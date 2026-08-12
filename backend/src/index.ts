@@ -1,0 +1,29 @@
+import 'reflect-metadata';
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import authRoutes from './modulos/Autenticación y gestión de usuario/Registro de usuarios/autenticacion.route';
+import { AppDataSource } from './data-source';
+
+dotenv.config();
+
+const app = express();
+
+app.use(cors());
+app.use(express.json());
+
+app.use('/api/auth', authRoutes);
+
+const PORT = process.env.PORT || 3000;
+
+AppDataSource.initialize()
+  .then(() => {
+    console.log('Conectado a MySQL correctamente');
+
+    app.listen(PORT, () => {
+      console.log(`Servidor corriendo en http://localhost:${PORT}`);
+    });
+  })
+  .catch((error) => {
+    console.error('Error al conectar con MySQL:', error);
+  });
