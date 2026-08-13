@@ -16,22 +16,25 @@ export const registerUser = async (data: RegisterInput) => {
   const usuarioRepository = AppDataSource.getRepository(Usuario);
   const rolRepository = AppDataSource.getRepository(Rol);
 
-  // 1. Verificar si ya existe un usuario con el mismo correo O el mismo nombreUsuario
+ // 1. Verificar si ya existe un usuario con el mismo correo, nombreUsuario o teléfono
   const usuarioExistente = await usuarioRepository.findOne({
     where: [
       { correo: data.correo },
       { nombreUsuario: data.nombreUsuario },
+      { telefono: data.telefono },
     ],
   });
 
   if (usuarioExistente) {
-    const esMismoCorreo = usuarioExistente.correo === data.correo;
-    return {
-      ok: false,
-      message: esMismoCorreo
-        ? 'El correo ya está registrado'
-        : 'El nombre de usuario ya está en uso',
-    };
+    let message = 'El nombre de usuario ya está en uso';
+
+    if (usuarioExistente.correo === data.correo) {
+      message = 'El correo ya está registrado';
+    } else if (usuarioExistente.telefono === data.telefono) {
+      message = 'El teléfono ya está registrado';
+    }
+
+    return { ok: false, message };
   }
 
   // 2. Buscar obligatoriamente el rol 'visitante' en la base de datos
