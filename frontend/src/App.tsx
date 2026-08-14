@@ -13,23 +13,34 @@ function App() {
   return (
     <>
       {mostrarRegistro ? (
-        <section>
+        <section className="formulario-contenedor">
           <button
             type="button"
+            className="cerrar-formulario"
             onClick={() => setMostrarRegistro(false)}
+            aria-label="Cerrar formulario"
+            title="Cerrar"
           >
-            ← Volver
+            ×
           </button>
 
-          <Registro />
+          <Registro
+            onIrLogin={() => {
+              setMostrarRegistro(false);
+              setMostrarLogin(true);
+            }}
+          />
         </section>
       ) : mostrarLogin ? (
-        <section>
+        <section className="formulario-contenedor">
           <button
             type="button"
+            className="cerrar-formulario"
             onClick={() => setMostrarLogin(false)}
+            aria-label="Cerrar formulario"
+            title="Cerrar"
           >
-            ← Volver
+            ×
           </button>
 
           <Login />
@@ -45,11 +56,13 @@ function App() {
                 height="179"
                 alt=""
               />
+
               <img
                 src={reactLogo}
                 className="framework"
                 alt="React logo"
               />
+
               <img
                 src={viteLogo}
                 className="vite"
@@ -87,7 +100,11 @@ function App() {
 
           <section id="next-steps">
             <div id="docs">
-              <svg className="icon" role="presentation" aria-hidden="true">
+              <svg
+                className="icon"
+                role="presentation"
+                aria-hidden="true"
+              >
                 <use href="/icons.svg#documentation-icon"></use>
               </svg>
 
@@ -97,7 +114,11 @@ function App() {
               <ul>
                 <li>
                   <a href="https://vite.dev/" target="_blank">
-                    <img className="logo" src={viteLogo} alt="" />
+                    <img
+                      className="logo"
+                      src={viteLogo}
+                      alt=""
+                    />
                     Explore Vite
                   </a>
                 </li>
@@ -116,7 +137,11 @@ function App() {
             </div>
 
             <div id="social">
-              <svg className="icon" role="presentation" aria-hidden="true">
+              <svg
+                className="icon"
+                role="presentation"
+                aria-hidden="true"
+              >
                 <use href="/icons.svg#social-icon"></use>
               </svg>
 
@@ -141,7 +166,10 @@ function App() {
                 </li>
 
                 <li>
-                  <a href="https://chat.vite.dev/" target="_blank">
+                  <a
+                    href="https://chat.vite.dev/"
+                    target="_blank"
+                  >
                     <svg
                       className="button-icon"
                       role="presentation"
@@ -154,7 +182,10 @@ function App() {
                 </li>
 
                 <li>
-                  <a href="https://x.com/vite_js" target="_blank">
+                  <a
+                    href="https://x.com/vite_js"
+                    target="_blank"
+                  >
                     <svg
                       className="button-icon"
                       role="presentation"
@@ -186,6 +217,7 @@ function App() {
           </section>
 
           <div className="ticks"></div>
+
           <section id="spacer"></section>
         </>
       )}

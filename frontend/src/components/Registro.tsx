@@ -12,11 +12,13 @@ interface CampoErrores {
   password?: string;
   confirmPassword?: string;
 }
+interface RegistroProps {
+  onIrLogin: () => void;
+}
 
 const SEGUNDOS_REDIRECCION = 3;
 
-export default function Registro() {
-  const [nombreUsuario, setNombreUsuario] = useState('');
+export default function Registro({ onIrLogin }: RegistroProps) {  const [nombreUsuario, setNombreUsuario] = useState('');
   const [nombre, setNombre] = useState('');
   const [apellidos, setApellidos] = useState('');
   const [correo, setCorreo] = useState('');
@@ -94,25 +96,22 @@ export default function Registro() {
     setSegundosRestantes(null);
   };
 
-  useEffect(() => {
-    if (segundosRestantes === null) return;
+ useEffect(() => {
+  if (segundosRestantes === null) return;
 
-    if (segundosRestantes === 0) {
-      // Cuando exista la pantalla de login, reemplazar por:
-      // navigate('/login');
-      console.log('Redirigiendo a /login...');
-      return;
-    }
+  if (segundosRestantes === 0) {
+    onIrLogin();
+    return;
+  }
 
-    const temporizador = setTimeout(() => {
-      setSegundosRestantes((prev) =>
-        prev !== null ? prev - 1 : null
-      );
-    }, 1000);
+  const temporizador = setTimeout(() => {
+    setSegundosRestantes((prev) =>
+      prev !== null ? prev - 1 : null
+    );
+  }, 1000);
 
-    return () => clearTimeout(temporizador);
-  }, [segundosRestantes]);
-
+  return () => clearTimeout(temporizador);
+}, [segundosRestantes, onIrLogin]);
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
@@ -379,7 +378,7 @@ export default function Registro() {
           )}
         </div>
 
-        {/* NUEVO CAMPO */}
+        {}
         <div className="registro-campo">
           <label htmlFor="confirmPassword">
             Confirmación de contraseña
@@ -500,9 +499,12 @@ export default function Registro() {
 
         <p className="registro-login">
           ¿Ya tienes cuenta?{' '}
-          <span className="registro-login-texto">
-            Inicia sesión
-          </span>
+       <span
+  className="registro-login-texto"
+  onClick={onIrLogin}
+>
+  Inicia sesión
+</span>
         </p>
       </form>
     </div>
