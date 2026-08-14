@@ -8,7 +8,16 @@ interface CampoErrores {
   password?: string;
 }
 
-export default function login() {
+type NombreRol = 'administrador' | 'asociado' | 'visitante';
+
+interface LoginProps {
+  onLogin: (rol: NombreRol) => void;
+}
+
+const esNombreRol = (rol: unknown): rol is NombreRol =>
+  rol === 'administrador' || rol === 'asociado' || rol === 'visitante';
+
+export default function login({ onLogin }: LoginProps) {
   const [identificador, setIdentificador] = useState('');
   const [password, setPassword] = useState('');
   const [recordarSesion, setRecordarSesion] = useState(false);
@@ -80,7 +89,12 @@ export default function login() {
       setMensaje('Inicio de sesión exitoso');
       setEstado('exito');
 
-      console.log('Rol del usuario:', resultado.usuario.rol.nombre);
+      const rol = resultado.usuario?.rol?.nombre;
+      if (esNombreRol(rol)) {
+        onLogin(rol);
+      }
+
+      console.log('Rol del usuario:', rol);
       // Cuando exista el router, acá se redirige según el rol
 
     } catch (error) {
