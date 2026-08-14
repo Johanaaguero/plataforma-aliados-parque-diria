@@ -3,7 +3,7 @@ import { DataSource } from 'typeorm';
 import dotenv from 'dotenv';
 import { Usuario } from './models/Usuario';
 import { Rol } from './models/Rol';
-
+import { LoginAttempt } from './models/LoginAttempt';
 dotenv.config();
 
 const DB_HOST = process.env.DB_HOST;
@@ -26,7 +26,7 @@ export const AppDataSource = new DataSource({
   password: DB_PASSWORD,
   database: DB_DATABASE,
 
-  entities: [Usuario, Rol],
+  entities: [Usuario, Rol, LoginAttempt],
 
   migrations: ['src/migrations/*.ts'],
 
