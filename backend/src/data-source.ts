@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { Usuario } from './models/Usuario';
 import { Rol } from './models/Rol';
 import { LoginAttempt } from './models/LoginAttempt';
+import { HistorialCambioRol } from './models/HistorialCambioRol';
 dotenv.config();
 
 const DB_HOST = process.env.DB_HOST;
@@ -26,7 +27,7 @@ export const AppDataSource = new DataSource({
   password: DB_PASSWORD,
   database: DB_DATABASE,
 
-  entities: [Usuario, Rol, LoginAttempt],
+  entities: [Usuario, Rol, LoginAttempt, HistorialCambioRol],
 
   migrations: ['src/migrations/*.ts'],
 

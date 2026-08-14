@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
+    "test": "tsx --test src/tests/roles.test.ts",
     "migration:generate": "typeorm-ts-node-commonjs -d src/data-source.ts migration:generate src/migrations/Inicial",
     "migration:run": "typeorm-ts-node-commonjs -d src/data-source.ts migration:run"
   },
