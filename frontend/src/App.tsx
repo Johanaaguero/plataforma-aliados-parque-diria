@@ -4,9 +4,11 @@ import viteLogo from './assets/vite.svg';
 import heroImg from './assets/hero.png';
 import './App.css';
 import Registro from './components/Registro';
+import Login from './components/login';
 
 function App() {
   const [mostrarRegistro, setMostrarRegistro] = useState(false);
+  const [mostrarLogin, setMostrarLogin] = useState(false);
 
   return (
     <>
@@ -20,6 +22,17 @@ function App() {
           </button>
 
           <Registro />
+        </section>
+      ) : mostrarLogin ? (
+        <section>
+          <button
+            type="button"
+            onClick={() => setMostrarLogin(false)}
+          >
+            ← Volver
+          </button>
+
+          <Login />
         </section>
       ) : (
         <>
@@ -59,6 +72,14 @@ function App() {
               onClick={() => setMostrarRegistro(true)}
             >
               Registrarse
+            </button>
+
+            <button
+              type="button"
+              className="counter"
+              onClick={() => setMostrarLogin(true)}
+            >
+              Iniciar sesión
             </button>
           </section>
 
