@@ -169,6 +169,15 @@ export default function login({ onLogin }: LoginProps) {
           )}
         </div>
 
+        <p style={{ marginTop: 8, textAlign: 'right', fontSize: 13 }}>
+          <a
+            href="/recuperar-contrasena"
+            className="registro-login-texto"
+          >
+            ¿Olvidaste tu contraseña?
+          </a>
+        </p>
+
         <div className="registro-campo">
           <label>
             <input

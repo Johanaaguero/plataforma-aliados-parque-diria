@@ -7,6 +7,8 @@ import './App.css';
 import Registro from './components/Registro';
 import Login from './components/login';
 import GestionRoles from './components/GestionRoles';
+import RecuperarContrasena from './components/RecuperarContrasena';
+import RestablecerContrasena from './components/RestablecerContrasena';
 
 type NombreRol = 'administrador' | 'asociado' | 'visitante';
 
@@ -68,6 +70,20 @@ function App() {
       setMostrarGestionRoles(false);
     }
   }, [rolAutenticado]);
+
+  const rutaActual = window.location.pathname.replace(/\/+$/, '') || '/';
+
+  if (rutaActual === '/recuperar-contrasena') {
+    return <RecuperarContrasena />;
+  }
+
+  if (rutaActual === '/restablecer-contrasena') {
+    return <RestablecerContrasena />;
+  }
+
+  if (rutaActual === '/login') {
+    return <Login onLogin={setRolAutenticado} />;
+  }
 
   return (
     <>

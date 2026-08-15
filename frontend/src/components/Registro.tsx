@@ -16,7 +16,18 @@ interface RegistroProps {
   onIrLogin: () => void;
 }
 
+interface RespuestaRegistro {
+  ok?: boolean;
+  message?: string;
+}
+
 const SEGUNDOS_REDIRECCION = 3;
+
+function obtenerUrlBaseApi(): string | null {
+  const urlConfigurada = import.meta.env.VITE_API_URL?.trim();
+
+  return urlConfigurada ? urlConfigurada.replace(/\/+$/, '') : null;
+}
 
 export default function Registro({ onIrLogin }: RegistroProps) {  const [nombreUsuario, setNombreUsuario] = useState('');
   const [nombre, setNombre] = useState('');
@@ -126,12 +137,21 @@ export default function Registro({ onIrLogin }: RegistroProps) {  const [nombreU
 
     setEstado('cargando');
 
+    const urlBaseApi = obtenerUrlBaseApi();
+
+    if (!urlBaseApi) {
+      setMensaje('No se pudo configurar la conexión con el servidor');
+      setEstado('error');
+      return;
+    }
+
     try {
       const respuesta = await fetch(
-        'http://localhost:3000/api/auth/register',
+        `${urlBaseApi}/api/auth/register`,
         {
           method: 'POST',
           headers: {
+            Accept: 'application/json',
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
@@ -145,9 +165,17 @@ export default function Registro({ onIrLogin }: RegistroProps) {  const [nombreU
         },
       );
 
-      const resultado = await respuesta.json();
+      let resultado: RespuestaRegistro;
 
-      if (!respuesta.ok) {
+      try {
+        resultado = await respuesta.json() as RespuestaRegistro;
+      } catch {
+        setMensaje('El servidor devolvió una respuesta inesperada');
+        setEstado('error');
+        return;
+      }
+
+      if (!respuesta.ok || resultado.ok !== true) {
         setMensaje(
           resultado.message ?? 'No se pudo completar el registro'
         );
