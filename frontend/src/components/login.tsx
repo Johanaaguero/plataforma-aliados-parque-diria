@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import type { FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
+import { api } from '../services/api';
 
 type Estado = 'idle' | 'cargando' | 'exito' | 'error';
 
@@ -17,6 +17,33 @@ interface LoginProps {
 const esNombreRol = (rol: unknown): rol is NombreRol =>
   rol === 'administrador' || rol === 'asociado' || rol === 'visitante';
 
+const extraerRolDelToken = (): NombreRol | null => {
+  const token = sessionStorage.getItem('token') ?? localStorage.getItem('token');
+
+  if (!token) return null;
+
+  try {
+    const payloadCodificado = token.split('.')[1];
+    if (!payloadCodificado) return null;
+
+    const base64 = payloadCodificado
+      .replace(/-/g, '+')
+      .replace(/_/g, '/')
+      .padEnd(Math.ceil(payloadCodificado.length / 4) * 4, '=');
+    const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+    const payload = JSON.parse(new TextDecoder().decode(bytes)) as { rol?: unknown };
+
+    return payload.rol === 'administrador' ||
+      payload.rol === 'asociado' ||
+      payload.rol === 'visitante'
+      ? payload.rol
+      : null;
+  } catch {
+    return null;
+  }
+};
+
+
 export default function login({ onLogin }: LoginProps) {
   const [identificador, setIdentificador] = useState('');
   const [password, setPassword] = useState('');
@@ -26,6 +53,7 @@ export default function login({ onLogin }: LoginProps) {
   const [mensaje, setMensaje] = useState('');
   const [estado, setEstado] = useState<Estado>('idle');
   const [errores, setErrores] = useState<CampoErrores>({});
+  const [codigoError, setCodigoError] = useState<string | null>(null);
 
   const validarCampos = (): CampoErrores => {
     const nuevosErrores: CampoErrores = {};
@@ -62,23 +90,10 @@ export default function login({ onLogin }: LoginProps) {
     }
 
     setEstado('cargando');
+    setCodigoError(null);
 
     try {
-      const respuesta = await fetch('http://localhost:3000/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ identificador, password }),
-      });
-
-      const resultado = await respuesta.json();
-
-      if (!respuesta.ok) {
-        setMensaje(resultado.message ?? 'No se pudo iniciar sesión');
-        setEstado('error');
-        return;
-      }
+      const resultado = await api.login(identificador.trim(), password);
 
       if (recordarSesion) {
         localStorage.setItem('token', resultado.token);
@@ -89,18 +104,16 @@ export default function login({ onLogin }: LoginProps) {
       setMensaje('Inicio de sesión exitoso');
       setEstado('exito');
 
-      const rol = resultado.usuario?.rol?.nombre;
-      if (esNombreRol(rol)) {
-        onLogin(rol);
+      const rolNuevo = extraerRolDelToken();
+      if (esNombreRol(rolNuevo)) {
+        onLogin(rolNuevo);
       }
-
-      console.log('Rol del usuario:', rol);
-      // Cuando exista el router, acá se redirige según el rol
-
-    } catch (error) {
-      console.error(error);
-      setMensaje('No se pudo conectar con el servidor');
+    } catch (error: unknown) {
+      const apiError = error as { code?: string; message?: string };
+      setCodigoError(apiError.code || 'UNKNOWN_ERROR');
+      setMensaje(apiError.message || 'No se pudo conectar con el servidor');
       setEstado('error');
+      console.error('Error en login:', error);
     }
   };
 
@@ -136,6 +149,7 @@ export default function login({ onLogin }: LoginProps) {
               limpiarError('identificador');
             }}
             placeholder="correo@ejemplo.com o usuario123"
+            disabled={estado === 'cargando'}
           />
           {errores.identificador && (
             <span className="campo-error">{errores.identificador}</span>
@@ -155,11 +169,13 @@ export default function login({ onLogin }: LoginProps) {
                 limpiarError('password');
               }}
               placeholder="Tu contraseña"
+              disabled={estado === 'cargando'}
             />
             <button
               type="button"
               onClick={() => setMostrarPassword((prev) => !prev)}
               style={{ position: 'absolute', right: 8, top: 8 }}
+              disabled={estado === 'cargando'}
             >
               {mostrarPassword ? 'Ocultar' : 'Mostrar'}
             </button>
@@ -184,6 +200,7 @@ export default function login({ onLogin }: LoginProps) {
               type="checkbox"
               checked={recordarSesion}
               onChange={(e) => setRecordarSesion(e.target.checked)}
+              disabled={estado === 'cargando'}
             />
             {' '}Recordar sesión
           </label>
@@ -200,9 +217,16 @@ export default function login({ onLogin }: LoginProps) {
         </div>
 
         {mensaje && (
-          <p className={`registro-mensaje registro-mensaje--${estado}`}>
-            {mensaje}
-          </p>
+          <div>
+            <p className={`registro-mensaje registro-mensaje--${estado}`}>
+              {mensaje}
+            </p>
+            {codigoError && (
+              <p style={{ fontSize: 12, color: '#666', marginTop: 4 }}>
+                Código: {codigoError}
+              </p>
+            )}
+          </div>
         )}
       </form>
     </div>
