@@ -9,8 +9,15 @@ import Login from './components/login';
 import GestionRoles from './components/GestionRoles';
 import RecuperarContrasena from './components/RecuperarContrasena';
 import RestablecerContrasena from './components/RestablecerContrasena';
+import { api } from './services/api';
 
 type NombreRol = 'administrador' | 'asociado' | 'visitante';
+
+interface ErrorDeAutenticacion {
+  code: string;
+  message: string;
+  status: number;
+}
 
 const obtenerRolDesdeToken = (): NombreRol | null => {
   const token =
@@ -43,6 +50,7 @@ const obtenerRolDesdeToken = (): NombreRol | null => {
   }
 };
 
+// Implementado por: Dallane
 function App() {
   const [mostrarRegistro, setMostrarRegistro] = useState(false);
   const [mostrarLogin, setMostrarLogin] = useState(false);
@@ -50,6 +58,8 @@ function App() {
   const [rolAutenticado, setRolAutenticado] = useState<NombreRol | null>(
     obtenerRolDesdeToken
   );
+  const [errorAutenticacion, setErrorAutenticacion] = useState<ErrorDeAutenticacion | null>(null);
+  const [mostrarErrorModal, setMostrarErrorModal] = useState(false);
 
   useEffect(() => {
     const sincronizarSesion = () => {
@@ -59,9 +69,28 @@ function App() {
     window.addEventListener('storage', sincronizarSesion);
     window.addEventListener('focus', sincronizarSesion);
 
+    // Listener para errores de autenticación
+    const handleUnauthorized = (event: Event) => {
+      const customEvent = event as CustomEvent<ErrorDeAutenticacion>;
+      setErrorAutenticacion(customEvent.detail);
+      setMostrarErrorModal(true);
+      setRolAutenticado(null);
+    };
+
+    const handleForbidden = (event: Event) => {
+      const customEvent = event as CustomEvent<ErrorDeAutenticacion>;
+      setErrorAutenticacion(customEvent.detail);
+      setMostrarErrorModal(true);
+    };
+
+    window.addEventListener('auth:unauthorized', handleUnauthorized);
+    window.addEventListener('auth:forbidden', handleForbidden);
+
     return () => {
       window.removeEventListener('storage', sincronizarSesion);
       window.removeEventListener('focus', sincronizarSesion);
+      window.removeEventListener('auth:unauthorized', handleUnauthorized);
+      window.removeEventListener('auth:forbidden', handleForbidden);
     };
   }, []);
 
@@ -70,6 +99,22 @@ function App() {
       setMostrarGestionRoles(false);
     }
   }, [rolAutenticado]);
+
+  const cerrarSesion = async () => {
+    try {
+      await api.logout();
+    } finally {
+      setRolAutenticado(null);
+      setMostrarGestionRoles(false);
+      setMostrarLogin(false);
+      setMostrarRegistro(false);
+    }
+  };
+
+  const cerrarErrorModal = () => {
+    setMostrarErrorModal(false);
+    setErrorAutenticacion(null);
+  };
 
   const rutaActual = window.location.pathname.replace(/\/+$/, '') || '/';
 
@@ -192,6 +237,69 @@ function App() {
               >
                 Gestionar Roles
               </button>
+            )}
+
+            {rolAutenticado && (
+              <button
+                type="button"
+                className="counter"
+                onClick={() => {
+                  void cerrarSesion();
+                }}
+              >
+                Cerrar sesión
+              </button>
+            )}
+
+            {mostrarErrorModal && errorAutenticacion && (
+              <div
+                style={{
+                  position: 'fixed',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  zIndex: 1000,
+                }}
+              >
+                <div
+                  style={{
+                    backgroundColor: 'white',
+                    padding: '20px',
+                    borderRadius: '8px',
+                    maxWidth: '400px',
+                    boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
+                  }}
+                >
+                  <h2 style={{ marginTop: 0 }}>
+                    {errorAutenticacion.status === 401 ? 'Sesión expirada' : 'Acceso denegado'}
+                  </h2>
+                  <p>{errorAutenticacion.message}</p>
+                  {errorAutenticacion.code && (
+                    <p style={{ fontSize: '12px', color: '#666' }}>
+                      Código: {errorAutenticacion.code}
+                    </p>
+                  )}
+                  <button
+                    type="button"
+                    onClick={cerrarErrorModal}
+                    style={{
+                      padding: '8px 16px',
+                      backgroundColor: '#007bff',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Aceptar
+                  </button>
+                </div>
+              </div>
             )}
           </section>
 

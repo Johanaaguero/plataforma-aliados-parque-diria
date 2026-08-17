@@ -6,6 +6,7 @@ import authRoutes from './modulos/Autenticación y gestión de usuario/Registro 
 import loginRoutes from './modulos/Autenticación y gestión de usuario/inicio de sesion/login.route';
 import recuperacionRoutes from './modulos/Autenticación y gestión de usuario/Recuperación de contraseña/recuperacion.route';
 import { iniciarLimpiezaTokensExpirados } from './modulos/Autenticación y gestión de usuario/Recuperación de contraseña/limpieza.service';
+import { iniciarLimpiezaTokensBlacklist } from './modulos/Autenticación y gestión de usuario/inicio de sesion/limpieza-blacklist.service';
 import { AppDataSource } from './data-source';
 import { errorMiddleware } from './middlewares/error.middleware';
  
@@ -29,6 +30,7 @@ AppDataSource.initialize()
   .then(() => {
     console.log('Conectado a MySQL correctamente');
     iniciarLimpiezaTokensExpirados();
+    iniciarLimpiezaTokensBlacklist();
 
     app.listen(PORT, () => {
       console.log(`Servidor corriendo en http://localhost:${PORT}`);

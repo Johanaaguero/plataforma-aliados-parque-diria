@@ -5,6 +5,11 @@ import { Usuario } from './models/Usuario';
 import { Rol } from './models/Rol';
 import { LoginAttempt } from './models/LoginAttempt';
 import { RecuperacionContrasena } from './models/RecuperacionContrasena';
+import { TokenBlacklist } from './models/TokenBlacklist';
+import { AuditLog } from './models/AuditLog';
+import { HistorialCambioRol } from './models/HistorialCambioRol';
+
+// Implementado por: Dallane
 dotenv.config();
 
 const DB_HOST = process.env.DB_HOST;
@@ -19,6 +24,7 @@ if (!DB_HOST || !DB_PORT || !DB_USERNAME || !DB_PASSWORD || !DB_DATABASE) {
   );
 }
 
+// Implementado por: Dallane
 export const AppDataSource = new DataSource({
   type: 'mysql',
   host: DB_HOST,
@@ -27,7 +33,7 @@ export const AppDataSource = new DataSource({
   password: DB_PASSWORD,
   database: DB_DATABASE,
 
-  entities: [Usuario, Rol, LoginAttempt, RecuperacionContrasena],
+  entities: [Usuario, Rol, LoginAttempt, RecuperacionContrasena, TokenBlacklist, AuditLog, HistorialCambioRol],
 
   migrations: ['src/migrations/*.ts'],
 
