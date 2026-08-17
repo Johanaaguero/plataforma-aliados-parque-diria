@@ -31,7 +31,15 @@ export const AppDataSource = new DataSource({
   password: DB_PASSWORD,
   database: DB_DATABASE,
 
-  entities: [Usuario, Rol, LoginAttempt, RecuperacionContrasena, TokenBlacklist, AuditLog, HistorialCambioRol],
+  entities: [
+    Usuario,
+    Rol,
+    LoginAttempt,
+    RecuperacionContrasena,
+    TokenBlacklist,
+    AuditLog,
+    HistorialCambioRol,
+  ],
 
   migrations: ['src/migrations/*.ts'],
 
