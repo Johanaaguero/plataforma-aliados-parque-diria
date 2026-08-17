@@ -50,7 +50,6 @@ const obtenerRolDesdeToken = (): NombreRol | null => {
   }
 };
 
-// Implementado por: Dallane
 function App() {
   const [mostrarRegistro, setMostrarRegistro] = useState(false);
   const [mostrarLogin, setMostrarLogin] = useState(false);

@@ -3,7 +3,6 @@ import { loginUser } from './login.service';
 import { logoutUser } from './logout.service';
 import { extraerIPDelRequest } from '../auditoria.service';
 
-// Implementado por: Dallane
 export const login = async (req: Request, res: Response) => {
   try {
     const { identificador, password } = req.body;

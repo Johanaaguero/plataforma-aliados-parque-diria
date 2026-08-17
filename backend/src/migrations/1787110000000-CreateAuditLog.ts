@@ -1,6 +1,5 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-// Implementado por: Dallane
 export class CreateAuditLog1787110000000 implements MigrationInterface {
   name = 'CreateAuditLog1787110000000';
 

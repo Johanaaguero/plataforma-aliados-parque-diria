@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../services/api';
 
-// Implementado por: Dallane
-
 type NombreRol = 'administrador' | 'asociado' | 'visitante';
 
 interface AuthError {

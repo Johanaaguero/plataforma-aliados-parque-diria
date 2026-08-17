@@ -1,7 +1,6 @@
 import { AppDataSource } from '../../../data-source';
 import { TokenBlacklist } from '../../../models/TokenBlacklist';
 
-// Implementado por: Dallane
 export const logoutUser = async (token: string, motivo = 'logout') => {
   if (!token) {
     return { ok: false, message: 'Token no proporcionado' };

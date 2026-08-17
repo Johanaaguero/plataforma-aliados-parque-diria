@@ -6,7 +6,6 @@ import {
   Index,
 } from 'typeorm';
 
-// Implementado por: Dallane
 @Entity('token_blacklist')
 export class TokenBlacklist {
   @PrimaryGeneratedColumn()

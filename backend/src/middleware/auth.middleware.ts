@@ -4,7 +4,6 @@ import { AppDataSource } from '../data-source';
 import { TokenBlacklist } from '../models/TokenBlacklist';
 import { registrarAuditoria, extraerIPDelRequest } from '../modulos/Autenticación y gestión de usuario/auditoria.service';
 
-// Implementado por: Dallane
 interface TokenPayload {
   id: number;
   nombreUsuario: string;

@@ -9,7 +9,6 @@ import { TokenBlacklist } from './models/TokenBlacklist';
 import { AuditLog } from './models/AuditLog';
 import { HistorialCambioRol } from './models/HistorialCambioRol';
 
-// Implementado por: Dallane
 dotenv.config();
 
 const DB_HOST = process.env.DB_HOST;
@@ -24,7 +23,6 @@ if (!DB_HOST || !DB_PORT || !DB_USERNAME || !DB_PASSWORD || !DB_DATABASE) {
   );
 }
 
-// Implementado por: Dallane
 export const AppDataSource = new DataSource({
   type: 'mysql',
   host: DB_HOST,

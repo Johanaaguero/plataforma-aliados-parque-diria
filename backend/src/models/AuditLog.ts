@@ -9,7 +9,6 @@ import {
 } from 'typeorm';
 import { Usuario } from './Usuario';
 
-// Implementado por: Dallane
 @Entity('audit_logs')
 @Index('IDX_AUDIT_LOGS_USER_ID', ['usuarioId'])
 @Index('IDX_AUDIT_LOGS_ACTION', ['action'])

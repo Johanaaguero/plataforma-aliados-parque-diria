@@ -3,7 +3,6 @@ import { rateLimit } from 'express-rate-limit';
 import { login, logout } from './login.controller';
 import { verificarToken } from '../../../middleware/auth.middleware';
 
-// Implementado por: Dallane
 const loginRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
   max: 5, // máximo 5 intentos de login por IP en 15 minutos
