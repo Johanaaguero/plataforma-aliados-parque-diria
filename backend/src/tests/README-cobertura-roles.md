@@ -52,8 +52,8 @@ Durante dos casos negativos aparecen trazas de conexión MySQL en la salida. Son
 
 | Archivo | Líneas | Ramas | Funciones |
 |---|---:|---:|---:|
-| `src/middleware/auth.middleware.ts` | 97.44% | 90.48% | 100.00% |
-| `src/middleware/authorization.middleware.ts` | 100.00% | 94.74% | 100.00% |
+| `src/middlewares/auth.middleware.ts` | 97.44% | 90.48% | 100.00% |
+| `src/middlewares/authorization.middleware.ts` | 100.00% | 94.74% | 100.00% |
 | `roles.controller.ts` | 98.57% | 96.00% | 100.00% |
 | `roles.route.ts` | 100.00% | 100.00% | 100.00% |
 | `roles.service.ts` | 97.89% | 91.18% | 100.00% |
