@@ -1,7 +1,4 @@
 import { useEffect, useState } from 'react';
-import reactLogo from './assets/react.svg';
-import viteLogo from './assets/vite.svg';
-import heroImg from './assets/hero.png';
 import './App.css';
 
 import Registro from './components/Registro';
@@ -9,6 +6,11 @@ import Login from './components/login';
 import GestionRoles from './components/GestionRoles';
 import RecuperarContrasena from './components/RecuperarContrasena';
 import RestablecerContrasena from './components/RestablecerContrasena';
+
+import Navbar from './components/informativo/Navbar';
+import Hero from './components/informativo/Hero';
+import Footer from './components/informativo/Footer';
+import Informativo from './components/informativo/general';
 
 type NombreRol = 'administrador' | 'asociado' | 'visitante';
 
@@ -20,16 +22,21 @@ const obtenerRolDesdeToken = (): NombreRol | null => {
 
   try {
     const payloadCodificado = token.split('.')[1];
+
     if (!payloadCodificado) return null;
 
     const base64 = payloadCodificado
       .replace(/-/g, '+')
       .replace(/_/g, '/')
       .padEnd(Math.ceil(payloadCodificado.length / 4) * 4, '=');
+
     const bytes = Uint8Array.from(atob(base64), (caracter) =>
       caracter.charCodeAt(0)
     );
-    const payload = JSON.parse(new TextDecoder().decode(bytes)) as {
+
+    const payload = JSON.parse(
+      new TextDecoder().decode(bytes)
+    ) as {
       rol?: unknown;
     };
 
@@ -47,9 +54,9 @@ function App() {
   const [mostrarRegistro, setMostrarRegistro] = useState(false);
   const [mostrarLogin, setMostrarLogin] = useState(false);
   const [mostrarGestionRoles, setMostrarGestionRoles] = useState(false);
-  const [rolAutenticado, setRolAutenticado] = useState<NombreRol | null>(
-    obtenerRolDesdeToken
-  );
+
+  const [rolAutenticado, setRolAutenticado] =
+    useState<NombreRol | null>(obtenerRolDesdeToken);
 
   useEffect(() => {
     const sincronizarSesion = () => {
@@ -71,16 +78,20 @@ function App() {
     }
   }, [rolAutenticado]);
 
-  const rutaActual = window.location.pathname.replace(/\/+$/, '') || '/';
+  const rutaActual =
+    window.location.pathname.replace(/\/+$/, '') || '/';
 
+  // Recuperar contraseña
   if (rutaActual === '/recuperar-contrasena') {
     return <RecuperarContrasena />;
   }
 
+  // Restablecer contraseña
   if (rutaActual === '/restablecer-contrasena') {
     return <RestablecerContrasena />;
   }
 
+  // Login mediante ruta
   if (rutaActual === '/login') {
     return <Login onLogin={setRolAutenticado} />;
   }
@@ -88,6 +99,7 @@ function App() {
   return (
     <>
       {mostrarRegistro ? (
+        // FORMULARIO DE REGISTRO
         <section className="formulario-contenedor">
           <button
             type="button"
@@ -100,13 +112,14 @@ function App() {
           </button>
 
           <Registro
-            onIrLogin={() => {
+            onIrALogin={() => {
               setMostrarRegistro(false);
               setMostrarLogin(true);
             }}
           />
         </section>
       ) : mostrarLogin ? (
+        // FORMULARIO DE LOGIN
         <section className="formulario-contenedor">
           <button
             type="button"
@@ -120,7 +133,9 @@ function App() {
 
           <Login onLogin={setRolAutenticado} />
         </section>
-      ) : mostrarGestionRoles && rolAutenticado === 'administrador' ? (
+      ) : mostrarGestionRoles &&
+        rolAutenticado === 'administrador' ? (
+        // GESTIÓN DE ROLES
         <section>
           <button
             type="button"
@@ -134,204 +149,22 @@ function App() {
 
           <GestionRoles />
         </section>
-      ) : (
-        <>
-          <section id="center">
-            <div className="hero">
-              <img
-                src={heroImg}
-                className="base"
-                width="170"
-                height="179"
-                alt=""
-              />
+     ) : (
+  // PÁGINA PRINCIPAL
+  <>
+    <Navbar 
+      onRegistro={() => setMostrarRegistro(true)} 
+      onLogin={() => setMostrarLogin(true)} 
+      rolAutenticado={rolAutenticado} 
+      onGestionRoles={() => setMostrarGestionRoles(true)} 
+    />
 
-              <img
-                src={reactLogo}
-                className="framework"
-                alt="React logo"
-              />
+    <Hero />
 
-              <img
-                src={viteLogo}
-                className="vite"
-                alt="Vite logo"
-              />
-            </div>
-
-            <div>
-              <h1>Get started</h1>
-
-              <p>
-                Edit <code>src/App.tsx</code> and save to test{' '}
-                <code>HMR</code>
-              </p>
-            </div>
-
-            <button
-              type="button"
-              className="counter"
-              onClick={() => setMostrarRegistro(true)}
-            >
-              Registrarse
-            </button>
-
-            <button
-              type="button"
-              className="counter"
-              onClick={() => setMostrarLogin(true)}
-            >
-              Iniciar sesión
-            </button>
-
-            {rolAutenticado === 'administrador' && (
-              <button
-                type="button"
-                className="counter"
-                onClick={() => setMostrarGestionRoles(true)}
-              >
-                Gestionar Roles
-              </button>
-            )}
-          </section>
-
-          <div className="ticks"></div>
-
-          <section id="next-steps">
-            <div id="docs">
-              <svg
-                className="icon"
-                role="presentation"
-                aria-hidden="true"
-              >
-                <use href="/icons.svg#documentation-icon"></use>
-              </svg>
-
-              <h2>Documentation</h2>
-              <p>Your questions, answered</p>
-
-              <ul>
-                <li>
-                  <a
-                    href="https://vite.dev/"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <img
-                      className="logo"
-                      src={viteLogo}
-                      alt=""
-                    />
-                    Explore Vite
-                  </a>
-                </li>
-
-                <li>
-                  <a
-                    href="https://react.dev/"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <img
-                      className="button-icon"
-                      src={reactLogo}
-                      alt=""
-                    />
-                    Learn more
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            <div id="social">
-              <svg
-                className="icon"
-                role="presentation"
-                aria-hidden="true"
-              >
-                <use href="/icons.svg#social-icon"></use>
-              </svg>
-
-              <h2>Connect with us</h2>
-              <p>Join the Vite community</p>
-
-              <ul>
-                <li>
-                  <a
-                    href="https://github.com/vitejs/vite"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <svg
-                      className="button-icon"
-                      role="presentation"
-                      aria-hidden="true"
-                    >
-                      <use href="/icons.svg#github-icon"></use>
-                    </svg>
-                    GitHub
-                  </a>
-                </li>
-
-                <li>
-                  <a
-                    href="https://chat.vite.dev/"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <svg
-                      className="button-icon"
-                      role="presentation"
-                      aria-hidden="true"
-                    >
-                      <use href="/icons.svg#discord-icon"></use>
-                    </svg>
-                    Discord
-                  </a>
-                </li>
-
-                <li>
-                  <a
-                    href="https://x.com/vite_js"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <svg
-                      className="button-icon"
-                      role="presentation"
-                      aria-hidden="true"
-                    >
-                      <use href="/icons.svg#x-icon"></use>
-                    </svg>
-                    X.com
-                  </a>
-                </li>
-
-                <li>
-                  <a
-                    href="https://bsky.app/profile/vite.dev"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <svg
-                      className="button-icon"
-                      role="presentation"
-                      aria-hidden="true"
-                    >
-                      <use href="/icons.svg#bluesky-icon"></use>
-                    </svg>
-                    Bluesky
-                  </a>
-                </li>
-              </ul>
-            </div>
-          </section>
-
-          <div className="ticks"></div>
-
-          <section id="spacer"></section>
-        </>
-      )}
+    <Informativo />
+    <Footer />
+  </>
+)}
     </>
   );
 }
