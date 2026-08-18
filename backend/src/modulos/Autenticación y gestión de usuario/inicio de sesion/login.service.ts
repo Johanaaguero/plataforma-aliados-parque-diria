@@ -1,7 +1,7 @@
 import { AppDataSource } from '../../../data-source';
 import { Usuario } from '../../../models/Usuario';
 import { LoginAttempt } from '../../../models/LoginAttempt';
-import { registrarAuditoria } from '../auditoria.service';
+import { registrarAuditoria } from '../Autenticación y seguridad de acceso al sistema/auditoria.service';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 

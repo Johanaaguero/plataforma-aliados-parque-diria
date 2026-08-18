@@ -1,6 +1,6 @@
 import { Request } from 'express';
-import { AppDataSource } from '../../data-source';
-import { AuditLog } from '../../models/AuditLog';
+import { AppDataSource } from '../../../data-source';
+import { AuditLog } from '../../../models/AuditLog';
 
 
 interface AuditLogInput {

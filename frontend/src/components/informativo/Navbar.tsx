@@ -6,6 +6,8 @@ interface NavbarProps {
   onLogin: () => void;
   rolAutenticado: string | null;
   onGestionRoles: () => void;
+  onIrInicio: () => void;
+  onIrEmprendimientos: () => void;
 }
 
 function Navbar({
@@ -13,6 +15,8 @@ function Navbar({
   onLogin,
   rolAutenticado,
   onGestionRoles,
+  onIrInicio,
+  onIrEmprendimientos,
 }: NavbarProps) {
   // Detectar si el usuario ha hecho scroll
   const [scrolled, setScrolled] = useState(false);
@@ -42,18 +46,20 @@ function Navbar({
         <img
           src={logo}
           alt="Logo SIGTAD"
-          className="h-12 w-auto"
+          className="h-12 w-auto cursor-pointer"
+          onClick={onIrInicio}
         />
       </div>
 
       {/* Enlaces */}
       <div className="flex items-center gap-6">
-        <a
-          href="#inicio"
-          className="hover:text-green-200 transition-colors"
+        <button
+          type="button"
+          onClick={onIrInicio}
+          className="hover:text-green-200 transition-colors bg-transparent border-none text-white font-normal text-base cursor-pointer"
         >
           Inicio
-        </a>
+        </button>
 
         <a
           href="#sobre-parque"
@@ -62,12 +68,13 @@ function Navbar({
           Sobre el Parque
         </a>
 
-        <a
-          href="#emprendimientos"
-          className="hover:text-green-200 transition-colors"
+        <button
+          type="button"
+          onClick={onIrEmprendimientos}
+          className="hover:text-green-200 transition-colors bg-transparent border-none text-white font-normal text-base cursor-pointer"
         >
           Emprendimientos
-        </a>
+        </button>
 
         <a
           href="#eventos"

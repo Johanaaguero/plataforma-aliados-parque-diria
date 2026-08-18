@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { loginUser } from './login.service';
 import { logoutUser } from './logout.service';
-import { extraerIPDelRequest } from '../auditoria.service';
+import { extraerIPDelRequest } from '../Autenticación y seguridad de acceso al sistema/auditoria.service';
 
 export const login = async (req: Request, res: Response) => {
   try {
