@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { rateLimit } from 'express-rate-limit';
 import { login, logout } from './login.controller';
-import { verificarToken } from '../../../middleware/auth.middleware';
+import { verificarToken } from '../../../middlewares/auth.middleware';
 
 const loginRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos

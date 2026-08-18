@@ -3,8 +3,8 @@ import {
   getUsersRoles,
   updateRole,
 } from './roles.controller';
-import { verificarToken } from '../../../middleware/auth.middleware';
-import { autorizarRoles } from '../../../middleware/authorization.middleware';
+import { verificarToken } from '../../../middlewares/auth.middleware';
+import { autorizarRoles } from '../../../middlewares/authorization.middleware';
 
 const router = Router();
 
