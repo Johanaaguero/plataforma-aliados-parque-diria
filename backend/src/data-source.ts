@@ -8,6 +8,8 @@ import { RecuperacionContrasena } from './models/RecuperacionContrasena';
 import { TokenBlacklist } from './models/TokenBlacklist';
 import { AuditLog } from './models/AuditLog';
 import { HistorialCambioRol } from './models/HistorialCambioRol';
+import { CategoriaEmprendimiento } from './models/CategoriaEmprendimiento';
+import { Emprendimiento } from './models/Emprendimiento';
 
 dotenv.config();
 
@@ -31,15 +33,17 @@ export const AppDataSource = new DataSource({
   password: DB_PASSWORD,
   database: DB_DATABASE,
 
-  entities: [
-    Usuario,
-    Rol,
-    LoginAttempt,
-    RecuperacionContrasena,
-    TokenBlacklist,
-    AuditLog,
-    HistorialCambioRol,
-  ],
+ entities: [
+  Usuario,
+  Rol,
+  LoginAttempt,
+  RecuperacionContrasena,
+  TokenBlacklist,
+  AuditLog,
+  HistorialCambioRol,
+  CategoriaEmprendimiento,
+  Emprendimiento,
+],
 
   migrations: ['src/migrations/*.ts'],
 

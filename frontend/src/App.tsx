@@ -7,6 +7,8 @@ import GestionRoles from './components/GestionRoles';
 import RecuperarContrasena from './components/RecuperarContrasena';
 import RestablecerContrasena from './components/RestablecerContrasena';
 import { api } from './services/api';
+import RegistroEmprendimiento from './components/RegistroEmprendimiento';
+import ListaEmprendimientos from './components/ListaEmprendimientos';
 
 import Navbar from './components/informativo/Navbar';
 import Hero from './components/informativo/Hero';
@@ -62,6 +64,9 @@ function App() {
   const [mostrarLogin, setMostrarLogin] = useState(false);
   const [mostrarGestionRoles, setMostrarGestionRoles] = useState(false);
 
+  // Estado para controlar la pantalla actual ('inicio' | 'emprendimientos' | 'registroEmprendimiento')
+  const [seccionActual, setSeccionActual] = useState<'inicio' | 'emprendimientos' | 'registroEmprendimiento'>('inicio');
+
   const [rolAutenticado, setRolAutenticado] =
     useState<NombreRol | null>(obtenerRolDesdeToken);
 
@@ -78,9 +83,9 @@ function App() {
     window.addEventListener('storage', sincronizarSesion);
     window.addEventListener('focus', sincronizarSesion);
 
-    // Listener para errores de autenticación
     const handleUnauthorized = (event: Event) => {
-      const customEvent = event as CustomEvent<ErrorDeAutenticacion>;
+      const customEvent =
+        event as CustomEvent<ErrorDeAutenticacion>;
 
       setErrorAutenticacion(customEvent.detail);
       setMostrarErrorModal(true);
@@ -88,22 +93,39 @@ function App() {
     };
 
     const handleForbidden = (event: Event) => {
-      const customEvent = event as CustomEvent<ErrorDeAutenticacion>;
+      const customEvent =
+        event as CustomEvent<ErrorDeAutenticacion>;
 
       setErrorAutenticacion(customEvent.detail);
       setMostrarErrorModal(true);
     };
 
-    window.addEventListener('auth:unauthorized', handleUnauthorized);
-    window.addEventListener('auth:forbidden', handleForbidden);
+    window.addEventListener(
+      'auth:unauthorized',
+      handleUnauthorized
+    );
+
+    window.addEventListener(
+      'auth:forbidden',
+      handleForbidden
+    );
 
     return () => {
-      window.removeEventListener('storage', sincronizarSesion);
-      window.removeEventListener('focus', sincronizarSesion);
+      window.removeEventListener(
+        'storage',
+        sincronizarSesion
+      );
+
+      window.removeEventListener(
+        'focus',
+        sincronizarSesion
+      );
+
       window.removeEventListener(
         'auth:unauthorized',
         handleUnauthorized
       );
+
       window.removeEventListener(
         'auth:forbidden',
         handleForbidden
@@ -114,8 +136,11 @@ function App() {
   useEffect(() => {
     if (rolAutenticado !== 'administrador') {
       setMostrarGestionRoles(false);
+      if (seccionActual === 'registroEmprendimiento') {
+        setSeccionActual('emprendimientos');
+      }
     }
-  }, [rolAutenticado]);
+  }, [rolAutenticado, seccionActual]);
 
   const cerrarSesion = async () => {
     try {
@@ -125,6 +150,7 @@ function App() {
       setMostrarGestionRoles(false);
       setMostrarLogin(false);
       setMostrarRegistro(false);
+      setSeccionActual('inicio');
     }
   };
 
@@ -136,25 +162,97 @@ function App() {
   const rutaActual =
     window.location.pathname.replace(/\/+$/, '') || '/';
 
-  // Recuperar contraseña
+  // ============================================================
+  // RECUPERAR CONTRASEÑA
+  // ============================================================
+
   if (rutaActual === '/recuperar-contrasena') {
     return <RecuperarContrasena />;
   }
 
-  // Restablecer contraseña
+  // ============================================================
+  // RESTABLECER CONTRASEÑA
+  // ============================================================
+
   if (rutaActual === '/restablecer-contrasena') {
     return <RestablecerContrasena />;
   }
 
-  // Login mediante ruta
+  // ============================================================
+  // LOGIN MEDIANTE RUTA
+  // ============================================================
+
   if (rutaActual === '/login') {
     return <Login onLogin={setRolAutenticado} />;
   }
 
+  // ============================================================
+  // REGISTRO DE EMPRENDIMIENTO (VÍA RUTA DIRECTA O BOTÓN REGISTRAR)
+  // ============================================================
+
+  if (rutaActual === '/registro-emprendimiento' || seccionActual === 'registroEmprendimiento') {
+    if (rolAutenticado !== 'administrador') {
+      window.location.href = '/';
+      return null;
+    }
+
+    return (
+      <section className="formulario-contenedor">
+        <button
+          type="button"
+          className="cerrar-formulario"
+          onClick={() => {
+            setSeccionActual('emprendimientos');
+            if (rutaActual === '/registro-emprendimiento') {
+              window.location.href = '/';
+            }
+          }}
+          aria-label="Volver"
+          title="Volver"
+        >
+          × Volver a la lista
+        </button>
+
+        <RegistroEmprendimiento />
+      </section>
+    );
+  }
+
+  // ============================================================
+  // VISTA DE EMPRENDIMIENTOS (CUANDO HACEN CLIC EN EL MENÚ)
+  // ============================================================
+
+  if (seccionActual === 'emprendimientos') {
+    return (
+      <>
+        <Navbar
+          onRegistro={() => setMostrarRegistro(true)}
+          onLogin={() => setMostrarLogin(true)}
+          rolAutenticado={rolAutenticado}
+          onGestionRoles={() => setMostrarGestionRoles(true)}
+          onIrInicio={() => setSeccionActual('inicio')}
+          onIrEmprendimientos={() => setSeccionActual('emprendimientos')}
+        />
+
+        <main style={{ minHeight: '80vh', paddingTop: '20px' }}>
+          <ListaEmprendimientos
+            esAdministrador={rolAutenticado === 'administrador'}
+            onRegistrar={() => setSeccionActual('registroEmprendimiento')}
+          />
+        </main>
+
+        <Footer />
+      </>
+    );
+  }
+
+  // ============================================================
+  // PÁGINA PRINCIPAL / INICIO
+  // ============================================================
+
   return (
     <>
       {mostrarRegistro ? (
-        // FORMULARIO DE REGISTRO
         <section className="formulario-contenedor">
           <button
             type="button"
@@ -174,7 +272,6 @@ function App() {
           />
         </section>
       ) : mostrarLogin ? (
-        // FORMULARIO DE LOGIN
         <section className="formulario-contenedor">
           <button
             type="button"
@@ -190,7 +287,6 @@ function App() {
         </section>
       ) : mostrarGestionRoles &&
         rolAutenticado === 'administrador' ? (
-        // GESTIÓN DE ROLES
         <section>
           <button
             type="button"
@@ -205,13 +301,14 @@ function App() {
           <GestionRoles />
         </section>
       ) : (
-        // PÁGINA PRINCIPAL
         <>
           <Navbar
             onRegistro={() => setMostrarRegistro(true)}
             onLogin={() => setMostrarLogin(true)}
             rolAutenticado={rolAutenticado}
             onGestionRoles={() => setMostrarGestionRoles(true)}
+            onIrInicio={() => setSeccionActual('inicio')}
+            onIrEmprendimientos={() => setSeccionActual('emprendimientos')}
           />
 
           <Hero />
