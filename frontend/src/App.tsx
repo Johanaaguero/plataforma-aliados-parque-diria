@@ -167,7 +167,7 @@ function App() {
           </button>
 
           <Registro
-            onIrALogin={() => {
+            onIrLogin={() => {
               setMostrarRegistro(false);
               setMostrarLogin(true);
             }}
