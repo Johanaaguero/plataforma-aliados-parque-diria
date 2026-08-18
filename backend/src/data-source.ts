@@ -5,6 +5,8 @@ import { Usuario } from './models/Usuario';
 import { Rol } from './models/Rol';
 import { LoginAttempt } from './models/LoginAttempt';
 import { RecuperacionContrasena } from './models/RecuperacionContrasena';
+import { TokenBlacklist } from './models/TokenBlacklist';
+import { AuditLog } from './models/AuditLog';
 import { HistorialCambioRol } from './models/HistorialCambioRol';
 
 dotenv.config();
@@ -29,7 +31,15 @@ export const AppDataSource = new DataSource({
   password: DB_PASSWORD,
   database: DB_DATABASE,
 
-  entities: [Usuario, Rol, LoginAttempt, RecuperacionContrasena, HistorialCambioRol],
+  entities: [
+    Usuario,
+    Rol,
+    LoginAttempt,
+    RecuperacionContrasena,
+    TokenBlacklist,
+    AuditLog,
+    HistorialCambioRol,
+  ],
 
   migrations: ['src/migrations/*.ts'],
 

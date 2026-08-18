@@ -1,8 +1,22 @@
 import { Router } from 'express';
-import { login } from './login.controller';
+import { rateLimit } from 'express-rate-limit';
+import { login, logout } from './login.controller';
+import { verificarToken } from '../../../middleware/auth.middleware';
+
+const loginRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 5, // máximo 5 intentos de login por IP en 15 minutos
+  message: 'Demasiados intentos de login. Inténtalo más tarde.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => {
+    return req.method !== 'POST';
+  },
+});
 
 const router = Router();
 
-router.post('/login', login);
+router.post('/login', loginRateLimit, login);
+router.post('/logout', verificarToken, logout);
 
 export default router;
