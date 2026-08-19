@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { AppDataSource } from '../data-source';
 import { TokenBlacklist } from '../models/TokenBlacklist';
-import { registrarAuditoria, extraerIPDelRequest } from '../modulos/Autenticación y gestión de usuario/auditoria.service';
+import { registrarAuditoria, extraerIPDelRequest } from '../modulos/Autenticación y gestión de usuario/Autenticación y seguridad de acceso al sistema/auditoria.service';
 
 interface TokenPayload {
   id: number;

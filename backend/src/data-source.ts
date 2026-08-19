@@ -9,6 +9,9 @@ import { TokenBlacklist } from './models/TokenBlacklist';
 import { AuditLog } from './models/AuditLog';
 import { HistorialCambioRol } from './models/HistorialCambioRol';
 import { IntentoAcceso } from './models/IntentoAcceso';
+import { CategoriaEmprendimiento } from './models/CategoriaEmprendimiento';
+import { Emprendimiento } from './models/Emprendimiento';
+
 dotenv.config();
 
 const DB_HOST = process.env.DB_HOST;
@@ -40,7 +43,10 @@ export const AppDataSource = new DataSource({
     AuditLog,
     IntentoAcceso,
     HistorialCambioRol,
+    CategoriaEmprendimiento,
+    Emprendimiento,
   ],
+ 
 
   migrations: ['src/migrations/*.ts'],
 
