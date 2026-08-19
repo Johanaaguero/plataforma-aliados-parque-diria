@@ -8,6 +8,7 @@ import { RecuperacionContrasena } from './models/RecuperacionContrasena';
 import { TokenBlacklist } from './models/TokenBlacklist';
 import { AuditLog } from './models/AuditLog';
 import { HistorialCambioRol } from './models/HistorialCambioRol';
+import { IntentoAcceso } from './models/IntentoAcceso';
 import { CategoriaEmprendimiento } from './models/CategoriaEmprendimiento';
 import { Emprendimiento } from './models/Emprendimiento';
 
@@ -33,17 +34,19 @@ export const AppDataSource = new DataSource({
   password: DB_PASSWORD,
   database: DB_DATABASE,
 
- entities: [
-  Usuario,
-  Rol,
-  LoginAttempt,
-  RecuperacionContrasena,
-  TokenBlacklist,
-  AuditLog,
-  HistorialCambioRol,
-  CategoriaEmprendimiento,
-  Emprendimiento,
-],
+  entities: [
+    Usuario,
+    Rol,
+    LoginAttempt,
+    RecuperacionContrasena,
+    TokenBlacklist,
+    AuditLog,
+    IntentoAcceso,
+    HistorialCambioRol,
+    CategoriaEmprendimiento,
+    Emprendimiento,
+  ],
+ 
 
   migrations: ['src/migrations/*.ts'],
 

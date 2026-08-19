@@ -7,6 +7,7 @@ import GestionRoles from './components/GestionRoles';
 import RecuperarContrasena from './components/RecuperarContrasena';
 import RestablecerContrasena from './components/RestablecerContrasena';
 import { api } from './services/api';
+import { useInactividad } from './services/useInactividad';
 import RegistroEmprendimiento from './components/RegistroEmprendimiento';
 import ListaEmprendimientos from './components/ListaEmprendimientos';
 
@@ -277,6 +278,18 @@ function App() {
     }
   };
 
+  const cerrarSesionPorInactividad = () => {
+    setRolAutenticado(null);
+    setMostrarGestionRoles(false);
+    setMostrarLogin(false);
+    setMostrarRegistro(false);
+    setMostrarErrorModal(false);
+  };
+  useInactividad({
+  activo: rolAutenticado !== null,
+  tiempoInactividad: 15* 60* 1000,
+  onLogout: cerrarSesionPorInactividad,
+});
   // ============================================================
   // CERRAR MODAL DE ERROR
   // ============================================================

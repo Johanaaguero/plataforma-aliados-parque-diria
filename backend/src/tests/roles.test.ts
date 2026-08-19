@@ -11,6 +11,7 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import type { DataSource } from 'typeorm';
 import type { Usuario } from '../models/Usuario';
+import {errorMiddleware} from '../middlewares/registro.middleware';
 import type { Rol, NombreRol } from '../models/Rol';
 import type { HistorialCambioRol } from '../models/HistorialCambioRol';
 import { RegisterInitialRoles1786838400000 } from '../migrations/1786838400000-RegisterInitialRoles';
@@ -238,6 +239,7 @@ before(async () => {
   const app = express();
   app.use(express.json());
   app.use('/api/users', routeModule.default);
+  app.use (errorMiddleware);
 
   await new Promise<void>((resolveListen, rejectListen) => {
     server = app.listen(0, '127.0.0.1', (error?: Error) => {
