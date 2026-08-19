@@ -10,6 +10,6 @@ export const errorMiddleware = (
 
   res.status(500).json({
     ok: false,
-    message: 'Ocurrió un error interno del servidor.',
+    message: 'Error interno del servidor',
   });
 };

@@ -1,6 +1,7 @@
 import { AppDataSource } from '../../../data-source';
 import { Usuario } from '../../../models/Usuario';
 import { LoginAttempt } from '../../../models/LoginAttempt';
+import { IntentoAcceso } from '../../../models/IntentoAcceso';
 import { registrarAuditoria } from '../auditoria.service';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -24,6 +25,7 @@ export const loginUser = async ({
 }: LoginInput) => {
   const usuarioRepo = AppDataSource.getRepository(Usuario);
   const attemptRepo = AppDataSource.getRepository(LoginAttempt);
+  const intentoAccesoRepo = AppDataSource.getRepository(IntentoAcceso);
 
   const usuario = await usuarioRepo.findOne({
     where: [
@@ -33,7 +35,20 @@ export const loginUser = async ({
     relations: { rol: true },
   });
 
+  
+  // USUARIO NO ENCONTRADO
+  
   if (!usuario) {
+    // Registrar en intentos_acceso
+    await intentoAccesoRepo.save({
+      usuarioId: null,
+      correo: identificador,
+      exitoso: false,
+      motivo: 'Usuario no encontrado',
+      ip: ipAddress || null,
+    });
+
+    // Registrar también en auditoría
     await registrarAuditoria({
       action: 'LOGIN_ATTEMPT',
       description: `Intento de login con identificador no encontrado: ${identificador}`,
@@ -42,21 +57,48 @@ export const loginUser = async ({
       status: 'failure',
     });
 
-    return { ok: false, code: 'INVALID_CREDENTIALS', message: 'Usuario o contraseña incorrectos' };
+    return {
+      ok: false,
+      code: 'INVALID_CREDENTIALS',
+      message: 'Usuario o contraseña incorrectos',
+    };
   }
 
-  // Buscar o crear el registro de intentos para este usuario
-  let intento = await attemptRepo.findOne({ where: { usuarioId: usuario.id } });
+  
+  // BUSCAR O CREAR REGISTRO DE INTENTOS
+  
+  let intento = await attemptRepo.findOne({
+    where: { usuarioId: usuario.id },
+  });
+
   if (!intento) {
-    intento = attemptRepo.create({ usuarioId: usuario.id, intentosFallidos: 0 });
+    intento = attemptRepo.create({
+      usuarioId: usuario.id,
+      intentosFallidos: 0,
+    });
   }
 
-  // Verificar si está bloqueado
-  if (intento.bloqueadoHasta && intento.bloqueadoHasta > new Date()) {
+  
+  // VERIFICAR SI LA CUENTA ESTÁ BLOQUEADA
+  
+  if (
+    intento.bloqueadoHasta &&
+    intento.bloqueadoHasta > new Date()
+  ) {
     const minutosRestantes = Math.ceil(
-      (intento.bloqueadoHasta.getTime() - Date.now()) / 60000
+      (intento.bloqueadoHasta.getTime() - Date.now()) / 60000,
     );
 
+    // Registrar en intentos_acceso
+    await intentoAccesoRepo.save({
+      usuarioId: usuario.id,
+      correo: usuario.correo,
+      exitoso: false,
+      motivo: 'Cuenta bloqueada temporalmente',
+      ip: ipAddress || null,
+    });
+
+    // Registrar en auditoría
     await registrarAuditoria({
       usuarioId: usuario.id,
       action: 'LOGIN_BLOCKED',
@@ -73,16 +115,39 @@ export const loginUser = async ({
     };
   }
 
-  const passwordValida = await bcrypt.compare(password, usuario.contraseña);
+  
+  // VALIDAR CONTRASEÑA
+  
+  const passwordValida = await bcrypt.compare(
+    password,
+    usuario.contraseña,
+  );
 
+  
+  // CONTRASEÑA INCORRECTA
+  
   if (!passwordValida) {
     intento.intentosFallidos += 1;
     intento.fechaUltimoIntento = new Date();
 
+    // Si llegó al máximo de intentos
     if (intento.intentosFallidos >= MAX_INTENTOS) {
-      intento.bloqueadoHasta = new Date(Date.now() + MINUTOS_BLOQUEO * 60000);
+      intento.bloqueadoHasta = new Date(
+        Date.now() + MINUTOS_BLOQUEO * 60000,
+      );
+
       await attemptRepo.save(intento);
 
+      // Registrar en intentos_acceso
+      await intentoAccesoRepo.save({
+        usuarioId: usuario.id,
+        correo: usuario.correo,
+        exitoso: false,
+        motivo: `Cuenta bloqueada después de ${MAX_INTENTOS} intentos fallidos`,
+        ip: ipAddress || null,
+      });
+
+      // Registrar en auditoría
       await registrarAuditoria({
         usuarioId: usuario.id,
         action: 'LOGIN_FAILED_BLOCKED',
@@ -99,8 +164,19 @@ export const loginUser = async ({
       };
     }
 
+    // Guardar contador de intentos
     await attemptRepo.save(intento);
 
+    // Registrar en intentos_acceso
+    await intentoAccesoRepo.save({
+      usuarioId: usuario.id,
+      correo: usuario.correo,
+      exitoso: false,
+      motivo: `Contraseña incorrecta. Intento ${intento.intentosFallidos}/${MAX_INTENTOS}`,
+      ip: ipAddress || null,
+    });
+
+    // Registrar en auditoría
     await registrarAuditoria({
       usuarioId: usuario.id,
       action: 'LOGIN_FAILED',
@@ -117,33 +193,63 @@ export const loginUser = async ({
     };
   }
 
-  // Login exitoso: reiniciar contador de intentos
+  
+  // LOGIN EXITOSO
+  
+
+  // Reiniciar contador de intentos
   intento.intentosFallidos = 0;
   intento.bloqueadoHasta = null;
   intento.fechaUltimoIntento = new Date();
+
   await attemptRepo.save(intento);
 
-  // Token con TTL de inactividad
+  // Registrar login exitoso en intentos_acceso
+  await intentoAccesoRepo.save({
+    usuarioId: usuario.id,
+    correo: usuario.correo,
+    exitoso: true,
+    motivo: 'Login exitoso',
+    ip: ipAddress || null,
+  });
+
+  
+  // CREAR TOKEN JWT
+  
+
+  const ahora = Math.floor(Date.now() / 1000);
+
   const token = jwt.sign(
     {
       id: usuario.id,
       nombreUsuario: usuario.nombreUsuario,
       rol: usuario.rol.nombre,
-      iat: Math.floor(Date.now() / 1000),
-      lastActivity: Math.floor(Date.now() / 1000),
+      iat: ahora,
+      lastActivity: ahora,
     },
     process.env.JWT_SECRET as string,
-    { expiresIn: '2h' },
+    {
+      expiresIn: '2h',
+        jwtid: `${usuario.id}-${ahora}`,
+    },
   );
+
+  
+  // REGISTRAR AUDITORÍA
+  
 
   await registrarAuditoria({
     usuarioId: usuario.id,
     action: 'LOGIN_SUCCESS',
-    description: `Login exitoso`,
+    description: 'Login exitoso',
     ipAddress: ipAddress || null,
     userAgent: userAgent || null,
     status: 'success',
   });
+
+  
+  // RESPUESTA
+
 
   return {
     ok: true,

@@ -11,6 +11,7 @@ interface TokenPayload {
   iat?: number;
   lastActivity?: number;
   exp?: number;
+  jti?: string;
 }
 
 declare global {

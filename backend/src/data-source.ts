@@ -8,7 +8,7 @@ import { RecuperacionContrasena } from './models/RecuperacionContrasena';
 import { TokenBlacklist } from './models/TokenBlacklist';
 import { AuditLog } from './models/AuditLog';
 import { HistorialCambioRol } from './models/HistorialCambioRol';
-
+import { IntentoAcceso } from './models/IntentoAcceso';
 dotenv.config();
 
 const DB_HOST = process.env.DB_HOST;
@@ -38,6 +38,7 @@ export const AppDataSource = new DataSource({
     RecuperacionContrasena,
     TokenBlacklist,
     AuditLog,
+    IntentoAcceso,
     HistorialCambioRol,
   ],
 

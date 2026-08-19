@@ -7,6 +7,7 @@ import GestionRoles from './components/GestionRoles';
 import RecuperarContrasena from './components/RecuperarContrasena';
 import RestablecerContrasena from './components/RestablecerContrasena';
 import { api } from './services/api';
+import { useInactividad } from './services/useInactividad';
 
 import Navbar from './components/informativo/Navbar';
 import Hero from './components/informativo/Hero';
@@ -127,6 +128,19 @@ function App() {
       setMostrarRegistro(false);
     }
   };
+
+  const cerrarSesionPorInactividad = () => {
+    setRolAutenticado(null);
+    setMostrarGestionRoles(false);
+    setMostrarLogin(false);
+    setMostrarRegistro(false);
+    setMostrarErrorModal(false);
+  };
+  useInactividad({
+  activo: rolAutenticado !== null,
+  tiempoInactividad: 15* 60* 1000,
+  onLogout: cerrarSesionPorInactividad,
+});
 
   const cerrarErrorModal = () => {
     setMostrarErrorModal(false);

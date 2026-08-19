@@ -27,18 +27,27 @@ node --experimental-test-coverage --import tsx --test src/tests/roles.test.ts
 
 ## Resultado general
 
+
 | Métrica | Resultado |
 |---|---:|
-| Suites | 5 |
-| Pruebas ejecutadas | 43 |
-| Exitosas | 43 |
+| Suites | 6 |
+| Pruebas ejecutadas | 47 |
+| Exitosas | 47 |
 | Fallidas | 0 |
 | Canceladas | 0 |
 | Omitidas | 0 |
 
-Las cinco suites corresponden a servicio, controlador, rutas HTTP, auditoría y concurrencia.
+La ejecución de la suite mediante `npm test` finalizó correctamente, con
+47 pruebas exitosas y ningún fallo.
 
-Durante dos casos negativos aparecen trazas de conexión MySQL en la salida. Son provocadas deliberadamente por las pruebas que desconectan la base para verificar el manejo controlado de errores `500`; no representan fallos del resultado.
+Las seis suites corresponden a:
+
+- Inicialización y asignación de roles predeterminados.
+- Servicio de Gestión de Roles.
+- Controlador de Gestión de Roles.
+- Rutas HTTP de Gestión de Roles.
+- Auditoría de cambios de roles.
+- Concurrencia en cambios de roles.
 
 ## Cobertura
 
@@ -111,6 +120,24 @@ También se comprueban ID inválido, usuario inexistente, rol inexistente, respu
 
 ## Conclusión
 
-La Gestión de Roles presenta una cobertura alta dentro del alcance backend evaluado y las 43 pruebas pasan. Los controles críticos de autenticación, autorización, vigencia del rol, protección del último administrador, auditoría, rollback y concurrencia están comprobados.
+La Gestión de Roles presenta una cobertura alta dentro del alcance backend
+evaluado. La ejecución actual de la suite registra **47 pruebas exitosas,
+0 fallidas, 0 canceladas y 0 omitidas**.
 
-Para el alcance específico del backend de Gestión de Roles, el resultado es satisfactorio y permite cerrar la tarea de elaboración del informe. Esto no equivale a certificar la seguridad completa de la aplicación: los riesgos no cubiertos y el frontend requieren tareas independientes si pasan a formar parte del alcance futuro.
+Los controles críticos de autenticación, autorización, vigencia del rol,
+protección del último administrador, auditoría, rollback y concurrencia
+se encuentran comprobados mediante pruebas automatizadas.
+
+Las pruebas de rutas protegidas verifican correctamente las respuestas
+`401 Unauthorized` para solicitudes no autenticadas y `403 Forbidden`
+para usuarios sin permisos suficientes. Asimismo, se comprueba que un
+administrador pueda realizar las operaciones permitidas.
+
+Para el alcance específico del backend de Gestión de Roles, los resultados
+son satisfactorios y permiten cerrar la tarea **#3663 — Elaborar el reporte
+de resultados y cobertura de pruebas de seguridad**.
+
+Este informe no representa una certificación de seguridad completa de toda
+la aplicación. El frontend, Login, Registro, bloqueo temporal, cierre de
+sesión, inactividad y manipulación de tokens requieren pruebas adicionales
+cuando formen parte del alcance correspondiente.
