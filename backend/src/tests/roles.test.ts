@@ -11,7 +11,7 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import type { DataSource } from 'typeorm';
 import type { Usuario } from '../models/Usuario';
-import { errorMiddleware } from '../middlewares/error.middleware';
+import {errorMiddleware} from '../middlewares/registro.middleware';
 import type { Rol, NombreRol } from '../models/Rol';
 import type { HistorialCambioRol } from '../models/HistorialCambioRol';
 import { RegisterInitialRoles1786838400000 } from '../migrations/1786838400000-RegisterInitialRoles';
