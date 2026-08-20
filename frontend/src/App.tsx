@@ -10,6 +10,7 @@ import { api } from './services/api';
 import { useInactividad } from './services/useInactividad';
 import RegistroEmprendimiento from './components/RegistroEmprendimiento';
 import ListaEmprendimientos from './components/ListaEmprendimientos';
+import RegistroCategoria from './components/RegistroCategoria';
 
 import Navbar from './components/informativo/Navbar';
 import Hero from './components/informativo/Hero';
@@ -80,6 +81,10 @@ const obtenerRolDesdeToken = (): NombreRol | null => {
   }
 };
 
+// ============================================================
+// BOTÓN VOLVER AL INICIO
+// ============================================================
+
 function BotonVolverInicio({
   onClick,
 }: {
@@ -97,7 +102,10 @@ function BotonVolverInicio({
         }
       }}
     >
-      <span className="boton-volver-inicio-icono">←</span>
+      <span className="boton-volver-inicio-icono">
+        ←
+      </span>
+
       <span>Volver al inicio</span>
     </button>
   );
@@ -123,12 +131,14 @@ function App() {
   // inicio
   // emprendimientos
   // registroEmprendimiento
+  // registroCategoria
   // ==========================================================
 
   const [seccionActual, setSeccionActual] = useState<
     | 'inicio'
     | 'emprendimientos'
     | 'registroEmprendimiento'
+    | 'registroCategoria'
   >('inicio');
 
   // ==========================================================
@@ -276,6 +286,21 @@ function App() {
         );
       }
     }
+
+    /*
+     * REGISTRO DE CATEGORÍA:
+     *
+     * SOLO el administrador puede registrar categorías.
+     */
+
+    if (
+      rolAutenticado !== 'administrador' &&
+      seccionActual === 'registroCategoria'
+    ) {
+      setSeccionActual(
+        'emprendimientos'
+      );
+    }
   }, [
     rolAutenticado,
     seccionActual,
@@ -301,18 +326,30 @@ function App() {
     }
   };
 
+  // ============================================================
+  // CERRAR SESIÓN POR INACTIVIDAD
+  // ============================================================
+
   const cerrarSesionPorInactividad = () => {
     setRolAutenticado(null);
+
     setMostrarGestionRoles(false);
+
     setMostrarLogin(false);
+
     setMostrarRegistro(false);
+
     setMostrarErrorModal(false);
+
+    setSeccionActual('inicio');
   };
+
   useInactividad({
-  activo: rolAutenticado !== null,
-  tiempoInactividad: 15* 60* 1000,
-  onLogout: cerrarSesionPorInactividad,
-});
+    activo: rolAutenticado !== null,
+    tiempoInactividad: 15 * 60 * 1000,
+    onLogout: cerrarSesionPorInactividad,
+  });
+
   // ============================================================
   // CERRAR MODAL DE ERROR
   // ============================================================
@@ -342,11 +379,12 @@ function App() {
     '/recuperar-contrasena'
   ) {
     return (
-    <>
-      <BotonVolverInicio />
-      <RecuperarContrasena />
-    </>
-  );
+      <>
+        <BotonVolverInicio />
+
+        <RecuperarContrasena />
+      </>
+    );
   }
 
   // ============================================================
@@ -358,11 +396,12 @@ function App() {
     '/restablecer-contrasena'
   ) {
     return (
-    <>
-      <BotonVolverInicio />
-      <RestablecerContrasena />
-    </>
-  );
+      <>
+        <BotonVolverInicio />
+
+        <RestablecerContrasena />
+      </>
+    );
   }
 
   // ============================================================
@@ -370,13 +409,89 @@ function App() {
   // ============================================================
 
   if (rutaActual === '/login') {
-    return(
-    <>
-      <BotonVolverInicio />
-      <Login
-        onLogin={setRolAutenticado}
-      />
-    </>
+    return (
+      <>
+        <BotonVolverInicio />
+
+        <Login
+          onLogin={setRolAutenticado}
+        />
+      </>
+    );
+  }
+
+  // ============================================================
+  // REGISTRO DE CATEGORÍA
+  //
+  // PERMITIDO ÚNICAMENTE PARA:
+  //
+  // administrador
+  //
+  // NO PERMITIDO PARA:
+  //
+  // asociado
+  // visitante
+  // sin sesión
+  // ============================================================
+
+  if (
+    rutaActual === '/registro-categoria' ||
+    seccionActual === 'registroCategoria'
+  ) {
+    const esAdministrador =
+      rolAutenticado === 'administrador';
+
+    // ----------------------------------------------------------
+    // SI NO ES ADMINISTRADOR
+    // ----------------------------------------------------------
+
+    if (!esAdministrador) {
+      window.location.href = '/';
+
+      return null;
+    }
+
+    // ----------------------------------------------------------
+    // FORMULARIO DE CATEGORÍA
+    // ----------------------------------------------------------
+
+    return (
+      <section className="formulario-contenedor">
+
+        <button
+          type="button"
+          className="cerrar-formulario"
+          onClick={() => {
+            setSeccionActual(
+              'emprendimientos'
+            );
+
+            if (
+              rutaActual ===
+              '/registro-categoria'
+            ) {
+              window.location.href = '/';
+            }
+          }}
+          aria-label="Volver"
+          title="Volver"
+        >
+          × 
+        </button>
+
+        <RegistroCategoria
+          onCategoriaCreada={() => {
+            /*
+             * NO cambiamos de sección.
+             *
+             * Esto permite que el administrador
+             * pueda registrar otra categoría
+             * inmediatamente.
+             */
+          }}
+        />
+
+      </section>
     );
   }
 
@@ -439,7 +554,7 @@ function App() {
           aria-label="Volver"
           title="Volver"
         >
-          × Volver a la lista
+          × 
         </button>
 
         <RegistroEmprendimiento />
@@ -453,12 +568,14 @@ function App() {
   //
   // ADMINISTRADOR:
   // - ve todos
-  // - registra
+  // - registra emprendimientos
+  // - registra categorías
   // - cambia estados
   //
   // ASOCIADO:
   // - ve todos
-  // - registra
+  // - registra emprendimientos
+  // - NO registra categorías
   // - NO cambia estados
   //
   // VISITANTE:
@@ -484,18 +601,23 @@ function App() {
           onRegistro={() =>
             setMostrarRegistro(true)
           }
+
           onLogin={() =>
             setMostrarLogin(true)
           }
+
           rolAutenticado={
             rolAutenticado
           }
+
           onGestionRoles={() =>
             setMostrarGestionRoles(true)
           }
+
           onIrInicio={() =>
             setSeccionActual('inicio')
           }
+
           onIrEmprendimientos={() =>
             setSeccionActual(
               'emprendimientos'
@@ -517,9 +639,16 @@ function App() {
             rolAutenticado={
               rolAutenticado
             }
+
             onRegistrar={() =>
               setSeccionActual(
                 'registroEmprendimiento'
+              )
+            }
+
+            onRegistrarCategoria={() =>
+              setSeccionActual(
+                'registroCategoria'
               )
             }
           />
@@ -545,6 +674,7 @@ function App() {
       ======================================================== */}
 
       {mostrarRegistro ? (
+
         <section className="formulario-contenedor">
 
           <button
@@ -570,6 +700,7 @@ function App() {
           />
 
         </section>
+
       ) : mostrarLogin ? (
 
         /* ======================================================
@@ -597,6 +728,7 @@ function App() {
           />
 
         </section>
+
       ) : mostrarGestionRoles &&
         rolAutenticado ===
           'administrador' ? (
@@ -609,22 +741,26 @@ function App() {
 
           <button
             type="button"
-  className="boton-volver"
-  onClick={() => {
-    setMostrarGestionRoles(false);
+            className="boton-volver"
+            onClick={() => {
+              setMostrarGestionRoles(false);
 
-    setRolAutenticado(
-      obtenerRolDesdeToken()
-    );
-  }}
->
-  <span className="boton-volver-icono">←</span>
-  <span>Volver</span>
+              setRolAutenticado(
+                obtenerRolDesdeToken()
+              );
+            }}
+          >
+            <span className="boton-volver-icono">
+              ←
+            </span>
+
+            <span>Volver</span>
           </button>
 
           <GestionRoles />
 
         </section>
+
       ) : (
 
         /* ======================================================
@@ -632,26 +768,32 @@ function App() {
         ====================================================== */
 
         <>
+
           <Navbar
             onRegistro={() =>
               setMostrarRegistro(true)
             }
+
             onLogin={() =>
               setMostrarLogin(true)
             }
+
             rolAutenticado={
               rolAutenticado
             }
+
             onGestionRoles={() =>
               setMostrarGestionRoles(
                 true
               )
             }
+
             onIrInicio={() =>
               setSeccionActual(
                 'inicio'
               )
             }
+
             onIrEmprendimientos={() =>
               setSeccionActual(
                 'emprendimientos'
@@ -671,14 +813,19 @@ function App() {
 
           {rolAutenticado && (
             <button
-               type="button"
-    className="boton-cerrar-sesion"
-    onClick={() => {
-      void cerrarSesion();
-    }}
-  >
-    <span className="boton-cerrar-icono">↪</span>
-    <span>Cerrar sesión</span>
+              type="button"
+              className="boton-cerrar-sesion"
+              onClick={() => {
+                void cerrarSesion();
+              }}
+            >
+              <span className="boton-cerrar-icono">
+                ↪
+              </span>
+
+              <span>
+                Cerrar sesión
+              </span>
             </button>
           )}
 
@@ -688,6 +835,7 @@ function App() {
 
           {mostrarErrorModal &&
             errorAutenticacion && (
+
               <div
                 style={{
                   position: 'fixed',

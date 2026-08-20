@@ -9,6 +9,7 @@ type NombreRol = 'administrador' | 'asociado' | 'visitante';
 interface Props {
   rolAutenticado: NombreRol | null;
   onRegistrar?: () => void;
+  onRegistrarCategoria?: () => void;
 }
 
 type EstadoEmprendimiento =
@@ -19,6 +20,7 @@ type EstadoEmprendimiento =
 function ListaEmprendimientos({
   rolAutenticado,
   onRegistrar,
+  onRegistrarCategoria,
 }: Props) {
   const [emprendimientos, setEmprendimientos] = useState<
     Emprendimiento[]
@@ -201,45 +203,103 @@ function ListaEmprendimientos({
     <section className="min-h-screen bg-slate-50 px-6 py-10 sm:px-8 lg:px-10">
       <div className="mx-auto max-w-7xl">
 
-        {/* ENCABEZADO */}
-        <div className="mb-10 overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-900 via-emerald-800 to-green-800 px-7 py-8 text-white shadow-lg sm:px-10">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-            <div className="max-w-3xl">
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-emerald-100">
-                <span className="h-2 w-2 rounded-full bg-emerald-300" />
-                {esAdministrador
-                  ? 'Panel de administración'
-                  : esAsociado
-                    ? 'Panel de asociado'
-                    : 'Comunidad Diriá'}
-              </div>
-              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                Emprendimientos locales
-              </h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-emerald-50 sm:text-base">
-                {esAdministrador
-                  ? 'Administre los emprendimientos registrados y gestione su estado de publicación.'
-                  : esAsociado
-                    ? 'Consultá y registrá emprendimientos de la comunidad. El estado de publicación es gestionado por los administradores.'
-                    : 'Conocé los emprendimientos publicados de la comunidad alrededor del Parque Nacional Diriá.'}
-              </p>
-            </div>
+       {/* ENCABEZADO */}
+<div className="mb-10 overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-900 via-emerald-800 to-green-800 px-7 py-8 text-white shadow-lg sm:px-10">
+  <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
 
-            {/* BOTÓN REGISTRAR */}
-            {puedeRegistrar && onRegistrar && (
-              <button
-                type="button"
-                onClick={onRegistrar}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-bold text-emerald-900 shadow-md transition hover:-translate-y-0.5 hover:bg-emerald-50 hover:shadow-lg"
-              >
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                </svg>
-                Registrar emprendimiento
-              </button>
-            )}
-          </div>
-        </div>
+    <div className="max-w-3xl">
+      
+      <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-emerald-100">
+        <span className="h-2 w-2 rounded-full bg-emerald-300" />
+
+        {esAdministrador
+          ? 'Panel de administración'
+          : esAsociado
+            ? 'Panel de asociado'
+            : 'Comunidad Diriá'}
+      </div>
+
+      <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+        Emprendimientos locales
+      </h1>
+
+      <p className="mt-3 max-w-2xl text-sm leading-6 text-emerald-50 sm:text-base">
+        {esAdministrador
+          ? 'Administre los emprendimientos registrados y gestione su estado de publicación.'
+          : esAsociado
+            ? 'Consultá y registrá emprendimientos de la comunidad. El estado de publicación es gestionado por los administradores.'
+            : 'Conocé los emprendimientos publicados de la comunidad alrededor del Parque Nacional Diriá.'}
+      </p>
+    </div>
+
+    {/* ============================================================
+        BOTONES DE REGISTRO
+    ============================================================ */}
+
+    <div className="flex flex-col gap-3 sm:flex-row">
+
+      {/* ============================================================
+          REGISTRAR CATEGORÍA
+          SOLO ADMINISTRADOR
+      ============================================================ */}
+
+      {esAdministrador && onRegistrarCategoria && (
+        <button
+          type="button"
+          onClick={onRegistrarCategoria}
+          className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/30 bg-white/10 px-5 py-3 text-sm font-bold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-white/20 hover:shadow-lg"
+        >
+          <svg
+            className="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth="2.5"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 4.5v15m7.5-7.5h-15"
+            />
+          </svg>
+
+          Registrar categoría
+        </button>
+      )}
+
+      {/* ============================================================
+          REGISTRAR EMPRENDIMIENTO
+          ADMINISTRADOR + ASOCIADO
+      ============================================================ */}
+
+      {puedeRegistrar && onRegistrar && (
+        <button
+          type="button"
+          onClick={onRegistrar}
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-bold text-emerald-900 shadow-md transition hover:-translate-y-0.5 hover:bg-emerald-50 hover:shadow-lg"
+        >
+          <svg
+            className="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth="2.5"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 4.5v15m7.5-7.5h-15"
+            />
+          </svg>
+
+          Registrar emprendimiento
+        </button>
+      )}
+
+    </div>
+
+  </div>
+</div>
 
         {/* INFORMACIÓN PARA ASOCIADO */}
         {esAsociado && (
