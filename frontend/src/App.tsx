@@ -80,6 +80,29 @@ const obtenerRolDesdeToken = (): NombreRol | null => {
   }
 };
 
+function BotonVolverInicio({
+  onClick,
+}: {
+  onClick?: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className="boton-volver-inicio"
+      onClick={() => {
+        if (onClick) {
+          onClick();
+        } else {
+          window.location.href = '/';
+        }
+      }}
+    >
+      <span className="boton-volver-inicio-icono">←</span>
+      <span>Volver al inicio</span>
+    </button>
+  );
+}
+
 // ============================================================
 // APP
 // ============================================================
@@ -318,7 +341,12 @@ function App() {
     rutaActual ===
     '/recuperar-contrasena'
   ) {
-    return <RecuperarContrasena />;
+    return (
+    <>
+      <BotonVolverInicio />
+      <RecuperarContrasena />
+    </>
+  );
   }
 
   // ============================================================
@@ -329,7 +357,12 @@ function App() {
     rutaActual ===
     '/restablecer-contrasena'
   ) {
-    return <RestablecerContrasena />;
+    return (
+    <>
+      <BotonVolverInicio />
+      <RestablecerContrasena />
+    </>
+  );
   }
 
   // ============================================================
@@ -337,10 +370,13 @@ function App() {
   // ============================================================
 
   if (rutaActual === '/login') {
-    return (
+    return(
+    <>
+      <BotonVolverInicio />
       <Login
         onLogin={setRolAutenticado}
       />
+    </>
     );
   }
 
@@ -573,17 +609,17 @@ function App() {
 
           <button
             type="button"
-            onClick={() => {
-              setMostrarGestionRoles(
-                false
-              );
+  className="boton-volver"
+  onClick={() => {
+    setMostrarGestionRoles(false);
 
-              setRolAutenticado(
-                obtenerRolDesdeToken()
-              );
-            }}
-          >
-            ← Volver
+    setRolAutenticado(
+      obtenerRolDesdeToken()
+    );
+  }}
+>
+  <span className="boton-volver-icono">←</span>
+  <span>Volver</span>
           </button>
 
           <GestionRoles />
@@ -635,13 +671,14 @@ function App() {
 
           {rolAutenticado && (
             <button
-              type="button"
-              className="counter"
-              onClick={() => {
-                void cerrarSesion();
-              }}
-            >
-              Cerrar sesión
+               type="button"
+    className="boton-cerrar-sesion"
+    onClick={() => {
+      void cerrarSesion();
+    }}
+  >
+    <span className="boton-cerrar-icono">↪</span>
+    <span>Cerrar sesión</span>
             </button>
           )}
 
