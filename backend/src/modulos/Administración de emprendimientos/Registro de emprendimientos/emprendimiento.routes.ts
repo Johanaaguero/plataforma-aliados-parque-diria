@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { emprendimientoController } from './emprendimiento.controller';
 import { upload } from '../../../middlewares/upload';
+import { verificarToken } from '../../../middlewares/auth.middleware';
 
 const router = Router();
 
@@ -21,12 +22,14 @@ router.get(
 );
 
 router.put(
-  '/:id',
+ '/:id',
+  verificarToken,
   emprendimientoController.actualizar.bind(emprendimientoController)
 );
 
 router.delete(
   '/:id',
+  verificarToken,
   emprendimientoController.eliminar.bind(emprendimientoController)
 );
 

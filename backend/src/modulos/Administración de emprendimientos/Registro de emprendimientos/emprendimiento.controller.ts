@@ -2,6 +2,47 @@ import { Request, Response } from 'express';
 import { emprendimientoService } from './emprendimiento.service';
 import { EstadoPublicacion } from '../../../models/Emprendimiento';
 
+//funcion de validacion 
+function validarActualizacion(body: any): string | null {
+  if (body.nombre !== undefined && !body.nombre.trim()) {
+    return 'El nombre no puede estar vacío';
+  }
+
+  if (body.correoElectronico !== undefined) {
+    const correoValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.correoElectronico);
+    if (!correoValido) {
+      return 'El correo electrónico no tiene un formato válido';
+    }
+  }
+
+  if (body.telefono !== undefined) {
+    const telefonoValido = /^\d{8}$/.test(String(body.telefono).trim());
+    if (!telefonoValido) {
+      return 'El teléfono debe contener exactamente 8 dígitos';
+    }
+  }
+
+  if (body.latitud !== undefined) {
+    const lat = Number(body.latitud);
+    if (isNaN(lat) || lat < -90 || lat > 90) {
+      return 'La latitud debe ser un número entre -90 y 90';
+    }
+  }
+
+  if (body.longitud !== undefined) {
+    const lng = Number(body.longitud);
+    if (isNaN(lng) || lng < -180 || lng > 180) {
+      return 'La longitud debe ser un número entre -180 y 180';
+    }
+  }
+
+  if (body.categoriaId !== undefined && isNaN(Number(body.categoriaId))) {
+    return 'El id de categoría no es válido';
+  }
+
+  return null;
+}
+
 export class EmprendimientoController {
   async crear(req: Request, res: Response): Promise<Response> {
     try {
@@ -62,9 +103,14 @@ export class EmprendimientoController {
     }
   }
 
-  async actualizar(req: Request, res: Response): Promise<Response> {
+  async actualizar(req: Request, res: Response): Promise<Response> 
+  {
     try {
       const id = Number(req.params.id);
+      const errorValidacion = validarActualizacion(req.body);
+if (errorValidacion) {
+  return res.status(400).json({ mensaje: errorValidacion });
+}
 
       const dto = {
         ...req.body,
