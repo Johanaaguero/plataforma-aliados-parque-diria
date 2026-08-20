@@ -1,14 +1,11 @@
 import { AppDataSource } from '../../../data-source';
 import { Usuario } from '../../../models/Usuario';
 import { LoginAttempt } from '../../../models/LoginAttempt';
-<<<<<<< HEAD
 import { IntentoAcceso } from '../../../models/IntentoAcceso';
-import { registrarAuditoria } from '../auditoria.service';
-=======
 import { registrarAuditoria } from '../Autenticación y seguridad de acceso al sistema/auditoria.service';
->>>>>>> origin/development
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+
 
 interface LoginInput {
   identificador: string;
