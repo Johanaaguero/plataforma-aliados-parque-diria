@@ -15,6 +15,13 @@ interface ApiError {
   status: number;
 }
 
+export interface ConfiguracionSolicitudApi {
+  incluirAuth?: boolean;
+  incluirContentType?: boolean;
+  desempaquetarData?: boolean;
+  mensajeError?: string;
+}
+
 class ApiService {
   private baseUrl = 'http://localhost:3000/api';
 
@@ -22,10 +29,15 @@ class ApiService {
     return sessionStorage.getItem('token') ?? localStorage.getItem('token');
   }
 
-  private getHeaders(includeAuth = true): HeadersInit {
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-    };
+  private getHeaders(
+    includeAuth = true,
+    includeContentType = true,
+  ): HeadersInit {
+    const headers: Record<string, string> = {};
+
+    if (includeContentType) {
+      headers['Content-Type'] = 'application/json';
+    }
 
     if (includeAuth) {
       const token = this.getToken();
@@ -58,6 +70,89 @@ class ApiService {
     }
 
     return (data.data || data) as T;
+  }
+
+  async solicitar<T>(
+    ruta: string,
+    opciones: RequestInit = {},
+    configuracion: ConfiguracionSolicitudApi = {},
+  ): Promise<T> {
+    const {
+      incluirAuth = true,
+      incluirContentType = true,
+      desempaquetarData = true,
+      mensajeError = 'No se pudo completar la solicitud',
+    } = configuracion;
+
+    const headers = new Headers(
+      this.getHeaders(incluirAuth, incluirContentType),
+    );
+    const headersAdicionales = new Headers(opciones.headers);
+    headersAdicionales.forEach((valor, clave) => {
+      headers.set(clave, valor);
+    });
+
+    let response: Response;
+
+    try {
+      response = await fetch(`${this.baseUrl}${ruta}`, {
+        ...opciones,
+        headers,
+      });
+    } catch {
+      throw new Error(mensajeError);
+    }
+
+    const data: unknown = await response.json().catch(() => null);
+    const esObjeto =
+      typeof data === 'object' && data !== null && !Array.isArray(data);
+    const respuesta = esObjeto
+      ? (data as Record<string, unknown>)
+      : null;
+
+    if (!response.ok) {
+      const mensajeRespuesta =
+        typeof respuesta?.message === 'string' && respuesta.message.trim()
+          ? respuesta.message
+          : typeof respuesta?.mensaje === 'string' &&
+              respuesta.mensaje.trim()
+            ? respuesta.mensaje
+            : mensajeError;
+      const message =
+        response.status >= 500 ? mensajeError : mensajeRespuesta;
+      const error: ApiError = {
+        code:
+          typeof respuesta?.code === 'string'
+            ? respuesta.code
+            : 'UNKNOWN_ERROR',
+        message,
+        status: response.status,
+      };
+
+      if (response.status === 401) {
+        window.dispatchEvent(
+          new CustomEvent('auth:unauthorized', { detail: error }),
+        );
+      } else if (response.status === 403) {
+        window.dispatchEvent(
+          new CustomEvent('auth:forbidden', { detail: error }),
+        );
+      }
+
+      const solicitudError = new Error(message);
+      Object.assign(solicitudError, error);
+      throw solicitudError;
+    }
+
+    if (
+      desempaquetarData &&
+      respuesta &&
+      respuesta.data !== undefined
+    ) {
+      return respuesta.data as T;
+    }
+
+    return data as T;
   }
 
   async login(identificador: string, password: string): Promise<{ token: string; usuario: unknown }> {
