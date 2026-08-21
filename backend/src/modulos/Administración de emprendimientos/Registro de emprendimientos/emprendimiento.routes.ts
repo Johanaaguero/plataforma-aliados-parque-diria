@@ -25,9 +25,9 @@ router.put(
   emprendimientoController.actualizar.bind(emprendimientoController)
 );
 
-router.delete(
-  '/:id',
-  emprendimientoController.eliminar.bind(emprendimientoController)
-);
+//router.delete(
+  //'/:id',
+  //emprendimientoController.eliminar.bind(emprendimientoController)
+//);
 
 export default router;
