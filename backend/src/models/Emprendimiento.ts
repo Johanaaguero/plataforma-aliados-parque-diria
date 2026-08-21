@@ -6,14 +6,14 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
-  Index,
 } from 'typeorm';
 
 import { CategoriaEmprendimiento } from './CategoriaEmprendimiento';
 
 export enum EstadoPublicacion {
-  NO_PUBLICADO = 'no_publicado',
+  PENDIENTE = 'pendiente',
   PUBLICADO = 'publicado',
+  RECHAZADO = 'rechazado',
 }
 
 @Entity('emprendimientos')
@@ -58,22 +58,13 @@ export class Emprendimiento {
   @Column({ type: 'varchar', length: 20 })
   telefono!: string;
 
-  @Index('IDX_EMPRENDIMIENTOS_ESTADO_PUBLICACION')
   @Column({
     type: 'enum',
     enum: EstadoPublicacion,
-    default: EstadoPublicacion.NO_PUBLICADO,
+    default: EstadoPublicacion.PENDIENTE,
     name: 'estado_publicacion',
   })
   estadoPublicacion!: EstadoPublicacion;
-
-  @Column({
-    type: 'datetime',
-    precision: 6,
-    nullable: true,
-    name: 'fecha_publicacion',
-  })
-  fechaPublicacion!: Date | null;
 
   // Imagen almacenada directamente en MySQL
   @Column({

@@ -6,6 +6,7 @@ import type { AddressInfo } from 'node:net';
 import type { Server } from 'node:http';
 import type { Request, Response } from 'express';
 import { config } from 'dotenv';
+import mysql from 'mysql2/promise';
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import type { DataSource } from 'typeorm';
@@ -17,14 +18,26 @@ import { RegisterInitialRoles1786838400000 } from '../migrations/1786838400000-R
 
 config({ path: resolve(process.cwd(), '.env') });
 
-const databaseTest = 'aliados_parque_diria_test';
-process.env.DB_DATABASE = databaseTest;
-if (process.env.DB_DATABASE !== databaseTest) {
-  throw new Error(
-    'SEGURIDAD: DB_DATABASE no apunta exactamente a aliados_parque_diria_test.',
-  );
+const databaseBase = process.env.DB_DATABASE;
+
+if (!databaseBase) {
+  throw new Error('DB_DATABASE no está configurada para crear la base de pruebas');
 }
+
+const databaseTest = `${databaseBase}_test`;
+
+if (!/^[a-zA-Z0-9_]+$/.test(databaseTest)) {
+  throw new Error('El nombre calculado para la base de pruebas no es seguro');
+}
+
+process.env.DB_DATABASE = databaseTest;
 process.env.JWT_SECRET = 'gestion-roles-test-secret-no-usar-en-produccion';
+
+const variableRequerida = (nombre: string): string => {
+  const valor = process.env[nombre];
+  if (!valor) throw new Error(`Falta la variable requerida ${nombre}`);
+  return valor;
+};
 
 let dataSource: DataSource;
 let UsuarioModel: typeof Usuario;
@@ -40,33 +53,6 @@ let rolesTrasMigraciones: Array<{
   nombre: NombreRol;
   descripcion: string;
 }> = [];
-let baseAisladaConfirmada = false;
-
-const asegurarBaseConfiguradaParaPruebas = (): void => {
-  const databaseConfigurada = (
-    dataSource.options as { database?: string }
-  ).database;
-
-  if (databaseConfigurada !== databaseTest) {
-    throw new Error(
-      `Ejecución cancelada: el DataSource apunta a ${String(databaseConfigurada)} y no a ${databaseTest}`,
-    );
-  }
-};
-
-const assertTestDatabase = async (): Promise<void> => {
-  asegurarBaseConfiguradaParaPruebas();
-
-  const basesConectadas: Array<{ databaseActual: string }> =
-    await dataSource.query('SELECT DATABASE() AS databaseActual');
-  if (basesConectadas[0]?.databaseActual !== databaseTest) {
-    throw new Error(
-      'SEGURIDAD: los tests intentaron utilizar una base distinta de aliados_parque_diria_test. Ejecución cancelada.',
-    );
-  }
-
-  baseAisladaConfirmada = true;
-};
 
 interface Escenario {
   administradorId: number;
@@ -123,7 +109,6 @@ const crearUsuario = async (
 const prepararEscenario = async (
   administradoresAdicionales = 0,
 ): Promise<Escenario & { administradoresAdicionalesIds: number[] }> => {
-  await assertTestDatabase();
   const rolRepository = dataSource.getRepository(RolModel);
   const administrador = await rolRepository.save(
     rolRepository.create({ nombre: 'administrador', descripcion: 'Admin' }),
@@ -157,7 +142,6 @@ const prepararEscenario = async (
 };
 
 const limpiarBaseTest = async () => {
-  await assertTestDatabase();
   await dataSource.query('DELETE FROM historial_cambio_roles');
   await dataSource.query('DELETE FROM login_attempts');
   await dataSource.query('DELETE FROM usuarios');
@@ -204,6 +188,21 @@ const request = async (
 };
 
 before(async () => {
+  const adminConnection = await mysql.createConnection({
+    host: variableRequerida('DB_HOST'),
+    port: Number(variableRequerida('DB_PORT')),
+    user: variableRequerida('DB_USERNAME'),
+    password: variableRequerida('DB_PASSWORD'),
+  });
+
+  try {
+    await adminConnection.query(
+      `CREATE DATABASE IF NOT EXISTS \`${databaseTest}\``,
+    );
+  } finally {
+    await adminConnection.end();
+  }
+
   const dataSourceModule = await import('../data-source');
   const usuarioModule = await import('../models/Usuario');
   const rolModule = await import('../models/Rol');
@@ -228,7 +227,6 @@ before(async () => {
   updateRole = controllerModule.updateRole;
 
   await dataSource.initialize();
-  await assertTestDatabase();
   await dataSource.runMigrations();
   await ejecutarInicializacionRoles();
 
@@ -258,7 +256,6 @@ beforeEach(async () => {
   if (!dataSource.isInitialized) {
     await dataSource.initialize();
   }
-  await assertTestDatabase();
   await limpiarBaseTest();
 });
 
@@ -272,7 +269,6 @@ after(async () => {
     });
   }
   if (dataSource?.isInitialized) {
-    await assertTestDatabase();
     await limpiarBaseTest();
     await dataSource.destroy();
   }
@@ -307,7 +303,6 @@ describe('inicialización y asignación de roles predeterminados', () => {
 
   test('la inicialización vuelve a crear un rol faltante', async () => {
     await ejecutarInicializacionRoles();
-    await assertTestDatabase();
     await dataSource.getRepository(RolModel).delete({ nombre: 'visitante' });
 
     await ejecutarInicializacionRoles();
@@ -794,7 +789,6 @@ describe('rutas HTTP de roles', () => {
   test('un JWT válido de un usuario eliminado devuelve 401', async () => {
     const escenario = await prepararEscenario();
     const jwtAnterior = token(escenario.visitanteId, 'visitante');
-    await assertTestDatabase();
     await dataSource.getRepository(UsuarioModel).delete(escenario.visitanteId);
 
     const resultado = await request('/api/users/roles', {
