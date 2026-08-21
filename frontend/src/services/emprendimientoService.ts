@@ -177,3 +177,7 @@ export async function cambiarEstadoPublicacion(
 
   return respuesta;
 }
+
+export async function eliminarEmprendimiento(id: number): Promise<void> {
+  await api.eliminar(`/emprendimientos/${id}`);
+}

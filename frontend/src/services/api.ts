@@ -1,14 +1,5 @@
 
 
-interface ApiResponse<T = unknown> {
-  ok: boolean;
-  code?: string;
-  message?: string;
-  data?: T;
-  token?: string;
-  usuario?: unknown;
-}
-
 interface ApiError {
   code: string;
   message: string;
@@ -50,26 +41,39 @@ class ApiService {
   }
 
   private async handleResponse<T>(response: Response): Promise<T> {
-    const data: ApiResponse<T> = await response.json();
+    if (response.status === 204) {
+      return undefined as T;
+    }
 
+    const data = await response.json().catch(() => null);
     if (!response.ok) {
+      const respuesta = data as Record<string, unknown> | null;
       const error: ApiError = {
-        code: data.code || 'UNKNOWN_ERROR',
-        message: data.message || 'Error desconocido',
+        code:
+          typeof respuesta?.code === 'string'
+            ? respuesta.code
+            : 'UNKNOWN_ERROR',
+        message:
+          typeof respuesta?.message === 'string'
+            ? respuesta.message
+            : 'Error desconocido',
         status: response.status,
       };
 
-      // Disparar evento global para 401/403
       if (response.status === 401) {
-        window.dispatchEvent(new CustomEvent('auth:unauthorized', { detail: error }));
+        window.dispatchEvent(
+          new CustomEvent('auth:unauthorized', { detail: error }),
+        );
       } else if (response.status === 403) {
-        window.dispatchEvent(new CustomEvent('auth:forbidden', { detail: error }));
+        window.dispatchEvent(
+          new CustomEvent('auth:forbidden', { detail: error }),
+        );
       }
 
       throw error;
     }
 
-    return (data.data || data) as T;
+    return data as T;
   }
 
   async solicitar<T>(
@@ -87,8 +91,7 @@ class ApiService {
     const headers = new Headers(
       this.getHeaders(incluirAuth, incluirContentType),
     );
-    const headersAdicionales = new Headers(opciones.headers);
-    headersAdicionales.forEach((valor, clave) => {
+    new Headers(opciones.headers).forEach((valor, clave) => {
       headers.set(clave, valor);
     });
 
@@ -214,7 +217,7 @@ class ApiService {
   }
 
   async restablecerContrasena(token: string, nuevaPassword: string): Promise<{ message: string }> {
-    const response = await fetch(`${this.baseUrl}/auth/reset-password`, {
+    const response = await fetch('${this.baseUrl}/auth/reset-password', {
       method: 'POST',
       headers: this.getHeaders(false),
       body: JSON.stringify({ token, nuevaPassword }),
@@ -224,7 +227,7 @@ class ApiService {
   }
 
   async obtenerRoles(): Promise<{ usuarios: unknown[] }> {
-    const response = await fetch(`${this.baseUrl}/users/roles`, {
+    const response = await fetch('${this.baseUrl}/users/roles',{
       method: 'GET',
       headers: this.getHeaders(true),
     });
@@ -241,6 +244,15 @@ class ApiService {
 
     return this.handleResponse(response);
   }
+  async eliminar(url: string): Promise<void> {
+  const response = await fetch(`${this.baseUrl}${url}`, {
+    method: 'DELETE',
+    headers: this.getHeaders(true),
+  });
+
+  await this.handleResponse<void>(response);
+  }
 }
 
 export const api = new ApiService();
+
