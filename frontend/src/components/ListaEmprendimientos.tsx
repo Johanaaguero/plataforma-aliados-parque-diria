@@ -1,8 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
-  obtenerEmprendimientos,
+  cambiarEstadoPublicacion,
+  obtenerCatalogoPublicado,
+  obtenerEmprendimientosAdministrativos,
   eliminarEmprendimiento,
   type Emprendimiento,
+  type EstadoPublicacion,
+  type EstadoPublicacionSolicitado,
 } from '../services/emprendimientoService';
 
 type NombreRol = 'administrador' | 'asociado' | 'visitante';
@@ -13,10 +17,55 @@ interface Props {
   onRegistrarCategoria?: () => void;
 }
 
-type EstadoEmprendimiento =
-  | 'pendiente'
-  | 'publicado'
-  | 'rechazado';
+interface MensajeAccion {
+  tipo: 'exito' | 'error';
+  texto: string;
+}
+
+const obtenerMensajeError = (
+  error: unknown,
+  mensajePredeterminado: string,
+): string =>
+  error instanceof Error && error.message.trim()
+    ? error.message
+    : mensajePredeterminado;
+
+const obtenerMensajeAutorizacion = (event: Event): string => {
+  const detalle = (event as CustomEvent<unknown>).detail;
+
+  if (
+    typeof detalle === 'object' &&
+    detalle !== null &&
+    'message' in detalle &&
+    typeof detalle.message === 'string' &&
+    detalle.message.trim()
+  ) {
+    return detalle.message;
+  }
+
+  return event.type === 'auth:forbidden'
+    ? 'No tienes permisos para realizar esta operación.'
+    : 'Tu sesión no está disponible. Inicia sesión nuevamente.';
+};
+
+const obtenerUbicacion = (
+  emprendimiento: Emprendimiento,
+): string | null => {
+  if (emprendimiento.direccion?.trim()) {
+    return emprendimiento.direccion;
+  }
+
+  if (
+    emprendimiento.latitud !== null &&
+    emprendimiento.latitud !== undefined &&
+    emprendimiento.longitud !== null &&
+    emprendimiento.longitud !== undefined
+  ) {
+    return `Coordenadas: ${emprendimiento.latitud}, ${emprendimiento.longitud}`;
+  }
+
+  return null;
+};
 
 function ListaEmprendimientos({
   rolAutenticado,
@@ -29,6 +78,14 @@ function ListaEmprendimientos({
 
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [mensajeAccion, setMensajeAccion] =
+    useState<MensajeAccion | null>(null);
+  const [emprendimientoSeleccionado, setEmprendimientoSeleccionado] =
+    useState<Emprendimiento | null>(null);
+  const [idProcesando, setIdProcesando] = useState<number | null>(null);
+  const operacionEnCurso = useRef(false);
+  const botonQueAbrioModal = useRef<HTMLButtonElement | null>(null);
+  const dialogoConfirmacion = useRef<HTMLDivElement | null>(null);
   const [emprendimientoAEliminar, setEmprendimientoAEliminar] =
     useState<Emprendimiento | null>(null);
 
@@ -49,15 +106,45 @@ function ListaEmprendimientos({
   const puedeRegistrar =
     esAdministrador || esAsociado;
 
+  useEffect(() => {
+    const mostrarErrorAutorizacion = (event: Event) => {
+      setMensajeAccion({
+        tipo: 'error',
+        texto: obtenerMensajeAutorizacion(event),
+      });
+      setEmprendimientoSeleccionado(null);
+    };
+
+    window.addEventListener(
+      'auth:unauthorized',
+      mostrarErrorAutorizacion,
+    );
+    window.addEventListener('auth:forbidden', mostrarErrorAutorizacion);
+
+    return () => {
+      window.removeEventListener(
+        'auth:unauthorized',
+        mostrarErrorAutorizacion,
+      );
+      window.removeEventListener(
+        'auth:forbidden',
+        mostrarErrorAutorizacion,
+      );
+    };
+  }, []);
+
   // ============================================================
   // CARGAR EMPRENDIMIENTOS
   // ============================================================
 
   useEffect(() => {
+    let componenteActivo = true;
+
     const cargarEmprendimientos = async () => {
       try {
         setCargando(true);
         setError(null);
+        setEmprendimientoSeleccionado(null);
 
         let data: Emprendimiento[];
 
@@ -65,90 +152,218 @@ function ListaEmprendimientos({
           rolAutenticado === 'administrador' ||
           rolAutenticado === 'asociado'
         ) {
-          data = await obtenerEmprendimientos();
+          data = await obtenerEmprendimientosAdministrativos();
         } else {
-          data = await obtenerEmprendimientos('publicado');
+          data = await obtenerCatalogoPublicado();
         }
 
-        setEmprendimientos(data);
-      } catch (err: any) {
-        setError(
-          err.message ||
-            'No se pudieron cargar los emprendimientos'
-        );
+        if (componenteActivo) {
+          setEmprendimientos(data);
+        }
+      } catch (err: unknown) {
+        if (componenteActivo) {
+          setError(
+            obtenerMensajeError(
+              err,
+              'No se pudieron cargar los emprendimientos',
+            ),
+          );
+        }
       } finally {
-        setCargando(false);
+        if (componenteActivo) {
+          setCargando(false);
+        }
       }
     };
 
     void cargarEmprendimientos();
+
+    return () => {
+      componenteActivo = false;
+    };
   }, [rolAutenticado]);
 
   // ============================================================
   // CAMBIAR ESTADO
   // ============================================================
 
-  const cambiarEstado = (
-    id: number,
-    nuevoEstado: EstadoEmprendimiento
+  const abrirConfirmacion = (
+    emprendimiento: Emprendimiento,
+    boton: HTMLButtonElement,
   ) => {
-    if (!esAdministrador) {
+    if (!esAdministrador || operacionEnCurso.current) return;
+
+    botonQueAbrioModal.current = boton;
+    setMensajeAccion(null);
+    setEmprendimientoSeleccionado(emprendimiento);
+  };
+
+  const cerrarConfirmacion = () => {
+    if (operacionEnCurso.current) return;
+    setEmprendimientoSeleccionado(null);
+  };
+
+  const confirmarCambioPublicacion = async () => {
+    if (
+      !esAdministrador ||
+      !emprendimientoSeleccionado ||
+      operacionEnCurso.current
+    ) {
       return;
     }
 
-    setEmprendimientos((actuales) =>
-      actuales.map((emprendimiento) =>
-        emprendimiento.id === id
-          ? {
-              ...emprendimiento,
-              estadoPublicacion: nuevoEstado,
-            }
-          : emprendimiento
-      )
-    );
+    const emprendimiento = emprendimientoSeleccionado;
+    const sePublicara =
+      emprendimiento.estadoPublicacion === 'no_publicado';
+    const nuevoEstado: EstadoPublicacionSolicitado = sePublicara
+      ? 'Publicado'
+      : 'No Publicado';
+
+    operacionEnCurso.current = true;
+    setIdProcesando(emprendimiento.id);
+    setMensajeAccion(null);
+
+    try {
+      const resultado = await cambiarEstadoPublicacion(
+        emprendimiento.id,
+        nuevoEstado,
+      );
+
+      setEmprendimientos((actuales) =>
+        actuales.map((item) =>
+          item.id === emprendimiento.id
+            ? {
+                ...item,
+                estadoPublicacion: resultado.data.estadoPublicacion,
+                fechaPublicacion: resultado.data.fechaPublicacion,
+              }
+            : item,
+        ),
+      );
+
+      setMensajeAccion({
+        tipo: 'exito',
+        texto:
+          resultado.message ||
+          (sePublicara
+            ? 'Emprendimiento publicado correctamente.'
+            : 'Emprendimiento ocultado correctamente.'),
+      });
+      setEmprendimientoSeleccionado(null);
+    } catch (err: unknown) {
+      setMensajeAccion({
+        tipo: 'error',
+        texto: obtenerMensajeError(
+          err,
+          'No se pudo actualizar el estado del emprendimiento.',
+        ),
+      });
+      setEmprendimientoSeleccionado(null);
+    } finally {
+      operacionEnCurso.current = false;
+      setIdProcesando(null);
+    }
   };
 
-  //ELIMINAR EMPRENDIMIENTO
+  useEffect(() => {
+    if (!emprendimientoSeleccionado) return;
+
+    const manejarTeclado = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !operacionEnCurso.current) {
+        setEmprendimientoSeleccionado(null);
+        return;
+      }
+
+      if (event.key !== 'Tab') return;
+
+      const dialogo = dialogoConfirmacion.current;
+      if (!dialogo) return;
+
+      const elementosEnfocables = Array.from(
+        dialogo.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      );
+
+      if (elementosEnfocables.length === 0) {
+        event.preventDefault();
+        dialogo.focus();
+        return;
+      }
+
+      const primero = elementosEnfocables[0];
+      const ultimo = elementosEnfocables[elementosEnfocables.length - 1];
+      const focoActual = document.activeElement;
+
+      if (
+        event.shiftKey &&
+        (focoActual === primero || !dialogo.contains(focoActual))
+      ) {
+        event.preventDefault();
+        ultimo.focus();
+      } else if (
+        !event.shiftKey &&
+        (focoActual === ultimo || !dialogo.contains(focoActual))
+      ) {
+        event.preventDefault();
+        primero.focus();
+      }
+    };
+
+    document.addEventListener('keydown', manejarTeclado);
+    return () => {
+      document.removeEventListener('keydown', manejarTeclado);
+      botonQueAbrioModal.current?.focus();
+      botonQueAbrioModal.current = null;
+    };
+  }, [emprendimientoSeleccionado]);
+
+  useEffect(() => {
+    if (idProcesando !== null && emprendimientoSeleccionado) {
+      dialogoConfirmacion.current?.focus();
+    }
+  }, [emprendimientoSeleccionado, idProcesando]);
+
   const confirmarEliminacion = async () => {
-  if (!esAdministrador || !emprendimientoAEliminar) {
-    return;
-  }
+    if (!esAdministrador || !emprendimientoAEliminar) {
+      return;
+    }
 
-  try {
-    setEliminando(true);
-    setErrorEliminacion(null);
-    setMensajeEliminacion(null);
+    try {
+      setEliminando(true);
+      setErrorEliminacion(null);
+      setMensajeEliminacion(null);
 
-    await eliminarEmprendimiento(emprendimientoAEliminar.id);
+      await eliminarEmprendimiento(emprendimientoAEliminar.id);
 
-    setEmprendimientos((actuales) =>
-      actuales.filter(
-        (emprendimiento) =>
-          emprendimiento.id !== emprendimientoAEliminar.id
-      )
-    );
+      setEmprendimientos((actuales) =>
+        actuales.filter(
+          (emprendimiento) =>
+            emprendimiento.id !== emprendimientoAEliminar.id,
+        ),
+      );
 
-    setMensajeEliminacion(
-      `El emprendimiento "${emprendimientoAEliminar.nombre}" fue eliminado correctamente.`
-    );
+      setMensajeEliminacion(
+        `El emprendimiento "${emprendimientoAEliminar.nombre}" fue eliminado correctamente.`,
+      );
 
-    setEmprendimientoAEliminar(null);
-  } catch (err: unknown) {
-    const error = err as { message?: string };
+      setEmprendimientoAEliminar(null);
+    } catch (err: unknown) {
+      const error = err as { message?: string };
 
-    setErrorEliminacion(
-      error.message || 'No se pudo eliminar el emprendimiento.'
-    );
-  } finally {
-    setEliminando(false);
-  }
-};
+      setErrorEliminacion(
+        error.message || 'No se pudo eliminar el emprendimiento.',
+      );
+    } finally {
+      setEliminando(false);
+    }
+  };
 
   // ============================================================
   // ESTILOS DE ESTADO
   // ============================================================
 
-  const obtenerEstiloEstado = (estado: string) => {
+  const obtenerEstiloEstado = (estado: EstadoPublicacion) => {
     switch (estado) {
       case 'publicado':
         return {
@@ -159,23 +374,13 @@ function ListaEmprendimientos({
           etiqueta: 'Publicado',
         };
 
-      case 'rechazado':
-        return {
-          fondo: 'bg-red-50',
-          texto: 'text-red-700',
-          borde: 'border-red-200',
-          punto: 'bg-red-500',
-          etiqueta: 'Rechazado',
-        };
-
-      case 'pendiente':
-      default:
+      case 'no_publicado':
         return {
           fondo: 'bg-amber-50',
           texto: 'text-amber-700',
           borde: 'border-amber-200',
           punto: 'bg-amber-500',
-          etiqueta: 'Pendiente',
+          etiqueta: 'No Publicado',
         };
     }
   };
@@ -184,17 +389,18 @@ function ListaEmprendimientos({
   // CANTIDADES
   // ============================================================
 
-  const cantidadPendientes = emprendimientos.filter(
-    (e) => e.estadoPublicacion === 'pendiente'
+  const cantidadNoPublicados = emprendimientos.filter(
+    (e) => e.estadoPublicacion === 'no_publicado'
   ).length;
 
   const cantidadPublicados = emprendimientos.filter(
     (e) => e.estadoPublicacion === 'publicado'
   ).length;
 
-  const cantidadRechazados = emprendimientos.filter(
-    (e) => e.estadoPublicacion === 'rechazado'
-  ).length;
+  const accionSeleccionada =
+    emprendimientoSeleccionado?.estadoPublicacion === 'publicado'
+      ? 'ocultar'
+      : 'publicar';
 
   // ============================================================
   // CARGANDO
@@ -348,6 +554,33 @@ function ListaEmprendimientos({
   </div>
 </div>
 
+        {mensajeAccion && (
+          <div
+            className={`mb-8 flex items-start justify-between gap-4 rounded-2xl border p-4 text-sm shadow-sm ${
+              mensajeAccion.tipo === 'exito'
+                ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                : 'border-red-200 bg-red-50 text-red-700'
+            }`}
+            role={mensajeAccion.tipo === 'error' ? 'alert' : 'status'}
+          >
+            <div className="flex items-start gap-3">
+              <span className="text-lg" aria-hidden="true">
+                {mensajeAccion.tipo === 'exito' ? '✓' : '⚠'}
+              </span>
+              <p className="font-semibold">{mensajeAccion.texto}</p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setMensajeAccion(null)}
+              className="rounded-lg px-2 py-1 font-bold transition hover:bg-black/5"
+              aria-label="Cerrar mensaje"
+            >
+              ×
+            </button>
+          </div>
+        )}
+
         {/* INFORMACIÓN PARA ASOCIADO */}
         {esAsociado && (
           <div className="mb-8 rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
@@ -393,7 +626,7 @@ function ListaEmprendimientos({
 
         {/* RESUMEN ADMINISTRATIVO */}
         {esAdministrador && emprendimientos.length > 0 && (
-          <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
             {/* TOTAL */}
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="flex items-center justify-between">
@@ -409,12 +642,12 @@ function ListaEmprendimientos({
               </div>
             </div>
 
-            {/* PENDIENTES */}
+            {/* NO PUBLICADOS */}
             <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-amber-700">Pendientes</p>
-                  <p className="mt-1 text-3xl font-bold text-amber-900">{cantidadPendientes}</p>
+                  <p className="text-sm font-medium text-amber-700">No publicados</p>
+                  <p className="mt-1 text-3xl font-bold text-amber-900">{cantidadNoPublicados}</p>
                 </div>
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-amber-600 shadow-sm">
                   <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
@@ -439,20 +672,6 @@ function ListaEmprendimientos({
               </div>
             </div>
 
-            {/* RECHAZADOS */}
-            <div className="rounded-2xl border border-red-200 bg-red-50 p-5 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-red-700">Rechazados</p>
-                  <p className="mt-1 text-3xl font-bold text-red-900">{cantidadRechazados}</p>
-                </div>
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-red-600 shadow-sm">
-                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </div>
-              </div>
-            </div>
           </div>
         )}
         {mensajeEliminacion && (
@@ -511,6 +730,11 @@ function ListaEmprendimientos({
               const estiloEstado = obtenerEstiloEstado(
                 emprendimiento.estadoPublicacion
               );
+              const ubicacion = obtenerUbicacion(emprendimiento);
+              const estaPublicado =
+                emprendimiento.estadoPublicacion === 'publicado';
+              const estaProcesando =
+                idProcesando === emprendimiento.id;
 
               return (
                 <article
@@ -564,13 +788,13 @@ function ListaEmprendimientos({
 
                     {/* DATOS DE CONTACTO */}
                     <div className="mt-5 space-y-3 border-t border-slate-100 pt-5">
-                      {emprendimiento.direccion && (
+                      {ubicacion && (
                         <div className="flex items-start gap-3 text-sm text-slate-600">
                           <svg className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
                             <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
                           </svg>
-                          <span>{emprendimiento.direccion}</span>
+                          <span>{ubicacion}</span>
                         </div>
                       )}
 
@@ -600,8 +824,6 @@ function ListaEmprendimientos({
                           <div className={`flex h-8 w-8 items-center justify-center rounded-full ${estiloEstado.punto} text-white`}>
                             {estiloEstado.etiqueta === 'Publicado' ? (
                               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
-                            ) : estiloEstado.etiqueta === 'Rechazado' ? (
-                              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                             ) : (
                               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5" /></svg>
                             )}
@@ -630,43 +852,148 @@ function ListaEmprendimientos({
                           </p>
                         </div>
 
-                        <select
-                          value={emprendimiento.estadoPublicacion}
-                          onChange={(e) =>
-                            cambiarEstado(
-                              emprendimiento.id,
-                              e.target.value as EstadoEmprendimiento
+                        <div className="mb-3 flex items-center gap-2 text-sm">
+                          <span className="text-slate-500">Estado actual:</span>
+                          <strong className={estiloEstado.texto}>
+                            {estiloEstado.etiqueta}
+                          </strong>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={(event) =>
+                            abrirConfirmacion(
+                              emprendimiento,
+                              event.currentTarget,
                             )
                           }
-                          className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                          disabled={idProcesando !== null}
+                          aria-haspopup="dialog"
+                          aria-busy={estaProcesando}
+                          aria-label={`${
+                            estaPublicado ? 'Ocultar' : 'Publicar'
+                          } emprendimiento #${emprendimiento.id} - ${emprendimiento.nombre}`}
+                          className={`w-full rounded-xl px-4 py-3 text-sm font-bold shadow-sm transition focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
+                            estaPublicado
+                              ? 'border border-amber-300 bg-white text-amber-800 hover:bg-amber-50 focus:ring-amber-500'
+                              : 'bg-emerald-800 text-white hover:bg-emerald-700 focus:ring-emerald-600'
+                          }`}
                         >
-                          <option value="pendiente">Pendiente de revisión</option>
-                          <option value="publicado">Publicado</option>
-                          <option value="rechazado">Rechazado</option>
-                        </select>
+                          {estaProcesando
+                            ? estaPublicado
+                              ? 'Ocultando...'
+                              : 'Publicando...'
+                            : estaPublicado
+                              ? 'Ocultar'
+                              : 'Publicar'}
+                        </button>
 
-                  <button
-                  type="button"
-                  onClick={() => {
-                      setErrorEliminacion(null);
-                      setMensajeEliminacion(null);
-                      setEmprendimientoAEliminar(emprendimiento);
-                    }}
-                   disabled={eliminando}
-                   className="mt-4 w-full rounded-xl bg-red-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    Eliminar emprendimiento
-                  </button>
-
-                        <p className="mt-2 text-xs text-slate-400">
-                          El cambio es visual y todavía no se guarda en la base de datos.
-                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setErrorEliminacion(null);
+                            setMensajeEliminacion(null);
+                            setEmprendimientoAEliminar(emprendimiento);
+                          }}
+                          disabled={eliminando}
+                          className="mt-4 w-full rounded-xl bg-red-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          Eliminar emprendimiento
+                        </button>
                       </div>
                     )}
                   </div>
                 </article>
               );
             })}
+          </div>
+        )}
+
+        {emprendimientoSeleccionado && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget) {
+                cerrarConfirmacion();
+              }
+            }}
+          >
+            <div
+              ref={dialogoConfirmacion}
+              className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl sm:p-7"
+              role="dialog"
+              tabIndex={-1}
+              aria-busy={idProcesando !== null}
+              aria-modal="true"
+              aria-labelledby="titulo-confirmacion-publicacion"
+              aria-describedby="detalle-confirmacion-publicacion"
+            >
+              <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700">
+                <svg
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth="2"
+                  stroke="currentColor"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                  />
+                </svg>
+              </div>
+
+              <h2
+                id="titulo-confirmacion-publicacion"
+                className="text-xl font-bold text-slate-900"
+              >
+                Confirmar cambio de publicación
+              </h2>
+
+              <p
+                id="detalle-confirmacion-publicacion"
+                className="mt-3 text-sm leading-6 text-slate-600"
+              >
+                ¿Deseas {accionSeleccionada} el emprendimiento{' '}
+                <strong className="text-slate-900">
+                  #{emprendimientoSeleccionado.id} -{' '}
+                  {emprendimientoSeleccionado.nombre}
+                </strong>{'?'}
+              </p>
+
+              <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={cerrarConfirmacion}
+                  disabled={idProcesando !== null}
+                  className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Cancelar
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => void confirmarCambioPublicacion()}
+                  disabled={idProcesando !== null}
+                  autoFocus
+                  className={`rounded-xl px-5 py-2.5 text-sm font-bold text-white shadow-sm transition focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
+                    accionSeleccionada === 'publicar'
+                      ? 'bg-emerald-800 hover:bg-emerald-700 focus:ring-emerald-600'
+                      : 'bg-amber-600 hover:bg-amber-500 focus:ring-amber-500'
+                  }`}
+                >
+                  {idProcesando !== null
+                    ? accionSeleccionada === 'publicar'
+                      ? 'Publicando...'
+                      : 'Ocultando...'
+                    : accionSeleccionada === 'publicar'
+                      ? 'Confirmar publicación'
+                      : 'Confirmar ocultamiento'}
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

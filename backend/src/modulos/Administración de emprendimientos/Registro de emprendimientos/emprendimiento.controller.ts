@@ -1,6 +1,26 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { emprendimientoService } from './emprendimiento.service';
 import { EstadoPublicacion } from '../../../models/Emprendimiento';
+
+const convertirEstadoPublicacion = (
+  valor: unknown,
+): EstadoPublicacion | null => {
+  if (
+    valor === 'Publicado' ||
+    valor === EstadoPublicacion.PUBLICADO
+  ) {
+    return EstadoPublicacion.PUBLICADO;
+  }
+
+  if (
+    valor === 'No Publicado' ||
+    valor === EstadoPublicacion.NO_PUBLICADO
+  ) {
+    return EstadoPublicacion.NO_PUBLICADO;
+  }
+
+  return null;
+};
 
 export class EmprendimientoController {
   async crear(req: Request, res: Response): Promise<Response> {
@@ -27,16 +47,29 @@ export class EmprendimientoController {
     }
   }
 
-  async obtenerTodos(req: Request, res: Response): Promise<Response> {
+  async obtenerTodos(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<Response | void> {
     try {
       const { estado } = req.query;
 
       let emprendimientos;
 
       if (estado) {
-        const estadoString = String(estado).toLowerCase() as EstadoPublicacion;
+        const estadoPublicacion = convertirEstadoPublicacion(estado);
+
+        if (!estadoPublicacion) {
+          return res.status(400).json({
+            ok: false,
+            message:
+              'El estado de publicación debe ser Publicado o No Publicado',
+          });
+        }
+
         emprendimientos =
-          await emprendimientoService.obtenerPorEstado(estadoString);
+          await emprendimientoService.obtenerPorEstado(estadoPublicacion);
       } else {
         emprendimientos = await emprendimientoService.obtenerTodos();
       }
@@ -44,8 +77,87 @@ export class EmprendimientoController {
       return res.status(200).json(
         emprendimientos.map((e) => e.toPublic())
       );
-    } catch (error: any) {
-      return res.status(500).json({ mensaje: error.message });
+    } catch (error: unknown) {
+      next(error);
+    }
+  }
+
+  async obtenerCatalogoPublico(
+    _req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<Response | void> {
+    try {
+      const emprendimientos =
+        await emprendimientoService.obtenerCatalogoPublico();
+
+      return res.status(200).json(
+        emprendimientos.map((emprendimiento) =>
+          emprendimiento.toPublic(),
+        ),
+      );
+    } catch (error: unknown) {
+      next(error);
+    }
+  }
+
+  async cambiarPublicacion(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<Response | void> {
+    try {
+      const id = Number(req.params.id);
+
+      if (!Number.isInteger(id) || id <= 0) {
+        return res.status(400).json({
+          ok: false,
+          message: 'El ID del emprendimiento no es válido',
+        });
+      }
+
+      const cuerpo = req.body as Record<string, unknown> | undefined;
+      const estadoSolicitado =
+        cuerpo?.estadoPublicacion ?? cuerpo?.estado;
+      const nuevoEstado = convertirEstadoPublicacion(estadoSolicitado);
+
+      if (!nuevoEstado) {
+        return res.status(400).json({
+          ok: false,
+          message:
+            'El estado de publicación debe ser Publicado o No Publicado',
+        });
+      }
+
+      const resultado = await emprendimientoService.cambiarPublicacion(
+        id,
+        nuevoEstado,
+      );
+
+      if (!resultado.ok) {
+        return res.status(resultado.status).json({
+          ok: false,
+          message: resultado.message,
+          ...(resultado.camposFaltantes
+            ? { camposFaltantes: resultado.camposFaltantes }
+            : {}),
+        });
+      }
+
+      return res.status(200).json({
+        ok: true,
+        message: resultado.message,
+        data: {
+          id: resultado.emprendimiento.id,
+          nombre: resultado.emprendimiento.nombre,
+          estadoPublicacion:
+            resultado.emprendimiento.estadoPublicacion,
+          fechaPublicacion:
+            resultado.emprendimiento.fechaPublicacion,
+        },
+      });
+    } catch (error: unknown) {
+      next(error);
     }
   }
 
@@ -65,6 +177,18 @@ export class EmprendimientoController {
   async actualizar(req: Request, res: Response): Promise<Response> {
     try {
       const id = Number(req.params.id);
+      const cuerpo = req.body as Record<string, unknown> | undefined;
+
+      if (
+        cuerpo &&
+        ('estadoPublicacion' in cuerpo || 'estado' in cuerpo)
+      ) {
+        return res.status(400).json({
+          ok: false,
+          message:
+            'El estado de publicación solo puede cambiarse mediante el endpoint de publicación',
+        });
+      }
 
       const dto = {
         ...req.body,
