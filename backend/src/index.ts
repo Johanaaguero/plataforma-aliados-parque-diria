@@ -9,6 +9,7 @@ import recuperacionRoutes from './modulos/Autenticación y gestión de usuario/R
 import rolesRoutes from './modulos/Autenticación y gestión de usuario/Gestión de Roles/roles.route';
 import emprendimientoRoutes from './modulos/Administración de emprendimientos/Registro de emprendimientos/emprendimiento.routes';
 import categoriaEmprendimientoRoutes from './modulos/Administración de emprendimientos/Registro de emprendimientos/categoriaEmprendimiento.routes';
+import eliminarEmprendimientoRoutes from './modulos/Administración de emprendimientos/Eliminación de emprendimientos/eliminarEmprendimiento.route';
 
 import { iniciarLimpiezaTokensExpirados } from './modulos/Autenticación y gestión de usuario/Recuperación de contraseña/limpieza.service';
 import { iniciarLimpiezaTokensBlacklist } from './modulos/Autenticación y gestión de usuario/inicio de sesion/limpieza-blacklist.service';
@@ -28,7 +29,7 @@ app.use('/api/auth', recuperacionRoutes);
 app.use('/api/users', rolesRoutes);
 app.use('/api/emprendimientos', emprendimientoRoutes);
 app.use('/api/categorias-emprendimientos', categoriaEmprendimientoRoutes);
-
+app.use('/api/emprendimientos', eliminarEmprendimientoRoutes);
 app.use(errorMiddleware);
 
 const PORT = process.env.PORT || 3000;

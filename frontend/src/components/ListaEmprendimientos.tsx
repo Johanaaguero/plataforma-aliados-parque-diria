@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   obtenerEmprendimientos,
+  eliminarEmprendimiento,
   type Emprendimiento,
 } from '../services/emprendimientoService';
 
@@ -28,6 +29,16 @@ function ListaEmprendimientos({
 
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [emprendimientoAEliminar, setEmprendimientoAEliminar] =
+    useState<Emprendimiento | null>(null);
+
+  const [eliminando, setEliminando] = useState(false);
+
+  const [mensajeEliminacion, setMensajeEliminacion] =
+    useState<string | null>(null);
+
+  const [errorEliminacion, setErrorEliminacion] =
+    useState<string | null>(null);
 
   const esAdministrador =
     rolAutenticado === 'administrador';
@@ -96,6 +107,42 @@ function ListaEmprendimientos({
       )
     );
   };
+
+  //ELIMINAR EMPRENDIMIENTO
+  const confirmarEliminacion = async () => {
+  if (!esAdministrador || !emprendimientoAEliminar) {
+    return;
+  }
+
+  try {
+    setEliminando(true);
+    setErrorEliminacion(null);
+    setMensajeEliminacion(null);
+
+    await eliminarEmprendimiento(emprendimientoAEliminar.id);
+
+    setEmprendimientos((actuales) =>
+      actuales.filter(
+        (emprendimiento) =>
+          emprendimiento.id !== emprendimientoAEliminar.id
+      )
+    );
+
+    setMensajeEliminacion(
+      `El emprendimiento "${emprendimientoAEliminar.nombre}" fue eliminado correctamente.`
+    );
+
+    setEmprendimientoAEliminar(null);
+  } catch (err: unknown) {
+    const error = err as { message?: string };
+
+    setErrorEliminacion(
+      error.message || 'No se pudo eliminar el emprendimiento.'
+    );
+  } finally {
+    setEliminando(false);
+  }
+};
 
   // ============================================================
   // ESTILOS DE ESTADO
@@ -408,6 +455,17 @@ function ListaEmprendimientos({
             </div>
           </div>
         )}
+        {mensajeEliminacion && (
+  <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-700">
+    {mensajeEliminacion}
+  </div>
+)}
+
+{errorEliminacion && (
+  <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
+    {errorEliminacion}
+  </div>
+)}
 
         {/* SIN EMPRENDIMIENTOS */}
         {emprendimientos.length === 0 && (
@@ -587,6 +645,19 @@ function ListaEmprendimientos({
                           <option value="rechazado">Rechazado</option>
                         </select>
 
+                  <button
+                  type="button"
+                  onClick={() => {
+                      setErrorEliminacion(null);
+                      setMensajeEliminacion(null);
+                      setEmprendimientoAEliminar(emprendimiento);
+                    }}
+                   disabled={eliminando}
+                   className="mt-4 w-full rounded-xl bg-red-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    Eliminar emprendimiento
+                  </button>
+
                         <p className="mt-2 text-xs text-slate-400">
                           El cambio es visual y todavía no se guarda en la base de datos.
                         </p>
@@ -599,6 +670,58 @@ function ListaEmprendimientos({
           </div>
         )}
       </div>
+      {emprendimientoAEliminar && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+    <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+      <h2 className="text-xl font-bold text-slate-900">
+        Confirmar eliminación
+      </h2>
+
+      <p className="mt-3 text-sm leading-6 text-slate-600">
+        ¿Está seguro de que desea eliminar el emprendimiento{' '}
+        <span className="font-bold text-slate-900">
+          {emprendimientoAEliminar.nombre}
+        </span>
+        ?
+      </p>
+      <div className="mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
+  <p>
+    <span className="font-semibold text-slate-800">ID:</span>{' '}
+    {emprendimientoAEliminar.id}
+  </p>
+
+  <p className="mt-1">
+    <span className="font-semibold text-slate-800">Categoría:</span>{' '}
+    {emprendimientoAEliminar.categoria || 'Sin categoría'}
+  </p>
+</div>
+
+      <p className="mt-2 text-xs text-slate-500">
+        Esta acción eliminará el registro de forma permanente.
+      </p>
+
+      <div className="mt-6 flex gap-3">
+        <button
+          type="button"
+          onClick={() => setEmprendimientoAEliminar(null)}
+          disabled={eliminando}
+          className="flex-1 rounded-xl border border-slate-300 px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+        >
+          Cancelar
+        </button>
+
+        <button
+          type="button"
+          onClick={() => void confirmarEliminacion()}
+          disabled={eliminando}
+          className="flex-1 rounded-xl bg-red-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {eliminando ? 'Eliminando...' : 'Confirmar eliminación'}
+        </button>
+      </div>
+    </div>
+  </div>
+    )}
     </section>
   );
 }

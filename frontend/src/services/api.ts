@@ -37,28 +37,36 @@ class ApiService {
     return headers;
   }
 
-  private async handleResponse<T>(response: Response): Promise<T> {
-    const data: ApiResponse<T> = await response.json();
+ private async handleResponse<T>(response: Response): Promise<T> {
+  if (response.status === 204) {
+    return undefined as T;
+  }
 
-    if (!response.ok) {
-      const error: ApiError = {
-        code: data.code || 'UNKNOWN_ERROR',
-        message: data.message || 'Error desconocido',
-        status: response.status,
-      };
+  const data: ApiResponse<T> = await response.json();
 
-      // Disparar evento global para 401/403
-      if (response.status === 401) {
-        window.dispatchEvent(new CustomEvent('auth:unauthorized', { detail: error }));
-      } else if (response.status === 403) {
-        window.dispatchEvent(new CustomEvent('auth:forbidden', { detail: error }));
-      }
+  if (!response.ok) {
+    const error: ApiError = {
+      code: data.code || 'UNKNOWN_ERROR',
+      message: data.message || 'Error desconocido',
+      status: response.status,
+    };
 
-      throw error;
+    // Disparar evento global para 401/403
+    if (response.status === 401) {
+      window.dispatchEvent(
+        new CustomEvent('auth:unauthorized', { detail: error })
+      );
+    } else if (response.status === 403) {
+      window.dispatchEvent(
+        new CustomEvent('auth:forbidden', { detail: error })
+      );
     }
 
-    return (data.data || data) as T;
+    throw error;
   }
+
+  return (data.data || data) as T;
+}
 
   async login(identificador: string, password: string): Promise<{ token: string; usuario: unknown }> {
     const response = await fetch(`${this.baseUrl}/auth/login`, {
@@ -146,6 +154,15 @@ class ApiService {
 
     return this.handleResponse(response);
   }
+  async eliminar(url: string): Promise<void> {
+  const response = await fetch(`${this.baseUrl}${url}`, {
+    method: 'DELETE',
+    headers: this.getHeaders(true),
+  });
+
+  await this.handleResponse<void>(response);
+  }
 }
 
 export const api = new ApiService();
+

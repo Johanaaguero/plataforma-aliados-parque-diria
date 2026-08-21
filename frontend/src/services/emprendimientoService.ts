@@ -1,3 +1,5 @@
+import { api } from './api';
+
 export interface CrearEmprendimientoDto {
   nombre: string;
   descripcion?: string;
@@ -83,4 +85,11 @@ export async function obtenerEmprendimientos(
   }
 
   return res.json();
+  
+}
+
+  //Elimina un emprendimiento por su ID.
+ 
+  export async function eliminarEmprendimiento(id: number): Promise<void> {
+    await api.eliminar(`/emprendimientos/${id}`);
 }
