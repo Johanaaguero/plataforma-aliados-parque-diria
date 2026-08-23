@@ -1,5 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
+
 import { emprendimientoService } from './emprendimiento.service';
+
 import { EstadoPublicacion } from '../../../models/Emprendimiento';
 
 const ESTADOS_TEXTO: Record<string, EstadoPublicacion> = {
@@ -25,46 +27,167 @@ const convertirEstadoPublicacion = (
   return ESTADOS_TEXTO[valor] ?? null;
 };
 
+// ============================================================
+// VALIDACIÓN DE ACTUALIZACIÓN
+// ============================================================
+
+const validarActualizacion = (
+  body: Record<string, unknown>,
+): string | null => {
+  if (!body || typeof body !== 'object') {
+    return 'Los datos de actualización son inválidos';
+  }
+
+  // Nombre
+  if (
+    body.nombre !== undefined &&
+    (typeof body.nombre !== 'string' ||
+      body.nombre.trim() === '')
+  ) {
+    return 'El nombre no puede estar vacío';
+  }
+
+  // Categoría
+  if (
+    body.categoriaId !== undefined &&
+    body.categoriaId !== ''
+  ) {
+    const categoriaId = Number(body.categoriaId);
+
+    if (
+      !Number.isInteger(categoriaId) ||
+      categoriaId <= 0
+    ) {
+      return 'La categoría seleccionada no es válida';
+    }
+  }
+
+  // Latitud
+  if (
+    body.latitud !== undefined &&
+    body.latitud !== ''
+  ) {
+    const latitud = Number(body.latitud);
+
+    if (Number.isNaN(latitud)) {
+      return 'La latitud no es válida';
+    }
+
+    if (latitud < -90 || latitud > 90) {
+      return 'La latitud debe estar entre -90 y 90';
+    }
+  }
+
+  // Longitud
+  if (
+    body.longitud !== undefined &&
+    body.longitud !== ''
+  ) {
+    const longitud = Number(body.longitud);
+
+    if (Number.isNaN(longitud)) {
+      return 'La longitud no es válida';
+    }
+
+    if (longitud < -180 || longitud > 180) {
+      return 'La longitud debe estar entre -180 y 180';
+    }
+  }
+
+  // Correo electrónico
+  if (
+    body.correoElectronico !== undefined &&
+    body.correoElectronico !== ''
+  ) {
+    if (
+      typeof body.correoElectronico !== 'string'
+    ) {
+      return 'El correo electrónico no es válido';
+    }
+
+    const correoValido =
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (
+      !correoValido.test(
+        body.correoElectronico.trim(),
+      )
+    ) {
+      return 'El correo electrónico no es válido';
+    }
+  }
+
+  // Teléfono
+  if (
+    body.telefono !== undefined &&
+    body.telefono !== ''
+  ) {
+    if (typeof body.telefono !== 'string') {
+      return 'El teléfono no es válido';
+    }
+
+    if (body.telefono.trim().length < 8) {
+      return 'El teléfono debe tener al menos 8 caracteres';
+    }
+  }
+
+  return null;
+};
+
 export class EmprendimientoController {
   // ============================================================
   // CREAR
   // ============================================================
 
-  async crear(req: Request, res: Response): Promise<Response> {
+  async crear(
+    req: Request,
+    res: Response,
+  ): Promise<Response> {
     try {
       const rolUsuario = req.usuario?.rol;
 
       const dto = {
         nombre: req.body.nombre,
-        descripcion: req.body.descripcion || undefined,
+
+        descripcion:
+          req.body.descripcion || undefined,
 
         ...(req.body.categoriaId !== undefined &&
         req.body.categoriaId !== ''
           ? {
-              categoriaId: Number(req.body.categoriaId),
+              categoriaId: Number(
+                req.body.categoriaId,
+              ),
             }
           : {}),
 
-        direccion: req.body.direccion || undefined,
+        direccion:
+          req.body.direccion || undefined,
 
         ...(req.body.latitud !== undefined &&
         req.body.latitud !== ''
           ? {
-              latitud: Number(req.body.latitud),
+              latitud: Number(
+                req.body.latitud,
+              ),
             }
           : {}),
 
         ...(req.body.longitud !== undefined &&
         req.body.longitud !== ''
           ? {
-              longitud: Number(req.body.longitud),
+              longitud: Number(
+                req.body.longitud,
+              ),
             }
           : {}),
 
         correoElectronico:
-          req.body.correoElectronico || undefined,
+          req.body.correoElectronico ||
+          undefined,
 
-        telefono: req.body.telefono || undefined,
+        telefono:
+          req.body.telefono || undefined,
 
         ...(req.file?.buffer !== undefined
           ? {
@@ -99,7 +222,6 @@ export class EmprendimientoController {
   // LISTADOS
   // ============================================================
 
-
   async obtenerTodos(
     req: Request,
     res: Response,
@@ -130,7 +252,6 @@ export class EmprendimientoController {
       const usuarioId = req.usuario?.id;
       const rolUsuario = req.usuario?.rol;
 
-      
       if (!usuarioId || !rolUsuario) {
         return res.status(401).json({
           ok: false,
@@ -149,50 +270,59 @@ export class EmprendimientoController {
       // ========================================================
       // ADMINISTRADOR
       // ========================================================
-      //
-      // Ya no usamos toInterno(), porque el modelo
-      // Emprendimiento no tiene ese método.
-      //
-      // Construimos la respuesta interna directamente.
 
       if (rolUsuario === 'administrador') {
         const respuesta = emprendimientos.map(
           (emprendimiento) => ({
             id: emprendimiento.id,
-            nombre: emprendimiento.nombre,
-            descripcion: emprendimiento.descripcion,
 
-            categoria: emprendimiento.categoria
-              ? emprendimiento.categoria.nombre
-              : null,
+            nombre: emprendimiento.nombre,
+
+            descripcion:
+              emprendimiento.descripcion,
+
+            categoria:
+              emprendimiento.categoria
+                ? emprendimiento.categoria.nombre
+                : null,
 
             categoriaId:
-              emprendimiento.categoria?.id ?? null,
+              emprendimiento.categoria?.id ??
+              null,
 
             asociadoId:
-              emprendimiento.asociado?.id ?? null,
+              emprendimiento.asociado?.id ??
+              null,
 
             asociado:
               emprendimiento.asociado
                 ? {
                     id: emprendimiento.asociado.id,
+
                     nombre:
-                      emprendimiento.asociado.nombre ??
-                      null,
+                      emprendimiento.asociado
+                        .nombre ?? null,
+
                     correo:
-                      emprendimiento.asociado.correo ??
-                      null,
+                      emprendimiento.asociado
+                        .correo ?? null,
                   }
                 : null,
 
-            direccion: emprendimiento.direccion,
-            latitud: emprendimiento.latitud,
-            longitud: emprendimiento.longitud,
+            direccion:
+              emprendimiento.direccion,
+
+            latitud:
+              emprendimiento.latitud,
+
+            longitud:
+              emprendimiento.longitud,
 
             correoElectronico:
               emprendimiento.correoElectronico,
 
-            telefono: emprendimiento.telefono,
+            telefono:
+              emprendimiento.telefono,
 
             estadoPublicacion:
               emprendimiento.estadoPublicacion,
@@ -290,7 +420,9 @@ export class EmprendimientoController {
       }
 
       const cuerpo =
-        req.body as Record<string, unknown> | undefined;
+        req.body as
+          | Record<string, unknown>
+          | undefined;
 
       const estadoSolicitado =
         cuerpo?.estadoPublicacion ??
@@ -334,6 +466,7 @@ export class EmprendimientoController {
 
       return res.status(200).json({
         ok: true,
+
         message: resultado.message,
 
         data: {
@@ -367,6 +500,13 @@ export class EmprendimientoController {
     try {
       const id = Number(req.params.id);
 
+      if (!Number.isInteger(id) || id <= 0) {
+        return res.status(400).json({
+          mensaje:
+            'El ID del emprendimiento no es válido',
+        });
+      }
+
       const usuarioId = req.usuario?.id;
       const rolUsuario = req.usuario?.rol;
 
@@ -389,11 +529,16 @@ export class EmprendimientoController {
           });
         }
 
+        // ======================================================
         // ADMINISTRADOR
+        // ======================================================
+
         if (rolUsuario === 'administrador') {
           return res.status(200).json({
             id: emprendimiento.id,
+
             nombre: emprendimiento.nombre,
+
             descripcion:
               emprendimiento.descripcion,
 
@@ -415,13 +560,14 @@ export class EmprendimientoController {
                 ? {
                     id:
                       emprendimiento.asociado.id,
+
                     nombre:
-                      emprendimiento.asociado.nombre ??
-                      null,
+                      emprendimiento.asociado
+                        .nombre ?? null,
+
                     correo:
                       emprendimiento.asociado
-                        .correo ??
-                      null,
+                        .correo ?? null,
                   }
                 : null,
 
@@ -460,7 +606,10 @@ export class EmprendimientoController {
           });
         }
 
+        // ======================================================
         // ASOCIADO
+        // ======================================================
+
         return res.status(200).json(
           emprendimiento.toPublic(),
         );
@@ -503,15 +652,40 @@ export class EmprendimientoController {
   ): Promise<Response> {
     try {
       const id = Number(req.params.id);
-      const errorValidacion = validarActualizacion(req.body);
-if (errorValidacion) {
-  return res.status(400).json({ mensaje: errorValidacion });
-}
+
+      if (!Number.isInteger(id) || id <= 0) {
+        return res.status(400).json({
+          ok: false,
+          message:
+            'El ID del emprendimiento no es válido',
+        });
+      }
+
+      // ========================================================
+      // VALIDAR DATOS
+      // ========================================================
+
+      const errorValidacion =
+        validarActualizacion(
+          req.body as Record<string, unknown>,
+        );
+
+      if (errorValidacion) {
+        return res.status(400).json({
+          ok: false,
+          mensaje: errorValidacion,
+        });
+      }
 
       const cuerpo =
-        req.body as Record<string, unknown> | undefined;
+        req.body as
+          | Record<string, unknown>
+          | undefined;
 
-      // El estado NO se puede cambiar mediante actualizar.
+      // ========================================================
+      // EL ESTADO NO SE ACTUALIZA AQUÍ
+      // ========================================================
+
       if (
         cuerpo &&
         ('estadoPublicacion' in cuerpo ||
@@ -524,27 +698,37 @@ if (errorValidacion) {
         });
       }
 
+      // ========================================================
+      // CONSTRUIR DTO
+      // ========================================================
+
       const dto = {
         ...req.body,
 
-        ...(req.body.categoriaId !== undefined
+        ...(req.body.categoriaId !== undefined &&
+        req.body.categoriaId !== ''
           ? {
-              categoriaId:
-                Number(req.body.categoriaId),
+              categoriaId: Number(
+                req.body.categoriaId,
+              ),
             }
           : {}),
 
-        ...(req.body.latitud !== undefined
+        ...(req.body.latitud !== undefined &&
+        req.body.latitud !== ''
           ? {
-              latitud:
-                Number(req.body.latitud),
+              latitud: Number(
+                req.body.latitud,
+              ),
             }
           : {}),
 
-        ...(req.body.longitud !== undefined
+        ...(req.body.longitud !== undefined &&
+        req.body.longitud !== ''
           ? {
-              longitud:
-                Number(req.body.longitud),
+              longitud: Number(
+                req.body.longitud,
+              ),
             }
           : {}),
 
@@ -554,6 +738,10 @@ if (errorValidacion) {
             }
           : {}),
       };
+
+      // ========================================================
+      // ACTUALIZAR
+      // ========================================================
 
       const emprendimiento =
         await emprendimientoService.actualizar(
@@ -581,6 +769,13 @@ if (errorValidacion) {
   ): Promise<Response> {
     try {
       const id = Number(req.params.id);
+
+      if (!Number.isInteger(id) || id <= 0) {
+        return res.status(400).json({
+          mensaje:
+            'El ID del emprendimiento no es válido',
+        });
+      }
 
       await emprendimientoService.eliminar(id);
 
