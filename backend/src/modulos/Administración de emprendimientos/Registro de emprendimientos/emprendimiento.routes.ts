@@ -5,7 +5,6 @@ import { emprendimientoController } from './emprendimiento.controller';
 import { upload } from '../../../middlewares/upload';
 import { verificarToken } from '../../../middlewares/auth.middleware';
 
-import { verificarToken } from '../../../middlewares/auth.middleware';
 
 import { autorizarRoles } from '../../../middlewares/authorization.middleware';
 
