@@ -6,14 +6,17 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 
 import { CategoriaEmprendimiento } from './CategoriaEmprendimiento';
+import { Usuario } from './Usuario';
 
 export enum EstadoPublicacion {
-  PENDIENTE = 'pendiente',
+  BORRADOR = 'borrador',
+  NO_PUBLICADO = 'no_publicado',
   PUBLICADO = 'publicado',
-  RECHAZADO = 'rechazado',
+  DESACTIVADO = 'desactivado',
 }
 
 @Entity('emprendimientos')
@@ -28,43 +31,64 @@ export class Emprendimiento {
   descripcion?: string;
 
   // Clave foránea referenciando a la tabla categorias_emprendimientos
+  // nullable: true para permitir borradores sin categoría asignada aún
   @ManyToOne(
     () => CategoriaEmprendimiento,
     (categoria) => categoria.emprendimientos,
     {
-      nullable: false,
+      nullable: true,
       eager: true,
     }
   )
   @JoinColumn({ name: 'categoria_id' })
-  categoria!: CategoriaEmprendimiento;
+  categoria?: CategoriaEmprendimiento;
+
+  // Asociado dueño del emprendimiento. Null cuando lo registra un
+  // administrador sin asignarlo a un asociado en particular.
+  @Index('IDX_EMPRENDIMIENTOS_ASOCIADO')
+  @ManyToOne(() => Usuario, {
+    nullable: true,
+    eager: false,
+  })
+  @JoinColumn({ name: 'asociado_id' })
+  asociado?: Usuario | null;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   direccion?: string;
 
-  @Column({ type: 'decimal', precision: 10, scale: 8 })
-  latitud!: number;
+  @Column({ type: 'decimal', precision: 10, scale: 8, nullable: true })
+  latitud?: number;
 
-  @Column({ type: 'decimal', precision: 11, scale: 8 })
-  longitud!: number;
+  @Column({ type: 'decimal', precision: 11, scale: 8, nullable: true })
+  longitud?: number;
 
   @Column({
     type: 'varchar',
     length: 150,
     name: 'correo_electronico',
+    nullable: true,
   })
-  correoElectronico!: string;
+  correoElectronico?: string;
 
-  @Column({ type: 'varchar', length: 20 })
-  telefono!: string;
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  telefono?: string;
 
+  @Index('IDX_EMPRENDIMIENTOS_ESTADO_PUBLICACION')
   @Column({
     type: 'enum',
     enum: EstadoPublicacion,
-    default: EstadoPublicacion.PENDIENTE,
+    default: EstadoPublicacion.BORRADOR,
     name: 'estado_publicacion',
   })
   estadoPublicacion!: EstadoPublicacion;
+
+  @Column({
+    type: 'datetime',
+    precision: 6,
+    nullable: true,
+    name: 'fecha_publicacion',
+  })
+  fechaPublicacion!: Date | null;
 
   // Imagen almacenada directamente en MySQL
   @Column({
@@ -83,12 +107,13 @@ export class Emprendimiento {
     id?: number;
     nombre?: string;
     descripcion?: string | undefined;
-    categoria?: CategoriaEmprendimiento;
+    categoria?: CategoriaEmprendimiento | undefined;
+    asociado?: Usuario | null | undefined;
     direccion?: string | undefined;
-    latitud?: number;
-    longitud?: number;
-    correoElectronico?: string;
-    telefono?: string;
+    latitud?: number | undefined;
+    longitud?: number | undefined;
+    correoElectronico?: string | undefined;
+    telefono?: string | undefined;
     estadoPublicacion?: EstadoPublicacion;
     imagen?: Buffer | undefined;
   }) {
@@ -101,6 +126,9 @@ export class Emprendimiento {
     }
     if (params.categoria !== undefined) {
       this.categoria = params.categoria;
+    }
+    if (params.asociado !== undefined) {
+      this.asociado = params.asociado;
     }
     if (params.direccion !== undefined) {
       this.direccion = params.direccion;
@@ -131,6 +159,7 @@ export class Emprendimiento {
       nombre: this.nombre,
       descripcion: this.descripcion,
       categoria: this.categoria ? this.categoria.nombre : null,
+      asociadoId: this.asociado ? this.asociado.id : null,
       direccion: this.direccion,
       latitud: this.latitud,
       longitud: this.longitud,
