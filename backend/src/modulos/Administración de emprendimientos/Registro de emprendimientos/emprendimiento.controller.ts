@@ -2,50 +2,103 @@ import { NextFunction, Request, Response } from 'express';
 import { emprendimientoService } from './emprendimiento.service';
 import { EstadoPublicacion } from '../../../models/Emprendimiento';
 
+const ESTADOS_TEXTO: Record<string, EstadoPublicacion> = {
+  Borrador: EstadoPublicacion.BORRADOR,
+  'No Publicado': EstadoPublicacion.NO_PUBLICADO,
+  Publicado: EstadoPublicacion.PUBLICADO,
+  Desactivado: EstadoPublicacion.DESACTIVADO,
+};
+
 const convertirEstadoPublicacion = (
   valor: unknown,
 ): EstadoPublicacion | null => {
-  if (
-    valor === 'Publicado' ||
-    valor === EstadoPublicacion.PUBLICADO
-  ) {
-    return EstadoPublicacion.PUBLICADO;
-  }
+  if (typeof valor !== 'string') return null;
 
   if (
-    valor === 'No Publicado' ||
-    valor === EstadoPublicacion.NO_PUBLICADO
+    Object.values(EstadoPublicacion).includes(
+      valor as EstadoPublicacion,
+    )
   ) {
-    return EstadoPublicacion.NO_PUBLICADO;
+    return valor as EstadoPublicacion;
   }
 
-  return null;
+  return ESTADOS_TEXTO[valor] ?? null;
 };
 
 export class EmprendimientoController {
+  // ============================================================
+  // CREAR
+  // ============================================================
+
   async crear(req: Request, res: Response): Promise<Response> {
     try {
+      const rolUsuario = req.usuario?.rol;
+
       const dto = {
         nombre: req.body.nombre,
         descripcion: req.body.descripcion || undefined,
-        categoriaId: Number(req.body.categoriaId),
+
+        ...(req.body.categoriaId !== undefined &&
+        req.body.categoriaId !== ''
+          ? {
+              categoriaId: Number(req.body.categoriaId),
+            }
+          : {}),
+
         direccion: req.body.direccion || undefined,
-        latitud: Number(req.body.latitud),
-        longitud: Number(req.body.longitud),
-        correoElectronico: req.body.correoElectronico,
-        telefono: req.body.telefono,
+
+        ...(req.body.latitud !== undefined &&
+        req.body.latitud !== ''
+          ? {
+              latitud: Number(req.body.latitud),
+            }
+          : {}),
+
+        ...(req.body.longitud !== undefined &&
+        req.body.longitud !== ''
+          ? {
+              longitud: Number(req.body.longitud),
+            }
+          : {}),
+
+        correoElectronico:
+          req.body.correoElectronico || undefined,
+
+        telefono: req.body.telefono || undefined,
+
         ...(req.file?.buffer !== undefined
-          ? { imagen: req.file.buffer }
+          ? {
+              imagen: req.file.buffer,
+            }
+          : {}),
+
+        // El dueño se obtiene del usuario autenticado.
+        // Nunca se toma del body enviado por el cliente.
+        ...(rolUsuario === 'asociado' &&
+        req.usuario?.id !== undefined
+          ? {
+              asociadoId: req.usuario.id,
+            }
           : {}),
       };
 
-      const emprendimiento = await emprendimientoService.crear(dto);
+      const emprendimiento =
+        await emprendimientoService.crear(dto);
 
-      return res.status(201).json(emprendimiento.toPublic());
+      return res
+        .status(201)
+        .json(emprendimiento.toPublic());
     } catch (error: any) {
-      return res.status(400).json({ mensaje: error.message });
+      return res.status(400).json({
+        mensaje: error.message,
+      });
     }
   }
+
+  // ============================================================
+  // LISTADOS
+  // ============================================================
+
 
   async obtenerTodos(
     req: Request,
@@ -55,33 +108,138 @@ export class EmprendimientoController {
     try {
       const { estado } = req.query;
 
-      let emprendimientos;
+      let estadoPublicacion:
+        | EstadoPublicacion
+        | undefined;
 
       if (estado) {
-        const estadoPublicacion = convertirEstadoPublicacion(estado);
+        const convertido =
+          convertirEstadoPublicacion(estado);
 
-        if (!estadoPublicacion) {
+        if (!convertido) {
           return res.status(400).json({
             ok: false,
             message:
-              'El estado de publicación debe ser Publicado o No Publicado',
+              'El estado de publicación debe ser Borrador, No Publicado, Publicado o Desactivado',
           });
         }
 
-        emprendimientos =
-          await emprendimientoService.obtenerPorEstado(estadoPublicacion);
-      } else {
-        emprendimientos = await emprendimientoService.obtenerTodos();
+        estadoPublicacion = convertido;
       }
 
+      const usuarioId = req.usuario?.id;
+      const rolUsuario = req.usuario?.rol;
+
+      
+      if (!usuarioId || !rolUsuario) {
+        return res.status(401).json({
+          ok: false,
+          message:
+            'Usuario autenticado no encontrado',
+        });
+      }
+
+      const emprendimientos =
+        await emprendimientoService.obtenerVisiblesParaUsuario(
+          usuarioId,
+          rolUsuario,
+          estadoPublicacion,
+        );
+
+      // ========================================================
+      // ADMINISTRADOR
+      // ========================================================
+      //
+      // Ya no usamos toInterno(), porque el modelo
+      // Emprendimiento no tiene ese método.
+      //
+      // Construimos la respuesta interna directamente.
+
+      if (rolUsuario === 'administrador') {
+        const respuesta = emprendimientos.map(
+          (emprendimiento) => ({
+            id: emprendimiento.id,
+            nombre: emprendimiento.nombre,
+            descripcion: emprendimiento.descripcion,
+
+            categoria: emprendimiento.categoria
+              ? emprendimiento.categoria.nombre
+              : null,
+
+            categoriaId:
+              emprendimiento.categoria?.id ?? null,
+
+            asociadoId:
+              emprendimiento.asociado?.id ?? null,
+
+            asociado:
+              emprendimiento.asociado
+                ? {
+                    id: emprendimiento.asociado.id,
+                    nombre:
+                      emprendimiento.asociado.nombre ??
+                      null,
+                    correo:
+                      emprendimiento.asociado.correo ??
+                      null,
+                  }
+                : null,
+
+            direccion: emprendimiento.direccion,
+            latitud: emprendimiento.latitud,
+            longitud: emprendimiento.longitud,
+
+            correoElectronico:
+              emprendimiento.correoElectronico,
+
+            telefono: emprendimiento.telefono,
+
+            estadoPublicacion:
+              emprendimiento.estadoPublicacion,
+
+            fechaPublicacion:
+              emprendimiento.fechaPublicacion,
+
+            imagen: emprendimiento.imagen
+              ? `data:image/jpeg;base64,${emprendimiento.imagen.toString(
+                  'base64',
+                )}`
+              : null,
+
+            fechaCreacion:
+              emprendimiento.fechaCreacion,
+
+            fechaActualizacion:
+              emprendimiento.fechaActualizacion,
+          }),
+        );
+
+        return res.status(200).json(respuesta);
+      }
+
+      // ========================================================
+      // ASOCIADO
+      // ========================================================
+
       return res.status(200).json(
-        emprendimientos.map((e) => e.toPublic())
+        emprendimientos.map((emprendimiento) =>
+          emprendimiento.toPublic(),
+        ),
       );
     } catch (error: unknown) {
       next(error);
     }
   }
 
+  // ============================================================
+  // CATÁLOGO PÚBLICO
+  // ============================================================
+
+  /**
+   * Catálogo público.
+   *
+   * Solamente muestra emprendimientos PUBLICADOS.
+   */
   async obtenerCatalogoPublico(
     _req: Request,
     res: Response,
@@ -101,6 +259,10 @@ export class EmprendimientoController {
     }
   }
 
+  // ============================================================
+  // CAMBIO DE ESTADO
+  // ============================================================
+
   async cambiarPublicacion(
     req: Request,
     res: Response,
@@ -112,48 +274,81 @@ export class EmprendimientoController {
       if (!Number.isInteger(id) || id <= 0) {
         return res.status(400).json({
           ok: false,
-          message: 'El ID del emprendimiento no es válido',
+          message:
+            'El ID del emprendimiento no es válido',
         });
       }
 
-      const cuerpo = req.body as Record<string, unknown> | undefined;
+      const rolUsuario = req.usuario?.rol;
+
+      if (!rolUsuario) {
+        return res.status(401).json({
+          ok: false,
+          message:
+            'Usuario autenticado no encontrado',
+        });
+      }
+
+      const cuerpo =
+        req.body as Record<string, unknown> | undefined;
+
       const estadoSolicitado =
-        cuerpo?.estadoPublicacion ?? cuerpo?.estado;
-      const nuevoEstado = convertirEstadoPublicacion(estadoSolicitado);
+        cuerpo?.estadoPublicacion ??
+        cuerpo?.estado;
+
+      const nuevoEstado =
+        convertirEstadoPublicacion(
+          estadoSolicitado,
+        );
 
       if (!nuevoEstado) {
         return res.status(400).json({
           ok: false,
           message:
-            'El estado de publicación debe ser Publicado o No Publicado',
+            'El estado de publicación debe ser Borrador, No Publicado, Publicado o Desactivado',
         });
       }
 
-      const resultado = await emprendimientoService.cambiarPublicacion(
-        id,
-        nuevoEstado,
-      );
+      const resultado =
+        await emprendimientoService.cambiarPublicacion(
+          id,
+          nuevoEstado,
+          rolUsuario,
+        );
 
       if (!resultado.ok) {
-        return res.status(resultado.status).json({
-          ok: false,
-          message: resultado.message,
-          ...(resultado.camposFaltantes
-            ? { camposFaltantes: resultado.camposFaltantes }
-            : {}),
-        });
+        return res
+          .status(resultado.status)
+          .json({
+            ok: false,
+            message: resultado.message,
+
+            ...(resultado.camposFaltantes
+              ? {
+                  camposFaltantes:
+                    resultado.camposFaltantes,
+                }
+              : {}),
+          });
       }
 
       return res.status(200).json({
         ok: true,
         message: resultado.message,
+
         data: {
           id: resultado.emprendimiento.id,
-          nombre: resultado.emprendimiento.nombre,
+
+          nombre:
+            resultado.emprendimiento.nombre,
+
           estadoPublicacion:
-            resultado.emprendimiento.estadoPublicacion,
+            resultado.emprendimiento
+              .estadoPublicacion,
+
           fechaPublicacion:
-            resultado.emprendimiento.fechaPublicacion,
+            resultado.emprendimiento
+              .fechaPublicacion,
         },
       });
     } catch (error: unknown) {
@@ -161,27 +356,162 @@ export class EmprendimientoController {
     }
   }
 
-  async obtenerPorId(req: Request, res: Response): Promise<Response> {
+  // ============================================================
+  // OBTENER POR ID
+  // ============================================================
+
+  async obtenerPorId(
+    req: Request,
+    res: Response,
+  ): Promise<Response> {
     try {
       const id = Number(req.params.id);
+
+      const usuarioId = req.usuario?.id;
+      const rolUsuario = req.usuario?.rol;
+
+      // ========================================================
+      // USUARIO AUTENTICADO
+      // ========================================================
+
+      if (usuarioId && rolUsuario) {
+        const emprendimiento =
+          await emprendimientoService.obtenerVisiblePorId(
+            id,
+            usuarioId,
+            rolUsuario,
+          );
+
+        if (!emprendimiento) {
+          return res.status(404).json({
+            mensaje:
+              'Emprendimiento no encontrado',
+          });
+        }
+
+        // ADMINISTRADOR
+        if (rolUsuario === 'administrador') {
+          return res.status(200).json({
+            id: emprendimiento.id,
+            nombre: emprendimiento.nombre,
+            descripcion:
+              emprendimiento.descripcion,
+
+            categoria:
+              emprendimiento.categoria
+                ? emprendimiento.categoria.nombre
+                : null,
+
+            categoriaId:
+              emprendimiento.categoria?.id ??
+              null,
+
+            asociadoId:
+              emprendimiento.asociado?.id ??
+              null,
+
+            asociado:
+              emprendimiento.asociado
+                ? {
+                    id:
+                      emprendimiento.asociado.id,
+                    nombre:
+                      emprendimiento.asociado.nombre ??
+                      null,
+                    correo:
+                      emprendimiento.asociado
+                        .correo ??
+                      null,
+                  }
+                : null,
+
+            direccion:
+              emprendimiento.direccion,
+
+            latitud:
+              emprendimiento.latitud,
+
+            longitud:
+              emprendimiento.longitud,
+
+            correoElectronico:
+              emprendimiento.correoElectronico,
+
+            telefono:
+              emprendimiento.telefono,
+
+            estadoPublicacion:
+              emprendimiento.estadoPublicacion,
+
+            fechaPublicacion:
+              emprendimiento.fechaPublicacion,
+
+            imagen: emprendimiento.imagen
+              ? `data:image/jpeg;base64,${emprendimiento.imagen.toString(
+                  'base64',
+                )}`
+              : null,
+
+            fechaCreacion:
+              emprendimiento.fechaCreacion,
+
+            fechaActualizacion:
+              emprendimiento.fechaActualizacion,
+          });
+        }
+
+        // ASOCIADO
+        return res.status(200).json(
+          emprendimiento.toPublic(),
+        );
+      }
+
+      // ========================================================
+      // VISITANTE
+      // ========================================================
 
       const emprendimiento =
         await emprendimientoService.obtenerPorId(id);
 
-      return res.status(200).json(emprendimiento.toPublic());
+      if (
+        emprendimiento.estadoPublicacion !==
+        EstadoPublicacion.PUBLICADO
+      ) {
+        return res.status(404).json({
+          mensaje:
+            'Emprendimiento no encontrado',
+        });
+      }
+
+      return res.status(200).json(
+        emprendimiento.toPublic(),
+      );
     } catch (error: any) {
-      return res.status(404).json({ mensaje: error.message });
+      return res.status(404).json({
+        mensaje: error.message,
+      });
     }
   }
 
-  async actualizar(req: Request, res: Response): Promise<Response> {
+  // ============================================================
+  // ACTUALIZAR
+  // ============================================================
+
+  async actualizar(
+    req: Request,
+    res: Response,
+  ): Promise<Response> {
     try {
       const id = Number(req.params.id);
-      const cuerpo = req.body as Record<string, unknown> | undefined;
 
+      const cuerpo =
+        req.body as Record<string, unknown> | undefined;
+
+      // El estado NO se puede cambiar mediante actualizar.
       if (
         cuerpo &&
-        ('estadoPublicacion' in cuerpo || 'estado' in cuerpo)
+        ('estadoPublicacion' in cuerpo ||
+          'estado' in cuerpo)
       ) {
         return res.status(400).json({
           ok: false,
@@ -192,30 +522,59 @@ export class EmprendimientoController {
 
       const dto = {
         ...req.body,
+
         ...(req.body.categoriaId !== undefined
-          ? { categoriaId: Number(req.body.categoriaId) }
+          ? {
+              categoriaId:
+                Number(req.body.categoriaId),
+            }
           : {}),
+
         ...(req.body.latitud !== undefined
-          ? { latitud: Number(req.body.latitud) }
+          ? {
+              latitud:
+                Number(req.body.latitud),
+            }
           : {}),
+
         ...(req.body.longitud !== undefined
-          ? { longitud: Number(req.body.longitud) }
+          ? {
+              longitud:
+                Number(req.body.longitud),
+            }
           : {}),
+
         ...(req.file?.buffer !== undefined
-          ? { imagen: req.file.buffer }
+          ? {
+              imagen: req.file.buffer,
+            }
           : {}),
       };
 
       const emprendimiento =
-        await emprendimientoService.actualizar(id, dto);
+        await emprendimientoService.actualizar(
+          id,
+          dto,
+        );
 
-      return res.status(200).json(emprendimiento.toPublic());
+      return res.status(200).json(
+        emprendimiento.toPublic(),
+      );
     } catch (error: any) {
-      return res.status(400).json({ mensaje: error.message });
+      return res.status(400).json({
+        mensaje: error.message,
+      });
     }
   }
 
-  async eliminar(req: Request, res: Response): Promise<Response> {
+  // ============================================================
+  // ELIMINAR
+  // ============================================================
+
+  async eliminar(
+    req: Request,
+    res: Response,
+  ): Promise<Response> {
     try {
       const id = Number(req.params.id);
 
@@ -223,7 +582,9 @@ export class EmprendimientoController {
 
       return res.status(204).send();
     } catch (error: any) {
-      return res.status(404).json({ mensaje: error.message });
+      return res.status(404).json({
+        mensaje: error.message,
+      });
     }
   }
 }
