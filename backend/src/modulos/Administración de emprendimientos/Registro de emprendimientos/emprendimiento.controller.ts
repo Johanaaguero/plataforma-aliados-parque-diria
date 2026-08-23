@@ -503,6 +503,10 @@ export class EmprendimientoController {
   ): Promise<Response> {
     try {
       const id = Number(req.params.id);
+      const errorValidacion = validarActualizacion(req.body);
+if (errorValidacion) {
+  return res.status(400).json({ mensaje: errorValidacion });
+}
 
       const cuerpo =
         req.body as Record<string, unknown> | undefined;
