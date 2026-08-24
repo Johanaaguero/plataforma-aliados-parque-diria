@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+
 import './App.css';
 
 import Registro from './components/Registro';
@@ -6,8 +7,10 @@ import Login from './components/login';
 import GestionRoles from './components/GestionRoles';
 import RecuperarContrasena from './components/RecuperarContrasena';
 import RestablecerContrasena from './components/RestablecerContrasena';
+
 import { api } from './services/api';
 import { useInactividad } from './services/useInactividad';
+
 import RegistroEmprendimiento from './components/RegistroEmprendimiento';
 import ListaEmprendimientos from './components/ListaEmprendimientos';
 import RegistroCategoria from './components/RegistroCategoria';
@@ -41,9 +44,6 @@ const obtenerToken = (): string | null => {
   );
 };
 
-/**
- * Decodifica el payload del JWT.
- */
 const obtenerPayloadDesdeToken = (): Record<
   string,
   unknown
@@ -67,16 +67,13 @@ const obtenerPayloadDesdeToken = (): Record<
       .replace(/-/g, '+')
       .replace(/_/g, '/')
       .padEnd(
-        Math.ceil(
-          payloadCodificado.length / 4
-        ) * 4,
+        Math.ceil(payloadCodificado.length / 4) * 4,
         '='
       );
 
     const bytes = Uint8Array.from(
       atob(base64),
-      (caracter) =>
-        caracter.charCodeAt(0)
+      (caracter) => caracter.charCodeAt(0)
     );
 
     return JSON.parse(
@@ -87,13 +84,8 @@ const obtenerPayloadDesdeToken = (): Record<
   }
 };
 
-/**
- * Obtiene el rol autenticado decodificando
- * el payload del JWT.
- */
 const obtenerRolDesdeToken = (): NombreRol | null => {
-  const payload =
-    obtenerPayloadDesdeToken();
+  const payload = obtenerPayloadDesdeToken();
 
   if (!payload) {
     return null;
@@ -112,18 +104,8 @@ const obtenerRolDesdeToken = (): NombreRol | null => {
   return null;
 };
 
-/**
- * Obtiene el ID del usuario autenticado
- * desde el JWT.
- *
- * Se soportan las posibles propiedades:
- * usuarioId
- * id
- * sub
- */
 const obtenerUsuarioIdDesdeToken = (): number | null => {
-  const payload =
-    obtenerPayloadDesdeToken();
+  const payload = obtenerPayloadDesdeToken();
 
   if (!payload) {
     return null;
@@ -178,7 +160,9 @@ function BotonVolverInicio({
         ←
       </span>
 
-      <span>Volver al inicio</span>
+      <span>
+        Volver al inicio
+      </span>
     </button>
   );
 }
@@ -209,10 +193,6 @@ function App() {
       obtenerRolDesdeToken()
     );
 
-  /**
-   * NUEVO:
-   * ID del usuario autenticado.
-   */
   const [usuarioId, setUsuarioId] =
     useState<number | null>(
       obtenerUsuarioIdDesdeToken()
@@ -224,20 +204,12 @@ function App() {
   const [mostrarErrorModal, setMostrarErrorModal] =
     useState(false);
 
-  /**
-   * Sincroniza la sesión entre pestañas
-   * y maneja errores 401/403.
-   */
   useEffect(() => {
     const sincronizarSesion = () => {
       setRolAutenticado(
         obtenerRolDesdeToken()
       );
 
-      /**
-       * NUEVO:
-       * También sincronizamos el ID.
-       */
       setUsuarioId(
         obtenerUsuarioIdDesdeToken()
       );
@@ -266,11 +238,6 @@ function App() {
       setMostrarErrorModal(true);
 
       setRolAutenticado(null);
-
-      /**
-       * NUEVO:
-       * Limpiamos también el ID.
-       */
       setUsuarioId(null);
     };
 
@@ -320,10 +287,6 @@ function App() {
     };
   }, []);
 
-  /**
-   * Controla el acceso a cada sección
-   * según el rol autenticado.
-   */
   useEffect(() => {
     if (
       rolAutenticado !==
@@ -356,15 +319,9 @@ function App() {
       );
     }
 
-    /**
-     * Edición:
-     * administrador y asociado.
-     */
     if (
-      rolAutenticado !==
-        'administrador' &&
-      rolAutenticado !==
-        'asociado' &&
+      rolAutenticado !== 'administrador' &&
+      rolAutenticado !== 'asociado' &&
       seccionActual ===
         'editarEmprendimiento'
     ) {
@@ -379,72 +336,39 @@ function App() {
     seccionActual,
   ]);
 
-  /**
-   * Cerrar sesión.
-   */
   const cerrarSesion = async () => {
     try {
       await api.logout();
     } finally {
       setRolAutenticado(null);
-
-      /**
-       * NUEVO:
-       * Limpiar usuarioId.
-       */
       setUsuarioId(null);
-
       setMostrarGestionRoles(false);
-
       setMostrarLogin(false);
-
       setMostrarRegistro(false);
-
       setEmprendimientoEditar(null);
-
       setSeccionActual('inicio');
     }
   };
 
-  /**
-   * Cerrar sesión por inactividad.
-   */
   const cerrarSesionPorInactividad = () => {
     setRolAutenticado(null);
-
-    /**
-     * NUEVO:
-     * Limpiar usuarioId.
-     */
     setUsuarioId(null);
-
     setMostrarGestionRoles(false);
-
     setMostrarLogin(false);
-
     setMostrarRegistro(false);
-
     setMostrarErrorModal(false);
-
     setEmprendimientoEditar(null);
-
     setSeccionActual('inicio');
   };
 
   useInactividad({
-    activo:
-      rolAutenticado !== null,
-
-    tiempoInactividad:
-      15 * 60 * 1000,
-
-    onLogout:
-      cerrarSesionPorInactividad,
+    activo: rolAutenticado !== null,
+    tiempoInactividad: 15 * 60 * 1000,
+    onLogout: cerrarSesionPorInactividad,
   });
 
   const cerrarErrorModal = () => {
     setMostrarErrorModal(false);
-
     setErrorAutenticacion(null);
   };
 
@@ -454,9 +378,12 @@ function App() {
       ''
     ) || '/';
 
-  /**
-   * Recuperar contraseña.
+  /*
+   * =========================================================
+   * RECUPERAR CONTRASEÑA
+   * =========================================================
    */
+
   if (
     rutaActual ===
     '/recuperar-contrasena'
@@ -470,9 +397,12 @@ function App() {
     );
   }
 
-  /**
-   * Restablecer contraseña.
+  /*
+   * =========================================================
+   * RESTABLECER CONTRASEÑA
+   * =========================================================
    */
+
   if (
     rutaActual ===
     '/restablecer-contrasena'
@@ -486,9 +416,12 @@ function App() {
     );
   }
 
-  /**
-   * Login mediante ruta directa.
+  /*
+   * =========================================================
+   * LOGIN
+   * =========================================================
    */
+
   if (rutaActual === '/login') {
     return (
       <>
@@ -498,11 +431,6 @@ function App() {
           onLogin={(rol) => {
             setRolAutenticado(rol);
 
-            /**
-             * NUEVO:
-             * Después del login obtenemos
-             * el usuarioId desde el JWT.
-             */
             setUsuarioId(
               obtenerUsuarioIdDesdeToken()
             );
@@ -512,10 +440,12 @@ function App() {
     );
   }
 
-  /**
-   * Registro de categoría:
-   * solamente administrador.
+  /*
+   * =========================================================
+   * REGISTRO DE CATEGORÍA
+   * =========================================================
    */
+
   if (
     rutaActual ===
       '/registro-categoria' ||
@@ -528,7 +458,6 @@ function App() {
 
     if (!esAdministrador) {
       window.location.href = '/';
-
       return null;
     }
 
@@ -557,21 +486,18 @@ function App() {
         </button>
 
         <RegistroCategoria
-          onCategoriaCreada={() => {
-            /*
-             * No cambiamos de sección para
-             * permitir registrar otra categoría.
-             */
-          }}
+          onCategoriaCreada={() => {}}
         />
       </section>
     );
   }
 
-  /**
-   * Registro de emprendimiento:
-   * administrador y asociado.
+  /*
+   * =========================================================
+   * REGISTRO DE EMPRENDIMIENTO
+   * =========================================================
    */
+
   if (
     rutaActual ===
       '/registro-emprendimiento' ||
@@ -586,7 +512,6 @@ function App() {
 
     if (!puedeRegistrar) {
       window.location.href = '/';
-
       return null;
     }
 
@@ -614,15 +539,31 @@ function App() {
           ×
         </button>
 
-        <RegistroEmprendimiento />
+        <RegistroEmprendimiento
+          onExito={() => {
+            setSeccionActual(
+              'emprendimientos'
+            );
+
+            if (
+              rutaActual ===
+              '/registro-emprendimiento'
+            ) {
+              window.location.href =
+                '/';
+            }
+          }}
+        />
       </section>
     );
   }
 
-  /**
-   * Edición de emprendimiento:
-   * administrador y asociado.
+  /*
+   * =========================================================
+   * EDITAR EMPRENDIMIENTO
+   * =========================================================
    */
+
   if (
     seccionActual ===
     'editarEmprendimiento'
@@ -645,9 +586,7 @@ function App() {
           type="button"
           className="cerrar-formulario"
           onClick={() => {
-            setEmprendimientoEditar(
-              null
-            );
+            setEmprendimientoEditar(null);
 
             setSeccionActual(
               'emprendimientos'
@@ -686,10 +625,12 @@ function App() {
     );
   }
 
-  /**
-   * Vista de emprendimientos:
-   * administrador, asociado y visitante.
+  /*
+   * =========================================================
+   * EMPRENDIMIENTOS
+   * =========================================================
    */
+
   if (
     seccionActual ===
     'emprendimientos'
@@ -697,6 +638,7 @@ function App() {
     return (
       <>
         <Navbar
+          modoAdministracion
           onRegistro={() =>
             setMostrarRegistro(true)
           }
@@ -726,32 +668,24 @@ function App() {
         <main
           style={{
             minHeight: '80vh',
-            paddingTop: '20px',
+            paddingTop: '90px',
           }}
         >
           <ListaEmprendimientos
             rolAutenticado={
               rolAutenticado
             }
-
-            /**
-             * IMPORTANTE:
-             * Ahora sí enviamos el ID del usuario.
-             */
             usuarioId={usuarioId}
-
             onRegistrar={() =>
               setSeccionActual(
                 'registroEmprendimiento'
               )
             }
-
             onRegistrarCategoria={() =>
               setSeccionActual(
                 'registroCategoria'
               )
             }
-
             onEditar={(
               emprendimiento
             ) => {
@@ -771,9 +705,12 @@ function App() {
     );
   }
 
-  /**
-   * Página principal / inicio.
+  /*
+   * =========================================================
+   * PÁGINA PRINCIPAL
+   * =========================================================
    */
+
   return (
     <>
       {mostrarRegistro ? (
@@ -782,7 +719,9 @@ function App() {
             type="button"
             className="cerrar-formulario"
             onClick={() =>
-              setMostrarRegistro(false)
+              setMostrarRegistro(
+                false
+              )
             }
             aria-label="Cerrar formulario"
             title="Cerrar"
@@ -806,7 +745,9 @@ function App() {
             type="button"
             className="cerrar-formulario"
             onClick={() =>
-              setMostrarLogin(false)
+              setMostrarLogin(
+                false
+              )
             }
             aria-label="Cerrar formulario"
             title="Cerrar"
@@ -818,16 +759,13 @@ function App() {
             onLogin={(rol) => {
               setRolAutenticado(rol);
 
-              /**
-               * NUEVO:
-               * Obtener también el ID después
-               * del login.
-               */
               setUsuarioId(
                 obtenerUsuarioIdDesdeToken()
               );
 
-              setMostrarLogin(false);
+              setMostrarLogin(
+                false
+              );
             }}
           />
         </section>
@@ -858,7 +796,9 @@ function App() {
               ←
             </span>
 
-            <span>Volver</span>
+            <span>
+              Volver
+            </span>
           </button>
 
           <GestionRoles />
@@ -867,29 +807,28 @@ function App() {
         <>
           <Navbar
             onRegistro={() =>
-              setMostrarRegistro(true)
+              setMostrarRegistro(
+                true
+              )
             }
-
             onLogin={() =>
-              setMostrarLogin(true)
+              setMostrarLogin(
+                true
+              )
             }
-
             rolAutenticado={
               rolAutenticado
             }
-
             onGestionRoles={() =>
               setMostrarGestionRoles(
                 true
               )
             }
-
             onIrInicio={() =>
               setSeccionActual(
                 'inicio'
               )
             }
-
             onIrEmprendimientos={() =>
               setSeccionActual(
                 'emprendimientos'
@@ -976,8 +915,7 @@ function App() {
                     style={{
                       marginBottom:
                         '12px',
-                      color:
-                        '#444',
+                      color: '#444',
                     }}
                   >
                     {

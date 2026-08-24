@@ -27,6 +27,12 @@ interface MensajeAccion {
 
 type FiltroEstado = 'todos' | EstadoPublicacion;
 
+interface TransicionDisponible {
+  estado: EstadoPublicacionSolicitado;
+  accion: 'publicar' | 'ocultar' | 'activar' | 'desactivar' | 'enviar';
+  texto: string;
+}
+
 const obtenerMensajeError = (
   error: unknown,
   mensajePredeterminado: string,
@@ -87,40 +93,48 @@ const obtenerUbicacion = (
   return null;
 };
 
-const obtenerSiguienteEstado = (
+
+const obtenerTransicionesDisponibles = (
   estado: EstadoPublicacion,
-): {
-  estado: EstadoPublicacionSolicitado;
-  accion: 'publicar' | 'ocultar' | 'activar';
-  texto: string;
-} | null => {
+): TransicionDisponible[] => {
   switch (estado) {
-    case 'borrador':
-      return {
-        estado: 'No Publicado',
-        accion: 'activar',
-        texto: 'Marcar como no publicado',
-      };
+   
     case 'no_publicado':
-      return {
-        estado: 'Publicado',
-        accion: 'publicar',
-        texto: 'Publicar',
-      };
+      return [
+        {
+          estado: 'Publicado',
+          accion: 'publicar',
+          texto: 'Publicar',
+        },
+        {
+          estado: 'Desactivado',
+          accion: 'desactivar',
+          texto: 'Desactivar',
+        },
+      ];
     case 'publicado':
-      return {
-        estado: 'No Publicado',
-        accion: 'ocultar',
-        texto: 'Ocultar',
-      };
+      return [
+        {
+          estado: 'No Publicado',
+          accion: 'ocultar',
+          texto: 'Ocultar',
+        },
+        {
+          estado: 'Desactivado',
+          accion: 'desactivar',
+          texto: 'Desactivar',
+        },
+      ];
     case 'desactivado':
-      return {
-        estado: 'No Publicado',
-        accion: 'activar',
-        texto: 'Reactivar',
-      };
+      return [
+        {
+          estado: 'No Publicado',
+          accion: 'activar',
+          texto: 'Reactivar',
+        },
+      ];
     default:
-      return null;
+      return [];
   }
 };
 
@@ -142,6 +156,8 @@ function ListaEmprendimientos({
 
   const [emprendimientoSeleccionado, setEmprendimientoSeleccionado] =
     useState<Emprendimiento | null>(null);
+  const [transicionSeleccionada, setTransicionSeleccionada] =
+    useState<TransicionDisponible | null>(null);
   const [idProcesando, setIdProcesando] = useState<number | null>(null);
 
   const operacionEnCurso = useRef(false);
@@ -165,6 +181,7 @@ function ListaEmprendimientos({
         texto: obtenerMensajeAutorizacion(event),
       });
       setEmprendimientoSeleccionado(null);
+      setTransicionSeleccionada(null);
     };
 
     window.addEventListener('auth:unauthorized', mostrarErrorAutorizacion);
@@ -184,6 +201,7 @@ function ListaEmprendimientos({
         setCargando(true);
         setError(null);
         setEmprendimientoSeleccionado(null);
+        setTransicionSeleccionada(null);
 
         let data: Emprendimiento[];
 
@@ -218,54 +236,35 @@ function ListaEmprendimientos({
 
   const abrirConfirmacion = (
     emprendimiento: Emprendimiento,
+    transicion: TransicionDisponible,
     boton: HTMLButtonElement,
   ) => {
     if (!esAdministrador || operacionEnCurso.current) return;
 
-    const siguienteEstado = obtenerSiguienteEstado(
-      emprendimiento.estadoPublicacion,
-    );
-
-    if (!siguienteEstado) {
-      setMensajeAccion({
-        tipo: 'error',
-        texto: 'No existe una transición disponible para este estado.',
-      });
-      return;
-    }
-
     botonQueAbrioModal.current = boton;
     setMensajeAccion(null);
     setEmprendimientoSeleccionado(emprendimiento);
+    setTransicionSeleccionada(transicion);
   };
 
   const cerrarConfirmacion = () => {
     if (operacionEnCurso.current) return;
     setEmprendimientoSeleccionado(null);
+    setTransicionSeleccionada(null);
   };
 
   const confirmarCambioPublicacion = async () => {
     if (
       !esAdministrador ||
       !emprendimientoSeleccionado ||
+      !transicionSeleccionada ||
       operacionEnCurso.current
     ) {
       return;
     }
 
     const emprendimiento = emprendimientoSeleccionado;
-    const siguienteEstado = obtenerSiguienteEstado(
-      emprendimiento.estadoPublicacion,
-    );
-
-    if (!siguienteEstado) {
-      setMensajeAccion({
-        tipo: 'error',
-        texto: 'No existe una transición disponible para este estado.',
-      });
-      setEmprendimientoSeleccionado(null);
-      return;
-    }
+    const transicion = transicionSeleccionada;
 
     operacionEnCurso.current = true;
     setIdProcesando(emprendimiento.id);
@@ -274,7 +273,7 @@ function ListaEmprendimientos({
     try {
       const resultado = await cambiarEstadoPublicacion(
         emprendimiento.id,
-        siguienteEstado.estado,
+        transicion.estado,
       );
 
       setEmprendimientos((actuales) =>
@@ -296,6 +295,7 @@ function ListaEmprendimientos({
           'El emprendimiento fue actualizado correctamente.',
       });
       setEmprendimientoSeleccionado(null);
+      setTransicionSeleccionada(null);
     } catch (err: unknown) {
       setMensajeAccion({
         tipo: 'error',
@@ -305,6 +305,7 @@ function ListaEmprendimientos({
         ),
       });
       setEmprendimientoSeleccionado(null);
+      setTransicionSeleccionada(null);
     } finally {
       operacionEnCurso.current = false;
       setIdProcesando(null);
@@ -317,6 +318,7 @@ function ListaEmprendimientos({
     const manejarTeclado = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && !operacionEnCurso.current) {
         setEmprendimientoSeleccionado(null);
+        setTransicionSeleccionada(null);
         return;
       }
 
@@ -358,6 +360,17 @@ function ListaEmprendimientos({
       botonQueAbrioModal.current = null;
     };
   }, [emprendimientoSeleccionado]);
+useEffect(() => {
+  if (!mensajeAccion) return;
+
+  const temporizador = window.setTimeout(() => {
+    setMensajeAccion(null);
+  }, 4000);
+
+  return () => {
+    window.clearTimeout(temporizador);
+  };
+}, [mensajeAccion]);
 
   useEffect(() => {
     if (idProcesando !== null && emprendimientoSeleccionado) {
@@ -451,7 +464,6 @@ function ListaEmprendimientos({
     (e) => e.estadoPublicacion === 'desactivado',
   ).length;
 
-  // Lógica de Filtrado combinada
   const emprendimientosFiltrados = useMemo(() => {
     return emprendimientos.filter((item) => {
       const coincideEstado =
@@ -463,10 +475,6 @@ function ListaEmprendimientos({
       return coincideEstado && coincideTexto;
     });
   }, [emprendimientos, filtroEstado, busquedaTexto]);
-
-  const siguienteAccion = emprendimientoSeleccionado
-    ? obtenerSiguienteEstado(emprendimientoSeleccionado.estadoPublicacion)
-    : null;
 
   if (cargando) {
     return (
@@ -588,31 +596,57 @@ function ListaEmprendimientos({
         </div>
 
         {/* MENSAJE DE ACCIÓN */}
-        {mensajeAccion && (
-          <div
-            className={`mb-6 flex items-center justify-between gap-4 rounded-2xl border p-4 text-sm shadow-sm transition-all ${
-              mensajeAccion.tipo === 'exito'
-                ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
-                : 'border-rose-200 bg-rose-50 text-rose-900'
-            }`}
-            role={mensajeAccion.tipo === 'error' ? 'alert' : 'status'}
-          >
-            <div className="flex items-center gap-3">
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/80 font-bold shadow-xs">
-                {mensajeAccion.tipo === 'exito' ? '✓' : '⚠'}
-              </span>
-              <p className="font-semibold">{mensajeAccion.texto}</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setMensajeAccion(null)}
-              className="rounded-lg p-1 font-bold text-slate-500 hover:bg-black/5 hover:text-slate-800"
-              aria-label="Cerrar mensaje"
-            >
-              ✕
-            </button>
-          </div>
-        )}
+       {mensajeAccion && (
+  <div
+    className="fixed right-4 top-4 z-[100] w-[calc(100%-2rem)] max-w-md animate-in slide-in-from-right-5 fade-in duration-300"
+    role={mensajeAccion.tipo === 'error' ? 'alert' : 'status'}
+    aria-live="polite"
+  >
+    <div
+      className={`flex items-start gap-3 rounded-2xl border bg-white p-4 shadow-xl ${
+        mensajeAccion.tipo === 'exito'
+          ? 'border-emerald-200'
+          : 'border-rose-200'
+      }`}
+    >
+      <div
+        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-lg font-bold ${
+          mensajeAccion.tipo === 'exito'
+            ? 'bg-emerald-100 text-emerald-700'
+            : 'bg-rose-100 text-rose-700'
+        }`}
+      >
+        {mensajeAccion.tipo === 'exito' ? '✓' : '⚠'}
+      </div>
+
+      <div className="min-w-0 flex-1 pt-0.5">
+        <p
+          className={`text-sm font-bold ${
+            mensajeAccion.tipo === 'exito'
+              ? 'text-emerald-900'
+              : 'text-rose-900'
+          }`}
+        >
+          {mensajeAccion.texto}
+        </p>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => setMensajeAccion(null)}
+        className="shrink-0 rounded-lg p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+        aria-label="Cerrar notificación"
+      >
+        
+      </button>
+    </div>
+  </div>
+  
+  
+
+)}
+
+
 
         {/* INFORMACIÓN ROLE BANNER */}
         {esAsociado && (
@@ -876,234 +910,388 @@ function ListaEmprendimientos({
           </div>
         )}
 
-        {/* TARJETAS DE EMPRENDIMIENTO */}
-        {emprendimientosFiltrados.length > 0 && (
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {emprendimientosFiltrados.map((emprendimiento) => {
-              const estiloEstado = obtenerEstiloEstado(
-                emprendimiento.estadoPublicacion,
-              );
-              const ubicacion = obtenerUbicacion(emprendimiento);
-              const nombreCategoria = obtenerNombreCategoria(
-                emprendimiento.categoria,
-              );
-              const estaPublicado =
-                emprendimiento.estadoPublicacion === 'publicado';
-              const estaProcesando = idProcesando === emprendimiento.id;
-              const siguienteEstado = obtenerSiguienteEstado(
-                emprendimiento.estadoPublicacion,
-              );
-              const puedeEditar =
-                esAdministrador ||
-                (esAsociado &&
-                  usuarioId !== null &&
-                  usuarioId !== undefined &&
-                  emprendimiento.asociadoId === usuarioId);
+       
+{/* TARJETAS DE EMPRENDIMIENTO */}
+{emprendimientosFiltrados.length > 0 && (
+  <div className="grid grid-cols-1 gap-7 sm:grid-cols-2 xl:grid-cols-3">
+    {emprendimientosFiltrados.map((emprendimiento) => {
+      const estiloEstado = obtenerEstiloEstado(
+        emprendimiento.estadoPublicacion,
+      );
 
-              return (
-                <article
-                  key={emprendimiento.id}
-                  className="group flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xs transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
-                >
-                  <div>
-                    {/* IMAGEN */}
-                    <div className="relative h-52 overflow-hidden bg-slate-100">
-                      {emprendimiento.imagen ? (
-                        <img
-                          src={emprendimiento.imagen}
-                          alt={emprendimiento.nombre}
-                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                      ) : (
-                        <div className="flex h-full items-center justify-center text-slate-300">
-                          <svg
-                            className="h-12 w-12"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth="1"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 19.5h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5z"
-                            />
-                          </svg>
-                        </div>
-                      )}
-                      <div className="absolute left-3.5 top-3.5">
-                        <span
-                          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold shadow-xs ${estiloEstado.fondo} ${estiloEstado.texto} ${estiloEstado.borde}`}
-                        >
-                          <span
-                            className={`h-2 w-2 rounded-full ${estiloEstado.punto}`}
-                          />
-                          {estiloEstado.etiqueta}
-                        </span>
-                      </div>
-                    </div>
+      const ubicacion = obtenerUbicacion(emprendimiento);
 
-                    {/* CONTENIDO */}
-                    <div className="p-5">
-                      {nombreCategoria && (
-                        <span className="inline-flex rounded-md bg-emerald-50 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-emerald-800">
-                          {nombreCategoria}
-                        </span>
-                      )}
-                      <h2 className="mt-2 text-lg font-bold text-slate-900">
-                        {emprendimiento.nombre}
-                      </h2>
-                      {emprendimiento.descripcion && (
-                        <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-slate-600">
-                          {emprendimiento.descripcion}
-                        </p>
-                      )}
+      const nombreCategoria = obtenerNombreCategoria(
+        emprendimiento.categoria,
+      );
 
-                      {/* DATOS CONTACTO */}
-                      <div className="mt-4 space-y-2 border-t border-slate-100 pt-4">
-                        {ubicacion && (
-                          <div className="flex items-start gap-2.5 text-xs font-medium text-slate-600">
-                            <svg
-                              className="mt-0.5 h-4 w-4 shrink-0 text-slate-400"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              strokeWidth="2"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"
-                              />
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"
-                              />
-                            </svg>
-                            <span className="line-clamp-1">{ubicacion}</span>
-                          </div>
-                        )}
-                        {emprendimiento.telefono && (
-                          <div className="flex items-center gap-2.5 text-xs font-medium text-slate-600">
-                            <svg
-                              className="h-4 w-4 shrink-0 text-slate-400"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              strokeWidth="2"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-2.826-1.07-5.02-3.264-6.09-6.09l1.293-.97c.362-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z"
-                              />
-                            </svg>
-                            <span>{emprendimiento.telefono}</span>
-                          </div>
-                        )}
-                        {emprendimiento.correoElectronico && (
-                          <div className="flex items-start gap-2.5 text-xs font-medium text-slate-600">
-                            <svg
-                              className="mt-0.5 h-4 w-4 shrink-0 text-slate-400"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              strokeWidth="2"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"
-                              />
-                            </svg>
-                            <span className="truncate">{emprendimiento.correoElectronico}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+      const estaPublicado =
+        emprendimiento.estadoPublicacion === 'publicado';
+
+      const estaProcesando = idProcesando === emprendimiento.id;
+
+      const transicionesDisponibles = obtenerTransicionesDisponibles(
+        emprendimiento.estadoPublicacion,
+      );
+
+      const puedeEditar =
+        esAdministrador ||
+        (esAsociado &&
+          usuarioId !== null &&
+          usuarioId !== undefined &&
+          emprendimiento.asociadoId === usuarioId);
+
+      return (
+        <article
+          key={emprendimiento.id}
+          className="
+            group flex h-full flex-col overflow-hidden
+            rounded-[1.5rem]
+            border border-slate-200/80
+            bg-white
+            shadow-[0_4px_20px_rgba(15,23,42,0.06)]
+            transition-all duration-300
+            hover:-translate-y-1
+            hover:border-emerald-200
+            hover:shadow-[0_18px_45px_rgba(15,23,42,0.12)]
+          "
+        >
+          {/* =========================
+              IMAGEN / PORTADA
+          ========================== */}
+          <div className="relative h-60 overflow-hidden bg-slate-100">
+            {emprendimiento.imagen ? (
+              <img
+                src={emprendimiento.imagen}
+                alt={emprendimiento.nombre}
+                className="
+                  h-full w-full object-cover
+                  transition-transform duration-700
+                  ease-out
+                  group-hover:scale-105
+                "
+              />
+            ) : (
+              <div className="relative flex h-full items-center justify-center overflow-hidden bg-gradient-to-br from-emerald-50 via-white to-slate-100">
+                <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-emerald-100/60 blur-2xl" />
+                <div className="absolute -bottom-16 -left-10 h-44 w-44 rounded-full bg-emerald-50 blur-2xl" />
+
+                <div className="relative flex h-20 w-20 items-center justify-center rounded-3xl border border-emerald-100 bg-white/80 text-emerald-300 shadow-sm backdrop-blur">
+                  <svg
+                    className="h-10 w-10"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth="1.4"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 19.5h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5z"
+                    />
+                  </svg>
+                </div>
+              </div>
+            )}
+
+            {/* Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-slate-950/5 to-transparent" />
+
+            {/* Estado */}
+            <div className="absolute left-4 top-4">
+              <span
+                className={`
+                  inline-flex items-center gap-2
+                  rounded-full border
+                  px-3 py-1.5
+                  text-[11px] font-bold
+                  shadow-lg backdrop-blur-md
+                  ${estiloEstado.fondo}
+                  ${estiloEstado.texto}
+                  ${estiloEstado.borde}
+                `}
+              >
+                <span
+                  className={`h-2 w-2 rounded-full ${estiloEstado.punto}`}
+                />
+                {estiloEstado.etiqueta}
+              </span>
+            </div>
+
+            {/* Categoría */}
+            {nombreCategoria && (
+              <div className="absolute bottom-4 left-4">
+                <span className="inline-flex items-center rounded-full border border-white/20 bg-black/25 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-white backdrop-blur-md">
+                  {nombreCategoria}
+                </span>
+              </div>
+            )}
+
+            {/* Indicador público */}
+            {estaPublicado && !esAdministrador && (
+              <div className="absolute bottom-4 right-4">
+                <span className="flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-white/15 text-white backdrop-blur-md">
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth="2"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M2.036 12.322a1.012 1.012 0 010-.644C3.423 7.51 7.36 4.5 12 4.5c4.64 0 8.577 3.01 9.964 7.178.07.21.07.434 0 .644C20.577 16.49 16.64 19.5 12 19.5c-4.64 0-8.577-3.01-9.964-7.178z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                  </svg>
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* =========================
+              CONTENIDO
+          ========================== */}
+          <div className="flex flex-1 flex-col p-5 sm:p-6">
+            {/* Título */}
+            <div className="min-h-[4.5rem]">
+              <h2 className="line-clamp-2 text-xl font-extrabold tracking-tight text-slate-900 transition-colors group-hover:text-emerald-800">
+                {emprendimiento.nombre}
+              </h2>
+
+              {emprendimiento.descripcion && (
+                <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-500">
+                  {emprendimiento.descripcion}
+                </p>
+              )}
+            </div>
+
+            {/* Información */}
+            <div className="mt-5 space-y-3 border-t border-slate-100 pt-5">
+              {ubicacion && (
+                <div className="flex items-start gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-500">
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth="1.8"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"
+                      />
+                    </svg>
                   </div>
 
-                  {/* CONTROLES Y ACCIONES RECORREGIDOS */}
-                  <div className="border-t border-slate-100 bg-slate-50/50 p-4">
-                    {esAdministrador && (
-                      <div className="space-y-2">
-                        {siguienteEstado && (
-                          <button
-                            type="button"
-                            onClick={(e) =>
-                              abrirConfirmacion(emprendimiento, e.currentTarget)
-                            }
-                            disabled={idProcesando !== null || eliminando}
-                            aria-haspopup="dialog"
-                            aria-busy={estaProcesando}
-                            aria-label={`${siguienteEstado.texto} - ${emprendimiento.nombre}`}
-                            className={`w-full rounded-xl px-4 py-2.5 text-xs font-bold transition-all shadow-2xs focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 ${
-                              estaPublicado
-                                ? 'border border-amber-300/80 bg-amber-50 text-amber-900 hover:bg-amber-100 focus:ring-amber-500'
-                                : 'bg-emerald-700 text-white hover:bg-emerald-800 focus:ring-emerald-600'
-                            }`}
-                          >
-                            {estaProcesando ? 'Actualizando...' : siguienteEstado.texto}
-                          </button>
-                        )}
+                  <div className="min-w-0 pt-0.5">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Ubicación
+                    </p>
 
-                        <div className="flex gap-2">
-                          {puedeEditar && onEditar && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (idProcesando !== null || eliminando) return;
-                                onEditar(emprendimiento);
-                              }}
-                              disabled={idProcesando !== null || eliminando}
-                              className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-400 disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                              <svg
-                                className="h-3.5 w-3.5 text-slate-500"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                strokeWidth="2"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931zm0 0L19.5 7.125"
-                                />
+                    <p className="mt-0.5 line-clamp-2 text-xs font-semibold leading-5 text-slate-700">
+                      {ubicacion}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {emprendimiento.telefono && (
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-500">
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth="1.8"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-2.826-1.07-5.02-3.264-6.09-6.09l1.293-.97c.362-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z"
+                      />
+                    </svg>
+                  </div>
+
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Teléfono
+                    </p>
+
+                    <p className="mt-0.5 truncate text-xs font-semibold text-slate-700">
+                      {emprendimiento.telefono}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {emprendimiento.correoElectronico && (
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-500">
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth="1.8"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"
+                      />
+                    </svg>
+                  </div>
+
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Correo
+                    </p>
+
+                    <p className="mt-0.5 truncate text-xs font-semibold text-slate-700">
+                      {emprendimiento.correoElectronico}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* =========================
+              ACCIONES
+          ========================== */}
+          {(esAdministrador || (!esAdministrador && puedeEditar && onEditar)) && (
+            <div className="border-t border-slate-100 bg-slate-50/70 p-4">
+              {esAdministrador && (
+                <div className="space-y-2.5">
+                  {transicionesDisponibles.map((transicion) => {
+                    const esEstaTransicionProcesando =
+                      estaProcesando &&
+                      transicionSeleccionada?.estado === transicion.estado;
+
+                    const estiloBoton =
+                      transicion.accion === 'publicar'
+                        ? 'bg-emerald-700 text-white shadow-sm hover:bg-emerald-800 focus:ring-emerald-600'
+                        : transicion.accion === 'ocultar'
+                        ? 'border border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100 focus:ring-amber-500'
+                        : transicion.accion === 'desactivar'
+                        ? 'border border-rose-300 bg-rose-50 text-rose-800 hover:bg-rose-100 focus:ring-rose-500'
+                        : 'border border-emerald-300 bg-emerald-50 text-emerald-900 hover:bg-emerald-100 focus:ring-emerald-500';
+
+                    return (
+                      <button
+                        key={transicion.estado}
+                        type="button"
+                        onClick={(e) =>
+                          abrirConfirmacion(
+                            emprendimiento,
+                            transicion,
+                            e.currentTarget,
+                          )
+                        }
+                        disabled={
+                          idProcesando !== null || eliminando
+                        }
+                        aria-haspopup="dialog"
+                        aria-busy={esEstaTransicionProcesando}
+                        aria-label={`${transicion.texto} - ${emprendimiento.nombre}`}
+                        className={`
+                          flex w-full items-center justify-center gap-2
+                          rounded-xl px-4 py-2.5
+                          text-xs font-bold
+                          transition-all duration-200
+                          focus:outline-none
+                          focus:ring-2
+                          focus:ring-offset-1
+                          disabled:cursor-not-allowed
+                          disabled:opacity-50
+                          ${estiloBoton}
+                        `}
+                      >
+                        {esEstaTransicionProcesando ? (
+                          <>
+                            <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                            Actualizando...
+                          </>
+                        ) : (
+                          <>
+                            {transicion.accion === 'publicar' && (
+                              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 12.75l4.5 4.5L19 7.75" />
                               </svg>
-                              Editar
-                            </button>
-                          )}
+                            )}
+                            {transicion.accion === 'ocultar' && (
+                              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M3 12h18M3 12l6-6m-6 6l6 6" />
+                              </svg>
+                            )}
+                            {transicion.accion === 'desactivar' && (
+                              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M18.36 6.64a9 9 0 11-12.73 0M12 3v9" />
+                              </svg>
+                            )}
+                            {(transicion.accion === 'activar' || transicion.accion === 'enviar') && (
+                              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                              </svg>
+                            )}
 
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setErrorEliminacion(null);
-                              setMensajeEliminacion(null);
-                              setEmprendimientoAEliminar(emprendimiento);
-                            }}
-                            disabled={eliminando || idProcesando !== null}
-                            className="inline-flex items-center justify-center rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-100 hover:text-rose-800 disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            Eliminar
-                          </button>
-                        </div>
-                      </div>
-                    )}
+                            {transicion.texto}
+                          </>
+                        )}
+                      </button>
+                    );
+                  })}
 
-                    {!esAdministrador && puedeEditar && onEditar && (
+                  <div className="grid grid-cols-2 gap-2">
+                    {puedeEditar && onEditar && (
                       <button
                         type="button"
                         onClick={() => {
-                          if (idProcesando !== null || eliminando) return;
+                          if (
+                            idProcesando !== null ||
+                            eliminando
+                          )
+                            return;
+
                           onEditar(emprendimiento);
                         }}
-                        disabled={idProcesando !== null || eliminando}
-                        className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-emerald-200 bg-white px-4 py-2.5 text-xs font-bold text-emerald-800 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        disabled={
+                          idProcesando !== null || eliminando
+                        }
+                        className="
+                          inline-flex items-center justify-center gap-2
+                          rounded-xl
+                          border border-slate-200
+                          bg-white
+                          px-3 py-2.5
+                          text-xs font-bold text-slate-700
+                          shadow-sm
+                          transition-all
+                          hover:border-slate-300
+                          hover:bg-slate-50
+                          hover:text-slate-900
+                          focus:outline-none
+                          focus:ring-2 focus:ring-slate-400
+                          disabled:cursor-not-allowed
+                          disabled:opacity-50
+                        "
                       >
                         <svg
-                          className="h-4 w-4"
+                          className="h-3.5 w-3.5"
                           fill="none"
                           viewBox="0 0 24 24"
                           strokeWidth="2"
@@ -1112,18 +1300,120 @@ function ListaEmprendimientos({
                           <path
                             strokeLinecap="round"
                             strokeLinejoin="round"
-                            d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931zm0 0L19.5 7.125"
+                            d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125"
                           />
                         </svg>
-                        Editar emprendimiento
+                        Editar
                       </button>
                     )}
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setErrorEliminacion(null);
+                        setMensajeEliminacion(null);
+                        setEmprendimientoAEliminar(
+                          emprendimiento,
+                        );
+                      }}
+                      disabled={
+                        eliminando || idProcesando !== null
+                      }
+                      className="
+                        inline-flex items-center justify-center gap-2
+                        rounded-xl
+                        border border-rose-200
+                        bg-white
+                        px-3 py-2.5
+                        text-xs font-bold text-rose-700
+                        transition-all
+                        hover:border-rose-300
+                        hover:bg-rose-50
+                        hover:text-rose-800
+                        focus:outline-none
+                        focus:ring-2 focus:ring-rose-400
+                        disabled:cursor-not-allowed
+                        disabled:opacity-50
+                      "
+                    >
+                      <svg
+                        className="h-3.5 w-3.5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth="2"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"
+                        />
+                      </svg>
+                      Eliminar
+                    </button>
                   </div>
-                </article>
-              );
-            })}
-          </div>
-        )}
+                </div>
+              )}
+
+              {!esAdministrador && puedeEditar && onEditar && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (
+                      idProcesando !== null ||
+                      eliminando
+                    )
+                      return;
+
+                    onEditar(emprendimiento);
+                  }}
+                  disabled={
+                    idProcesando !== null || eliminando
+                  }
+                  className="
+                    flex w-full items-center justify-center gap-2
+                    rounded-xl
+                    border border-emerald-200
+                    bg-white
+                    px-4 py-2.5
+                    text-xs font-bold text-emerald-800
+                    shadow-sm
+                    transition-all
+                    hover:border-emerald-300
+                    hover:bg-emerald-50
+                    hover:text-emerald-900
+                    focus:outline-none
+                    focus:ring-2 focus:ring-emerald-500
+                    disabled:cursor-not-allowed
+                    disabled:opacity-50
+                  "
+                >
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth="2"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125"
+                    />
+                  </svg>
+
+                  Editar emprendimiento
+                </button>
+              )}
+            </div>
+          )}
+        </article>
+      );
+    })}
+  </div>
+)}
+
+
 
         {/* MODAL CAMBIO ESTADO */}
         {emprendimientoSeleccionado && (
@@ -1163,12 +1453,12 @@ function ListaEmprendimientos({
               <p id="detalle-confirmacion-publicacion" className="mt-2 text-sm leading-relaxed text-slate-600">
                 ¿Deseas{' '}
                 <strong className="text-slate-900">
-                  {siguienteAccion?.texto.toLowerCase()}
+                  {transicionSeleccionada?.texto.toLowerCase()}
                 </strong>{' '}
                 el emprendimiento{' '}
-                <strong className="text-slate-900">
-                  #{emprendimientoSeleccionado.id} - {emprendimientoSeleccionado.nombre}
-                </strong>
+               <strong className="text-slate-900">
+  {emprendimientoSeleccionado.nombre}
+</strong>
                 ?
               </p>
 
