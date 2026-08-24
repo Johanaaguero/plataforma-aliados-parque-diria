@@ -1,17 +1,11 @@
 import { api } from './api';
 
-/**
- * Estados reales utilizados por el backend.
- */
 export type EstadoPublicacion =
   | 'borrador'
   | 'no_publicado'
   | 'publicado'
   | 'desactivado';
 
-/**
- * Estados que puede recibir el endpoint PATCH.
- */
 export type EstadoPublicacionSolicitado =
   | 'Borrador'
   | 'No Publicado'
@@ -35,10 +29,6 @@ export interface Emprendimiento {
   nombre: string;
   descripcion?: string | null;
 
-  /**
-   * El backend devuelve la categoría como objeto en algunos casos
-   * y como información pública en otros.
-   */
   categoria:
     | string
     | null
@@ -47,6 +37,14 @@ export interface Emprendimiento {
         nombre?: string;
         descripcion?: string | null;
       };
+
+  /**
+   * ID del asociado propietario.
+   *
+   * Viene del backend desde:
+   * asociadoId: this.asociado ? this.asociado.id : null
+   */
+  asociadoId: number | null;
 
   direccion?: string | null;
 
@@ -60,19 +58,11 @@ export interface Emprendimiento {
 
   fechaPublicacion?: string | null;
 
-  /**
-   * El backend puede devolver la imagen como string/base64
-   * cuando se transforma mediante toPublic().
-   */
   imagen?: string | null;
 
   fechaCreacion: string;
   fechaActualizacion: string;
 
-  /**
-   * Información adicional que puede venir en la respuesta interna
-   * del administrador.
-   */
   asociado?: {
     id: number;
     nombre?: string;
@@ -121,7 +111,9 @@ const esRespuestaCambioPublicacion = (
     typeof valor.message === 'string' &&
     typeof valor.data.id === 'number' &&
     typeof valor.data.nombre === 'string' &&
-    esEstadoPublicacion(valor.data.estadoPublicacion) &&
+    esEstadoPublicacion(
+      valor.data.estadoPublicacion,
+    ) &&
     (
       typeof valor.data.fechaPublicacion === 'string' ||
       valor.data.fechaPublicacion === null
@@ -129,16 +121,6 @@ const esRespuestaCambioPublicacion = (
   );
 };
 
-/**
- * Crea un nuevo emprendimiento.
- *
- * Soporta:
- * - JSON
- * - FormData para enviar imágenes
- *
- * El backend asigna automáticamente el asociado autenticado
- * cuando el usuario tiene rol "asociado".
- */
 export async function crearEmprendimiento(
   datos: FormData | CrearEmprendimientoDto,
 ): Promise<Emprendimiento> {
@@ -162,13 +144,6 @@ export async function crearEmprendimiento(
   );
 }
 
-/**
- * Obtiene únicamente los emprendimientos PUBLICADOS.
- *
- * Endpoint público, no necesita autenticación.
- *
- * GET /emprendimientos/catalogo
- */
 export async function obtenerCatalogoPublicado(): Promise<
   Emprendimiento[]
 > {
@@ -194,18 +169,6 @@ export async function obtenerCatalogoPublicado(): Promise<
   return datos as Emprendimiento[];
 }
 
-/**
- * Obtiene los emprendimientos visibles para el usuario autenticado.
- *
- * Administrador:
- *   - ve todos.
- *
- * Asociado:
- *   - ve los propios en cualquier estado.
- *   - ve publicados de otros asociados.
- *
- * También permite filtrar por estado.
- */
 export async function obtenerEmprendimientosAdministrativos(
   estado?: EstadoPublicacion,
 ): Promise<Emprendimiento[]> {
@@ -235,12 +198,6 @@ export async function obtenerEmprendimientosAdministrativos(
   return datos as Emprendimiento[];
 }
 
-/**
- * Conserva la función general existente.
- *
- * Si se solicita "publicado", utiliza el catálogo público.
- * Para cualquier otro estado consulta el endpoint autenticado.
- */
 export async function obtenerEmprendimientos(
   estado?: EstadoPublicacion,
 ): Promise<Emprendimiento[]> {
@@ -248,23 +205,11 @@ export async function obtenerEmprendimientos(
     return obtenerCatalogoPublicado();
   }
 
-  return obtenerEmprendimientosAdministrativos(estado);
+  return obtenerEmprendimientosAdministrativos(
+    estado,
+  );
 }
 
-/**
- * Cambia el estado de publicación.
- *
- * Transiciones permitidas por el backend:
- *
- * Borrador -> No Publicado
- * No Publicado -> Publicado
- * Publicado -> No Publicado
- * No Publicado -> Desactivado
- * Publicado -> Desactivado
- * Desactivado -> No Publicado
- *
- * Los permisos los valida el backend según el rol.
- */
 export async function cambiarEstadoPublicacion(
   id: number,
   estadoPublicacion: EstadoPublicacionSolicitado,
@@ -294,13 +239,53 @@ export async function cambiarEstadoPublicacion(
   return respuesta;
 }
 
-/**
- * Elimina un emprendimiento.
- *
- * El backend responde 204 cuando se elimina correctamente.
- */
 export async function eliminarEmprendimiento(
   id: number,
 ): Promise<void> {
-  await api.eliminar(`/emprendimientos/${id}`);
+  await api.eliminar(
+    `/emprendimientos/${id}`,
+  );
+}
+
+export async function obtenerEmprendimientoPorId(
+  id: number,
+): Promise<Emprendimiento> {
+  return api.solicitar<Emprendimiento>(
+    `/emprendimientos/${id}`,
+    {
+      method: 'GET',
+    },
+    {
+      incluirAuth: true,
+      desempaquetarData: false,
+      mensajeError:
+        'No se pudo cargar el emprendimiento',
+    },
+  );
+}
+
+export async function actualizarEmprendimiento(
+  id: number,
+  datos:
+    | FormData
+    | Partial<CrearEmprendimientoDto>,
+): Promise<Emprendimiento> {
+  const esFormData = datos instanceof FormData;
+
+  return api.solicitar<Emprendimiento>(
+    `/emprendimientos/${id}`,
+    {
+      method: 'PUT',
+      body: esFormData
+        ? datos
+        : JSON.stringify(datos),
+    },
+    {
+      incluirAuth: true,
+      incluirContentType: !esFormData,
+      desempaquetarData: false,
+      mensajeError:
+        'No se pudo actualizar el emprendimiento',
+    },
+  );
 }

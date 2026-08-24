@@ -662,6 +662,21 @@ export class EmprendimientoController {
       }
 
       // ========================================================
+      // USUARIO AUTENTICADO
+      // ========================================================
+
+      const usuarioId = req.usuario?.id;
+      const rolUsuario = req.usuario?.rol;
+
+      if (!usuarioId || !rolUsuario) {
+        return res.status(401).json({
+          ok: false,
+          message:
+            'Usuario autenticado no encontrado',
+        });
+      }
+
+      // ========================================================
       // VALIDAR DATOS
       // ========================================================
 
@@ -742,18 +757,26 @@ export class EmprendimientoController {
       // ========================================================
       // ACTUALIZAR
       // ========================================================
+      //
+      // El servicio valida que el usuario sea administrador
+      // o el asociado dueño del emprendimiento.
+      //
 
       const emprendimiento =
         await emprendimientoService.actualizar(
           id,
           dto,
+          usuarioId,
+          rolUsuario,
         );
 
       return res.status(200).json(
         emprendimiento.toPublic(),
       );
     } catch (error: any) {
-      return res.status(400).json({
+      const status = error.status ?? 400;
+
+      return res.status(status).json({
         mensaje: error.message,
       });
     }
