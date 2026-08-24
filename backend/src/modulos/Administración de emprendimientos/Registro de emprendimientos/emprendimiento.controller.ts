@@ -11,10 +11,13 @@ const ESTADOS_TEXTO: Record<string, EstadoPublicacion> = {
   Desactivado: EstadoPublicacion.DESACTIVADO,
 };
 
+
 const convertirEstadoPublicacion = (
   valor: unknown,
 ): EstadoPublicacion | null => {
-  if (typeof valor !== 'string') return null;
+  if (typeof valor !== 'string') {
+    return null;
+  }
 
   if (
     Object.values(EstadoPublicacion).includes(
@@ -27,27 +30,33 @@ const convertirEstadoPublicacion = (
   return ESTADOS_TEXTO[valor] ?? null;
 };
 
-// ============================================================
-// VALIDACIÓN DE ACTUALIZACIÓN
-// ============================================================
 
 const validarActualizacion = (
   body: Record<string, unknown>,
 ): string | null => {
+
   if (!body || typeof body !== 'object') {
     return 'Los datos de actualización son inválidos';
   }
 
-  // Nombre
+  // ==========================================================
+  // NOMBRE
+  // ==========================================================
+
   if (
     body.nombre !== undefined &&
-    (typeof body.nombre !== 'string' ||
-      body.nombre.trim() === '')
+    (
+      typeof body.nombre !== 'string' ||
+      body.nombre.trim() === ''
+    )
   ) {
     return 'El nombre no puede estar vacío';
   }
 
-  // Categoría
+  // ==========================================================
+  // CATEGORÍA
+  // ==========================================================
+
   if (
     body.categoriaId !== undefined &&
     body.categoriaId !== ''
@@ -62,7 +71,10 @@ const validarActualizacion = (
     }
   }
 
-  // Latitud
+  // ==========================================================
+  // LATITUD
+  // ==========================================================
+
   if (
     body.latitud !== undefined &&
     body.latitud !== ''
@@ -78,7 +90,10 @@ const validarActualizacion = (
     }
   }
 
-  // Longitud
+  // ==========================================================
+  // LONGITUD
+  // ==========================================================
+
   if (
     body.longitud !== undefined &&
     body.longitud !== ''
@@ -94,7 +109,10 @@ const validarActualizacion = (
     }
   }
 
-  // Correo electrónico
+  // ==========================================================
+  // CORREO
+  // ==========================================================
+
   if (
     body.correoElectronico !== undefined &&
     body.correoElectronico !== ''
@@ -117,7 +135,7 @@ const validarActualizacion = (
     }
   }
 
-  // Teléfono
+  
   if (
     body.telefono !== undefined &&
     body.telefono !== ''
@@ -134,23 +152,67 @@ const validarActualizacion = (
   return null;
 };
 
+
 export class EmprendimientoController {
-  // ============================================================
-  // CREAR
-  // ============================================================
 
   async crear(
     req: Request,
     res: Response,
   ): Promise<Response> {
+
     try {
+
       const rolUsuario = req.usuario?.rol;
 
+  
+      const modo = req.body.modo;
+
+      if (
+        modo !== undefined &&
+        modo !== 'borrador' &&
+        modo !== 'cambios'
+      ) {
+        return res.status(400).json({
+          ok: false,
+          message:
+            'El modo de guardado debe ser "borrador" o "cambios"',
+        });
+      }
+
+ 
+      let estadoPublicacion:
+        | EstadoPublicacion
+        | undefined;
+
+      if (
+        req.body.estadoPublicacion !== undefined
+      ) {
+
+        const estadoConvertido =
+          convertirEstadoPublicacion(
+            req.body.estadoPublicacion,
+          );
+
+        if (!estadoConvertido) {
+          return res.status(400).json({
+            ok: false,
+            message:
+              'El estado de publicación no es válido',
+          });
+        }
+
+        estadoPublicacion =
+          estadoConvertido;
+      }
+
       const dto = {
-        nombre: req.body.nombre,
+
+        nombre:
+          req.body.nombre,
 
         descripcion:
-          req.body.descripcion || undefined,
+          req.body.descripcion ||
+          undefined,
 
         ...(req.body.categoriaId !== undefined &&
         req.body.categoriaId !== ''
@@ -162,7 +224,8 @@ export class EmprendimientoController {
           : {}),
 
         direccion:
-          req.body.direccion || undefined,
+          req.body.direccion ||
+          undefined,
 
         ...(req.body.latitud !== undefined &&
         req.body.latitud !== ''
@@ -187,7 +250,8 @@ export class EmprendimientoController {
           undefined,
 
         telefono:
-          req.body.telefono || undefined,
+          req.body.telefono ||
+          undefined,
 
         ...(req.file?.buffer !== undefined
           ? {
@@ -195,24 +259,58 @@ export class EmprendimientoController {
             }
           : {}),
 
-        // El dueño se obtiene del usuario autenticado.
-        // Nunca se toma del body enviado por el cliente.
+        // ======================================================
+        // MODO
+        // ======================================================
+
+        ...(modo !== undefined
+          ? {
+              modo,
+            }
+          : {}),
+
+        // ======================================================
+        // ESTADO
+        // ======================================================
+
+        ...(estadoPublicacion !== undefined
+          ? {
+              estadoPublicacion,
+            }
+          : {}),
+
+        // ======================================================
+        // DUEÑO
+        // ======================================================
+
         ...(rolUsuario === 'asociado' &&
         req.usuario?.id !== undefined
           ? {
-              asociadoId: req.usuario.id,
+              asociadoId:
+                req.usuario.id,
             }
           : {}),
       };
 
+      // ========================================================
+      // CREAR
+      // ========================================================
+
       const emprendimiento =
-        await emprendimientoService.crear(dto);
+        await emprendimientoService.crear(
+          dto,
+        );
 
       return res
         .status(201)
-        .json(emprendimiento.toPublic());
+        .json(
+          emprendimiento.toPublic(),
+        );
+
     } catch (error: any) {
+
       return res.status(400).json({
+        ok: false,
         mensaje: error.message,
       });
     }
@@ -227,7 +325,9 @@ export class EmprendimientoController {
     res: Response,
     next: NextFunction,
   ): Promise<Response | void> {
+
     try {
+
       const { estado } = req.query;
 
       let estadoPublicacion:
@@ -235,8 +335,11 @@ export class EmprendimientoController {
         | undefined;
 
       if (estado) {
+
         const convertido =
-          convertirEstadoPublicacion(estado);
+          convertirEstadoPublicacion(
+            estado,
+          );
 
         if (!convertido) {
           return res.status(400).json({
@@ -246,11 +349,15 @@ export class EmprendimientoController {
           });
         }
 
-        estadoPublicacion = convertido;
+        estadoPublicacion =
+          convertido;
       }
 
-      const usuarioId = req.usuario?.id;
-      const rolUsuario = req.usuario?.rol;
+      const usuarioId =
+        req.usuario?.id;
+
+      const rolUsuario =
+        req.usuario?.rol;
 
       if (!usuarioId || !rolUsuario) {
         return res.status(401).json({
@@ -271,92 +378,108 @@ export class EmprendimientoController {
       // ADMINISTRADOR
       // ========================================================
 
-      if (rolUsuario === 'administrador') {
-        const respuesta = emprendimientos.map(
-          (emprendimiento) => ({
-            id: emprendimiento.id,
+      if (
+        rolUsuario === 'administrador'
+      ) {
 
-            nombre: emprendimiento.nombre,
+        const respuesta =
+          emprendimientos.map(
+            (emprendimiento) => ({
 
-            descripcion:
-              emprendimiento.descripcion,
+              id:
+                emprendimiento.id,
 
-            categoria:
-              emprendimiento.categoria
-                ? emprendimiento.categoria.nombre
-                : null,
+              nombre:
+                emprendimiento.nombre,
 
-            categoriaId:
-              emprendimiento.categoria?.id ??
-              null,
+              descripcion:
+                emprendimiento.descripcion,
 
-            asociadoId:
-              emprendimiento.asociado?.id ??
-              null,
+              categoria:
+                emprendimiento.categoria
+                  ? emprendimiento.categoria.nombre
+                  : null,
 
-            asociado:
-              emprendimiento.asociado
-                ? {
-                    id: emprendimiento.asociado.id,
+              categoriaId:
+                emprendimiento.categoria?.id ??
+                null,
 
-                    nombre:
-                      emprendimiento.asociado
-                        .nombre ?? null,
+              asociadoId:
+                emprendimiento.asociado?.id ??
+                null,
 
-                    correo:
-                      emprendimiento.asociado
-                        .correo ?? null,
-                  }
-                : null,
+              asociado:
+                emprendimiento.asociado
+                  ? {
+                      id:
+                        emprendimiento.asociado.id,
 
-            direccion:
-              emprendimiento.direccion,
+                      nombre:
+                        emprendimiento.asociado.nombre ??
+                        null,
 
-            latitud:
-              emprendimiento.latitud,
+                      correo:
+                        emprendimiento.asociado.correo ??
+                        null,
+                    }
+                  : null,
 
-            longitud:
-              emprendimiento.longitud,
+              direccion:
+                emprendimiento.direccion,
 
-            correoElectronico:
-              emprendimiento.correoElectronico,
+              latitud:
+                emprendimiento.latitud,
 
-            telefono:
-              emprendimiento.telefono,
+              longitud:
+                emprendimiento.longitud,
 
-            estadoPublicacion:
-              emprendimiento.estadoPublicacion,
+              correoElectronico:
+                emprendimiento.correoElectronico,
 
-            fechaPublicacion:
-              emprendimiento.fechaPublicacion,
+              telefono:
+                emprendimiento.telefono,
 
-            imagen: emprendimiento.imagen
-              ? `data:image/jpeg;base64,${emprendimiento.imagen.toString(
-                  'base64',
-                )}`
-              : null,
+              estadoPublicacion:
+                emprendimiento.estadoPublicacion,
 
-            fechaCreacion:
-              emprendimiento.fechaCreacion,
+              fechaPublicacion:
+                emprendimiento.fechaPublicacion,
 
-            fechaActualizacion:
-              emprendimiento.fechaActualizacion,
-          }),
-        );
+              imagen:
+                emprendimiento.imagen
+                  ? `data:image/jpeg;base64,${emprendimiento.imagen.toString(
+                      'base64',
+                    )}`
+                  : null,
 
-        return res.status(200).json(respuesta);
+              fechaCreacion:
+                emprendimiento.fechaCreacion,
+
+              fechaActualizacion:
+                emprendimiento.fechaActualizacion,
+            }),
+          );
+
+        return res
+          .status(200)
+          .json(respuesta);
       }
 
       // ========================================================
       // ASOCIADO
       // ========================================================
 
-      return res.status(200).json(
-        emprendimientos.map((emprendimiento) =>
-          emprendimiento.toPublic(),
-        ),
-      );
+      return res
+        .status(200)
+        .json(
+          emprendimientos.map(
+            (emprendimiento) =>
+              emprendimiento.toPublic(),
+          ),
+        );
+
     } catch (error: unknown) {
+
       next(error);
     }
   }
@@ -365,26 +488,28 @@ export class EmprendimientoController {
   // CATÁLOGO PÚBLICO
   // ============================================================
 
-  /**
-   * Catálogo público.
-   *
-   * Solamente muestra emprendimientos PUBLICADOS.
-   */
   async obtenerCatalogoPublico(
     _req: Request,
     res: Response,
     next: NextFunction,
   ): Promise<Response | void> {
+
     try {
+
       const emprendimientos =
         await emprendimientoService.obtenerCatalogoPublico();
 
-      return res.status(200).json(
-        emprendimientos.map((emprendimiento) =>
-          emprendimiento.toPublic(),
-        ),
-      );
+      return res
+        .status(200)
+        .json(
+          emprendimientos.map(
+            (emprendimiento) =>
+              emprendimiento.toPublic(),
+          ),
+        );
+
     } catch (error: unknown) {
+
       next(error);
     }
   }
@@ -398,10 +523,16 @@ export class EmprendimientoController {
     res: Response,
     next: NextFunction,
   ): Promise<Response | void> {
-    try {
-      const id = Number(req.params.id);
 
-      if (!Number.isInteger(id) || id <= 0) {
+    try {
+
+      const id =
+        Number(req.params.id);
+
+      if (
+        !Number.isInteger(id) ||
+        id <= 0
+      ) {
         return res.status(400).json({
           ok: false,
           message:
@@ -409,7 +540,8 @@ export class EmprendimientoController {
         });
       }
 
-      const rolUsuario = req.usuario?.rol;
+      const rolUsuario =
+        req.usuario?.rol;
 
       if (!rolUsuario) {
         return res.status(401).json({
@@ -449,11 +581,13 @@ export class EmprendimientoController {
         );
 
       if (!resultado.ok) {
+
         return res
           .status(resultado.status)
           .json({
             ok: false,
-            message: resultado.message,
+            message:
+              resultado.message,
 
             ...(resultado.camposFaltantes
               ? {
@@ -466,11 +600,13 @@ export class EmprendimientoController {
 
       return res.status(200).json({
         ok: true,
-
-        message: resultado.message,
+        message:
+          resultado.message,
 
         data: {
-          id: resultado.emprendimiento.id,
+
+          id:
+            resultado.emprendimiento.id,
 
           nombre:
             resultado.emprendimiento.nombre,
@@ -484,7 +620,9 @@ export class EmprendimientoController {
               .fechaPublicacion,
         },
       });
+
     } catch (error: unknown) {
+
       next(error);
     }
   }
@@ -497,24 +635,37 @@ export class EmprendimientoController {
     req: Request,
     res: Response,
   ): Promise<Response> {
-    try {
-      const id = Number(req.params.id);
 
-      if (!Number.isInteger(id) || id <= 0) {
+    try {
+
+      const id =
+        Number(req.params.id);
+
+      if (
+        !Number.isInteger(id) ||
+        id <= 0
+      ) {
         return res.status(400).json({
           mensaje:
             'El ID del emprendimiento no es válido',
         });
       }
 
-      const usuarioId = req.usuario?.id;
-      const rolUsuario = req.usuario?.rol;
+      const usuarioId =
+        req.usuario?.id;
+
+      const rolUsuario =
+        req.usuario?.rol;
 
       // ========================================================
       // USUARIO AUTENTICADO
       // ========================================================
 
-      if (usuarioId && rolUsuario) {
+      if (
+        usuarioId &&
+        rolUsuario
+      ) {
+
         const emprendimiento =
           await emprendimientoService.obtenerVisiblePorId(
             id,
@@ -533,11 +684,17 @@ export class EmprendimientoController {
         // ADMINISTRADOR
         // ======================================================
 
-        if (rolUsuario === 'administrador') {
-          return res.status(200).json({
-            id: emprendimiento.id,
+        if (
+          rolUsuario === 'administrador'
+        ) {
 
-            nombre: emprendimiento.nombre,
+          return res.status(200).json({
+
+            id:
+              emprendimiento.id,
+
+            nombre:
+              emprendimiento.nombre,
 
             descripcion:
               emprendimiento.descripcion,
@@ -558,16 +715,17 @@ export class EmprendimientoController {
             asociado:
               emprendimiento.asociado
                 ? {
+
                     id:
                       emprendimiento.asociado.id,
 
                     nombre:
-                      emprendimiento.asociado
-                        .nombre ?? null,
+                      emprendimiento.asociado.nombre ??
+                      null,
 
                     correo:
-                      emprendimiento.asociado
-                        .correo ?? null,
+                      emprendimiento.asociado.correo ??
+                      null,
                   }
                 : null,
 
@@ -592,11 +750,12 @@ export class EmprendimientoController {
             fechaPublicacion:
               emprendimiento.fechaPublicacion,
 
-            imagen: emprendimiento.imagen
-              ? `data:image/jpeg;base64,${emprendimiento.imagen.toString(
-                  'base64',
-                )}`
-              : null,
+            imagen:
+              emprendimiento.imagen
+                ? `data:image/jpeg;base64,${emprendimiento.imagen.toString(
+                    'base64',
+                  )}`
+                : null,
 
             fechaCreacion:
               emprendimiento.fechaCreacion,
@@ -610,9 +769,11 @@ export class EmprendimientoController {
         // ASOCIADO
         // ======================================================
 
-        return res.status(200).json(
-          emprendimiento.toPublic(),
-        );
+        return res
+          .status(200)
+          .json(
+            emprendimiento.toPublic(),
+          );
       }
 
       // ========================================================
@@ -620,7 +781,9 @@ export class EmprendimientoController {
       // ========================================================
 
       const emprendimiento =
-        await emprendimientoService.obtenerPorId(id);
+        await emprendimientoService.obtenerPorId(
+          id,
+        );
 
       if (
         emprendimiento.estadoPublicacion !==
@@ -632,12 +795,17 @@ export class EmprendimientoController {
         });
       }
 
-      return res.status(200).json(
-        emprendimiento.toPublic(),
-      );
+      return res
+        .status(200)
+        .json(
+          emprendimiento.toPublic(),
+        );
+
     } catch (error: any) {
+
       return res.status(404).json({
-        mensaje: error.message,
+        mensaje:
+          error.message,
       });
     }
   }
@@ -650,10 +818,16 @@ export class EmprendimientoController {
     req: Request,
     res: Response,
   ): Promise<Response> {
-    try {
-      const id = Number(req.params.id);
 
-      if (!Number.isInteger(id) || id <= 0) {
+    try {
+
+      const id =
+        Number(req.params.id);
+
+      if (
+        !Number.isInteger(id) ||
+        id <= 0
+      ) {
         return res.status(400).json({
           ok: false,
           message:
@@ -665,10 +839,16 @@ export class EmprendimientoController {
       // USUARIO AUTENTICADO
       // ========================================================
 
-      const usuarioId = req.usuario?.id;
-      const rolUsuario = req.usuario?.rol;
+      const usuarioId =
+        req.usuario?.id;
 
-      if (!usuarioId || !rolUsuario) {
+      const rolUsuario =
+        req.usuario?.rol;
+
+      if (
+        !usuarioId ||
+        !rolUsuario
+      ) {
         return res.status(401).json({
           ok: false,
           message:
@@ -688,28 +868,52 @@ export class EmprendimientoController {
       if (errorValidacion) {
         return res.status(400).json({
           ok: false,
-          mensaje: errorValidacion,
+          mensaje:
+            errorValidacion,
         });
       }
 
       const cuerpo =
-        req.body as
-          | Record<string, unknown>
-          | undefined;
+        req.body as Record<string, unknown>;
 
       // ========================================================
-      // EL ESTADO NO SE ACTUALIZA AQUÍ
+      // VALIDAR MODO
       // ========================================================
 
       if (
-        cuerpo &&
-        ('estadoPublicacion' in cuerpo ||
-          'estado' in cuerpo)
+        cuerpo.modo !== undefined &&
+        cuerpo.modo !== 'borrador' &&
+        cuerpo.modo !== 'cambios'
       ) {
         return res.status(400).json({
           ok: false,
           message:
-            'El estado de publicación solo puede cambiarse mediante el endpoint de publicación',
+            'El modo de guardado debe ser "borrador" o "cambios"',
+        });
+      }
+
+      // ========================================================
+      // EL ESTADO NO SE CAMBIA DIRECTAMENTE AQUÍ
+      // ========================================================
+      //
+      // El estado se determina mediante "modo":
+      //
+      // borrador -> BORRADOR
+      // cambios  -> NO_PUBLICADO
+      //
+      // Los cambios de publicación siguen utilizando
+      // cambiarPublicacion().
+      //
+      // ========================================================
+
+      if (
+        'estadoPublicacion' in cuerpo ||
+        'estado' in cuerpo
+      ) {
+        return res.status(400).json({
+          ok: false,
+          message:
+            'El estado de publicación solo puede cambiarse mediante el modo de guardado o el endpoint de publicación',
         });
       }
 
@@ -718,38 +922,43 @@ export class EmprendimientoController {
       // ========================================================
 
       const dto = {
+
         ...req.body,
 
         ...(req.body.categoriaId !== undefined &&
         req.body.categoriaId !== ''
           ? {
-              categoriaId: Number(
-                req.body.categoriaId,
-              ),
+              categoriaId:
+                Number(
+                  req.body.categoriaId,
+                ),
             }
           : {}),
 
         ...(req.body.latitud !== undefined &&
         req.body.latitud !== ''
           ? {
-              latitud: Number(
-                req.body.latitud,
-              ),
+              latitud:
+                Number(
+                  req.body.latitud,
+                ),
             }
           : {}),
 
         ...(req.body.longitud !== undefined &&
         req.body.longitud !== ''
           ? {
-              longitud: Number(
-                req.body.longitud,
-              ),
+              longitud:
+                Number(
+                  req.body.longitud,
+                ),
             }
           : {}),
 
         ...(req.file?.buffer !== undefined
           ? {
-              imagen: req.file.buffer,
+              imagen:
+                req.file.buffer,
             }
           : {}),
       };
@@ -757,10 +966,6 @@ export class EmprendimientoController {
       // ========================================================
       // ACTUALIZAR
       // ========================================================
-      //
-      // El servicio valida que el usuario sea administrador
-      // o el asociado dueño del emprendimiento.
-      //
 
       const emprendimiento =
         await emprendimientoService.actualizar(
@@ -770,15 +975,24 @@ export class EmprendimientoController {
           rolUsuario,
         );
 
-      return res.status(200).json(
-        emprendimiento.toPublic(),
-      );
-    } catch (error: any) {
-      const status = error.status ?? 400;
+      return res
+        .status(200)
+        .json(
+          emprendimiento.toPublic(),
+        );
 
-      return res.status(status).json({
-        mensaje: error.message,
-      });
+    } catch (error: any) {
+
+      const status =
+        error.status ?? 400;
+
+      return res
+        .status(status)
+        .json({
+          ok: false,
+          mensaje:
+            error.message,
+        });
     }
   }
 
@@ -790,26 +1004,40 @@ export class EmprendimientoController {
     req: Request,
     res: Response,
   ): Promise<Response> {
-    try {
-      const id = Number(req.params.id);
 
-      if (!Number.isInteger(id) || id <= 0) {
+    try {
+
+      const id =
+        Number(req.params.id);
+
+      if (
+        !Number.isInteger(id) ||
+        id <= 0
+      ) {
         return res.status(400).json({
           mensaje:
             'El ID del emprendimiento no es válido',
         });
       }
 
-      await emprendimientoService.eliminar(id);
+      await emprendimientoService.eliminar(
+        id,
+      );
 
-      return res.status(204).send();
+      return res
+        .status(204)
+        .send();
+
     } catch (error: any) {
+
       return res.status(404).json({
-        mensaje: error.message,
+        mensaje:
+          error.message,
       });
     }
   }
 }
+
 
 export const emprendimientoController =
   new EmprendimientoController();

@@ -1,9 +1,12 @@
 import { AppDataSource } from '../../../data-source';
+
 import {
   Emprendimiento,
   EstadoPublicacion,
 } from '../../../models/Emprendimiento';
+
 import { CategoriaEmprendimiento } from '../../../models/CategoriaEmprendimiento';
+
 import { Usuario } from '../../../models/Usuario';
 
 const emprendimientoRepository =
@@ -15,6 +18,10 @@ const categoriaRepository =
 const usuarioRepository =
   AppDataSource.getRepository(Usuario);
 
+// ============================================================
+// DTO CREAR
+// ============================================================
+
 interface CrearEmprendimientoDto {
   nombre: string;
   descripcion?: string;
@@ -25,10 +32,18 @@ interface CrearEmprendimientoDto {
   correoElectronico?: string;
   telefono?: string;
   imagen?: Buffer;
-
-  // Usuario asociado dueño del emprendimiento
   asociadoId?: number;
+
+  // Estado explícito, si se utiliza
+  estadoPublicacion?: EstadoPublicacion;
+
+  // Modo utilizado por los botones del formulario
+  modo?: 'cambios' | 'borrador';
 }
+
+// ============================================================
+// DTO ACTUALIZAR
+// ============================================================
 
 interface ActualizarEmprendimientoDto {
   nombre?: string;
@@ -40,7 +55,16 @@ interface ActualizarEmprendimientoDto {
   correoElectronico?: string;
   telefono?: string;
   imagen?: Buffer;
+
+  // IMPORTANTE:
+  // borrador = guardar como borrador
+  // cambios = guardar cambios y dejar pendiente de publicación
+  modo?: 'cambios' | 'borrador';
 }
+
+// ============================================================
+// RESULTADO CAMBIO PUBLICACIÓN
+// ============================================================
 
 type ResultadoCambioPublicacion =
   | {
@@ -54,6 +78,10 @@ type ResultadoCambioPublicacion =
       message: string;
       camposFaltantes?: string[];
     };
+
+// ============================================================
+// FUNCIONES AUXILIARES
+// ============================================================
 
 const tieneTexto = (
   valor: string | null | undefined,
@@ -87,6 +115,10 @@ const coordenadaValida = (
   );
 };
 
+// ============================================================
+// CAMPOS FALTANTES
+// ============================================================
+
 const obtenerCamposFaltantes = (
   emprendimiento: Emprendimiento,
 ): string[] => {
@@ -112,9 +144,13 @@ const obtenerCamposFaltantes = (
   }
 
   if (
-    !tieneTexto(emprendimiento.correoElectronico)
+    !tieneTexto(
+      emprendimiento.correoElectronico,
+    )
   ) {
-    camposFaltantes.push('correo electrónico');
+    camposFaltantes.push(
+      'correo electrónico',
+    );
   }
 
   if (!tieneTexto(emprendimiento.telefono)) {
@@ -224,6 +260,10 @@ const TRANSICIONES: Record<
   },
 };
 
+// ============================================================
+// SERVICE
+// ============================================================
+
 export class EmprendimientoService {
   // ============================================================
   // BUSCAR POR ID
@@ -234,6 +274,7 @@ export class EmprendimientoService {
   ): Promise<Emprendimiento | null> {
     return emprendimientoRepository.findOne({
       where: { id },
+
       relations: {
         categoria: true,
         asociado: true,
@@ -245,86 +286,158 @@ export class EmprendimientoService {
   // CREAR
   // ============================================================
 
-  async crear(
-    dto: CrearEmprendimientoDto,
-  ): Promise<Emprendimiento> {
-    let categoria:
-      | CategoriaEmprendimiento
-      | undefined;
+  // ============================================================
+// CREAR
+// ============================================================
 
-    if (dto.categoriaId !== undefined) {
-      categoria =
-        (await categoriaRepository.findOneBy({
-          id: dto.categoriaId,
-        })) ?? undefined;
+async crear(
+  dto: CrearEmprendimientoDto,
+): Promise<Emprendimiento> {
 
-      if (!categoria) {
-        throw new Error(
-          'La categoría seleccionada no existe',
-        );
-      }
-    }
+  // ============================================================
+  // CATEGORÍA
+  // ============================================================
 
-    const existente =
-      await emprendimientoRepository.findOneBy({
-        nombre: dto.nombre,
-      });
+  let categoria:
+    | CategoriaEmprendimiento
+    | undefined;
 
-    if (existente) {
+  if (dto.categoriaId !== undefined) {
+
+    categoria =
+      (await categoriaRepository.findOneBy({
+        id: dto.categoriaId,
+      })) ?? undefined;
+
+    if (!categoria) {
       throw new Error(
-        'Ya existe un emprendimiento registrado con ese nombre',
+        'La categoría seleccionada no existe',
       );
     }
+  }
 
-    let asociado: Usuario | undefined;
+  // ============================================================
+  // VALIDAR NOMBRE DUPLICADO
+  // ============================================================
 
-    if (dto.asociadoId !== undefined) {
-      asociado =
-        (await usuarioRepository.findOneBy({
-          id: dto.asociadoId,
-        })) ?? undefined;
+  const existente =
+    await emprendimientoRepository.findOneBy({
+      nombre: dto.nombre,
+    });
 
-      if (!asociado) {
-        throw new Error(
-          'El usuario asociado no existe',
-        );
-      }
-    }
-
-    const emprendimiento =
-      new Emprendimiento({
-        nombre: dto.nombre,
-        descripcion: dto.descripcion,
-        categoria,
-        asociado,
-        direccion: dto.direccion,
-        latitud: dto.latitud,
-        longitud: dto.longitud,
-        correoElectronico:
-          dto.correoElectronico,
-        telefono: dto.telefono,
-        imagen: dto.imagen,
-
-        // Todo nuevo emprendimiento inicia como borrador.
-        estadoPublicacion:
-          EstadoPublicacion.BORRADOR,
-      });
-
-    return await emprendimientoRepository.save(
-      emprendimiento,
+  if (existente) {
+    throw new Error(
+      'Ya existe un emprendimiento registrado con ese nombre',
     );
   }
 
   // ============================================================
+  // ASOCIADO
+  // ============================================================
+
+  let asociado: Usuario | undefined;
+
+  if (dto.asociadoId !== undefined) {
+
+    asociado =
+      (await usuarioRepository.findOneBy({
+        id: dto.asociadoId,
+      })) ?? undefined;
+
+    if (!asociado) {
+      throw new Error(
+        'El usuario asociado no existe',
+      );
+    }
+  }
+
+  // ============================================================
+  // DETERMINAR ESTADO INICIAL
+  // ============================================================
+
+  let estadoInicial: EstadoPublicacion;
+
+  if (dto.modo === 'borrador') {
+
+    estadoInicial =
+      EstadoPublicacion.BORRADOR;
+
+  } else if (dto.modo === 'cambios') {
+
+    estadoInicial =
+      EstadoPublicacion.NO_PUBLICADO;
+
+  } else if (dto.estadoPublicacion !== undefined) {
+
+    estadoInicial =
+      dto.estadoPublicacion;
+
+  } else {
+
+    // Por seguridad, si no se especifica nada
+    estadoInicial =
+      EstadoPublicacion.NO_PUBLICADO;
+  }
+
+  // ============================================================
+  // CREAR EMPRENDIMIENTO
+  // ============================================================
+
+  const emprendimiento =
+    new Emprendimiento({
+
+      nombre: dto.nombre,
+
+      descripcion:
+        dto.descripcion,
+
+      categoria,
+
+      asociado,
+
+      direccion:
+        dto.direccion,
+
+      latitud:
+        dto.latitud,
+
+      longitud:
+        dto.longitud,
+
+      correoElectronico:
+        dto.correoElectronico,
+
+      telefono:
+        dto.telefono,
+
+      imagen:
+        dto.imagen,
+
+      estadoPublicacion:
+        estadoInicial,
+    });
+
+  // ============================================================
+  // GUARDAR
+  // ============================================================
+
+  return await emprendimientoRepository.save(
+    emprendimiento,
+  );
+}
+  // ============================================================
   // OBTENER TODOS
   // ============================================================
 
-  async obtenerTodos(): Promise<Emprendimiento[]> {
+  async obtenerTodos(): Promise<
+    Emprendimiento[]
+  > {
     return await emprendimientoRepository.find({
       relations: {
         categoria: true,
         asociado: true,
       },
+
       order: {
         fechaCreacion: 'DESC',
       },
@@ -340,7 +453,10 @@ export class EmprendimientoService {
     rolUsuario: string,
     estado?: EstadoPublicacion,
   ): Promise<Emprendimiento[]> {
-    console.log('========== VISIBILIDAD ==========');
+    console.log(
+      '========== VISIBILIDAD ==========',
+    );
+
     console.log('Usuario ID:', usuarioId);
     console.log('Rol:', rolUsuario);
     console.log('Estado:', estado);
@@ -364,9 +480,6 @@ export class EmprendimientoService {
     // ========================================================
     // ADMINISTRADOR
     // ========================================================
-    //
-    // El administrador puede ver absolutamente todos.
-    //
 
     if (rolUsuario === 'administrador') {
       if (estado) {
@@ -392,7 +505,6 @@ export class EmprendimientoService {
     // ========================================================
     // ASOCIADO
     // ========================================================
-    
 
     consulta.where(
       '(asociado.id = :usuarioId) OR ' +
@@ -417,11 +529,6 @@ export class EmprendimientoService {
       await consulta.getMany();
 
     console.log(
-    );
-    console.log('Usuario ID:', usuarioId);
-    console.log('Rol:', rolUsuario);
-    console.log('Estado:', estado);
-    console.log(
       'Emprendimientos encontrados:',
       resultados.length,
     );
@@ -431,7 +538,8 @@ export class EmprendimientoService {
         id: emprendimiento.id,
         nombre: emprendimiento.nombre,
         asociadoId:
-          emprendimiento.asociado?.id ?? null,
+          emprendimiento.asociado?.id ??
+          null,
         estado:
           emprendimiento.estadoPublicacion,
       });
@@ -447,59 +555,64 @@ export class EmprendimientoService {
   // ============================================================
   // OBTENER UNO SEGÚN VISIBILIDAD
   // ============================================================
-async obtenerVisiblePorId(
-  id: number,
-  usuarioId: number,
-  rolUsuario: string,
-): Promise<Emprendimiento | null> {
-  const emprendimiento =
-    await this.buscarPorId(id);
 
-  if (!emprendimiento) {
+  async obtenerVisiblePorId(
+    id: number,
+    usuarioId: number,
+    rolUsuario: string,
+  ): Promise<Emprendimiento | null> {
+    const emprendimiento =
+      await this.buscarPorId(id);
+
+    if (!emprendimiento) {
+      return null;
+    }
+
+    // ========================================================
+    // ADMINISTRADOR
+    // ========================================================
+
+    if (rolUsuario === 'administrador') {
+      return emprendimiento;
+    }
+
+    // ========================================================
+    // ASOCIADO
+    // ========================================================
+
+    const usuarioIdNumero =
+      Number(usuarioId);
+
+    const asociadoIdNumero =
+      emprendimiento.asociado?.id !==
+        undefined &&
+      emprendimiento.asociado?.id !== null
+        ? Number(
+            emprendimiento.asociado.id,
+          )
+        : null;
+
+    const esDueno =
+      asociadoIdNumero !== null &&
+      asociadoIdNumero === usuarioIdNumero;
+
+    if (esDueno) {
+      return emprendimiento;
+    }
+
+    // Un asociado puede consultar emprendimientos
+    // de otros asociados únicamente si están publicados.
+
+    const esPublicado =
+      emprendimiento.estadoPublicacion ===
+      EstadoPublicacion.PUBLICADO;
+
+    if (esPublicado) {
+      return emprendimiento;
+    }
+
     return null;
   }
-
-  // ============================================================
-  // ADMINISTRADOR
-  // ============================================================
-
-  if (rolUsuario === 'administrador') {
-    return emprendimiento;
-  }
-
-  // ============================================================
-  // ASOCIADO
-  // ============================================================
-
-  const usuarioIdNumero = Number(usuarioId);
-
-  const asociadoIdNumero =
-    emprendimiento.asociado?.id !== undefined &&
-    emprendimiento.asociado?.id !== null
-      ? Number(emprendimiento.asociado.id)
-      : null;
-
-  const esDueno =
-    asociadoIdNumero !== null &&
-    asociadoIdNumero === usuarioIdNumero;
-
-  if (esDueno) {
-    return emprendimiento;
-  }
-
-  // Un asociado puede consultar emprendimientos
-  // de otros asociados únicamente si están publicados.
-
-  const esPublicado =
-    emprendimiento.estadoPublicacion ===
-    EstadoPublicacion.PUBLICADO;
-
-  if (esPublicado) {
-    return emprendimiento;
-  }
-
-  return null;
-}
 
   // ============================================================
   // OBTENER POR ID
@@ -531,10 +644,12 @@ async obtenerVisiblePorId(
       where: {
         estadoPublicacion: estado,
       },
+
       relations: {
         categoria: true,
         asociado: true,
       },
+
       order: {
         fechaCreacion: 'DESC',
       },
@@ -640,7 +755,8 @@ async obtenerVisiblePorId(
     if (
       nuevoEstado ===
         EstadoPublicacion.PUBLICADO &&
-      emprendimiento.fechaPublicacion === null
+      emprendimiento.fechaPublicacion ===
+        null
     ) {
       emprendimiento.fechaPublicacion =
         new Date();
@@ -665,181 +781,236 @@ async obtenerVisiblePorId(
   // ============================================================
   // ACTUALIZAR
   // ============================================================
-async actualizar(
-  id: number,
-  dto: ActualizarEmprendimientoDto,
-  usuarioId: number,
-  rolUsuario: string,
-): Promise<Emprendimiento> {
-  const emprendimiento = await this.obtenerPorId(id);
 
-  // ============================================================
-  // NORMALIZAR IDS
-  // ============================================================
+  async actualizar(
+    id: number,
+    dto: ActualizarEmprendimientoDto,
+    usuarioId: number,
+    rolUsuario: string,
+  ): Promise<Emprendimiento> {
+    const emprendimiento =
+      await this.obtenerPorId(id);
 
-  const usuarioIdNumero = Number(usuarioId);
-  const asociadoIdNumero = emprendimiento.asociado?.id
-    ? Number(emprendimiento.asociado.id)
-    : null;
+    // ========================================================
+    // NORMALIZAR IDS
+    // ========================================================
 
-  // ============================================================
-  // VALIDAR PROPIETARIO
-  // ============================================================
+    const usuarioIdNumero =
+      Number(usuarioId);
 
-  if (rolUsuario !== 'administrador') {
-    const esDueno =
-      asociadoIdNumero !== null &&
-      asociadoIdNumero === usuarioIdNumero;
+    const asociadoIdNumero =
+      emprendimiento.asociado?.id
+        ? Number(
+            emprendimiento.asociado.id,
+          )
+        : null;
 
-    if (!esDueno) {
-      const error: any = new Error(
-        'Este emprendimiento pertenece a otro asociado.',
-      );
+    // ========================================================
+    // VALIDAR PROPIETARIO
+    // ========================================================
 
-      error.status = 403;
+    if (rolUsuario !== 'administrador') {
+      const esDueno =
+        asociadoIdNumero !== null &&
+        asociadoIdNumero ===
+          usuarioIdNumero;
 
-      throw error;
-    }
-  }
+      if (!esDueno) {
+        const error: any =
+          new Error(
+            'Este emprendimiento pertenece a otro asociado.',
+          );
 
-  // ============================================================
-  // CATEGORÍA
-  // ============================================================
+        error.status = 403;
 
-  if (dto.categoriaId !== undefined) {
-    const categoria =
-      await categoriaRepository.findOneBy({
-        id: Number(dto.categoriaId),
-      });
-
-    if (!categoria) {
-      throw new Error(
-        'La categoría seleccionada no existe',
-      );
+        throw error;
+      }
     }
 
-    emprendimiento.categoria = categoria;
-  }
+    // ========================================================
+    // CATEGORÍA
+    // ========================================================
 
-  // ============================================================
-  // NOMBRE
-  // ============================================================
+    if (dto.categoriaId !== undefined) {
+      const categoria =
+        await categoriaRepository.findOneBy({
+          id: Number(dto.categoriaId),
+        });
 
-  if (
-    dto.nombre !== undefined &&
-    dto.nombre.trim() !== '' &&
-    dto.nombre !== emprendimiento.nombre
-  ) {
-    const existente =
-      await emprendimientoRepository.findOneBy({
-        nombre: dto.nombre,
-      });
+      if (!categoria) {
+        throw new Error(
+          'La categoría seleccionada no existe',
+        );
+      }
+
+      emprendimiento.categoria =
+        categoria;
+    }
+
+    // ========================================================
+    // NOMBRE
+    // ========================================================
 
     if (
-      existente &&
-      existente.id !== emprendimiento.id
+      dto.nombre !== undefined &&
+      dto.nombre.trim() !== '' &&
+      dto.nombre !== emprendimiento.nombre
     ) {
-      throw new Error(
-        'Ya existe un emprendimiento registrado con ese nombre',
-      );
+      const existente =
+        await emprendimientoRepository.findOneBy({
+          nombre: dto.nombre,
+        });
+
+      if (
+        existente &&
+        existente.id !== emprendimiento.id
+      ) {
+        throw new Error(
+          'Ya existe un emprendimiento registrado con ese nombre',
+        );
+      }
+
+      emprendimiento.nombre =
+        dto.nombre;
     }
 
-    emprendimiento.nombre = dto.nombre;
-  }
+    // ========================================================
+    // DESCRIPCIÓN
+    // ========================================================
 
-  // ============================================================
-  // DESCRIPCIÓN
-  // ============================================================
+    if (dto.descripcion !== undefined) {
+      emprendimiento.descripcion =
+        dto.descripcion;
+    }
 
-  if (dto.descripcion !== undefined) {
-    emprendimiento.descripcion =
-      dto.descripcion;
-  }
+    // ========================================================
+    // DIRECCIÓN
+    // ========================================================
 
-  // ============================================================
-  // DIRECCIÓN
-  // ============================================================
+    if (dto.direccion !== undefined) {
+      emprendimiento.direccion =
+        dto.direccion;
+    }
 
-  if (dto.direccion !== undefined) {
-    emprendimiento.direccion =
-      dto.direccion;
-  }
+    // ========================================================
+    // LATITUD
+    // ========================================================
 
-  // ============================================================
-  // LATITUD
-  // ============================================================
+    if (dto.latitud !== undefined) {
+      emprendimiento.latitud =
+        Number(dto.latitud);
+    }
 
-  if (dto.latitud !== undefined) {
-    emprendimiento.latitud =
-      Number(dto.latitud);
-  }
+    // ========================================================
+    // LONGITUD
+    // ========================================================
 
-  // ============================================================
-  // LONGITUD
-  // ============================================================
+    if (dto.longitud !== undefined) {
+      emprendimiento.longitud =
+        Number(dto.longitud);
+    }
 
-  if (dto.longitud !== undefined) {
-    emprendimiento.longitud =
-      Number(dto.longitud);
-  }
+    // ========================================================
+    // CORREO
+    // ========================================================
 
-  // ============================================================
-  // CORREO
-  // ============================================================
+    if (
+      dto.correoElectronico !==
+      undefined
+    ) {
+      emprendimiento.correoElectronico =
+        dto.correoElectronico;
+    }
 
-  if (
-    dto.correoElectronico !== undefined
-  ) {
-    emprendimiento.correoElectronico =
-      dto.correoElectronico;
-  }
+    // ========================================================
+    // TELÉFONO
+    // ========================================================
 
-  // ============================================================
-  // TELÉFONO
-  // ============================================================
+    if (dto.telefono !== undefined) {
+      emprendimiento.telefono =
+        dto.telefono;
+    }
 
-  if (dto.telefono !== undefined) {
-    emprendimiento.telefono =
-      dto.telefono;
-  }
+    // ========================================================
+    // IMAGEN
+    // ========================================================
 
-  // ============================================================
-  // IMAGEN
-  // ============================================================
+    if (dto.imagen !== undefined) {
+      emprendimiento.imagen =
+        dto.imagen;
+    }
 
-  if (dto.imagen !== undefined) {
-    emprendimiento.imagen =
-      dto.imagen;
-  }
+    // ========================================================
+    // ESTADO SEGÚN MODO DE GUARDADO
+    // ========================================================
 
-  // ============================================================
-  // VALIDAR EMPRENDIMIENTO PUBLICADO
-  // ============================================================
+    if (dto.modo === 'borrador') {
+      emprendimiento.estadoPublicacion =
+        EstadoPublicacion.BORRADOR;
+    }
 
-  if (
-    emprendimiento.estadoPublicacion ===
-    EstadoPublicacion.PUBLICADO
-  ) {
-    const camposFaltantes =
-      obtenerCamposFaltantes(
+    if (dto.modo === 'cambios') {
+      emprendimiento.estadoPublicacion =
+        EstadoPublicacion.NO_PUBLICADO;
+    }
+
+    // ========================================================
+    // VALIDAR EMPRENDIMIENTO PUBLICADO
+    // ========================================================
+
+    /*
+     * Solamente validamos completitud si después
+     * de la actualización el emprendimiento queda PUBLICADO.
+     *
+     * Esto permite guardar un formulario incompleto
+     * como BORRADOR.
+     */
+
+    if (
+      emprendimiento.estadoPublicacion ===
+      EstadoPublicacion.PUBLICADO
+    ) {
+      const camposFaltantes =
+        obtenerCamposFaltantes(
+          emprendimiento,
+        );
+
+      if (
+        camposFaltantes.length > 0
+      ) {
+        throw new Error(
+          `Un emprendimiento publicado debe conservar toda la información requerida: ${camposFaltantes.join(', ')}`,
+        );
+      }
+    }
+
+    // ========================================================
+    // GUARDAR
+    // ========================================================
+
+    const actualizado =
+      await emprendimientoRepository.save(
         emprendimiento,
       );
 
-    if (camposFaltantes.length > 0) {
+    // ========================================================
+    // DEVOLVER CON RELACIONES ACTUALIZADAS
+    // ========================================================
+
+    const resultado =
+      await this.buscarPorId(
+        actualizado.id,
+      );
+
+    if (!resultado) {
       throw new Error(
-        `Un emprendimiento publicado debe conservar toda la información requerida: ${camposFaltantes.join(', ')}`,
+        'No fue posible recuperar el emprendimiento actualizado',
       );
     }
+
+    return resultado;
   }
 
-  // ============================================================
-  // GUARDAR
-  // ============================================================
-
-  return await emprendimientoRepository.save(
-    emprendimiento,
-  );
-}
   // ============================================================
   // ELIMINAR
   // ============================================================
@@ -855,6 +1026,10 @@ async actualizar(
     );
   }
 }
+
+// ============================================================
+// EXPORTAR SERVICE
+// ============================================================
 
 export const emprendimientoService =
   new EmprendimientoService();

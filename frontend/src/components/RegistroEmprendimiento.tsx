@@ -68,8 +68,10 @@ const validarNumero = (valor: string): boolean => {
   return Number.isFinite(numero);
 };
 
+
 const validarFormulario = (
-  form: FormState
+  form: FormState,
+  esBorrador: boolean,
 ): FormErrors => {
   const errores: FormErrors = {};
 
@@ -78,8 +80,10 @@ const validarFormulario = (
   ---------------------------------------------------------- */
 
   if (!form.nombre.trim()) {
-    errores.nombre =
-      'El nombre del emprendimiento es obligatorio.';
+    if (!esBorrador) {
+      errores.nombre =
+        'El nombre del emprendimiento es obligatorio.';
+    }
   } else if (form.nombre.trim().length < 3) {
     errores.nombre =
       'El nombre debe tener al menos 3 caracteres.';
@@ -101,7 +105,7 @@ const validarFormulario = (
      CATEGORÍA
   ---------------------------------------------------------- */
 
-  if (!form.categoriaId) {
+  if (!form.categoriaId && !esBorrador) {
     errores.categoriaId =
       'Debe seleccionar una categoría.';
   }
@@ -120,8 +124,10 @@ const validarFormulario = (
   ---------------------------------------------------------- */
 
   if (!form.latitud.trim()) {
-    errores.latitud =
-      'La latitud es obligatoria.';
+    if (!esBorrador) {
+      errores.latitud =
+        'La latitud es obligatoria.';
+    }
   } else if (!validarNumero(form.latitud)) {
     errores.latitud =
       'Ingrese una latitud válida.';
@@ -139,8 +145,10 @@ const validarFormulario = (
   ---------------------------------------------------------- */
 
   if (!form.longitud.trim()) {
-    errores.longitud =
-      'La longitud es obligatoria.';
+    if (!esBorrador) {
+      errores.longitud =
+        'La longitud es obligatoria.';
+    }
   } else if (!validarNumero(form.longitud)) {
     errores.longitud =
       'Ingrese una longitud válida.';
@@ -158,8 +166,10 @@ const validarFormulario = (
   ---------------------------------------------------------- */
 
   if (!form.correoElectronico.trim()) {
-    errores.correoElectronico =
-      'El correo electrónico es obligatorio.';
+    if (!esBorrador) {
+      errores.correoElectronico =
+        'El correo electrónico es obligatorio.';
+    }
   } else if (!validarCorreo(form.correoElectronico)) {
     errores.correoElectronico =
       'Ingrese un correo electrónico válido.';
@@ -170,8 +180,10 @@ const validarFormulario = (
   ---------------------------------------------------------- */
 
   if (!form.telefono.trim()) {
-    errores.telefono =
-      'El teléfono es obligatorio.';
+    if (!esBorrador) {
+      errores.telefono =
+        'El teléfono es obligatorio.';
+    }
   } else if (!validarTelefono(form.telefono)) {
     errores.telefono =
       'El teléfono debe contener exactamente 8 números.';
@@ -184,7 +196,11 @@ const validarFormulario = (
    COMPONENTE
 ============================================================ */
 
-function RegistroEmprendimiento() {
+interface Props {
+  onExito?: () => void;
+}
+
+function RegistroEmprendimiento({ onExito }: Props) {
   const [categorias, setCategorias] =
     useState<CategoriaEmprendimiento[]>([]);
 
@@ -209,11 +225,16 @@ function RegistroEmprendimiento() {
   const [enviando, setEnviando] =
     useState(false);
 
+  const [guardandoBorrador, setGuardandoBorrador] =
+    useState(false);
+
   const [error, setError] =
     useState<string | null>(null);
 
   const [exito, setExito] =
     useState(false);
+
+  const procesando = enviando || guardandoBorrador;
 
   /* ==========================================================
      CATEGORÍAS
@@ -267,11 +288,7 @@ function RegistroEmprendimiento() {
   ) => {
     const { name, value } = e.target;
 
-    /*
-     * TELÉFONO:
-     * Solo permite números.
-     * Máximo 8 dígitos.
-     */
+   
 
     if (name === 'telefono') {
       const solamenteNumeros = value
@@ -287,7 +304,7 @@ function RegistroEmprendimiento() {
         ...prev,
         telefono:
           solamenteNumeros.length === 0
-            ? 'El teléfono es obligatorio.'
+            ? undefined
             : solamenteNumeros.length < 8
               ? 'El teléfono debe contener exactamente 8 números.'
               : undefined,
@@ -301,9 +318,6 @@ function RegistroEmprendimiento() {
       [name]: value,
     }));
 
-    /*
-     * Validación inmediata del campo.
-     */
 
     const nuevoFormulario = {
       ...form,
@@ -311,7 +325,7 @@ function RegistroEmprendimiento() {
     };
 
     const nuevosErrores =
-      validarFormulario(nuevoFormulario);
+      validarFormulario(nuevoFormulario, false);
 
     setErrores((prev) => ({
       ...prev,
@@ -386,49 +400,46 @@ function RegistroEmprendimiento() {
     setImagenPreview(null);
   };
 
-  /* ==========================================================
-     SUBMIT
-  ========================================================== */
-
-  const handleSubmit = async (
-    e: SyntheticEvent<HTMLFormElement>
-  ) => {
-    e.preventDefault();
-
+  
+  const procesarEnvio = async (esBorrador: boolean) => {
     setError(null);
     setExito(false);
 
-    /*
-     * Validar TODOS los campos antes de enviar.
-     */
-
     const erroresFormulario =
-      validarFormulario(form);
+      validarFormulario(form, esBorrador);
 
     setErrores(erroresFormulario);
 
-    /*
-     * Si existen errores, no se envía nada.
-     */
-
     if (Object.keys(erroresFormulario).length > 0) {
       setError(
-        'Por favor, corrija los campos indicados antes de continuar.'
+        esBorrador
+          ? 'Algunos campos tienen un formato inválido. Corríjalos o déjelos vacíos.'
+          : 'Por favor, corrija los campos indicados antes de continuar.'
       );
 
       return;
     }
 
-    setEnviando(true);
+    if (esBorrador) {
+      setGuardandoBorrador(true);
+    } else {
+      setEnviando(true);
+    }
 
     try {
       const formDataToSend =
         new FormData();
 
-      formDataToSend.append(
-        'nombre',
-        form.nombre.trim()
-      );
+     
+
+      if (form.nombre.trim()) {
+        formDataToSend.append(
+          'nombre',
+          form.nombre.trim()
+        );
+      } else if (!esBorrador) {
+        formDataToSend.append('nombre', form.nombre.trim());
+      }
 
       if (form.descripcion.trim()) {
         formDataToSend.append(
@@ -437,10 +448,12 @@ function RegistroEmprendimiento() {
         );
       }
 
-      formDataToSend.append(
-        'categoriaId',
-        form.categoriaId
-      );
+      if (form.categoriaId) {
+        formDataToSend.append(
+          'categoriaId',
+          form.categoriaId
+        );
+      }
 
       if (form.direccion.trim()) {
         formDataToSend.append(
@@ -449,34 +462,47 @@ function RegistroEmprendimiento() {
         );
       }
 
-      formDataToSend.append(
-        'latitud',
-        form.latitud
-      );
+      if (form.latitud.trim()) {
+        formDataToSend.append(
+          'latitud',
+          form.latitud
+        );
+      }
 
-      formDataToSend.append(
-        'longitud',
-        form.longitud
-      );
+      if (form.longitud.trim()) {
+        formDataToSend.append(
+          'longitud',
+          form.longitud
+        );
+      }
 
-      formDataToSend.append(
-        'correoElectronico',
-        form.correoElectronico.trim()
-      );
+      if (form.correoElectronico.trim()) {
+        formDataToSend.append(
+          'correoElectronico',
+          form.correoElectronico.trim()
+        );
+      }
 
-      formDataToSend.append(
-        'telefono',
-        form.telefono
-      );
+      if (form.telefono.trim()) {
+        formDataToSend.append(
+          'telefono',
+          form.telefono
+        );
+      }
 
-      if (imagen) {
+            if (imagen) {
         formDataToSend.append(
           'imagen',
           imagen
         );
       }
 
-      await crearEmprendimiento(
+      formDataToSend.append(
+        'modo',
+        esBorrador ? 'borrador' : 'cambios'
+      );
+
+          await crearEmprendimiento(
         formDataToSend
       );
 
@@ -485,12 +511,13 @@ function RegistroEmprendimiento() {
       setErrores({});
       handleRemoveImage();
 
-    } catch (err) {
-      /*
-       * Aquí también capturamos el error del UNIQUE
-       * que venga desde el backend.
-       */
+      if (onExito) {
+        window.setTimeout(() => {
+          onExito();
+        }, 1200);
+      }
 
+    } catch (err) {
       const mensaje =
         err instanceof Error
           ? err.message
@@ -500,7 +527,19 @@ function RegistroEmprendimiento() {
 
     } finally {
       setEnviando(false);
+      setGuardandoBorrador(false);
     }
+  };
+
+  const handleSubmit = async (
+    e: SyntheticEvent<HTMLFormElement>
+  ) => {
+    e.preventDefault();
+    await procesarEnvio(false);
+  };
+
+  const handleGuardarBorrador = async () => {
+    await procesarEnvio(true);
   };
 
   /* ==========================================================
@@ -1004,7 +1043,7 @@ function RegistroEmprendimiento() {
 
             <div>
               <p className="font-bold">
-                No se pudo registrar el emprendimiento
+                No se pudo guardar el emprendimiento
               </p>
 
               <p className="mt-1">
@@ -1024,7 +1063,7 @@ function RegistroEmprendimiento() {
 
             <div>
               <p className="font-bold">
-                ¡Emprendimiento registrado correctamente!
+                ¡Emprendimiento guardado correctamente!
               </p>
 
               <p className="mt-1">
@@ -1035,23 +1074,37 @@ function RegistroEmprendimiento() {
         )}
 
         {/* ====================================================
-            BOTÓN
+            BOTONES
         ==================================================== */}
 
         <div className="border-t border-gray-100 pt-6">
 
-          <button
-            type="submit"
-            disabled={enviando}
-            className="w-full rounded-xl bg-green-800 px-6 py-3.5 font-semibold text-white shadow-md transition-all hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {enviando
-              ? 'Guardando registro...'
-              : 'Registrar emprendimiento'}
-          </button>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <button
+              type="submit"
+              disabled={procesando}
+              className="flex-1 rounded-xl bg-green-800 px-6 py-3.5 font-semibold text-white shadow-md transition-all hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {enviando
+                ? 'Guardando registro...'
+                : 'Registrar emprendimiento'}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => void handleGuardarBorrador()}
+              disabled={procesando}
+              className="flex-1 rounded-xl border-2 border-green-800 bg-white px-6 py-3.5 font-semibold text-green-800 shadow-sm transition-all hover:bg-green-50 focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {guardandoBorrador
+                ? 'Guardando borrador...'
+                : 'Guardar como borrador'}
+            </button>
+          </div>
 
           <p className="mt-3 text-center text-xs text-gray-400">
-            Los campos marcados con * son obligatorios.
+            Los campos marcados con * son obligatorios para el registro completo.
+            Al guardar como borrador puede dejarlos vacíos.
           </p>
         </div>
       </form>
