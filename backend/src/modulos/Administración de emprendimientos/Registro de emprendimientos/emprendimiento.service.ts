@@ -392,18 +392,7 @@ export class EmprendimientoService {
     // ========================================================
     // ASOCIADO
     // ========================================================
-    //
-    // El asociado puede ver:
-    //
-    // 1. TODOS sus propios emprendimientos,
-    //    sin importar su estado.
-    //
-    // 2. TODOS los emprendimientos publicados,
-    //    sin importar quién los creó.
-    //
-    // Esto incluye emprendimientos con asociado_id NULL
-    // siempre que estén PUBLICADOS.
-    //
+    
 
     consulta.where(
       '(asociado.id = :usuarioId) OR ' +
@@ -415,8 +404,6 @@ export class EmprendimientoService {
       },
     );
 
-    // Si posteriormente se solicita un estado específico,
-    // se aplica el filtro adicional.
     if (estado) {
       consulta.andWhere(
         'emprendimiento.estado_publicacion = :estado',
@@ -430,7 +417,6 @@ export class EmprendimientoService {
       await consulta.getMany();
 
     console.log(
-      '========== VISIBILIDAD ASOCIADO ==========',
     );
     console.log('Usuario ID:', usuarioId);
     console.log('Rol:', rolUsuario);
@@ -461,46 +447,59 @@ export class EmprendimientoService {
   // ============================================================
   // OBTENER UNO SEGÚN VISIBILIDAD
   // ============================================================
+async obtenerVisiblePorId(
+  id: number,
+  usuarioId: number,
+  rolUsuario: string,
+): Promise<Emprendimiento | null> {
+  const emprendimiento =
+    await this.buscarPorId(id);
 
-  async obtenerVisiblePorId(
-    id: number,
-    usuarioId: number,
-    rolUsuario: string,
-  ): Promise<Emprendimiento | null> {
-    const emprendimiento =
-      await this.buscarPorId(id);
-
-    if (!emprendimiento) {
-      return null;
-    }
-
-    // Administrador puede verlo todo.
-    if (rolUsuario === 'administrador') {
-      return emprendimiento;
-    }
-
-    // El asociado puede ver siempre sus propios
-    // emprendimientos, sin importar el estado.
-    const esDueno =
-      emprendimiento.asociado?.id === usuarioId;
-
-    if (esDueno) {
-      return emprendimiento;
-    }
-
-    // El asociado también puede ver cualquier
-    // emprendimiento que esté publicado,
-    // aunque no tenga asociado o pertenezca a otro usuario.
-    const esPublicado =
-      emprendimiento.estadoPublicacion ===
-      EstadoPublicacion.PUBLICADO;
-
-    if (esPublicado) {
-      return emprendimiento;
-    }
-
+  if (!emprendimiento) {
     return null;
   }
+
+  // ============================================================
+  // ADMINISTRADOR
+  // ============================================================
+
+  if (rolUsuario === 'administrador') {
+    return emprendimiento;
+  }
+
+  // ============================================================
+  // ASOCIADO
+  // ============================================================
+
+  const usuarioIdNumero = Number(usuarioId);
+
+  const asociadoIdNumero =
+    emprendimiento.asociado?.id !== undefined &&
+    emprendimiento.asociado?.id !== null
+      ? Number(emprendimiento.asociado.id)
+      : null;
+
+  const esDueno =
+    asociadoIdNumero !== null &&
+    asociadoIdNumero === usuarioIdNumero;
+
+  if (esDueno) {
+    return emprendimiento;
+  }
+
+  // Un asociado puede consultar emprendimientos
+  // de otros asociados únicamente si están publicados.
+
+  const esPublicado =
+    emprendimiento.estadoPublicacion ===
+    EstadoPublicacion.PUBLICADO;
+
+  if (esPublicado) {
+    return emprendimiento;
+  }
+
+  return null;
+}
 
   // ============================================================
   // OBTENER POR ID
@@ -666,119 +665,181 @@ export class EmprendimientoService {
   // ============================================================
   // ACTUALIZAR
   // ============================================================
+async actualizar(
+  id: number,
+  dto: ActualizarEmprendimientoDto,
+  usuarioId: number,
+  rolUsuario: string,
+): Promise<Emprendimiento> {
+  const emprendimiento = await this.obtenerPorId(id);
 
-  async actualizar(
-    id: number,
-    dto: ActualizarEmprendimientoDto,
-  ): Promise<Emprendimiento> {
-    const emprendimiento =
-      await this.obtenerPorId(id);
+  // ============================================================
+  // NORMALIZAR IDS
+  // ============================================================
 
-    if (dto.categoriaId !== undefined) {
-      const categoria =
-        await categoriaRepository.findOneBy({
-          id: dto.categoriaId,
-        });
+  const usuarioIdNumero = Number(usuarioId);
+  const asociadoIdNumero = emprendimiento.asociado?.id
+    ? Number(emprendimiento.asociado.id)
+    : null;
 
-      if (!categoria) {
-        throw new Error(
-          'La categoría seleccionada no existe',
-        );
-      }
+  // ============================================================
+  // VALIDAR PROPIETARIO
+  // ============================================================
 
-      emprendimiento.categoria =
-        categoria;
+  if (rolUsuario !== 'administrador') {
+    const esDueno =
+      asociadoIdNumero !== null &&
+      asociadoIdNumero === usuarioIdNumero;
+
+    if (!esDueno) {
+      const error: any = new Error(
+        'Este emprendimiento pertenece a otro asociado.',
+      );
+
+      error.status = 403;
+
+      throw error;
     }
-
-    if (
-      dto.nombre !== undefined &&
-      dto.nombre !== emprendimiento.nombre
-    ) {
-      const existente =
-        await emprendimientoRepository.findOneBy({
-          nombre: dto.nombre,
-        });
-
-      if (existente) {
-        throw new Error(
-          'Ya existe un emprendimiento registrado con ese nombre',
-        );
-      }
-
-      emprendimiento.nombre =
-        dto.nombre;
-    }
-
-    if (
-      dto.descripcion !== undefined
-    ) {
-      emprendimiento.descripcion =
-        dto.descripcion;
-    }
-
-    if (
-      dto.direccion !== undefined
-    ) {
-      emprendimiento.direccion =
-        dto.direccion;
-    }
-
-    if (
-      dto.latitud !== undefined
-    ) {
-      emprendimiento.latitud =
-        dto.latitud;
-    }
-
-    if (
-      dto.longitud !== undefined
-    ) {
-      emprendimiento.longitud =
-        dto.longitud;
-    }
-
-    if (
-      dto.correoElectronico !== undefined
-    ) {
-      emprendimiento.correoElectronico =
-        dto.correoElectronico;
-    }
-
-    if (
-      dto.telefono !== undefined
-    ) {
-      emprendimiento.telefono =
-        dto.telefono;
-    }
-
-    if (dto.imagen !== undefined) {
-      emprendimiento.imagen =
-        dto.imagen;
-    }
-
-    if (
-      emprendimiento.estadoPublicacion ===
-      EstadoPublicacion.PUBLICADO
-    ) {
-      const camposFaltantes =
-        obtenerCamposFaltantes(
-          emprendimiento,
-        );
-
-      if (
-        camposFaltantes.length > 0
-      ) {
-        throw new Error(
-          `Un emprendimiento publicado debe conservar toda la información requerida: ${camposFaltantes.join(', ')}`,
-        );
-      }
-    }
-
-    return await emprendimientoRepository.save(
-      emprendimiento,
-    );
   }
 
+  // ============================================================
+  // CATEGORÍA
+  // ============================================================
+
+  if (dto.categoriaId !== undefined) {
+    const categoria =
+      await categoriaRepository.findOneBy({
+        id: Number(dto.categoriaId),
+      });
+
+    if (!categoria) {
+      throw new Error(
+        'La categoría seleccionada no existe',
+      );
+    }
+
+    emprendimiento.categoria = categoria;
+  }
+
+  // ============================================================
+  // NOMBRE
+  // ============================================================
+
+  if (
+    dto.nombre !== undefined &&
+    dto.nombre.trim() !== '' &&
+    dto.nombre !== emprendimiento.nombre
+  ) {
+    const existente =
+      await emprendimientoRepository.findOneBy({
+        nombre: dto.nombre,
+      });
+
+    if (
+      existente &&
+      existente.id !== emprendimiento.id
+    ) {
+      throw new Error(
+        'Ya existe un emprendimiento registrado con ese nombre',
+      );
+    }
+
+    emprendimiento.nombre = dto.nombre;
+  }
+
+  // ============================================================
+  // DESCRIPCIÓN
+  // ============================================================
+
+  if (dto.descripcion !== undefined) {
+    emprendimiento.descripcion =
+      dto.descripcion;
+  }
+
+  // ============================================================
+  // DIRECCIÓN
+  // ============================================================
+
+  if (dto.direccion !== undefined) {
+    emprendimiento.direccion =
+      dto.direccion;
+  }
+
+  // ============================================================
+  // LATITUD
+  // ============================================================
+
+  if (dto.latitud !== undefined) {
+    emprendimiento.latitud =
+      Number(dto.latitud);
+  }
+
+  // ============================================================
+  // LONGITUD
+  // ============================================================
+
+  if (dto.longitud !== undefined) {
+    emprendimiento.longitud =
+      Number(dto.longitud);
+  }
+
+  // ============================================================
+  // CORREO
+  // ============================================================
+
+  if (
+    dto.correoElectronico !== undefined
+  ) {
+    emprendimiento.correoElectronico =
+      dto.correoElectronico;
+  }
+
+  // ============================================================
+  // TELÉFONO
+  // ============================================================
+
+  if (dto.telefono !== undefined) {
+    emprendimiento.telefono =
+      dto.telefono;
+  }
+
+  // ============================================================
+  // IMAGEN
+  // ============================================================
+
+  if (dto.imagen !== undefined) {
+    emprendimiento.imagen =
+      dto.imagen;
+  }
+
+  // ============================================================
+  // VALIDAR EMPRENDIMIENTO PUBLICADO
+  // ============================================================
+
+  if (
+    emprendimiento.estadoPublicacion ===
+    EstadoPublicacion.PUBLICADO
+  ) {
+    const camposFaltantes =
+      obtenerCamposFaltantes(
+        emprendimiento,
+      );
+
+    if (camposFaltantes.length > 0) {
+      throw new Error(
+        `Un emprendimiento publicado debe conservar toda la información requerida: ${camposFaltantes.join(', ')}`,
+      );
+    }
+  }
+
+  // ============================================================
+  // GUARDAR
+  // ============================================================
+
+  return await emprendimientoRepository.save(
+    emprendimiento,
+  );
+}
   // ============================================================
   // ELIMINAR
   // ============================================================

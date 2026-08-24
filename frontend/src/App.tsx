@@ -11,11 +11,14 @@ import { useInactividad } from './services/useInactividad';
 import RegistroEmprendimiento from './components/RegistroEmprendimiento';
 import ListaEmprendimientos from './components/ListaEmprendimientos';
 import RegistroCategoria from './components/RegistroCategoria';
+import EditarEmprendimiento from './components/EditarEmprendimiento';
 
 import Navbar from './components/informativo/Navbar';
 import Hero from './components/informativo/Hero';
 import Footer from './components/informativo/Footer';
 import Informativo from './components/informativo/general';
+
+import type { Emprendimiento } from './services/emprendimientoService';
 
 type NombreRol =
   | 'administrador'
@@ -28,62 +31,131 @@ interface ErrorDeAutenticacion {
   status: number;
 }
 
-// ============================================================
-// OBTENER ROL DESDE EL TOKEN
-// ============================================================
-
-const obtenerRolDesdeToken = (): NombreRol | null => {
-  const token =
+/**
+ * Obtiene el token actualmente almacenado.
+ */
+const obtenerToken = (): string | null => {
+  return (
     sessionStorage.getItem('token') ??
-    localStorage.getItem('token');
+    localStorage.getItem('token')
+  );
+};
+
+/**
+ * Decodifica el payload del JWT.
+ */
+const obtenerPayloadDesdeToken = (): Record<
+  string,
+  unknown
+> | null => {
+  const token = obtenerToken();
 
   if (!token) {
     return null;
   }
 
   try {
-    const payloadCodificado = token.split('.')[1];
+    const partes = token.split('.');
 
-    if (!payloadCodificado) {
+    if (partes.length < 2) {
       return null;
     }
+
+    const payloadCodificado = partes[1];
 
     const base64 = payloadCodificado
       .replace(/-/g, '+')
       .replace(/_/g, '/')
       .padEnd(
-        Math.ceil(payloadCodificado.length / 4) * 4,
+        Math.ceil(
+          payloadCodificado.length / 4
+        ) * 4,
         '='
       );
 
     const bytes = Uint8Array.from(
       atob(base64),
-      (caracter) => caracter.charCodeAt(0)
+      (caracter) =>
+        caracter.charCodeAt(0)
     );
 
-    const payload = JSON.parse(
+    return JSON.parse(
       new TextDecoder().decode(bytes)
-    ) as {
-      rol?: unknown;
-    };
-
-    if (
-      payload.rol === 'administrador' ||
-      payload.rol === 'asociado' ||
-      payload.rol === 'visitante'
-    ) {
-      return payload.rol;
-    }
-
-    return null;
+    ) as Record<string, unknown>;
   } catch {
     return null;
   }
 };
 
-// ============================================================
-// BOTÓN VOLVER AL INICIO
-// ============================================================
+/**
+ * Obtiene el rol autenticado decodificando
+ * el payload del JWT.
+ */
+const obtenerRolDesdeToken = (): NombreRol | null => {
+  const payload =
+    obtenerPayloadDesdeToken();
+
+  if (!payload) {
+    return null;
+  }
+
+  const rol = payload.rol;
+
+  if (
+    rol === 'administrador' ||
+    rol === 'asociado' ||
+    rol === 'visitante'
+  ) {
+    return rol;
+  }
+
+  return null;
+};
+
+/**
+ * Obtiene el ID del usuario autenticado
+ * desde el JWT.
+ *
+ * Se soportan las posibles propiedades:
+ * usuarioId
+ * id
+ * sub
+ */
+const obtenerUsuarioIdDesdeToken = (): number | null => {
+  const payload =
+    obtenerPayloadDesdeToken();
+
+  if (!payload) {
+    return null;
+  }
+
+  const posiblesIds = [
+    payload.usuarioId,
+    payload.id,
+    payload.sub,
+  ];
+
+  for (const valor of posiblesIds) {
+    if (typeof valor === 'number') {
+      if (Number.isFinite(valor)) {
+        return valor;
+      }
+    }
+
+    if (typeof valor === 'string') {
+      const id = Number(valor);
+
+      if (
+        Number.isFinite(id) &&
+        id > 0
+      ) {
+        return id;
+      }
+    }
+  }
+
+  return null;
+};
 
 function BotonVolverInicio({
   onClick,
@@ -111,10 +183,6 @@ function BotonVolverInicio({
   );
 }
 
-// ============================================================
-// APP
-// ============================================================
-
 function App() {
   const [mostrarRegistro, setMostrarRegistro] =
     useState(false);
@@ -125,34 +193,30 @@ function App() {
   const [mostrarGestionRoles, setMostrarGestionRoles] =
     useState(false);
 
-  // ==========================================================
-  // SECCIÓN ACTUAL
-  //
-  // inicio
-  // emprendimientos
-  // registroEmprendimiento
-  // registroCategoria
-  // ==========================================================
-
   const [seccionActual, setSeccionActual] = useState<
     | 'inicio'
     | 'emprendimientos'
     | 'registroEmprendimiento'
     | 'registroCategoria'
+    | 'editarEmprendimiento'
   >('inicio');
 
-  // ==========================================================
-  // ROL AUTENTICADO
-  // ==========================================================
+  const [emprendimientoEditar, setEmprendimientoEditar] =
+    useState<Emprendimiento | null>(null);
 
   const [rolAutenticado, setRolAutenticado] =
     useState<NombreRol | null>(
-      obtenerRolDesdeToken
+      obtenerRolDesdeToken()
     );
 
-  // ==========================================================
-  // ERRORES DE AUTENTICACIÓN
-  // ==========================================================
+  /**
+   * NUEVO:
+   * ID del usuario autenticado.
+   */
+  const [usuarioId, setUsuarioId] =
+    useState<number | null>(
+      obtenerUsuarioIdDesdeToken()
+    );
 
   const [errorAutenticacion, setErrorAutenticacion] =
     useState<ErrorDeAutenticacion | null>(null);
@@ -160,14 +224,22 @@ function App() {
   const [mostrarErrorModal, setMostrarErrorModal] =
     useState(false);
 
-  // ============================================================
-  // SINCRONIZAR SESIÓN
-  // ============================================================
-
+  /**
+   * Sincroniza la sesión entre pestañas
+   * y maneja errores 401/403.
+   */
   useEffect(() => {
     const sincronizarSesion = () => {
       setRolAutenticado(
         obtenerRolDesdeToken()
+      );
+
+      /**
+       * NUEVO:
+       * También sincronizamos el ID.
+       */
+      setUsuarioId(
+        obtenerUsuarioIdDesdeToken()
       );
     };
 
@@ -181,11 +253,9 @@ function App() {
       sincronizarSesion
     );
 
-    // ==========================================================
-    // 401 - SESIÓN NO AUTORIZADA
-    // ==========================================================
-
-    const handleUnauthorized = (event: Event) => {
+    const handleUnauthorized = (
+      event: Event
+    ) => {
       const customEvent =
         event as CustomEvent<ErrorDeAutenticacion>;
 
@@ -196,13 +266,17 @@ function App() {
       setMostrarErrorModal(true);
 
       setRolAutenticado(null);
+
+      /**
+       * NUEVO:
+       * Limpiamos también el ID.
+       */
+      setUsuarioId(null);
     };
 
-    // ==========================================================
-    // 403 - ACCESO DENEGADO
-    // ==========================================================
-
-    const handleForbidden = (event: Event) => {
+    const handleForbidden = (
+      event: Event
+    ) => {
       const customEvent =
         event as CustomEvent<ErrorDeAutenticacion>;
 
@@ -222,10 +296,6 @@ function App() {
       'auth:forbidden',
       handleForbidden
     );
-
-    // ==========================================================
-    // LIMPIEZA
-    // ==========================================================
 
     return () => {
       window.removeEventListener(
@@ -250,28 +320,17 @@ function App() {
     };
   }, []);
 
-  // ============================================================
-  // CONTROL DE PERMISOS SEGÚN ROL
-  // ============================================================
-
+  /**
+   * Controla el acceso a cada sección
+   * según el rol autenticado.
+   */
   useEffect(() => {
-    /*
-     * GESTIÓN DE ROLES:
-     *
-     * Solo el administrador puede acceder.
-     */
-
-    if (rolAutenticado !== 'administrador') {
+    if (
+      rolAutenticado !==
+      'administrador'
+    ) {
       setMostrarGestionRoles(false);
     }
-
-    /*
-     * REGISTRO DE EMPRENDIMIENTO:
-     *
-     * Administrador y asociado pueden registrar.
-     *
-     * Visitante y usuario sin sesión no pueden.
-     */
 
     if (
       rolAutenticado !== 'administrador' &&
@@ -287,16 +346,30 @@ function App() {
       }
     }
 
-    /*
-     * REGISTRO DE CATEGORÍA:
-     *
-     * SOLO el administrador puede registrar categorías.
-     */
-
     if (
       rolAutenticado !== 'administrador' &&
-      seccionActual === 'registroCategoria'
+      seccionActual ===
+        'registroCategoria'
     ) {
+      setSeccionActual(
+        'emprendimientos'
+      );
+    }
+
+    /**
+     * Edición:
+     * administrador y asociado.
+     */
+    if (
+      rolAutenticado !==
+        'administrador' &&
+      rolAutenticado !==
+        'asociado' &&
+      seccionActual ===
+        'editarEmprendimiento'
+    ) {
+      setEmprendimientoEditar(null);
+
       setSeccionActual(
         'emprendimientos'
       );
@@ -306,15 +379,20 @@ function App() {
     seccionActual,
   ]);
 
-  // ============================================================
-  // CERRAR SESIÓN
-  // ============================================================
-
+  /**
+   * Cerrar sesión.
+   */
   const cerrarSesion = async () => {
     try {
       await api.logout();
     } finally {
       setRolAutenticado(null);
+
+      /**
+       * NUEVO:
+       * Limpiar usuarioId.
+       */
+      setUsuarioId(null);
 
       setMostrarGestionRoles(false);
 
@@ -322,16 +400,23 @@ function App() {
 
       setMostrarRegistro(false);
 
+      setEmprendimientoEditar(null);
+
       setSeccionActual('inicio');
     }
   };
 
-  // ============================================================
-  // CERRAR SESIÓN POR INACTIVIDAD
-  // ============================================================
-
+  /**
+   * Cerrar sesión por inactividad.
+   */
   const cerrarSesionPorInactividad = () => {
     setRolAutenticado(null);
+
+    /**
+     * NUEVO:
+     * Limpiar usuarioId.
+     */
+    setUsuarioId(null);
 
     setMostrarGestionRoles(false);
 
@@ -341,18 +426,21 @@ function App() {
 
     setMostrarErrorModal(false);
 
+    setEmprendimientoEditar(null);
+
     setSeccionActual('inicio');
   };
 
   useInactividad({
-    activo: rolAutenticado !== null,
-    tiempoInactividad: 15 * 60 * 1000,
-    onLogout: cerrarSesionPorInactividad,
-  });
+    activo:
+      rolAutenticado !== null,
 
-  // ============================================================
-  // CERRAR MODAL DE ERROR
-  // ============================================================
+    tiempoInactividad:
+      15 * 60 * 1000,
+
+    onLogout:
+      cerrarSesionPorInactividad,
+  });
 
   const cerrarErrorModal = () => {
     setMostrarErrorModal(false);
@@ -360,20 +448,15 @@ function App() {
     setErrorAutenticacion(null);
   };
 
-  // ============================================================
-  // RUTA ACTUAL
-  // ============================================================
-
   const rutaActual =
     window.location.pathname.replace(
       /\/+$/,
       ''
     ) || '/';
 
-  // ============================================================
-  // RECUPERAR CONTRASEÑA
-  // ============================================================
-
+  /**
+   * Recuperar contraseña.
+   */
   if (
     rutaActual ===
     '/recuperar-contrasena'
@@ -387,10 +470,9 @@ function App() {
     );
   }
 
-  // ============================================================
-  // RESTABLECER CONTRASEÑA
-  // ============================================================
-
+  /**
+   * Restablecer contraseña.
+   */
   if (
     rutaActual ===
     '/restablecer-contrasena'
@@ -404,46 +486,45 @@ function App() {
     );
   }
 
-  // ============================================================
-  // LOGIN MEDIANTE RUTA
-  // ============================================================
-
+  /**
+   * Login mediante ruta directa.
+   */
   if (rutaActual === '/login') {
     return (
       <>
         <BotonVolverInicio />
 
         <Login
-          onLogin={setRolAutenticado}
+          onLogin={(rol) => {
+            setRolAutenticado(rol);
+
+            /**
+             * NUEVO:
+             * Después del login obtenemos
+             * el usuarioId desde el JWT.
+             */
+            setUsuarioId(
+              obtenerUsuarioIdDesdeToken()
+            );
+          }}
         />
       </>
     );
   }
 
-  // ============================================================
-  // REGISTRO DE CATEGORÍA
-  //
-  // PERMITIDO ÚNICAMENTE PARA:
-  //
-  // administrador
-  //
-  // NO PERMITIDO PARA:
-  //
-  // asociado
-  // visitante
-  // sin sesión
-  // ============================================================
-
+  /**
+   * Registro de categoría:
+   * solamente administrador.
+   */
   if (
-    rutaActual === '/registro-categoria' ||
-    seccionActual === 'registroCategoria'
+    rutaActual ===
+      '/registro-categoria' ||
+    seccionActual ===
+      'registroCategoria'
   ) {
     const esAdministrador =
-      rolAutenticado === 'administrador';
-
-    // ----------------------------------------------------------
-    // SI NO ES ADMINISTRADOR
-    // ----------------------------------------------------------
+      rolAutenticado ===
+      'administrador';
 
     if (!esAdministrador) {
       window.location.href = '/';
@@ -451,13 +532,8 @@ function App() {
       return null;
     }
 
-    // ----------------------------------------------------------
-    // FORMULARIO DE CATEGORÍA
-    // ----------------------------------------------------------
-
     return (
       <section className="formulario-contenedor">
-
         <button
           type="button"
           className="cerrar-formulario"
@@ -470,45 +546,32 @@ function App() {
               rutaActual ===
               '/registro-categoria'
             ) {
-              window.location.href = '/';
+              window.location.href =
+                '/';
             }
           }}
           aria-label="Volver"
           title="Volver"
         >
-          × 
+          ×
         </button>
 
         <RegistroCategoria
           onCategoriaCreada={() => {
             /*
-             * NO cambiamos de sección.
-             *
-             * Esto permite que el administrador
-             * pueda registrar otra categoría
-             * inmediatamente.
+             * No cambiamos de sección para
+             * permitir registrar otra categoría.
              */
           }}
         />
-
       </section>
     );
   }
 
-  // ============================================================
-  // REGISTRO DE EMPRENDIMIENTO
-  //
-  // PERMITIDO PARA:
-  //
-  // administrador
-  // asociado
-  //
-  // NO PERMITIDO PARA:
-  //
-  // visitante
-  // sin sesión
-  // ============================================================
-
+  /**
+   * Registro de emprendimiento:
+   * administrador y asociado.
+   */
   if (
     rutaActual ===
       '/registro-emprendimiento' ||
@@ -516,12 +579,10 @@ function App() {
       'registroEmprendimiento'
   ) {
     const puedeRegistrar =
-      rolAutenticado === 'administrador' ||
-      rolAutenticado === 'asociado';
-
-    // ----------------------------------------------------------
-    // SI NO TIENE PERMISOS
-    // ----------------------------------------------------------
+      rolAutenticado ===
+        'administrador' ||
+      rolAutenticado ===
+        'asociado';
 
     if (!puedeRegistrar) {
       window.location.href = '/';
@@ -529,13 +590,8 @@ function App() {
       return null;
     }
 
-    // ----------------------------------------------------------
-    // FORMULARIO
-    // ----------------------------------------------------------
-
     return (
       <section className="formulario-contenedor">
-
         <button
           type="button"
           className="cerrar-formulario"
@@ -548,86 +604,124 @@ function App() {
               rutaActual ===
               '/registro-emprendimiento'
             ) {
-              window.location.href = '/';
+              window.location.href =
+                '/';
             }
           }}
           aria-label="Volver"
           title="Volver"
         >
-          × 
+          ×
         </button>
 
         <RegistroEmprendimiento />
-
       </section>
     );
   }
 
-  // ============================================================
-  // VISTA DE EMPRENDIMIENTOS
-  //
-  // ADMINISTRADOR:
-  // - ve todos
-  // - registra emprendimientos
-  // - registra categorías
-  // - cambia estados
-  //
-  // ASOCIADO:
-  // - ve todos
-  // - registra emprendimientos
-  // - NO registra categorías
-  // - NO cambia estados
-  //
-  // VISITANTE:
-  // - solo ve publicados
-  // - no registra
-  // - no cambia estados
-  //
-  // SIN SESIÓN:
-  // - solo ve publicados
-  // ============================================================
+  /**
+   * Edición de emprendimiento:
+   * administrador y asociado.
+   */
+  if (
+    seccionActual ===
+    'editarEmprendimiento'
+  ) {
+    if (
+      (
+        rolAutenticado !==
+          'administrador' &&
+        rolAutenticado !==
+          'asociado'
+      ) ||
+      !emprendimientoEditar
+    ) {
+      return null;
+    }
 
+    return (
+      <section className="formulario-contenedor">
+        <button
+          type="button"
+          className="cerrar-formulario"
+          onClick={() => {
+            setEmprendimientoEditar(
+              null
+            );
+
+            setSeccionActual(
+              'emprendimientos'
+            );
+          }}
+          aria-label="Volver"
+          title="Volver"
+        >
+          ×
+        </button>
+
+        <EditarEmprendimiento
+          id={
+            emprendimientoEditar.id
+          }
+          onActualizado={() => {
+            setEmprendimientoEditar(
+              null
+            );
+
+            setSeccionActual(
+              'emprendimientos'
+            );
+          }}
+          onCancelar={() => {
+            setEmprendimientoEditar(
+              null
+            );
+
+            setSeccionActual(
+              'emprendimientos'
+            );
+          }}
+        />
+      </section>
+    );
+  }
+
+  /**
+   * Vista de emprendimientos:
+   * administrador, asociado y visitante.
+   */
   if (
     seccionActual ===
     'emprendimientos'
   ) {
     return (
       <>
-        {/* ======================================================
-            NAVBAR
-        ====================================================== */}
-
         <Navbar
           onRegistro={() =>
             setMostrarRegistro(true)
           }
-
           onLogin={() =>
             setMostrarLogin(true)
           }
-
           rolAutenticado={
             rolAutenticado
           }
-
           onGestionRoles={() =>
-            setMostrarGestionRoles(true)
+            setMostrarGestionRoles(
+              true
+            )
           }
-
           onIrInicio={() =>
-            setSeccionActual('inicio')
+            setSeccionActual(
+              'inicio'
+            )
           }
-
           onIrEmprendimientos={() =>
             setSeccionActual(
               'emprendimientos'
             )
           }
         />
-
-        {/* ======================================================
-            LISTA
-        ====================================================== */}
 
         <main
           style={{
@@ -640,6 +734,12 @@ function App() {
               rolAutenticado
             }
 
+            /**
+             * IMPORTANTE:
+             * Ahora sí enviamos el ID del usuario.
+             */
+            usuarioId={usuarioId}
+
             onRegistrar={() =>
               setSeccionActual(
                 'registroEmprendimiento'
@@ -651,32 +751,33 @@ function App() {
                 'registroCategoria'
               )
             }
+
+            onEditar={(
+              emprendimiento
+            ) => {
+              setEmprendimientoEditar(
+                emprendimiento
+              );
+
+              setSeccionActual(
+                'editarEmprendimiento'
+              );
+            }}
           />
         </main>
-
-        {/* ======================================================
-            FOOTER
-        ====================================================== */}
 
         <Footer />
       </>
     );
   }
 
-  // ============================================================
-  // PÁGINA PRINCIPAL / INICIO
-  // ============================================================
-
+  /**
+   * Página principal / inicio.
+   */
   return (
     <>
-      {/* ========================================================
-          REGISTRO DE USUARIO
-      ======================================================== */}
-
       {mostrarRegistro ? (
-
         <section className="formulario-contenedor">
-
           <button
             type="button"
             className="cerrar-formulario"
@@ -698,17 +799,9 @@ function App() {
               setMostrarLogin(true);
             }}
           />
-
         </section>
-
       ) : mostrarLogin ? (
-
-        /* ======================================================
-           LOGIN
-        ====================================================== */
-
         <section className="formulario-contenedor">
-
           <button
             type="button"
             className="cerrar-formulario"
@@ -722,31 +815,42 @@ function App() {
           </button>
 
           <Login
-            onLogin={
-              setRolAutenticado
-            }
+            onLogin={(rol) => {
+              setRolAutenticado(rol);
+
+              /**
+               * NUEVO:
+               * Obtener también el ID después
+               * del login.
+               */
+              setUsuarioId(
+                obtenerUsuarioIdDesdeToken()
+              );
+
+              setMostrarLogin(false);
+            }}
           />
-
         </section>
-
-      ) : mostrarGestionRoles &&
+      ) : (
+        mostrarGestionRoles &&
         rolAutenticado ===
-          'administrador' ? (
-
-        /* ======================================================
-           GESTIÓN DE ROLES
-        ====================================================== */
-
+          'administrador'
+      ) ? (
         <section>
-
           <button
             type="button"
             className="boton-volver"
             onClick={() => {
-              setMostrarGestionRoles(false);
+              setMostrarGestionRoles(
+                false
+              );
 
               setRolAutenticado(
                 obtenerRolDesdeToken()
+              );
+
+              setUsuarioId(
+                obtenerUsuarioIdDesdeToken()
               );
             }}
           >
@@ -758,17 +862,9 @@ function App() {
           </button>
 
           <GestionRoles />
-
         </section>
-
       ) : (
-
-        /* ======================================================
-           INICIO
-        ====================================================== */
-
         <>
-
           <Navbar
             onRegistro={() =>
               setMostrarRegistro(true)
@@ -807,10 +903,6 @@ function App() {
 
           <Footer />
 
-          {/* ==================================================
-              CERRAR SESIÓN
-          ================================================== */}
-
           {rolAutenticado && (
             <button
               type="button"
@@ -829,13 +921,8 @@ function App() {
             </button>
           )}
 
-          {/* ==================================================
-              MODAL DE ERROR
-          ================================================== */}
-
           {mostrarErrorModal &&
             errorAutenticacion && (
-
               <div
                 style={{
                   position: 'fixed',
@@ -854,7 +941,6 @@ function App() {
                   padding: '20px',
                 }}
               >
-
                 <div
                   style={{
                     backgroundColor:
@@ -869,7 +955,6 @@ function App() {
                       '0 10px 30px rgba(0, 0, 0, 0.2)',
                   }}
                 >
-
                   <h2
                     style={{
                       marginTop: 0,
@@ -942,9 +1027,7 @@ function App() {
                   >
                     Aceptar
                   </button>
-
                 </div>
-
               </div>
             )}
         </>
