@@ -47,13 +47,13 @@ function RegistroCategoria({
   }
 
   const inputClase =
-    'w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-gray-800 placeholder-gray-400 outline-none transition-all duration-200 focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-100';
+    'w-full rounded-2xl border border-stone-200 bg-[#fffef9] px-4 py-3 text-stone-800 placeholder:text-stone-400 outline-none motion-safe:transition-[border-color,background-color,box-shadow] motion-safe:duration-200 focus-visible:border-emerald-700 focus-visible:bg-white focus-visible:ring-4 focus-visible:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-500';
 
   const labelClase =
-    'flex flex-col gap-2 text-sm font-semibold text-gray-700';
+    'flex flex-col gap-2 text-sm font-semibold text-stone-700';
 
   return (
-    <div className="relative mx-auto max-w-xl overflow-hidden rounded-3xl bg-white shadow-xl">
+    <div className="relative mx-auto w-full max-w-xl overflow-hidden rounded-[2rem] border border-emerald-950/10 bg-[#fffef9] shadow-[0_24px_70px_rgba(20,83,45,0.12)]">
 
       {/* =====================================================
           BOTÓN CERRAR
@@ -65,7 +65,7 @@ function RegistroCategoria({
           onClick={onCerrar}
           aria-label="Cerrar formulario"
           title="Cerrar"
-          className="absolute right-5 top-5 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-sm transition-all duration-200 hover:scale-105 hover:border-red-200 hover:bg-red-50 hover:text-red-600 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-red-100"
+          className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-white/30 bg-white/90 text-emerald-950 shadow-sm backdrop-blur-sm motion-safe:transition-all motion-safe:duration-200 motion-safe:hover:scale-105 hover:bg-white hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 focus-visible:ring-offset-emerald-900 motion-reduce:transform-none sm:right-5 sm:top-5"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -87,18 +87,19 @@ function RegistroCategoria({
           ENCABEZADO
       ===================================================== */}
 
-      <div className="bg-gradient-to-r from-emerald-900 via-emerald-800 to-green-800 px-8 py-7 text-white sm:px-10">
+      <div className="relative overflow-hidden bg-gradient-to-br from-emerald-950 via-emerald-900 to-green-800 px-6 py-8 text-white sm:px-10">
+        <div className="pointer-events-none absolute -right-12 -top-14 h-40 w-40 rounded-full bg-[#d9d823]/15 blur-3xl" aria-hidden="true" />
         <div className="pr-10">
-          <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-emerald-100">
-            <span className="h-2 w-2 rounded-full bg-emerald-300" />
+          <div className="relative mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-emerald-50 backdrop-blur-sm">
+            <span className="h-2 w-2 rounded-full bg-[#d9d823]" />
             Administración
           </div>
 
-          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+          <h2 className="relative text-2xl font-bold tracking-tight sm:text-3xl">
             Registrar categoría
           </h2>
 
-          <p className="mt-2 max-w-lg text-sm leading-6 text-emerald-50">
+          <p className="relative mt-2 max-w-lg text-sm leading-6 text-emerald-50/85">
             Creá una nueva categoría para organizar los
             emprendimientos de la comunidad.
           </p>
@@ -109,7 +110,7 @@ function RegistroCategoria({
           FORMULARIO
       ===================================================== */}
 
-      <div className="p-8 sm:p-10">
+      <div className="p-6 sm:p-10">
 
         <form
           onSubmit={handleSubmit}
@@ -132,7 +133,7 @@ function RegistroCategoria({
               className={inputClase}
             />
 
-            <span className="text-xs font-normal text-gray-500">
+            <span className="text-xs font-normal text-stone-500">
               Máximo 100 caracteres.
             </span>
           </label>
@@ -141,7 +142,7 @@ function RegistroCategoria({
 
           <label className={labelClase}>
             Descripción
-            <span className="font-normal text-gray-400">
+            <span className="font-normal text-stone-400">
               (opcional)
             </span>
 
@@ -159,7 +160,7 @@ function RegistroCategoria({
           {/* ERROR */}
 
           {error && (
-            <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="mt-0.5 h-5 w-5 shrink-0"
@@ -194,7 +195,7 @@ function RegistroCategoria({
           {/* ÉXITO */}
 
           {exito && (
-            <div className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+            <div className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800" role="status" aria-live="polite">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="mt-0.5 h-5 w-5 shrink-0"
@@ -227,7 +228,7 @@ function RegistroCategoria({
                 type="button"
                 onClick={onCerrar}
                 disabled={enviando}
-                className="rounded-xl border border-gray-300 bg-white px-6 py-3 font-semibold text-gray-700 transition-all duration-200 hover:border-gray-400 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-2xl border border-stone-300 bg-white px-6 py-3 font-semibold text-stone-700 shadow-sm motion-safe:transition-colors motion-safe:duration-200 hover:border-stone-400 hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Cancelar
               </button>
@@ -236,12 +237,12 @@ function RegistroCategoria({
             <button
               type="submit"
               disabled={enviando}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-800 px-6 py-3 font-semibold text-white shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-900 px-6 py-3 font-semibold text-white shadow-md motion-safe:transition-all motion-safe:duration-200 motion-safe:hover:-translate-y-0.5 hover:bg-emerald-800 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transform-none"
             >
               {enviando ? (
                 <>
                   <svg
-                    className="h-5 w-5 animate-spin"
+                    className="h-5 w-5 motion-safe:animate-spin motion-reduce:animate-none"
                     viewBox="0 0 24 24"
                     fill="none"
                   >

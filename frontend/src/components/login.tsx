@@ -1,5 +1,8 @@
 import { useState, type FormEvent } from 'react';
 import { api } from '../services/api';
+import parqueImage from '../assets/parque-hero.jpg';
+
+/* oxlint-disable react-hooks/rules-of-hooks -- Se conserva el nombre existente del componente. */
 
 type Estado = 'idle' | 'cargando' | 'exito' | 'error';
 
@@ -119,13 +122,36 @@ export default function login({ onLogin }: LoginProps) {
   };
 
   return (
-    <div className="registro-container">
-      <form className="registro-form" noValidate onSubmit={handleSubmit}>
-        <div className="registro-franja" aria-hidden="true" />
+    <div className="relative isolate flex min-h-screen items-center justify-center overflow-hidden bg-[#0b3b2e] px-4 py-20 font-sans sm:px-6 lg:px-8">
+      <img
+        src={parqueImage}
+        alt=""
+        aria-hidden="true"
+        className="absolute inset-0 -z-30 h-full w-full object-cover object-center"
+      />
+      <div
+        className="absolute inset-0 -z-20 bg-gradient-to-br from-[#06251d]/90 via-[#0a4938]/75 to-[#132f25]/90"
+        aria-hidden="true"
+      />
+      <div
+        className="absolute -left-24 top-1/4 -z-10 h-72 w-72 rounded-full bg-[#8dc63f]/20 blur-3xl"
+        aria-hidden="true"
+      />
 
-        <div className="registro-header">
-          <span className="registro-eyebrow">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <form
+        className="relative w-full max-w-md overflow-hidden rounded-[2rem] border border-white/70 bg-[#fffef9]/95 p-6 pt-9 shadow-[0_28px_80px_rgba(3,30,22,0.38)] backdrop-blur-xl motion-safe:transition-[transform,box-shadow] motion-safe:duration-500 motion-safe:ease-out motion-reduce:transition-none sm:p-8 sm:pt-11"
+        noValidate
+        onSubmit={handleSubmit}
+        aria-busy={estado === 'cargando'}
+      >
+        <div
+          className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-[#0b4d3a] via-[#36a269] to-[#a8d84e]"
+          aria-hidden="true"
+        />
+
+        <div className="mb-7 text-left">
+          <span className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#8dc63f]/35 bg-[#eaf5d9] px-3 py-1 text-[0.68rem] font-bold uppercase tracking-[0.16em] text-[#174d35]">
+            <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path
                 d="M12 2C7 2 3 6 3 11c0 5.5 6 10 9 11 3-1 9-5.5 9-11 0-5-4-9-9-9z"
                 fill="currentColor"
@@ -134,17 +160,31 @@ export default function login({ onLogin }: LoginProps) {
             Programa de visitantes
           </span>
 
-          <h1>Iniciar sesión</h1>
-          <p>Ingresa con tu cuenta para continuar</p>
+          <h1 className="text-3xl font-bold tracking-tight text-[#123a2c] sm:text-[2rem]">
+            Iniciar sesión
+          </h1>
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            Ingresa con tu cuenta para continuar
+          </p>
         </div>
 
-        <div className="registro-campo">
-          <label htmlFor="identificador">Correo o nombre de usuario</label>
+        <div>
+          <label className="text-sm font-semibold text-[#183c2f]" htmlFor="identificador">
+            Correo o nombre de usuario
+          </label>
           <input
             id="identificador"
             type="text"
-            className={errores.identificador ? 'campo-invalido' : ''}
+            className={`mt-2 block w-full rounded-2xl border bg-white/95 px-4 py-3 text-[0.9375rem] text-slate-900 shadow-sm outline-none placeholder:text-slate-400 focus-visible:ring-4 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-500 motion-safe:transition-[border-color,box-shadow,background-color] motion-safe:duration-200 motion-reduce:transition-none ${
+              errores.identificador
+                ? 'border-red-500 focus-visible:border-red-600 focus-visible:ring-red-200/70'
+                : 'border-emerald-950/15 hover:border-emerald-800/40 focus-visible:border-[#16845f] focus-visible:ring-[#8dc63f]/25'
+            }`}
             value={identificador}
+            aria-invalid={Boolean(errores.identificador)}
+            aria-describedby={
+              errores.identificador ? 'identificador-error' : undefined
+            }
             onChange={(e) => {
               setIdentificador(e.target.value);
               limpiarError('identificador');
@@ -153,18 +193,33 @@ export default function login({ onLogin }: LoginProps) {
             disabled={estado === 'cargando'}
           />
           {errores.identificador && (
-            <span className="campo-error">{errores.identificador}</span>
+            <span
+              id="identificador-error"
+              className="mt-2 flex items-center gap-2 text-xs font-medium text-red-700"
+              role="alert"
+            >
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-red-600" aria-hidden="true" />
+              {errores.identificador}
+            </span>
           )}
         </div>
 
-        <div className="registro-campo">
-          <label htmlFor="password">Contraseña</label>
-          <div style={{ position: 'relative' }}>
+        <div className="mt-5">
+          <label className="text-sm font-semibold text-[#183c2f]" htmlFor="password">
+            Contraseña
+          </label>
+          <div className="relative mt-2">
             <input
               id="password"
               type={mostrarPassword ? 'text' : 'password'}
-              className={errores.password ? 'campo-invalido' : ''}
+              className={`block w-full rounded-2xl border bg-white/95 px-4 py-3 pr-24 text-[0.9375rem] text-slate-900 shadow-sm outline-none placeholder:text-slate-400 focus-visible:ring-4 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-500 motion-safe:transition-[border-color,box-shadow,background-color] motion-safe:duration-200 motion-reduce:transition-none ${
+                errores.password
+                  ? 'border-red-500 focus-visible:border-red-600 focus-visible:ring-red-200/70'
+                  : 'border-emerald-950/15 hover:border-emerald-800/40 focus-visible:border-[#16845f] focus-visible:ring-[#8dc63f]/25'
+              }`}
               value={password}
+              aria-invalid={Boolean(errores.password)}
+              aria-describedby={errores.password ? 'password-error' : undefined}
               onChange={(e) => {
                 setPassword(e.target.value);
                 limpiarError('password');
@@ -175,42 +230,50 @@ export default function login({ onLogin }: LoginProps) {
             <button
               type="button"
               onClick={() => setMostrarPassword((prev) => !prev)}
-              style={{ position: 'absolute', right: 8, top: 8 }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl px-3 py-2 text-xs font-bold text-[#0b6246] outline-none hover:bg-emerald-50 focus-visible:ring-2 focus-visible:ring-[#16845f] focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 motion-safe:transition-colors motion-safe:duration-200 motion-reduce:transition-none"
               disabled={estado === 'cargando'}
             >
               {mostrarPassword ? 'Ocultar' : 'Mostrar'}
             </button>
           </div>
           {errores.password && (
-            <span className="campo-error">{errores.password}</span>
+            <span
+              id="password-error"
+              className="mt-2 flex items-center gap-2 text-xs font-medium text-red-700"
+              role="alert"
+            >
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-red-600" aria-hidden="true" />
+              {errores.password}
+            </span>
           )}
         </div>
 
-        <p style={{ marginTop: 8, textAlign: 'right', fontSize: 13 }}>
+        <p className="mt-3 text-right text-xs sm:text-sm">
           <a
             href="/recuperar-contrasena"
-            className="registro-login-texto"
+            className="rounded-md font-semibold text-[#0b6246] underline-offset-4 outline-none hover:text-[#073f31] hover:underline focus-visible:ring-2 focus-visible:ring-[#16845f] focus-visible:ring-offset-2 motion-safe:transition-colors motion-safe:duration-200 motion-reduce:transition-none"
           >
             ¿Olvidaste tu contraseña?
           </a>
         </p>
 
-        <div className="registro-campo">
-          <label>
+        <div className="mt-5">
+          <label className="inline-flex cursor-pointer items-center gap-2.5 text-sm font-medium text-slate-700">
             <input
               type="checkbox"
+              className="h-4 w-4 rounded border-emerald-950/25 accent-[#0b6246] outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               checked={recordarSesion}
               onChange={(e) => setRecordarSesion(e.target.checked)}
               disabled={estado === 'cargando'}
             />
-            {' '}Recordar sesión
+            Recordar sesión
           </label>
         </div>
 
-        <div className="registro-acciones">
+        <div className="mt-7">
           <button
             type="submit"
-            className="registro-boton-primario"
+            className="inline-flex w-full items-center justify-center rounded-2xl bg-[#0b6246] px-5 py-3 text-sm font-bold text-white shadow-[0_10px_24px_rgba(11,98,70,0.24)] outline-none motion-safe:hover:-translate-y-0.5 hover:bg-[#084c37] hover:shadow-[0_14px_30px_rgba(11,98,70,0.3)] focus-visible:ring-4 focus-visible:ring-[#8dc63f]/40 focus-visible:ring-offset-2 active:translate-y-0 disabled:cursor-not-allowed disabled:bg-emerald-900/45 disabled:shadow-none motion-safe:transition-[transform,background-color,box-shadow] motion-safe:duration-200 motion-safe:ease-out motion-reduce:transform-none motion-reduce:transition-none"
             disabled={estado === 'cargando'}
           >
             {estado === 'cargando' ? 'Iniciando sesión...' : 'Iniciar sesión'}
@@ -218,12 +281,20 @@ export default function login({ onLogin }: LoginProps) {
         </div>
 
         {mensaje && (
-          <div>
-            <p className={`registro-mensaje registro-mensaje--${estado}`}>
+          <div className="mt-5">
+            <p
+              className={`rounded-2xl border px-4 py-3 text-sm font-medium leading-5 ${
+                estado === 'exito'
+                  ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                  : 'border-red-200 bg-red-50 text-red-800'
+              }`}
+              role={estado === 'error' ? 'alert' : 'status'}
+              aria-live={estado === 'error' ? 'assertive' : 'polite'}
+            >
               {mensaje}
             </p>
             {codigoError && (
-              <p style={{ fontSize: 12, color: '#666', marginTop: 4 }}>
+              <p className="mt-1.5 px-1 text-xs text-slate-500">
                 Código: {codigoError}
               </p>
             )}

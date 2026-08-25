@@ -480,23 +480,23 @@ function EditarEmprendimiento({
 
 
   const inputClase =
-    'w-full rounded-xl border px-4 py-3 text-gray-800 transition-all focus:outline-none focus:ring-2';
+    'w-full rounded-2xl border bg-[#fffef9] px-4 py-3 text-stone-800 outline-none motion-safe:transition-[border-color,background-color,box-shadow] motion-safe:duration-200 focus-visible:ring-4 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-500';
 
   const obtenerClaseInput = (campo: keyof FormErrors) => {
     return `${inputClase} ${
       errores[campo]
-        ? 'border-red-400 bg-red-50 focus:border-red-500 focus:ring-red-100'
-        : 'border-gray-300 bg-white focus:border-green-700 focus:ring-green-100'
+        ? 'border-red-400 bg-red-50 focus-visible:border-red-500 focus-visible:ring-red-100'
+        : 'border-stone-200 focus-visible:border-emerald-700 focus-visible:bg-white focus-visible:ring-emerald-100'
     }`;
   };
 
-  const labelClase = 'flex flex-col gap-1.5 text-sm font-semibold text-gray-700';
+  const labelClase = 'flex flex-col gap-1.5 text-sm font-semibold text-stone-700';
 
   if (cargando || cargandoCategorias) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="flex items-center gap-3 text-gray-600">
-          <span className="h-5 w-5 animate-spin rounded-full border-2 border-green-700 border-t-transparent" />
+        <div className="flex items-center gap-3 text-stone-600">
+          <span className="h-5 w-5 rounded-full border-2 border-emerald-800 border-t-transparent motion-safe:animate-spin motion-reduce:animate-none" />
           <span>Cargando información...</span>
         </div>
       </div>
@@ -505,7 +505,7 @@ function EditarEmprendimiento({
 
   if (errorCarga) {
     return (
-      <div className="mx-auto max-w-xl rounded-2xl border border-red-200 bg-red-50 p-6 text-center shadow-sm">
+      <div className="mx-auto max-w-xl rounded-2xl border border-red-200 bg-red-50 p-6 text-center shadow-sm" role="alert">
         <div className="text-3xl">⚠</div>
 
         <h3 className="mt-3 font-bold text-red-800">
@@ -517,7 +517,7 @@ function EditarEmprendimiento({
         <button
           type="button"
           onClick={() => void cargarEmprendimiento()}
-          className="mt-4 rounded-lg bg-red-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-800"
+          className="mt-4 rounded-xl bg-red-700 px-4 py-2 text-sm font-semibold text-white motion-safe:transition-colors hover:bg-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
         >
           Reintentar
         </button>
@@ -526,7 +526,7 @@ function EditarEmprendimiento({
           <button
             type="button"
             onClick={onCancelar}
-            className="ml-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+            className="ml-2 rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-semibold text-stone-700 motion-safe:transition-colors hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:ring-offset-2"
           >
             Regresar
           </button>
@@ -537,7 +537,7 @@ function EditarEmprendimiento({
 
   if (errorCategorias) {
     return (
-      <div className="mx-auto max-w-xl rounded-xl border border-red-200 bg-red-50 p-6 text-center shadow-sm">
+      <div className="mx-auto max-w-xl rounded-2xl border border-red-200 bg-red-50 p-6 text-center shadow-sm" role="alert">
         <p className="font-medium text-red-700">
           Error al cargar categorías: {errorCategorias}
         </p>
@@ -545,7 +545,7 @@ function EditarEmprendimiento({
         <button
           type="button"
           onClick={() => void cargarCategorias()}
-          className="mt-3 text-sm font-semibold text-red-800 underline hover:text-red-900"
+          className="mt-3 rounded-lg text-sm font-semibold text-red-800 underline underline-offset-4 hover:text-red-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
         >
           Reintentar
         </button>
@@ -555,7 +555,7 @@ function EditarEmprendimiento({
 
   if (categorias.length === 0) {
     return (
-      <div className="mx-auto max-w-xl rounded-xl border border-amber-200 bg-amber-50 p-6">
+      <div className="mx-auto max-w-xl rounded-2xl border border-amber-200 bg-amber-50 p-6">
         <strong className="block text-base text-amber-900">
           No hay categorías disponibles.
         </strong>
@@ -568,18 +568,19 @@ function EditarEmprendimiento({
   }
 
   return (
-    <div className="mx-auto max-w-3xl rounded-3xl bg-white p-6 shadow-xl ring-1 ring-gray-100 sm:p-8">
-      <div className="mb-8 border-b border-gray-100 pb-6">
-        <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-bold uppercase tracking-wide text-blue-800">
-          <span className="h-2 w-2 rounded-full bg-blue-600" />
+    <div className="mx-auto w-full max-w-3xl overflow-hidden rounded-[2rem] border border-emerald-950/10 bg-[#fffef9] p-5 shadow-[0_24px_70px_rgba(20,83,45,0.12)] sm:p-8">
+      <div className="relative mb-8 overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-950 via-emerald-900 to-green-800 p-6 text-white shadow-lg sm:p-8">
+        <div className="pointer-events-none absolute -right-12 -top-16 h-44 w-44 rounded-full bg-[#d9d823]/15 blur-3xl" aria-hidden="true" />
+        <div className="relative mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-emerald-50 backdrop-blur-sm">
+          <span className="h-2 w-2 rounded-full bg-[#d9d823]" />
           Edición de emprendimiento
         </div>
 
-        <h2 className="text-2xl font-bold text-green-950 sm:text-3xl">
+        <h2 className="relative text-2xl font-bold tracking-tight text-white sm:text-3xl">
           Editar emprendimiento
         </h2>
 
-        <p className="mt-2 text-sm leading-6 text-gray-500">
+        <p className="relative mt-2 max-w-2xl text-sm leading-6 text-emerald-50/85">
           Modifique la información del emprendimiento. Puede guardar los cambios
           definitivos o guardar como borrador para continuar más tarde.
         </p>
@@ -589,11 +590,11 @@ function EditarEmprendimiento({
       <form onSubmit={(e) => handleGuardar(e, 'cambios')} noValidate className="space-y-8">
         <div className="space-y-5">
           <div>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-green-700">
+            <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-800">
               1. Información general
             </h3>
 
-            <p className="mt-1 text-xs text-gray-400">
+            <p className="mt-1 text-xs text-stone-500">
               Información principal del emprendimiento.
             </p>
           </div>
@@ -672,7 +673,7 @@ function EditarEmprendimiento({
                 <span />
               )}
 
-              <span className="text-xs text-gray-400">
+              <span className="text-xs text-stone-400">
                 {form.descripcion.length}/500
               </span>
             </div>
@@ -685,32 +686,33 @@ function EditarEmprendimiento({
 
         <div className="space-y-3">
           <div>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-green-700">
+            <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-800">
               2. Imagen representativa
             </h3>
 
-            <p className="mt-1 text-xs text-gray-400">
+            <p className="mt-1 text-xs text-stone-500">
               Puede conservar la imagen actual o seleccionar una nueva.
             </p>
           </div>
 
           {imagenPreview ? (
-            <div className="relative max-w-sm overflow-hidden rounded-2xl border border-blue-200 shadow-sm">
+            <div className="relative max-w-sm overflow-hidden rounded-3xl border border-emerald-200 bg-stone-100 shadow-sm">
               <img
                 src={imagenPreview}
                 alt="Nueva imagen seleccionada"
                 className="h-56 w-full object-cover"
               />
 
-              <div className="absolute left-3 top-3 rounded-full bg-blue-600 px-3 py-1 text-xs font-bold text-white shadow">
+              <div className="absolute left-3 top-3 rounded-full bg-emerald-800 px-3 py-1 text-xs font-bold text-white shadow">
                 Nueva imagen
               </div>
 
               <button
                 type="button"
                 onClick={handleRemoveNewImage}
-                className="absolute right-3 top-3 rounded-full bg-red-600 p-2 text-white shadow-md transition hover:bg-red-700"
+                className="absolute right-3 top-3 rounded-full bg-red-700 p-2 text-white shadow-md motion-safe:transition-colors hover:bg-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-red-700"
                 title="Cancelar nueva imagen"
+                aria-label="Eliminar imagen nueva"
               >
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
@@ -723,16 +725,18 @@ function EditarEmprendimiento({
               </button>
             </div>
           ) : imagenActual ? (
-            <div className="relative max-w-sm overflow-hidden rounded-2xl border border-gray-200 shadow-sm">
+            <div className="relative max-w-sm overflow-hidden rounded-3xl border border-stone-200 bg-stone-100 shadow-sm">
               <img
                 src={imagenActual}
                 alt="Imagen actual del emprendimiento"
+                loading="lazy"
+                decoding="async"
                 className={`h-56 w-full object-cover ${
                   eliminarImagenActual ? 'opacity-40 grayscale' : ''
                 }`}
               />
 
-              <div className="absolute left-3 top-3 rounded-full bg-gray-800/80 px-3 py-1 text-xs font-bold text-white shadow">
+              <div className="absolute left-3 top-3 rounded-full bg-emerald-950/85 px-3 py-1 text-xs font-bold text-white shadow backdrop-blur-sm">
                 Imagen actual
               </div>
 
@@ -740,8 +744,9 @@ function EditarEmprendimiento({
                 <button
                   type="button"
                   onClick={handleRemoveCurrentImage}
-                  className="absolute right-3 top-3 rounded-full bg-red-600 p-2 text-white shadow-md transition hover:bg-red-700"
+                  className="absolute right-3 top-3 rounded-full bg-red-700 p-2 text-white shadow-md motion-safe:transition-colors hover:bg-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-red-700"
                   title="Quitar imagen"
+                  aria-label="Eliminar imagen actual"
                 >
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
@@ -756,7 +761,7 @@ function EditarEmprendimiento({
                 <button
                   type="button"
                   onClick={handleRestoreCurrentImage}
-                  className="absolute right-3 top-3 rounded-lg bg-green-700 px-3 py-2 text-xs font-bold text-white shadow-md transition hover:bg-green-800"
+                  className="absolute bottom-3 right-3 rounded-xl bg-emerald-800 px-3 py-2 text-xs font-bold text-white shadow-md motion-safe:transition-colors hover:bg-emerald-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 focus-visible:ring-offset-emerald-800 sm:bottom-auto sm:top-3"
                 >
                   Conservar imagen
                 </button>
@@ -770,8 +775,8 @@ function EditarEmprendimiento({
             </div>
           )}
 
-          <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 p-6 transition-colors hover:border-green-600 hover:bg-green-50/50">
-            <svg className="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <label className="flex cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed border-stone-300 bg-stone-50/70 p-6 text-center motion-safe:transition-colors motion-safe:duration-200 hover:border-emerald-600 hover:bg-emerald-50/70 focus-within:border-emerald-700 focus-within:ring-4 focus-within:ring-emerald-100">
+            <svg className="h-8 w-8 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -780,11 +785,11 @@ function EditarEmprendimiento({
               />
             </svg>
 
-            <span className="mt-2 text-sm font-semibold text-gray-600">
+            <span className="mt-2 text-sm font-semibold text-stone-700">
               Seleccionar nueva imagen
             </span>
 
-            <span className="mt-1 text-xs text-gray-400">PNG, JPG o WEBP · Máximo 5MB</span>
+            <span className="mt-1 text-xs text-stone-500">PNG, JPG o WEBP · Máximo 5MB</span>
 
             <input
               type="file"
@@ -801,11 +806,11 @@ function EditarEmprendimiento({
 
         <div className="space-y-5">
           <div>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-green-700">
+            <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-800">
               3. Ubicación
             </h3>
 
-            <p className="mt-1 text-xs text-gray-400">
+            <p className="mt-1 text-xs text-stone-500">
               Indique dónde se encuentra ubicado el emprendimiento.
             </p>
           </div>
@@ -882,11 +887,11 @@ function EditarEmprendimiento({
 
         <div className="space-y-5">
           <div>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-green-700">
+            <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-800">
               4. Datos de contacto
             </h3>
 
-            <p className="mt-1 text-xs text-gray-400">
+            <p className="mt-1 text-xs text-stone-500">
               Información mediante la cual los visitantes podrán contactar al
               emprendimiento.
             </p>
@@ -936,10 +941,10 @@ function EditarEmprendimiento({
                     {errores.telefono}
                   </p>
                 ) : (
-                  <p className="text-xs text-gray-400">8 dígitos numéricos</p>
+                  <p className="text-xs text-stone-400">8 dígitos numéricos</p>
                 )}
 
-                <span className="text-xs text-gray-400">{form.telefono.length}/8</span>
+                <span className="text-xs text-stone-400">{form.telefono.length}/8</span>
               </div>
             </label>
           </div>
@@ -949,16 +954,16 @@ function EditarEmprendimiento({
             ESTADO
         ================================================== */}
 
-        <div className="rounded-xl border border-blue-100 bg-blue-50 p-4">
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
           <div className="flex items-start gap-3">
             <span className="mt-0.5 text-lg">ℹ</span>
 
             <div>
-              <p className="font-bold text-blue-900">
+              <p className="font-bold text-emerald-950">
                 El estado de publicación no se modifica aquí
               </p>
 
-              <p className="mt-1 text-sm leading-5 text-blue-800">
+              <p className="mt-1 text-sm leading-5 text-emerald-800">
                 El estado del emprendimiento se administra por separado según los
                 permisos correspondientes.
               </p>
@@ -971,7 +976,7 @@ function EditarEmprendimiento({
         ================================================== */}
 
         {error && (
-          <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
+          <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700" role="alert">
             <span className="text-lg">⚠</span>
 
             <div>
@@ -986,7 +991,7 @@ function EditarEmprendimiento({
         ================================================== */}
 
         {exito && (
-          <div className="flex items-start gap-3 rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-800">
+          <div className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800" role="status" aria-live="polite">
             <span className="text-lg">✓</span>
 
             <div>
@@ -1009,13 +1014,13 @@ function EditarEmprendimiento({
             BOTONES
         ================================================== */}
 
-        <div className="flex flex-col gap-3 border-t border-gray-100 pt-6 sm:flex-row">
+        <div className="flex flex-col gap-3 border-t border-stone-200 pt-6 sm:flex-row">
           {onCancelar && (
             <button
               type="button"
               onClick={onCancelar}
               disabled={guardando}
-              className="w-full rounded-xl border border-gray-300 bg-white px-6 py-3.5 font-semibold text-gray-700 transition-all hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+              className="w-full rounded-2xl border border-stone-300 bg-white px-6 py-3.5 font-semibold text-stone-700 shadow-sm motion-safe:transition-colors motion-safe:duration-200 hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
             >
               Cancelar
             </button>
@@ -1026,7 +1031,7 @@ function EditarEmprendimiento({
             type="button"
             onClick={(e) => handleGuardar(e, 'borrador')}
             disabled={guardando}
-            className="w-full rounded-xl border-2 border-green-700 bg-white px-6 py-3.5 font-semibold text-green-800 shadow-sm transition-all hover:bg-green-50 focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+            className="w-full rounded-2xl border-2 border-emerald-800 bg-white px-6 py-3.5 font-semibold text-emerald-900 shadow-sm motion-safe:transition-colors motion-safe:duration-200 hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
           >
             {guardando && modoGuardando === 'borrador'
               ? 'Guardando borrador...'
@@ -1038,7 +1043,7 @@ function EditarEmprendimiento({
           <button
             type="submit"
             disabled={guardando}
-            className="w-full rounded-xl bg-green-800 px-6 py-3.5 font-semibold text-white shadow-md transition-all hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-2xl bg-emerald-900 px-6 py-3.5 font-semibold text-white shadow-md motion-safe:transition-all motion-safe:duration-200 motion-safe:hover:-translate-y-0.5 hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transform-none"
           >
             {guardando && modoGuardando === 'cambios'
               ? 'Guardando cambios...'
@@ -1046,7 +1051,7 @@ function EditarEmprendimiento({
           </button>
         </div>
 
-        <p className="text-center text-xs text-gray-400">
+        <p className="text-center text-xs text-stone-400">
           Los campos marcados con * son obligatorios para "Guardar cambios". El
           borrador permite dejarlos vacíos.
         </p>

@@ -1,5 +1,6 @@
-import logo from '../../assets/logo.png';
 import { useEffect, useState } from 'react';
+
+import logo from '../../assets/logo.png';
 
 interface NavbarProps {
   onRegistro: () => void;
@@ -52,176 +53,97 @@ function Navbar({
 
     if (elemento) {
       elemento.scrollIntoView({
-        behavior: 'smooth',
+        behavior: 'auto',
       });
     }
   };
 
+  const claseNavegacion =
+    'rounded-full px-3 py-2 text-sm font-semibold text-[#17372c] motion-safe:transition motion-safe:duration-200 hover:bg-[#eef7e7] hover:text-[#095540] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2';
+  const claseNavegacionMovil =
+    'w-full rounded-2xl px-4 py-3 text-left text-sm font-semibold text-[#17372c] motion-safe:transition motion-safe:duration-200 hover:bg-[#eef7e7] hover:text-[#095540] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f]';
+
   return (
     <nav
-      className={`
-        fixed top-0 left-0 right-0 z-50
-        transition-all duration-300
-        ${
-          modoAdministracion
-            ? 'bg-green-900/80 backdrop-blur-md shadow-md'
-            : scrolled
-              ? 'bg-green-900/60 backdrop-blur-lg shadow-md'
-              : 'bg-green-900/40 backdrop-blur-md'
-        }
-      `}
+      className="fixed inset-x-0 top-3 z-50 px-3 sm:top-4 sm:px-5"
+      aria-label="Navegación principal"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between min-h-[72px]">
-
-          {/* LOGO */}
+      <div
+        className={`mx-auto max-w-7xl overflow-hidden border border-white/70 bg-white/90 backdrop-blur-xl motion-safe:transition-all motion-safe:duration-300 motion-reduce:transition-none ${
+          menuAbierto ? 'rounded-[1.75rem] lg:rounded-full' : 'rounded-full'
+        } ${
+          modoAdministracion || scrolled
+            ? 'shadow-[0_16px_45px_rgba(7,63,49,0.16)]'
+            : 'shadow-[0_10px_35px_rgba(7,63,49,0.11)]'
+        }`}
+      >
+        <div className="flex min-h-[68px] items-center justify-between gap-3 px-3 sm:px-4 lg:px-5">
           <button
             type="button"
             onClick={irInicio}
-            className="
-              flex
-              items-center
-              bg-transparent
-              border-none
-              cursor-pointer
-              shrink-0
-            "
+            className="group flex min-w-0 shrink-0 items-center gap-2 rounded-full pr-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2"
             aria-label="Ir al inicio"
           >
-            <img
-              src={logo}
-              alt="Aliados del Parque"
-              className="h-11 sm:h-12 w-auto object-contain"
-            />
+            <span className="flex h-11 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white sm:w-16">
+              <img
+                src={logo}
+                alt=""
+                className="h-full w-full object-cover object-[center_18%] motion-safe:transition motion-safe:duration-300 motion-safe:group-hover:scale-105 motion-reduce:transform-none"
+              />
+            </span>
+            <span className="hidden min-w-0 sm:block">
+              <span className="block truncate text-sm font-bold leading-tight text-[#095540]">
+                Aliados del Parque
+              </span>
+              <span className="block truncate text-[10px] font-semibold uppercase tracking-[0.15em] text-[#587267]">
+                Parque Nacional Diriá
+              </span>
+            </span>
           </button>
 
-          {/* NAVEGACIÓN DESKTOP */}
-          <div className="hidden lg:flex items-center gap-6 xl:gap-8">
-
-            <button
-              type="button"
-              onClick={irInicio}
-              className="
-                bg-transparent
-                border-none
-                text-white
-                font-medium
-                text-sm
-                cursor-pointer
-                transition-colors
-                hover:text-green-200
-                whitespace-nowrap
-              "
-            >
+          <div className="hidden items-center gap-0.5 lg:flex xl:gap-1">
+            <button type="button" onClick={irInicio} className={claseNavegacion}>
               Inicio
             </button>
-
             <button
               type="button"
               onClick={() => irSeccion('sobre-parque')}
-              className="
-                bg-transparent
-                border-none
-                text-white
-                font-medium
-                text-sm
-                cursor-pointer
-                transition-colors
-                hover:text-green-200
-                whitespace-nowrap
-              "
+              className={claseNavegacion}
             >
-              Sobre el Parque
+              Sobre el parque
             </button>
-
             <button
               type="button"
               onClick={irEmprendimientos}
-              className="
-                bg-transparent
-                border-none
-                text-white
-                font-medium
-                text-sm
-                cursor-pointer
-                transition-colors
-                hover:text-green-200
-                whitespace-nowrap
-              "
+              className={claseNavegacion}
             >
               Emprendimientos
             </button>
-
             <button
               type="button"
               onClick={() => irSeccion('eventos')}
-              className="
-                bg-transparent
-                border-none
-                text-white
-                font-medium
-                text-sm
-                cursor-pointer
-                transition-colors
-                hover:text-green-200
-                whitespace-nowrap
-              "
+              className={claseNavegacion}
             >
               Eventos
             </button>
-
           </div>
 
-          {/* BOTONES DESKTOP */}
-          <div className="hidden lg:flex items-center gap-2 xl:gap-3">
-
+          <div className="hidden shrink-0 items-center gap-2 lg:flex">
             {!rolAutenticado && (
               <>
                 <button
                   type="button"
                   onClick={onRegistro}
-                  className="
-                    bg-white
-                    text-green-900
-                    px-3
-                    xl:px-4
-                    py-2
-                    rounded-lg
-                    font-semibold
-                    text-sm
-                    border
-                    border-white
-                    cursor-pointer
-                    transition-all
-                    hover:bg-green-50
-                    whitespace-nowrap
-                  "
+                  className="min-h-10 rounded-full border border-[#dce9d7] bg-[#f8fbf4] px-4 py-2 text-sm font-bold text-[#095540] motion-safe:transition motion-safe:duration-200 hover:border-[#8dc63f] hover:bg-[#eef7e7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2"
                 >
                   Registrarse
                 </button>
-
                 <button
                   type="button"
                   onClick={onLogin}
-                  className="
-                    bg-transparent
-                    text-white
-                    px-3
-                    xl:px-4
-                    py-2
-                    rounded-lg
-                    font-semibold
-                    text-sm
-                    border
-                    border-white
-                    cursor-pointer
-                    transition-all
-                    hover:bg-white
-                    hover:text-green-900
-                    whitespace-nowrap
-                  "
+                  className="min-h-10 rounded-full bg-[#095540] px-5 py-2 text-sm font-bold text-white shadow-md shadow-[#095540]/20 motion-safe:transition motion-safe:duration-200 hover:bg-[#073f31] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 motion-safe:hover:-translate-y-0.5 motion-reduce:transform-none"
                 >
-                  Iniciar sesión
+                  Ingresar
                 </button>
               </>
             )}
@@ -230,256 +152,116 @@ function Navbar({
               <button
                 type="button"
                 onClick={onGestionRoles}
-                className="
-                  bg-yellow-500
-                  text-white
-                  px-3
-                  xl:px-4
-                  py-2
-                  rounded-lg
-                  font-semibold
-                  text-sm
-                  border-none
-                  cursor-pointer
-                  transition-all
-                  hover:bg-yellow-600
-                  whitespace-nowrap
-                "
+                className="min-h-10 rounded-full bg-[#d9d823] px-4 py-2 text-sm font-bold text-[#073f31] motion-safe:transition motion-safe:duration-200 hover:bg-[#c7cc22] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2"
               >
-                Gestionar Roles
+                Gestionar roles
               </button>
             )}
-
           </div>
 
-          {/* BOTÓN MENÚ MÓVIL */}
           <button
             type="button"
             onClick={() => setMenuAbierto(!menuAbierto)}
-            className="
-              lg:hidden
-              flex
-              items-center
-              justify-center
-              w-10
-              h-10
-              rounded-lg
-              border
-              border-white/40
-              bg-white/10
-              text-white
-              cursor-pointer
-              hover:bg-white/20
-              transition-all
-            "
-            aria-label={
-              menuAbierto
-                ? 'Cerrar menú'
-                : 'Abrir menú'
-            }
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#095540] text-white shadow-sm motion-safe:transition motion-safe:duration-200 hover:bg-[#073f31] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 lg:hidden"
+            aria-label={menuAbierto ? 'Cerrar menú' : 'Abrir menú'}
             aria-expanded={menuAbierto}
+            aria-controls="menu-principal-movil"
           >
             {menuAbierto ? (
-              <span className="text-2xl leading-none">
-                ×
-              </span>
+              <svg
+                viewBox="0 0 24 24"
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                aria-hidden="true"
+              >
+                <path d="M6 6l12 12M18 6 6 18" />
+              </svg>
             ) : (
-              <span className="text-2xl leading-none">
-                ☰
-              </span>
+              <svg
+                viewBox="0 0 24 24"
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                aria-hidden="true"
+              >
+                <path d="M4 7h16M4 12h16M4 17h16" />
+              </svg>
             )}
           </button>
-
         </div>
 
-        {/* MENÚ MÓVIL */}
         {menuAbierto && (
           <div
-            className="
-              lg:hidden
-              border-t
-              border-white/20
-              py-4
-            "
+            id="menu-principal-movil"
+            className="border-t border-[#e2ebe5] px-3 pb-4 pt-3 lg:hidden"
           >
             <div className="flex flex-col gap-1">
-
-              <button
-                type="button"
-                onClick={irInicio}
-                className="
-                  w-full
-                  text-left
-                  px-4
-                  py-3
-                  rounded-lg
-                  bg-transparent
-                  border-none
-                  text-white
-                  font-medium
-                  cursor-pointer
-                  hover:bg-white/10
-                  transition-all
-                "
-              >
+              <button type="button" onClick={irInicio} className={claseNavegacionMovil}>
                 Inicio
               </button>
-
               <button
                 type="button"
-                onClick={() =>
-                  irSeccion('sobre-parque')
-                }
-                className="
-                  w-full
-                  text-left
-                  px-4
-                  py-3
-                  rounded-lg
-                  bg-transparent
-                  border-none
-                  text-white
-                  font-medium
-                  cursor-pointer
-                  hover:bg-white/10
-                  transition-all
-                "
+                onClick={() => irSeccion('sobre-parque')}
+                className={claseNavegacionMovil}
               >
-                Sobre el Parque
+                Sobre el parque
               </button>
-
               <button
                 type="button"
                 onClick={irEmprendimientos}
-                className="
-                  w-full
-                  text-left
-                  px-4
-                  py-3
-                  rounded-lg
-                  bg-transparent
-                  border-none
-                  text-white
-                  font-medium
-                  cursor-pointer
-                  hover:bg-white/10
-                  transition-all
-                "
+                className={claseNavegacionMovil}
               >
                 Emprendimientos
               </button>
-
               <button
                 type="button"
-                onClick={() =>
-                  irSeccion('eventos')
-                }
-                className="
-                  w-full
-                  text-left
-                  px-4
-                  py-3
-                  rounded-lg
-                  bg-transparent
-                  border-none
-                  text-white
-                  font-medium
-                  cursor-pointer
-                  hover:bg-white/10
-                  transition-all
-                "
+                onClick={() => irSeccion('eventos')}
+                className={claseNavegacionMovil}
               >
                 Eventos
               </button>
+            </div>
 
-              {/* SEPARADOR */}
-              <div className="border-t border-white/20 my-3" />
-
-              {/* BOTONES */}
-              {!rolAutenticado && (
-                <div className="flex flex-col gap-2 px-2">
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMenuAbierto(false);
-                      onRegistro();
-                    }}
-                    className="
-                      w-full
-                      bg-white
-                      text-green-900
-                      px-4
-                      py-3
-                      rounded-lg
-                      font-semibold
-                      text-sm
-                      border
-                      border-white
-                      cursor-pointer
-                      transition-all
-                      hover:bg-green-50
-                    "
-                  >
-                    Registrarse
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMenuAbierto(false);
-                      onLogin();
-                    }}
-                    className="
-                      w-full
-                      bg-transparent
-                      text-white
-                      px-4
-                      py-3
-                      rounded-lg
-                      font-semibold
-                      text-sm
-                      border
-                      border-white
-                      cursor-pointer
-                      transition-all
-                      hover:bg-white
-                      hover:text-green-900
-                    "
-                  >
-                    Iniciar sesión
-                  </button>
-
-                </div>
-              )}
-
-              {rolAutenticado === 'administrador' && (
+            {!rolAutenticado && (
+              <div className="mt-3 grid gap-2 border-t border-[#e2ebe5] pt-3 sm:grid-cols-2">
                 <button
                   type="button"
                   onClick={() => {
                     setMenuAbierto(false);
-                    onGestionRoles();
+                    onRegistro();
                   }}
-                  className="
-                    w-full
-                    bg-yellow-500
-                    text-white
-                    px-4
-                    py-3
-                    rounded-lg
-                    font-semibold
-                    text-sm
-                    border-none
-                    cursor-pointer
-                    transition-all
-                    hover:bg-yellow-600
-                  "
+                  className="min-h-12 rounded-full border border-[#b9d6af] bg-[#f8fbf4] px-4 py-3 text-sm font-bold text-[#095540] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f]"
                 >
-                  Gestionar Roles
+                  Registrarse
                 </button>
-              )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuAbierto(false);
+                    onLogin();
+                  }}
+                  className="min-h-12 rounded-full bg-[#095540] px-4 py-3 text-sm font-bold text-white shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f]"
+                >
+                  Ingresar
+                </button>
+              </div>
+            )}
 
-            </div>
+            {rolAutenticado === 'administrador' && (
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuAbierto(false);
+                  onGestionRoles();
+                }}
+                className="mt-3 min-h-12 w-full rounded-full bg-[#d9d823] px-4 py-3 text-sm font-bold text-[#073f31] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f]"
+              >
+                Gestionar roles
+              </button>
+            )}
           </div>
         )}
       </div>

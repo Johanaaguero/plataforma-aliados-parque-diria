@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react';
 
-import './App.css';
-
 import Registro from './components/Registro';
 import Login from './components/login';
 import GestionRoles from './components/GestionRoles';
@@ -150,7 +148,7 @@ function BotonVolverInicio({
   return (
     <button
       type="button"
-      className="boton-volver-inicio"
+      className="fixed left-3 top-3 z-[60] inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-white/70 bg-white/90 px-4 py-2 text-sm font-bold text-[#095540] shadow-[0_10px_30px_rgba(7,63,49,0.16)] backdrop-blur-md motion-safe:transition motion-safe:duration-200 hover:bg-white hover:text-[#073f31] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 motion-safe:hover:-translate-y-0.5 motion-reduce:transform-none sm:left-5 sm:top-5"
       onClick={() => {
         if (onClick) {
           onClick();
@@ -159,7 +157,7 @@ function BotonVolverInicio({
         }
       }}
     >
-      <span className="boton-volver-inicio-icono">
+      <span className="text-lg leading-none" aria-hidden="true">
         ←
       </span>
 
@@ -498,10 +496,10 @@ function App() {
     }
 
     return (
-      <section className="formulario-contenedor">
+      <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef] px-4 pb-12 pt-24 sm:px-6 sm:pt-28">
         <button
           type="button"
-          className="cerrar-formulario"
+          className="fixed right-3 top-3 z-[60] flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/90 text-2xl font-light leading-none text-[#355448] shadow-[0_10px_30px_rgba(7,63,49,0.16)] backdrop-blur-md motion-safe:transition motion-safe:duration-200 hover:bg-white hover:text-[#095540] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 motion-safe:hover:scale-105 motion-reduce:transform-none sm:right-5 sm:top-5"
           onClick={() => {
             setSeccionActual(
               'emprendimientos'
@@ -552,10 +550,10 @@ function App() {
     }
 
     return (
-      <section className="formulario-contenedor">
+      <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef] px-4 pb-12 pt-24 sm:px-6 sm:pt-28">
         <button
           type="button"
-          className="cerrar-formulario"
+          className="fixed right-3 top-3 z-[60] flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/90 text-2xl font-light leading-none text-[#355448] shadow-[0_10px_30px_rgba(7,63,49,0.16)] backdrop-blur-md motion-safe:transition motion-safe:duration-200 hover:bg-white hover:text-[#095540] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 motion-safe:hover:scale-105 motion-reduce:transform-none sm:right-5 sm:top-5"
           onClick={() => {
             setSeccionActual(
               'emprendimientos'
@@ -617,10 +615,10 @@ function App() {
     }
 
     return (
-      <section className="formulario-contenedor">
+      <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef] px-4 pb-12 pt-24 sm:px-6 sm:pt-28">
         <button
           type="button"
-          className="cerrar-formulario"
+          className="fixed right-3 top-3 z-[60] flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/90 text-2xl font-light leading-none text-[#355448] shadow-[0_10px_30px_rgba(7,63,49,0.16)] backdrop-blur-md motion-safe:transition motion-safe:duration-200 hover:bg-white hover:text-[#095540] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 motion-safe:hover:scale-105 motion-reduce:transform-none sm:right-5 sm:top-5"
           onClick={() => {
             setEmprendimientoEditar(null);
 
@@ -701,12 +699,7 @@ function App() {
           }
         />
 
-        <main
-          style={{
-            minHeight: '80vh',
-            paddingTop: '90px',
-          }}
-        >
+        <main className="min-h-[80vh] overflow-x-hidden bg-[#f5f7ef] pt-24 sm:pt-28">
           <ListaEmprendimientos
             rolAutenticado={
               rolAutenticado === 'super_admin'
@@ -752,10 +745,10 @@ function App() {
   return (
     <>
       {mostrarRegistro ? (
-        <section className="formulario-contenedor">
+        <section className="relative min-h-screen overflow-x-hidden">
           <button
             type="button"
-            className="cerrar-formulario"
+            className="fixed right-3 top-3 z-[60] flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/90 text-2xl font-light leading-none text-[#355448] shadow-[0_10px_30px_rgba(7,63,49,0.16)] backdrop-blur-md motion-safe:transition motion-safe:duration-200 hover:bg-white hover:text-[#095540] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 motion-safe:hover:scale-105 motion-reduce:transform-none sm:right-5 sm:top-5"
             onClick={() =>
               setMostrarRegistro(
                 false
@@ -778,10 +771,10 @@ function App() {
           />
         </section>
       ) : mostrarLogin ? (
-        <section className="formulario-contenedor">
+        <section className="relative min-h-screen overflow-x-hidden">
           <button
             type="button"
-            className="cerrar-formulario"
+            className="fixed right-3 top-3 z-[60] flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/90 text-2xl font-light leading-none text-[#355448] shadow-[0_10px_30px_rgba(7,63,49,0.16)] backdrop-blur-md motion-safe:transition motion-safe:duration-200 hover:bg-white hover:text-[#095540] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 motion-safe:hover:scale-105 motion-reduce:transform-none sm:right-5 sm:top-5"
             onClick={() =>
               setMostrarLogin(
                 false
@@ -844,10 +837,10 @@ function App() {
         rolAutenticado ===
           'administrador'
       ) ? (
-        <section>
+        <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef] pt-20 sm:pt-24">
           <button
             type="button"
-            className="boton-volver"
+            className="fixed left-3 top-3 z-[60] inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-[#b9d6af] bg-white/95 px-4 py-2 text-sm font-bold text-[#095540] shadow-[0_10px_30px_rgba(7,63,49,0.15)] backdrop-blur-md motion-safe:transition motion-safe:duration-200 hover:border-[#8dc63f] hover:bg-[#eef7e7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 motion-safe:hover:-translate-y-0.5 motion-reduce:transform-none sm:left-5 sm:top-5"
             onClick={() => {
               setMostrarGestionRoles(
                 false
@@ -862,7 +855,7 @@ function App() {
               );
             }}
           >
-            <span className="boton-volver-icono">
+            <span className="text-lg leading-none" aria-hidden="true">
               ←
             </span>
 
@@ -906,9 +899,11 @@ function App() {
             }
           />
 
-          <Hero />
+          <main>
+            <Hero />
 
-          <Informativo />
+            <Informativo />
+          </main>
 
           <Footer />
 
@@ -934,16 +929,17 @@ function App() {
           {rolAutenticado && (
             <button
               type="button"
-              className="boton-cerrar-sesion"
+              className="fixed bottom-4 right-4 z-40 inline-flex h-12 w-12 items-center justify-center gap-2 rounded-full bg-[#095540] p-0 text-sm font-bold text-white shadow-[0_12px_35px_rgba(7,63,49,0.28)] motion-safe:transition motion-safe:duration-200 hover:bg-[#073f31] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 motion-safe:hover:-translate-y-0.5 motion-reduce:transform-none sm:bottom-6 sm:right-6 sm:w-auto sm:px-5"
+              aria-label="Cerrar sesión"
               onClick={() => {
                 void cerrarSesion();
               }}
             >
-              <span className="boton-cerrar-icono">
-                ↪
+              <span className="text-lg leading-none" aria-hidden="true">
+                ↗
               </span>
 
-              <span>
+              <span className="hidden sm:inline">
                 Cerrar sesión
               </span>
             </button>
@@ -952,47 +948,17 @@ function App() {
           {mostrarErrorModal &&
             errorAutenticacion && (
               <div
-                style={{
-                  position: 'fixed',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  backgroundColor:
-                    'rgba(0, 0, 0, 0.5)',
-                  display: 'flex',
-                  alignItems:
-                    'center',
-                  justifyContent:
-                    'center',
-                  zIndex: 1000,
-                  padding: '20px',
-                }}
+                className="fixed inset-0 z-[70] flex items-center justify-center bg-[#052f25]/70 p-4 backdrop-blur-sm"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="titulo-error-autenticacion"
               >
                 <div
-                  style={{
-                    backgroundColor:
-                      'white',
-                    padding: '24px',
-                    borderRadius:
-                      '12px',
-                    maxWidth:
-                      '400px',
-                    width: '100%',
-                    boxShadow:
-                      '0 10px 30px rgba(0, 0, 0, 0.2)',
-                  }}
+                  className="w-full max-w-md rounded-[1.75rem] border border-white/70 bg-[#fffef9] p-6 shadow-[0_24px_70px_rgba(5,47,37,0.3)] motion-safe:transition motion-safe:duration-200 starting:scale-[0.98] starting:opacity-0 motion-reduce:transform-none motion-reduce:transition-none sm:p-8"
                 >
                   <h2
-                    style={{
-                      marginTop: 0,
-                      marginBottom:
-                        '12px',
-                      fontSize:
-                        '20px',
-                      fontWeight:
-                        '700',
-                    }}
+                    id="titulo-error-autenticacion"
+                    className="text-xl font-bold tracking-[-0.015em] text-[#17372c] sm:text-2xl"
                   >
                     {errorAutenticacion.status ===
                     401
@@ -1001,11 +967,7 @@ function App() {
                   </h2>
 
                   <p
-                    style={{
-                      marginBottom:
-                        '12px',
-                      color: '#444',
-                    }}
+                    className="mt-3 text-sm leading-6 text-[#587267] sm:text-base"
                   >
                     {
                       errorAutenticacion.message
@@ -1014,14 +976,7 @@ function App() {
 
                   {errorAutenticacion.code && (
                     <p
-                      style={{
-                        fontSize:
-                          '12px',
-                        color:
-                          '#666',
-                        marginBottom:
-                          '18px',
-                      }}
+                      className="mt-3 rounded-xl bg-[#eef4ea] px-3 py-2 font-mono text-xs text-[#587267]"
                     >
                       Código:{' '}
                       {
@@ -1032,25 +987,11 @@ function App() {
 
                   <button
                     type="button"
+                    autoFocus
                     onClick={
                       cerrarErrorModal
                     }
-                    style={{
-                      padding:
-                        '9px 18px',
-                      backgroundColor:
-                        '#007bff',
-                      color:
-                        'white',
-                      border:
-                        'none',
-                      borderRadius:
-                        '6px',
-                      cursor:
-                        'pointer',
-                      fontWeight:
-                        '600',
-                    }}
+                    className="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-full bg-[#095540] px-5 py-2.5 text-sm font-bold text-white shadow-md motion-safe:transition motion-safe:duration-200 hover:bg-[#073f31] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 sm:w-auto"
                   >
                     Aceptar
                   </button>
