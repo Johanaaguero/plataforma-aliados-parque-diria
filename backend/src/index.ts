@@ -7,6 +7,7 @@ import authRoutes from './modulos/Autenticación y gestión de usuario/Registro 
 import loginRoutes from './modulos/Autenticación y gestión de usuario/inicio de sesion/login.route';
 import recuperacionRoutes from './modulos/Autenticación y gestión de usuario/Recuperación de contraseña/recuperacion.route';
 import rolesRoutes from './modulos/Autenticación y gestión de usuario/Gestión de Roles/roles.route';
+import cuentasBloqueadasRoutes from './modulos/Autenticación y gestión de usuario/Gestión de cuentas bloqueadas/cuentasBloqueadas.route';
 import emprendimientoRoutes from './modulos/Administración de emprendimientos/Registro de emprendimientos/emprendimiento.routes';
 import categoriaEmprendimientoRoutes from './modulos/Administración de emprendimientos/Registro de emprendimientos/categoriaEmprendimiento.routes';
 import eliminarEmprendimientoRoutes from './modulos/Administración de emprendimientos/Eliminación de emprendimientos/eliminarEmprendimiento.route';
@@ -27,6 +28,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/auth', loginRoutes);
 app.use('/api/auth', recuperacionRoutes);
 app.use('/api/users', rolesRoutes);
+app.use('/api/admin', cuentasBloqueadasRoutes);
 app.use('/api/emprendimientos', emprendimientoRoutes);
 app.use('/api/categorias-emprendimientos', categoriaEmprendimientoRoutes);
 app.use('/api/emprendimientos', eliminarEmprendimientoRoutes);

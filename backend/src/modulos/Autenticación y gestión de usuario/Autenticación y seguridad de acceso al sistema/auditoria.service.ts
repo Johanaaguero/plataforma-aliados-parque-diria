@@ -1,4 +1,5 @@
 import { Request } from 'express';
+import type { EntityManager } from 'typeorm';
 import { AppDataSource } from '../../../data-source';
 import { AuditLog } from '../../../models/AuditLog';
 
@@ -13,9 +14,14 @@ interface AuditLogInput {
   details?: string;
 }
 
-export const registrarAuditoria = async (input: AuditLogInput): Promise<void> => {
+export const registrarAuditoria = async (
+  input: AuditLogInput,
+  manager?: EntityManager,
+): Promise<void> => {
   try {
-    const repo = AppDataSource.getRepository(AuditLog);
+    const repo = manager
+      ? manager.getRepository(AuditLog)
+      : AppDataSource.getRepository(AuditLog);
 
     const auditLog = repo.create({
       usuarioId: input.usuarioId || null,
@@ -30,6 +36,10 @@ export const registrarAuditoria = async (input: AuditLogInput): Promise<void> =>
     await repo.save(auditLog);
   } catch (error) {
     console.warn('Error al registrar auditoría:', error);
+
+    if (manager) {
+      throw error;
+    }
   }
 };
 

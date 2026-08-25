@@ -1,7 +1,11 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 import { Usuario } from './Usuario';
 
-export type NombreRol = 'administrador' | 'asociado' | 'visitante';
+export type NombreRol =
+  | 'administrador'
+  | 'asociado'
+  | 'visitante'
+  | 'super_admin';
 
 @Entity('roles')
 export class Rol {
@@ -10,7 +14,7 @@ export class Rol {
 
   @Column({
     type: 'enum',
-    enum: ['administrador', 'asociado', 'visitante'],
+    enum: ['administrador', 'asociado', 'visitante', 'super_admin'],
     unique: true,
   })
   nombre!: NombreRol;
