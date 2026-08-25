@@ -478,11 +478,11 @@ useEffect(() => {
 
   if (cargando) {
     return (
-      <section className="min-h-screen bg-slate-50/50 px-6 py-16">
+      <section className="min-h-screen bg-[#f5f7f1] px-4 py-16 sm:px-6">
         <div className="mx-auto max-w-7xl">
           <div className="flex min-h-[400px] items-center justify-center">
             <div className="text-center">
-              <div className="mx-auto mb-5 h-12 w-12 animate-spin rounded-full border-4 border-slate-200 border-t-emerald-700" />
+              <div className="mx-auto mb-5 h-12 w-12 rounded-full border-4 border-emerald-100 border-t-emerald-800 motion-safe:animate-spin motion-reduce:animate-none" />
               <h2 className="text-lg font-semibold text-slate-800">
                 Cargando emprendimientos
               </h2>
@@ -498,9 +498,9 @@ useEffect(() => {
 
   if (error) {
     return (
-      <section className="min-h-screen bg-slate-50/50 px-6 py-16">
+      <section className="min-h-screen bg-[#f5f7f1] px-4 py-16 sm:px-6">
         <div className="mx-auto max-w-3xl">
-          <div className="rounded-2xl border border-red-200 bg-white p-8 text-center shadow-sm">
+          <div className="rounded-3xl border border-red-200 bg-[#fffef9] p-8 text-center shadow-[0_18px_50px_rgba(20,83,45,0.08)]" role="alert">
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-50 text-red-600">
               <svg
                 className="h-7 w-7"
@@ -527,14 +527,15 @@ useEffect(() => {
   }
 
   return (
-    <section className="min-h-screen bg-slate-50/60 px-4 py-8 sm:px-6 lg:px-10">
+    <section className="min-h-screen overflow-x-clip bg-[#f5f7f1] px-4 py-8 sm:px-6 lg:px-10">
       <div className="mx-auto max-w-7xl">
         {/* ENCABEZADO */}
-        <div className="mb-8 overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-900 via-emerald-800 to-green-800 px-7 py-8 text-white shadow-xl sm:px-10">
+        <div className="relative mb-8 overflow-hidden rounded-[2rem] bg-gradient-to-br from-emerald-950 via-emerald-900 to-green-800 px-5 py-8 text-white shadow-[0_24px_70px_rgba(20,83,45,0.2)] sm:px-10">
+          <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-[#d9d823]/15 blur-3xl" aria-hidden="true" />
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-            <div className="max-w-3xl">
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-emerald-100 backdrop-blur-md">
-                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+            <div className="relative max-w-3xl">
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-emerald-50 backdrop-blur-md">
+                <span className="h-2 w-2 rounded-full bg-[#d9d823] motion-safe:animate-pulse motion-reduce:animate-none" />
                 {esAdministrador
                   ? 'Panel de administración'
                   : esAsociado
@@ -553,12 +554,12 @@ useEffect(() => {
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="relative flex flex-col gap-3 min-[430px]:flex-row min-[430px]:flex-wrap min-[430px]:items-center">
               {esAdministrador && onRegistrarCategoria && (
                 <button
                   type="button"
                   onClick={onRegistrarCategoria}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-white/20 active:scale-[0.98]"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/25 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white shadow-sm backdrop-blur-sm motion-safe:transition-all motion-safe:duration-200 hover:bg-white/20 motion-safe:active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 focus-visible:ring-offset-emerald-900 motion-reduce:transform-none"
                 >
                   <svg
                     className="h-4 w-4"
@@ -577,7 +578,7 @@ useEffect(() => {
                 <button
                   type="button"
                   onClick={onRegistrar}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-emerald-950 shadow-md transition-all duration-200 hover:bg-emerald-50 active:scale-[0.98]"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#d9d823] px-5 py-2.5 text-sm font-bold text-emerald-950 shadow-md motion-safe:transition-all motion-safe:duration-200 hover:bg-[#e5e55d] motion-safe:active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-emerald-900 motion-reduce:transform-none"
                 >
                   <svg
                     className="h-4 w-4 text-emerald-800"
@@ -598,12 +599,12 @@ useEffect(() => {
         {/* MENSAJE DE ACCIÓN */}
        {mensajeAccion && (
   <div
-    className="fixed right-4 top-4 z-[100] w-[calc(100%-2rem)] max-w-md animate-in slide-in-from-right-5 fade-in duration-300"
+    className="fixed right-4 top-4 z-[100] w-[calc(100%-2rem)] max-w-md motion-safe:transition-[opacity,transform] motion-safe:duration-300 motion-safe:ease-out motion-reduce:transition-none"
     role={mensajeAccion.tipo === 'error' ? 'alert' : 'status'}
     aria-live="polite"
   >
     <div
-      className={`flex items-start gap-3 rounded-2xl border bg-white p-4 shadow-xl ${
+      className={`flex items-start gap-3 rounded-2xl border bg-[#fffef9] p-4 shadow-xl ${
         mensajeAccion.tipo === 'exito'
           ? 'border-emerald-200'
           : 'border-rose-200'
@@ -634,10 +635,12 @@ useEffect(() => {
       <button
         type="button"
         onClick={() => setMensajeAccion(null)}
-        className="shrink-0 rounded-lg p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+        className="shrink-0 rounded-lg p-1 text-stone-400 motion-safe:transition-colors hover:bg-stone-100 hover:text-stone-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2"
         aria-label="Cerrar notificación"
       >
-        
+        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 6l12 12M18 6 6 18" />
+        </svg>
       </button>
     </div>
   </div>
@@ -650,7 +653,7 @@ useEffect(() => {
 
         {/* INFORMACIÓN ROLE BANNER */}
         {esAsociado && (
-          <div className="mb-6 rounded-2xl border border-emerald-100 bg-white p-5 shadow-xs">
+          <div className="mb-6 rounded-3xl border border-emerald-100 bg-[#fffef9] p-5 shadow-sm">
             <div className="flex items-start gap-4">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
                 <svg
@@ -678,7 +681,7 @@ useEffect(() => {
         )}
 
         {!rolAutenticado && (
-          <div className="mb-6 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs">
+          <div className="mb-6 rounded-3xl border border-stone-200 bg-[#fffef9] p-5 shadow-sm">
             <div className="flex items-start gap-4">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
                 <svg
@@ -706,7 +709,7 @@ useEffect(() => {
         )}
 
         {/* BUSCADOR Y FILTROS INTERACTIVOS TIPO TAB */}
-        <div className="mb-8 space-y-4 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs sm:p-5">
+        <div className="mb-8 space-y-4 rounded-3xl border border-emerald-950/10 bg-[#fffef9] p-4 shadow-sm sm:p-5">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             {/* Buscador de texto */}
             <div className="relative flex-1">
@@ -728,7 +731,7 @@ useEffect(() => {
                 placeholder="Buscar por nombre o descripción..."
                 value={busquedaTexto}
                 onChange={(e) => setBusquedaTexto(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pl-10 pr-4 text-sm font-medium text-slate-800 placeholder-slate-400 transition focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                className="w-full rounded-2xl border border-stone-200 bg-stone-50/70 py-3 pl-10 pr-4 text-sm font-medium text-stone-800 placeholder:text-stone-400 outline-none motion-safe:transition-[border-color,background-color,box-shadow] motion-safe:duration-200 focus-visible:border-emerald-700 focus-visible:bg-white focus-visible:ring-4 focus-visible:ring-emerald-100"
               />
             </div>
 
@@ -744,7 +747,7 @@ useEffect(() => {
               <button
                 type="button"
                 onClick={() => setFiltroEstado('todos')}
-                className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition-all ${
+                className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-700 focus-visible:ring-offset-2 ${
                   filtroEstado === 'todos'
                     ? 'bg-slate-900 text-white shadow-xs'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200/80'
@@ -765,7 +768,7 @@ useEffect(() => {
               <button
                 type="button"
                 onClick={() => setFiltroEstado('publicado')}
-                className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition-all ${
+                className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2 ${
                   filtroEstado === 'publicado'
                     ? 'bg-emerald-700 text-white shadow-xs'
                     : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100/80'
@@ -786,7 +789,7 @@ useEffect(() => {
               <button
                 type="button"
                 onClick={() => setFiltroEstado('no_publicado')}
-                className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition-all ${
+                className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2 ${
                   filtroEstado === 'no_publicado'
                     ? 'bg-amber-600 text-white shadow-xs'
                     : 'bg-amber-50 text-amber-800 hover:bg-amber-100/80'
@@ -807,7 +810,7 @@ useEffect(() => {
               <button
                 type="button"
                 onClick={() => setFiltroEstado('borrador')}
-                className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition-all ${
+                className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-700 focus-visible:ring-offset-2 ${
                   filtroEstado === 'borrador'
                     ? 'bg-slate-700 text-white shadow-xs'
                     : 'bg-slate-100 text-slate-700 hover:bg-slate-200/80'
@@ -828,7 +831,7 @@ useEffect(() => {
               <button
                 type="button"
                 onClick={() => setFiltroEstado('desactivado')}
-                className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition-all ${
+                className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-700 focus-visible:ring-offset-2 ${
                   filtroEstado === 'desactivado'
                     ? 'bg-rose-700 text-white shadow-xs'
                     : 'bg-rose-50 text-rose-800 hover:bg-rose-100/80'
@@ -851,20 +854,20 @@ useEffect(() => {
 
         {/* MENSAJES DE ELIMINACIÓN */}
         {mensajeEliminacion && (
-          <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">
+          <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800" role="status" aria-live="polite">
             {mensajeEliminacion}
           </div>
         )}
 
         {errorEliminacion && (
-          <div className="mb-6 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-800">
+          <div className="mb-6 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-800" role="alert">
             {errorEliminacion}
           </div>
         )}
 
         {/* ESTADO VACÍO */}
         {emprendimientosFiltrados.length === 0 && (
-          <div className="rounded-3xl border border-slate-200 bg-white px-6 py-16 text-center shadow-xs">
+          <div className="rounded-[2rem] border border-stone-200 bg-[#fffef9] px-5 py-16 text-center shadow-sm sm:px-6">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
               <svg
                 className="h-8 w-8"
@@ -893,7 +896,7 @@ useEffect(() => {
               <button
                 type="button"
                 onClick={onRegistrar}
-                className="mt-6 inline-flex items-center gap-2 rounded-xl bg-emerald-800 px-5 py-2.5 text-sm font-bold text-white shadow-xs transition hover:bg-emerald-700"
+                className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-emerald-900 px-5 py-2.5 text-sm font-bold text-white shadow-sm motion-safe:transition-all motion-safe:duration-200 motion-safe:hover:-translate-y-0.5 hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 motion-reduce:transform-none"
               >
                 <svg
                   className="h-4 w-4"
@@ -913,7 +916,7 @@ useEffect(() => {
        
 {/* TARJETAS DE EMPRENDIMIENTO */}
 {emprendimientosFiltrados.length > 0 && (
-  <div className="grid grid-cols-1 gap-7 sm:grid-cols-2 xl:grid-cols-3">
+  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3 xl:gap-7">
     {emprendimientosFiltrados.map((emprendimiento) => {
       const estiloEstado = obtenerEstiloEstado(
         emprendimiento.estadoPublicacion,
@@ -946,29 +949,32 @@ useEffect(() => {
           key={emprendimiento.id}
           className="
             group flex h-full flex-col overflow-hidden
-            rounded-[1.5rem]
-            border border-slate-200/80
-            bg-white
-            shadow-[0_4px_20px_rgba(15,23,42,0.06)]
-            transition-all duration-300
-            hover:-translate-y-1
+            rounded-[1.75rem]
+            border border-emerald-950/10
+            bg-[#fffef9]
+            shadow-[0_8px_28px_rgba(20,83,45,0.07)]
+            motion-safe:transition-all motion-safe:duration-300
+            motion-safe:hover:-translate-y-1
             hover:border-emerald-200
-            hover:shadow-[0_18px_45px_rgba(15,23,42,0.12)]
+            hover:shadow-[0_20px_50px_rgba(20,83,45,0.13)]
+            motion-reduce:transform-none motion-reduce:transition-none
           "
         >
           {/* =========================
               IMAGEN / PORTADA
           ========================== */}
-          <div className="relative h-60 overflow-hidden bg-slate-100">
+          <div className="relative h-56 overflow-hidden bg-stone-100 sm:h-60">
             {emprendimiento.imagen ? (
               <img
                 src={emprendimiento.imagen}
                 alt={emprendimiento.nombre}
+                loading="lazy"
                 className="
                   h-full w-full object-cover
-                  transition-transform duration-700
-                  ease-out
-                  group-hover:scale-105
+                  motion-safe:transition-transform motion-safe:duration-700
+                  motion-safe:ease-out
+                  motion-safe:group-hover:scale-[1.03]
+                  motion-reduce:transform-none motion-reduce:transition-none
                 "
               />
             ) : (
@@ -1020,8 +1026,8 @@ useEffect(() => {
 
             {/* Categoría */}
             {nombreCategoria && (
-              <div className="absolute bottom-4 left-4">
-                <span className="inline-flex items-center rounded-full border border-white/20 bg-black/25 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-white backdrop-blur-md">
+              <div className="absolute bottom-4 left-4 max-w-[calc(100%-5rem)]">
+                <span className="inline-flex max-w-full items-center truncate rounded-full border border-white/20 bg-black/25 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-white backdrop-blur-md">
                   {nombreCategoria}
                 </span>
               </div>
@@ -1060,7 +1066,7 @@ useEffect(() => {
           <div className="flex flex-1 flex-col p-5 sm:p-6">
             {/* Título */}
             <div className="min-h-[4.5rem]">
-              <h2 className="line-clamp-2 text-xl font-extrabold tracking-tight text-slate-900 transition-colors group-hover:text-emerald-800">
+              <h2 className="line-clamp-2 text-xl font-extrabold tracking-tight text-stone-900 motion-safe:transition-colors group-hover:text-emerald-900">
                 {emprendimiento.nombre}
               </h2>
 
@@ -1184,12 +1190,12 @@ useEffect(() => {
 
                     const estiloBoton =
                       transicion.accion === 'publicar'
-                        ? 'bg-emerald-700 text-white shadow-sm hover:bg-emerald-800 focus:ring-emerald-600'
+                        ? 'bg-emerald-800 text-white shadow-sm hover:bg-emerald-900 focus-visible:ring-emerald-700'
                         : transicion.accion === 'ocultar'
-                        ? 'border border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100 focus:ring-amber-500'
+                        ? 'border border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100 focus-visible:ring-amber-500'
                         : transicion.accion === 'desactivar'
-                        ? 'border border-rose-300 bg-rose-50 text-rose-800 hover:bg-rose-100 focus:ring-rose-500'
-                        : 'border border-emerald-300 bg-emerald-50 text-emerald-900 hover:bg-emerald-100 focus:ring-emerald-500';
+                        ? 'border border-rose-300 bg-rose-50 text-rose-800 hover:bg-rose-100 focus-visible:ring-rose-500'
+                        : 'border border-emerald-300 bg-emerald-50 text-emerald-900 hover:bg-emerald-100 focus-visible:ring-emerald-500';
 
                     return (
                       <button
@@ -1212,10 +1218,10 @@ useEffect(() => {
                           flex w-full items-center justify-center gap-2
                           rounded-xl px-4 py-2.5
                           text-xs font-bold
-                          transition-all duration-200
-                          focus:outline-none
-                          focus:ring-2
-                          focus:ring-offset-1
+                          motion-safe:transition-all motion-safe:duration-200
+                          focus-visible:outline-none
+                          focus-visible:ring-2
+                          focus-visible:ring-offset-2
                           disabled:cursor-not-allowed
                           disabled:opacity-50
                           ${estiloBoton}
@@ -1223,7 +1229,7 @@ useEffect(() => {
                       >
                         {esEstaTransicionProcesando ? (
                           <>
-                            <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                            <span className="h-3.5 w-3.5 rounded-full border-2 border-current border-t-transparent motion-safe:animate-spin motion-reduce:animate-none" />
                             Actualizando...
                           </>
                         ) : (
@@ -1256,7 +1262,7 @@ useEffect(() => {
                     );
                   })}
 
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 gap-2 min-[430px]:grid-cols-2 sm:grid-cols-1 md:grid-cols-2">
                     {puedeEditar && onEditar && (
                       <button
                         type="button"
@@ -1280,12 +1286,13 @@ useEffect(() => {
                           px-3 py-2.5
                           text-xs font-bold text-slate-700
                           shadow-sm
-                          transition-all
+                          motion-safe:transition-colors motion-safe:duration-200
                           hover:border-slate-300
                           hover:bg-slate-50
                           hover:text-slate-900
-                          focus:outline-none
-                          focus:ring-2 focus:ring-slate-400
+                          focus-visible:outline-none
+                          focus-visible:ring-2 focus-visible:ring-slate-400
+                          focus-visible:ring-offset-2
                           disabled:cursor-not-allowed
                           disabled:opacity-50
                         "
@@ -1326,12 +1333,13 @@ useEffect(() => {
                         bg-white
                         px-3 py-2.5
                         text-xs font-bold text-rose-700
-                        transition-all
+                        motion-safe:transition-colors motion-safe:duration-200
                         hover:border-rose-300
                         hover:bg-rose-50
                         hover:text-rose-800
-                        focus:outline-none
-                        focus:ring-2 focus:ring-rose-400
+                        focus-visible:outline-none
+                        focus-visible:ring-2 focus-visible:ring-rose-400
+                        focus-visible:ring-offset-2
                         disabled:cursor-not-allowed
                         disabled:opacity-50
                       "
@@ -1378,12 +1386,13 @@ useEffect(() => {
                     px-4 py-2.5
                     text-xs font-bold text-emerald-800
                     shadow-sm
-                    transition-all
+                    motion-safe:transition-colors motion-safe:duration-200
                     hover:border-emerald-300
                     hover:bg-emerald-50
                     hover:text-emerald-900
-                    focus:outline-none
-                    focus:ring-2 focus:ring-emerald-500
+                    focus-visible:outline-none
+                    focus-visible:ring-2 focus-visible:ring-emerald-500
+                    focus-visible:ring-offset-2
                     disabled:cursor-not-allowed
                     disabled:opacity-50
                   "
@@ -1418,14 +1427,14 @@ useEffect(() => {
         {/* MODAL CAMBIO ESTADO */}
         {emprendimientoSeleccionado && (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-emerald-950/65 p-4 backdrop-blur-sm starting:opacity-0 motion-safe:transition-opacity motion-safe:duration-200 motion-reduce:backdrop-blur-none"
             onMouseDown={(e) => {
               if (e.target === e.currentTarget) cerrarConfirmacion();
             }}
           >
             <div
               ref={dialogoConfirmacion}
-              className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl sm:p-7"
+              className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-[2rem] border border-white/60 bg-[#fffef9] p-6 shadow-2xl starting:scale-[0.98] starting:opacity-0 motion-safe:transition-[opacity,transform] motion-safe:duration-200 motion-reduce:transform-none sm:p-7"
               role="dialog"
               tabIndex={-1}
               aria-busy={idProcesando !== null}
@@ -1462,12 +1471,13 @@ useEffect(() => {
                 ?
               </p>
 
-              <div className="mt-6 flex gap-3">
+              <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row">
                 <button
                   type="button"
+                  autoFocus
                   onClick={cerrarConfirmacion}
                   disabled={idProcesando !== null}
-                  className="flex-1 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                  className="flex-1 rounded-2xl border border-stone-300 bg-white px-4 py-2.5 text-sm font-bold text-stone-700 motion-safe:transition-colors hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Cancelar
                 </button>
@@ -1476,7 +1486,7 @@ useEffect(() => {
                   type="button"
                   onClick={() => void confirmarCambioPublicacion()}
                   disabled={idProcesando !== null}
-                  className="flex-1 rounded-xl bg-emerald-800 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                  className="flex-1 rounded-2xl bg-emerald-900 px-4 py-2.5 text-sm font-bold text-white shadow-sm motion-safe:transition-colors hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {idProcesando !== null ? 'Guardando...' : 'Confirmar'}
                 </button>
@@ -1488,12 +1498,20 @@ useEffect(() => {
         {/* MODAL ELIMINAR */}
         {emprendimientoAEliminar && (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-emerald-950/65 p-4 backdrop-blur-sm starting:opacity-0 motion-safe:transition-opacity motion-safe:duration-200 motion-reduce:backdrop-blur-none"
             onMouseDown={(e) => {
               if (e.target === e.currentTarget && !eliminando) setEmprendimientoAEliminar(null);
             }}
           >
-            <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl sm:p-7">
+            <div
+              className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-[2rem] border border-white/60 bg-[#fffef9] p-6 shadow-2xl starting:scale-[0.98] starting:opacity-0 motion-safe:transition-[opacity,transform] motion-safe:duration-200 motion-reduce:transform-none sm:p-7"
+              role="dialog"
+              tabIndex={-1}
+              aria-busy={eliminando}
+              aria-modal="true"
+              aria-labelledby="titulo-eliminar-emprendimiento"
+              aria-describedby="detalle-eliminar-emprendimiento"
+            >
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
                 <svg
                   className="h-6 w-6"
@@ -1510,11 +1528,11 @@ useEffect(() => {
                 </svg>
               </div>
 
-              <h2 className="text-xl font-bold text-slate-900">
+              <h2 id="titulo-eliminar-emprendimiento" className="text-xl font-bold text-stone-900">
                 Eliminar emprendimiento
               </h2>
 
-              <p className="mt-2 text-sm leading-relaxed text-slate-600">
+              <p id="detalle-eliminar-emprendimiento" className="mt-2 text-sm leading-relaxed text-stone-600">
                 ¿Estás seguro de que deseas eliminar{' '}
                 <strong className="text-slate-900">
                   {emprendimientoAEliminar.nombre}
@@ -1522,12 +1540,13 @@ useEffect(() => {
                 ? Esta acción es irreversible.
               </p>
 
-              <div className="mt-6 flex gap-3">
+              <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row">
                 <button
                   type="button"
+                  autoFocus
                   onClick={() => setEmprendimientoAEliminar(null)}
                   disabled={eliminando}
-                  className="flex-1 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                  className="flex-1 rounded-2xl border border-stone-300 bg-white px-4 py-2.5 text-sm font-bold text-stone-700 motion-safe:transition-colors hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Cancelar
                 </button>
@@ -1536,7 +1555,7 @@ useEffect(() => {
                   type="button"
                   onClick={() => void confirmarEliminacion()}
                   disabled={eliminando}
-                  className="flex-1 rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-rose-700 disabled:opacity-50"
+                  className="flex-1 rounded-2xl bg-rose-700 px-4 py-2.5 text-sm font-bold text-white shadow-sm motion-safe:transition-colors hover:bg-rose-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {eliminando ? 'Eliminando...' : 'Eliminar'}
                 </button>

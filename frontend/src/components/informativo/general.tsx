@@ -1,92 +1,243 @@
 import { useEffect, useState } from 'react';
 
-import parque1 from '../../assets/imagen1.png';
-import parque2 from '../../assets/imagen2.png';
-import parque3 from '../../assets/imagen3.png';
-import parque4 from '../../assets/imagen4.png';
+import parque1 from '../../assets/diria-paisaje-1.jpg';
+import parque2 from '../../assets/diria-paisaje-2.jpg';
+import parque3 from '../../assets/diria-paisaje-3.jpg';
+import parque4 from '../../assets/diria-paisaje-4.jpg';
+
+const IMAGENES_PARQUE = [
+  {
+    src: parque1,
+    alt: 'Entrada al Parque Nacional Diriá rodeada de vegetación',
+  },
+  {
+    src: parque2,
+    alt: 'Poza natural entre las rocas del Parque Nacional Diriá',
+  },
+  {
+    src: parque3,
+    alt: 'Vista aérea del bosque y las comunidades alrededor del Diriá',
+  },
+  {
+    src: parque4,
+    alt: 'Café maduro cultivado por comunidades cercanas al Diriá',
+  },
+] as const;
+
+const MODULOS = [
+  {
+    id: 'atractivos',
+    titulo: 'Experiencias',
+    categoria: 'Explorar',
+    descripcion: 'Senderos, paisajes y encuentros con la riqueza natural del Diriá.',
+    imagen: parque2,
+    alt: 'Poza natural rodeada por el bosque',
+  },
+  {
+    id: 'emprendimientos',
+    titulo: 'Emprendimientos',
+    categoria: 'Comunidad',
+    descripcion: 'Propuestas locales creadas por los aliados de nuestras comunidades.',
+    imagen: parque4,
+    alt: 'Frutos de café producidos en la zona',
+  },
+  {
+    id: 'eventos',
+    titulo: 'Eventos',
+    categoria: 'Encontrarnos',
+    descripcion: 'Actividades que conectan a visitantes, naturaleza y comunidad.',
+    imagen: parque1,
+    alt: 'Acceso principal al Parque Nacional Diriá',
+  },
+  {
+    id: 'capacitaciones',
+    titulo: 'Capacitaciones',
+    categoria: 'Crecer',
+    descripcion: 'Conocimiento que fortalece el turismo rural y el trabajo colaborativo.',
+    imagen: parque3,
+    alt: 'Comunidades y terrenos productivos entre el bosque',
+  },
+] as const;
 
 function Informativo() {
-  const imagenes = [parque1, parque2, parque3, parque4];
-
   const [imagenActual, setImagenActual] = useState(0);
 
   useEffect(() => {
-    const intervalo = setInterval(() => {
-      setImagenActual((actual) => (actual + 1) % imagenes.length);
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      return undefined;
+    }
+
+    const intervalo = window.setInterval(() => {
+      setImagenActual((actual) => (actual + 1) % IMAGENES_PARQUE.length);
     }, 4000);
 
-    return () => clearInterval(intervalo);
+    return () => window.clearInterval(intervalo);
   }, []);
 
   return (
     <section
       id="sobre-parque"
-      className="py-20 px-6 bg-white"
+      className="relative scroll-mt-28 overflow-hidden bg-[#f7f8f1] px-4 py-20 sm:px-6 sm:py-24 lg:px-8 lg:py-28"
     >
-      <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+      <div
+        className="absolute -right-28 top-16 h-72 w-72 rounded-full bg-[#8dc63f]/10 blur-3xl"
+        aria-hidden="true"
+      />
 
-        {/* CARRUSEL */}
-        <div className="relative overflow-hidden rounded-2xl shadow-lg">
-
-          {/* Contenedor de imágenes */}
-          <div
-            className="flex transition-transform duration-700 ease-in-out"
-            style={{
-              transform: `translateX(-${imagenActual * 100}%)`,
-            }}
-          >
-            {imagenes.map((imagen, index) => (
+      <div className="relative mx-auto max-w-7xl">
+        <div className="grid items-center gap-10 lg:grid-cols-[1.08fr_0.92fr] lg:gap-16">
+          <div className="relative min-h-[360px] overflow-hidden rounded-[2rem] bg-[#095540] shadow-[0_24px_70px_rgba(7,63,49,0.18)] sm:min-h-[460px] lg:min-h-[540px]">
+            {IMAGENES_PARQUE.map((imagen, index) => (
               <img
-                key={index}
-                src={imagen}
-                alt={`Parque Nacional Diriá ${index + 1}`}
-                className="w-full h-[400px] object-cover flex-shrink-0"
-              />
-            ))}
-          </div>
-
-          {/* Indicadores */}
-          <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
-            {imagenes.map((_, index) => (
-              <button
-                key={index}
-                type="button"
-                onClick={() => setImagenActual(index)}
-                className={`w-3 h-3 rounded-full transition ${
+                key={imagen.src}
+                src={imagen.src}
+                alt={imagenActual === index ? imagen.alt : ''}
+                aria-hidden={imagenActual !== index}
+                loading="lazy"
+                decoding="async"
+                className={`absolute inset-0 h-full w-full object-cover motion-safe:transition-[opacity,transform] motion-safe:duration-700 motion-safe:ease-out motion-reduce:transform-none motion-reduce:transition-none ${
                   imagenActual === index
-                    ? 'bg-white'
-                    : 'bg-white/50'
+                    ? 'scale-100 opacity-100'
+                    : 'scale-[1.025] opacity-0'
                 }`}
-                aria-label={`Ver imagen ${index + 1}`}
               />
             ))}
+
+            <div
+              className="absolute inset-0 bg-gradient-to-t from-[#052f25]/65 via-transparent to-transparent"
+              aria-hidden="true"
+            />
+
+            <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-4 p-5 sm:p-7">
+              <div className="rounded-2xl border border-white/20 bg-[#052f25]/55 px-4 py-3 text-white backdrop-blur-md">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#d9d823]">
+                  Paisaje vivo
+                </p>
+                <p className="mt-1 text-sm font-semibold sm:text-base">
+                  Parque Nacional Diriá
+                </p>
+              </div>
+
+              <div
+                className="flex gap-0.5 rounded-full border border-white/20 bg-[#052f25]/55 p-1.5 backdrop-blur-md"
+                role="group"
+                aria-label="Seleccionar imagen del parque"
+              >
+                {IMAGENES_PARQUE.map((imagen, index) => (
+                  <button
+                    key={imagen.src}
+                    type="button"
+                    onClick={() => setImagenActual(index)}
+                    className="group flex h-6 w-6 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d9d823]"
+                    aria-label={`Ver imagen ${index + 1}: ${imagen.alt}`}
+                    aria-current={imagenActual === index ? 'true' : undefined}
+                  >
+                    <span
+                      className={`h-2.5 rounded-full motion-safe:transition-all motion-safe:duration-300 motion-reduce:transition-none ${
+                        imagenActual === index
+                          ? 'w-5 bg-[#d9d823]'
+                          : 'w-2.5 bg-white/55 group-hover:bg-white'
+                      }`}
+                      aria-hidden="true"
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#009444] sm:text-sm">
+              Conoce nuestro parque
+            </p>
+            <h2 className="mt-4 text-3xl font-semibold leading-tight tracking-[-0.025em] text-[#17372c] sm:text-4xl lg:text-5xl">
+              Un refugio natural conectado con su comunidad.
+            </h2>
+            <p className="mt-6 text-base leading-7 text-[#587267] sm:text-lg sm:leading-8">
+              El Parque Nacional Diriá es un espacio natural que destaca por su
+              riqueza ecológica, sus paisajes y la diversidad de especies que
+              habitan en la zona.
+            </p>
+            <p className="mt-4 text-base leading-7 text-[#587267] sm:text-lg sm:leading-8">
+              A través de SIGTAD podrás conocer sus atractivos, actividades,
+              eventos y los emprendimientos de los aliados de nuestra comunidad.
+            </p>
+
+            <div className="mt-8 flex items-center gap-3 rounded-[1.5rem] border border-[#dce9d7] bg-white/80 p-4 shadow-sm backdrop-blur-sm sm:p-5">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#e9f5df] text-[#095540]">
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-6 w-6"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  aria-hidden="true"
+                >
+                  <path d="M12 21c5-3.2 8-7.1 8-11a8 8 0 0 0-16 0c0 3.9 3 7.8 8 11Z" />
+                  <path d="M8 13c4 0 7-2.5 8-6-4 0-7 2.5-8 6Z" />
+                </svg>
+              </span>
+              <p className="text-sm font-semibold leading-6 text-[#355448] sm:text-base">
+                Naturaleza, turismo rural y colaboración en un mismo territorio.
+              </p>
+            </div>
+          </div>
         </div>
 
-        {/* INFORMACIÓN */}
-        <div>
-          <p className="text-yellow-700 font-semibold mb-2">
-            CONOCE NUESTRO PARQUE
-          </p>
+        <div className="pt-24 sm:pt-28">
+          <div className="mx-auto max-w-3xl text-center">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#009444] sm:text-sm">
+              Vive el territorio
+            </p>
+            <h2 className="mt-4 text-3xl font-semibold tracking-[-0.025em] text-[#17372c] sm:text-4xl lg:text-5xl">
+              Hay mucho por descubrir alrededor del Diriá
+            </h2>
+            <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-[#587267] sm:text-lg">
+              Conoce las distintas formas en que el parque y sus comunidades se
+              encuentran, crecen y comparten su identidad.
+            </p>
+          </div>
 
-          <h2 className="text-4xl font-bold text-gray-800 mb-6">
-            Sobre el Parque Nacional Diriá
-          </h2>
+          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:mt-12 lg:grid-cols-4">
+            {MODULOS.map((modulo) => (
+              <article
+                id={modulo.id}
+                key={modulo.id}
+                className="group relative isolate min-h-[390px] scroll-mt-28 overflow-hidden rounded-[1.75rem] bg-[#095540] shadow-[0_14px_35px_rgba(7,63,49,0.12)] motion-safe:transition motion-safe:duration-500 motion-safe:ease-out hover:shadow-[0_22px_50px_rgba(7,63,49,0.2)] motion-safe:hover:-translate-y-1 motion-reduce:transform-none"
+              >
+                <img
+                  src={modulo.imagen}
+                  alt={modulo.alt}
+                  loading="lazy"
+                  decoding="async"
+                  className="absolute inset-0 h-full w-full object-cover motion-safe:transition-transform motion-safe:duration-700 motion-safe:ease-out motion-safe:group-hover:scale-[1.035] motion-reduce:transform-none"
+                />
+                <div
+                  className="absolute inset-0 bg-gradient-to-t from-[#052f25]/95 via-[#073f31]/35 to-black/10"
+                  aria-hidden="true"
+                />
 
-          <p className="text-gray-600 leading-relaxed mb-4">
-            El Parque Nacional Diriá es un espacio natural
-            que destaca por su riqueza ecológica, sus paisajes
-            y la diversidad de especies que habitan en la zona.
-          </p>
+                <div className="relative flex min-h-[390px] flex-col justify-between p-5 sm:p-6">
+                  <span className="w-fit rounded-full border border-white/25 bg-white/15 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-white backdrop-blur-md">
+                    {modulo.categoria}
+                  </span>
 
-          <p className="text-gray-600 leading-relaxed">
-            A través de SIGTAD podrás conocer sus atractivos,
-            actividades, eventos y los emprendimientos de los
-            aliados de nuestra comunidad.
-          </p>
+                  <div>
+                    <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-[#d9d823] text-xl text-[#073f31] shadow-lg motion-safe:transition motion-safe:duration-300 group-hover:bg-[#8dc63f]" aria-hidden="true">
+                      ↗
+                    </div>
+                    <h3 className="text-2xl font-semibold tracking-[-0.02em] text-white">
+                      {modulo.titulo}
+                    </h3>
+                    <p className="mt-2 text-sm leading-6 text-white/80">
+                      {modulo.descripcion}
+                    </p>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
         </div>
-
       </div>
     </section>
   );
