@@ -14,6 +14,7 @@ import {errorMiddleware} from '../middlewares/registro.middleware';
 import type { Rol, NombreRol } from '../models/Rol';
 import type { HistorialCambioRol } from '../models/HistorialCambioRol';
 import { RegisterInitialRoles1786838400000 } from '../migrations/1786838400000-RegisterInitialRoles';
+import { RegisterSuperAdminRole1787558400000 } from '../migrations/1787558400000-RegisterSuperAdminRole';
 
 config({ path: resolve(process.cwd(), '.env') });
 
@@ -34,6 +35,8 @@ let getUsersWithRoles: typeof import('../modulos/Autenticación y gestión de us
 let updateUserRole: typeof import('../modulos/Autenticación y gestión de usuario/Gestión de Roles/roles.service').updateUserRole;
 let getUsersRoles: typeof import('../modulos/Autenticación y gestión de usuario/Gestión de Roles/roles.controller').getUsersRoles;
 let updateRole: typeof import('../modulos/Autenticación y gestión de usuario/Gestión de Roles/roles.controller').updateRole;
+let verificarToken: typeof import('../middlewares/auth.middleware').verificarToken;
+let autorizarRoles: typeof import('../middlewares/authorization.middleware').autorizarRoles;
 let server: Server;
 let baseUrl: string;
 let rolesTrasMigraciones: Array<{
@@ -179,6 +182,16 @@ const ejecutarInicializacionRoles = async () => {
   } finally {
     await queryRunner.release();
   }
+
+  const superAdminQueryRunner = dataSource.createQueryRunner();
+  await superAdminQueryRunner.connect();
+
+  try {
+    const migration = new RegisterSuperAdminRole1787558400000();
+    await migration.up(superAdminQueryRunner);
+  } finally {
+    await superAdminQueryRunner.release();
+  }
 };
 
 const token = (
@@ -208,6 +221,8 @@ before(async () => {
   const usuarioModule = await import('../models/Usuario');
   const rolModule = await import('../models/Rol');
   const historialModule = await import('../models/HistorialCambioRol');
+  const authModule = await import('../middlewares/auth.middleware');
+  const authorizationModule = await import('../middlewares/authorization.middleware');
   const serviceModule = await import(
     '../modulos/Autenticación y gestión de usuario/Gestión de Roles/roles.service'
   );
@@ -222,6 +237,8 @@ before(async () => {
   UsuarioModel = usuarioModule.Usuario;
   RolModel = rolModule.Rol;
   HistorialModel = historialModule.HistorialCambioRol;
+  verificarToken = authModule.verificarToken;
+  autorizarRoles = authorizationModule.autorizarRoles;
   getUsersWithRoles = serviceModule.getUsersWithRoles;
   updateUserRole = serviceModule.updateUserRole;
   getUsersRoles = controllerModule.getUsersRoles;
@@ -241,6 +258,12 @@ before(async () => {
   const app = express();
   app.use(express.json());
   app.use('/api/users', routeModule.default);
+  app.get(
+    '/api/test/super-admin',
+    verificarToken,
+    autorizarRoles('super_admin'),
+    (_req, res) => res.status(200).json({ ok: true }),
+  );
   app.use (errorMiddleware);
 
   await new Promise<void>((resolveListen, rejectListen) => {
@@ -279,7 +302,7 @@ after(async () => {
 });
 
 describe('inicialización y asignación de roles predeterminados', () => {
-  test('las migraciones dejan exactamente los tres roles con sus descripciones', () => {
+  test('las migraciones dejan exactamente los cuatro roles con sus descripciones', () => {
     assert.deepEqual(rolesTrasMigraciones, [
       {
         nombre: 'administrador',
@@ -293,7 +316,16 @@ describe('inicialización y asignación de roles predeterminados', () => {
         nombre: 'visitante',
         descripcion: 'Usuario visitante',
       },
+      {
+        nombre: 'super_admin',
+        descripcion: 'Super administrador del sistema',
+      },
     ]);
+  });
+
+  test('super_admin es un nombre de rol válido', () => {
+    const nombre: NombreRol = 'super_admin';
+    assert.equal(nombre, 'super_admin');
   });
 
   test('ejecutar nuevamente la inicialización no duplica roles', async () => {
@@ -301,8 +333,8 @@ describe('inicialización y asignación de roles predeterminados', () => {
     await ejecutarInicializacionRoles();
 
     const roles = await dataSource.getRepository(RolModel).find();
-    assert.equal(roles.length, 3);
-    assert.equal(new Set(roles.map(({ nombre }) => nombre)).size, 3);
+    assert.equal(roles.length, 4);
+    assert.equal(new Set(roles.map(({ nombre }) => nombre)).size, 4);
   });
 
   test('la inicialización vuelve a crear un rol faltante', async () => {
@@ -317,7 +349,7 @@ describe('inicialización y asignación de roles predeterminados', () => {
     });
     assert.deepEqual(
       roles.map(({ nombre }) => nombre),
-      ['administrador', 'asociado', 'visitante'],
+      ['administrador', 'asociado', 'visitante', 'super_admin'],
     );
     assert.equal(
       roles.find(({ nombre }) => nombre === 'visitante')?.descripcion,
@@ -640,6 +672,22 @@ describe('rutas HTTP de roles', () => {
     const resultado = await request('/api/users/roles', {
       headers: { Authorization: `Bearer ${token(escenario.administradorId, 'administrador')}` },
     });
+    assert.equal(resultado.status, 200);
+  });
+
+  test("verificarToken y autorizarRoles('super_admin') aceptan super_admin", async () => {
+    await ejecutarInicializacionRoles();
+    const rolSuperAdmin = await dataSource.getRepository(RolModel).findOneByOrFail({
+      nombre: 'super_admin',
+    });
+    const usuarioSuperAdmin = await crearUsuario('40000001', rolSuperAdmin);
+
+    const resultado = await request('/api/test/super-admin', {
+      headers: {
+        Authorization: `Bearer ${token(usuarioSuperAdmin.id, 'super_admin')}`,
+      },
+    });
+
     assert.equal(resultado.status, 200);
   });
 

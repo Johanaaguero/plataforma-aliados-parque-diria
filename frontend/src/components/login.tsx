@@ -8,14 +8,14 @@ interface CampoErrores {
   password?: string;
 }
 
-type NombreRol = 'administrador' | 'asociado' | 'visitante';
+type NombreRol = 'administrador' | 'asociado' | 'visitante' | 'super_admin';
 
 interface LoginProps {
   onLogin: (rol: NombreRol) => void;
 }
 
 const esNombreRol = (rol: unknown): rol is NombreRol =>
-  rol === 'administrador' || rol === 'asociado' || rol === 'visitante';
+  rol === 'administrador' || rol === 'asociado' || rol === 'visitante' || rol === 'super_admin';
 
 const extraerRolDelToken = (): NombreRol | null => {
   const token = sessionStorage.getItem('token') ?? localStorage.getItem('token');
@@ -35,7 +35,8 @@ const extraerRolDelToken = (): NombreRol | null => {
 
     return payload.rol === 'administrador' ||
       payload.rol === 'asociado' ||
-      payload.rol === 'visitante'
+      payload.rol === 'visitante' ||
+      payload.rol === 'super_admin'
       ? payload.rol
       : null;
   } catch {

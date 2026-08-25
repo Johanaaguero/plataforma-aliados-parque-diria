@@ -5,6 +5,7 @@ import './App.css';
 import Registro from './components/Registro';
 import Login from './components/login';
 import GestionRoles from './components/GestionRoles';
+import CuentasBloqueadas from './components/CuentasBloqueadas';
 import RecuperarContrasena from './components/RecuperarContrasena';
 import RestablecerContrasena from './components/RestablecerContrasena';
 
@@ -26,7 +27,8 @@ import type { Emprendimiento } from './services/emprendimientoService';
 type NombreRol =
   | 'administrador'
   | 'asociado'
-  | 'visitante';
+  | 'visitante'
+  | 'super_admin';
 
 interface ErrorDeAutenticacion {
   code: string;
@@ -96,7 +98,8 @@ const obtenerRolDesdeToken = (): NombreRol | null => {
   if (
     rol === 'administrador' ||
     rol === 'asociado' ||
-    rol === 'visitante'
+    rol === 'visitante' ||
+    rol === 'super_admin'
   ) {
     return rol;
   }
@@ -177,6 +180,9 @@ function App() {
   const [mostrarGestionRoles, setMostrarGestionRoles] =
     useState(false);
 
+  const [mostrarCuentasBloqueadas, setMostrarCuentasBloqueadas] =
+    useState(false);
+
   const [seccionActual, setSeccionActual] = useState<
     | 'inicio'
     | 'emprendimientos'
@@ -238,6 +244,13 @@ function App() {
       setMostrarErrorModal(true);
 
       setRolAutenticado(null);
+
+      setMostrarCuentasBloqueadas(false);
+
+      /**
+       * NUEVO:
+       * Limpiamos también el ID.
+       */
       setUsuarioId(null);
     };
 
@@ -288,6 +301,10 @@ function App() {
   }, []);
 
   useEffect(() => {
+    if (rolAutenticado !== 'super_admin') {
+      setMostrarCuentasBloqueadas(false);
+    }
+
     if (
       rolAutenticado !==
       'administrador'
@@ -336,6 +353,19 @@ function App() {
     seccionActual,
   ]);
 
+  useEffect(() => {
+    if (
+      mostrarCuentasBloqueadas &&
+      errorAutenticacion?.status === 403
+    ) {
+      setMostrarErrorModal(false);
+      setErrorAutenticacion(null);
+    }
+  }, [
+    mostrarCuentasBloqueadas,
+    errorAutenticacion,
+  ]);
+
   const cerrarSesion = async () => {
     try {
       await api.logout();
@@ -343,6 +373,9 @@ function App() {
       setRolAutenticado(null);
       setUsuarioId(null);
       setMostrarGestionRoles(false);
+
+      setMostrarCuentasBloqueadas(false);
+
       setMostrarLogin(false);
       setMostrarRegistro(false);
       setEmprendimientoEditar(null);
@@ -354,6 +387,9 @@ function App() {
     setRolAutenticado(null);
     setUsuarioId(null);
     setMostrarGestionRoles(false);
+
+    setMostrarCuentasBloqueadas(false);
+
     setMostrarLogin(false);
     setMostrarRegistro(false);
     setMostrarErrorModal(false);
@@ -673,7 +709,9 @@ function App() {
         >
           <ListaEmprendimientos
             rolAutenticado={
-              rolAutenticado
+              rolAutenticado === 'super_admin'
+                ? null
+                : rolAutenticado
             }
             usuarioId={usuarioId}
             onRegistrar={() =>
@@ -770,6 +808,38 @@ function App() {
           />
         </section>
       ) : (
+        mostrarCuentasBloqueadas &&
+        rolAutenticado ===
+          'super_admin'
+      ) ? (
+        <section>
+          <button
+            type="button"
+            className="boton-volver"
+            onClick={() => {
+              setMostrarCuentasBloqueadas(
+                false
+              );
+
+              setRolAutenticado(
+                obtenerRolDesdeToken()
+              );
+
+              setUsuarioId(
+                obtenerUsuarioIdDesdeToken()
+              );
+            }}
+          >
+            <span className="boton-volver-icono">
+              ←
+            </span>
+
+            <span>Volver</span>
+          </button>
+
+          <CuentasBloqueadas />
+        </section>
+      ) : (
         mostrarGestionRoles &&
         rolAutenticado ===
           'administrador'
@@ -841,6 +911,25 @@ function App() {
           <Informativo />
 
           <Footer />
+
+          {rolAutenticado ===
+            'super_admin' && (
+            <button
+              type="button"
+              className="fixed right-6 bottom-[86px] z-[100] min-h-[42px] cursor-pointer rounded-[9px] border border-[#095540] bg-white px-4 py-0 text-[13px] font-bold text-[#095540] shadow-[0_5px_14px_rgba(23,48,31,0.14)] [font-family:inherit] [transition:0.2s_ease] hover:bg-[#095540] hover:text-white hover:[transform:translateY(-1px)] max-[520px]:right-4 max-[520px]:bottom-[76px]"
+              onClick={() => {
+                setMostrarGestionRoles(
+                  false
+                );
+
+                setMostrarCuentasBloqueadas(
+                  true
+                );
+              }}
+            >
+              Cuentas bloqueadas
+            </button>
+          )}
 
           {rolAutenticado && (
             <button
