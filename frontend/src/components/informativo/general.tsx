@@ -77,7 +77,7 @@ function Informativo() {
   return (
     <section
       id="sobre-parque"
-      className="relative scroll-mt-28 overflow-hidden bg-[#f7f8f1] px-4 py-20 sm:px-6 sm:py-24 lg:px-8 lg:py-28"
+      className="relative scroll-mt-28 overflow-hidden bg-stone-50 px-4 py-20 sm:px-6 sm:py-24 lg:px-8 lg:py-28"
     >
       <div
         className="absolute -right-28 top-16 h-72 w-72 rounded-full bg-[#8dc63f]/10 blur-3xl"
@@ -86,7 +86,7 @@ function Informativo() {
 
       <div className="relative mx-auto max-w-7xl">
         <div className="grid items-center gap-10 lg:grid-cols-[1.08fr_0.92fr] lg:gap-16">
-          <div className="relative min-h-[360px] overflow-hidden rounded-[2rem] bg-[#095540] shadow-[0_24px_70px_rgba(7,63,49,0.18)] sm:min-h-[460px] lg:min-h-[540px]">
+            <div className="relative min-h-[360px] overflow-hidden rounded-[2rem] bg-[#095540] shadow-[0_24px_70px_rgba(9,85,64,0.18)] sm:min-h-[460px] lg:min-h-[540px]">
             {IMAGENES_PARQUE.map((imagen, index) => (
               <img
                 key={imagen.src}
@@ -104,12 +104,12 @@ function Informativo() {
             ))}
 
             <div
-              className="absolute inset-0 bg-gradient-to-t from-[#052f25]/65 via-transparent to-transparent"
+              className="absolute inset-0 bg-gradient-to-t from-[#095540]/65 via-transparent to-transparent"
               aria-hidden="true"
             />
 
             <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-4 p-5 sm:p-7">
-              <div className="rounded-2xl border border-white/20 bg-[#052f25]/55 px-4 py-3 text-white backdrop-blur-md">
+              <div className="rounded-2xl border border-white/20 bg-[#095540]/55 px-4 py-3 text-white backdrop-blur-md">
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#d9d823]">
                   Paisaje vivo
                 </p>
@@ -119,7 +119,7 @@ function Informativo() {
               </div>
 
               <div
-                className="flex gap-0.5 rounded-full border border-white/20 bg-[#052f25]/55 p-1.5 backdrop-blur-md"
+                className="flex gap-0.5 rounded-full border border-white/20 bg-[#095540]/55 p-1.5 backdrop-blur-md"
                 role="group"
                 aria-label="Seleccionar imagen del parque"
               >
@@ -150,21 +150,21 @@ function Informativo() {
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#009444] sm:text-sm">
               Conoce nuestro parque
             </p>
-            <h2 className="mt-4 text-3xl font-semibold leading-tight tracking-[-0.025em] text-[#17372c] sm:text-4xl lg:text-5xl">
+            <h2 className="mt-4 text-3xl font-semibold leading-tight tracking-[-0.025em] text-[#095540] sm:text-4xl lg:text-5xl">
               Un refugio natural conectado con su comunidad.
             </h2>
-            <p className="mt-6 text-base leading-7 text-[#587267] sm:text-lg sm:leading-8">
+            <p className="mt-6 text-base leading-7 text-slate-600 sm:text-lg sm:leading-8">
               El Parque Nacional Diriá es un espacio natural que destaca por su
               riqueza ecológica, sus paisajes y la diversidad de especies que
               habitan en la zona.
             </p>
-            <p className="mt-4 text-base leading-7 text-[#587267] sm:text-lg sm:leading-8">
+            <p className="mt-4 text-base leading-7 text-slate-600 sm:text-lg sm:leading-8">
               A través de SIGTAD podrás conocer sus atractivos, actividades,
               eventos y los emprendimientos de los aliados de nuestra comunidad.
             </p>
 
-            <div className="mt-8 flex items-center gap-3 rounded-[1.5rem] border border-[#dce9d7] bg-white/80 p-4 shadow-sm backdrop-blur-sm sm:p-5">
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#e9f5df] text-[#095540]">
+            <div className="mt-8 flex items-center gap-3 rounded-[1.5rem] border border-[#095540]/15 bg-white/80 p-4 shadow-sm backdrop-blur-sm sm:p-5">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#8dc63f]/15 text-[#095540]">
                 <svg
                   viewBox="0 0 24 24"
                   className="h-6 w-6"
@@ -177,7 +177,7 @@ function Informativo() {
                   <path d="M8 13c4 0 7-2.5 8-6-4 0-7 2.5-8 6Z" />
                 </svg>
               </span>
-              <p className="text-sm font-semibold leading-6 text-[#355448] sm:text-base">
+              <p className="text-sm font-semibold leading-6 text-slate-700 sm:text-base">
                 Naturaleza, turismo rural y colaboración en un mismo territorio.
               </p>
             </div>
@@ -189,10 +189,10 @@ function Informativo() {
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#009444] sm:text-sm">
               Vive el territorio
             </p>
-            <h2 className="mt-4 text-3xl font-semibold tracking-[-0.025em] text-[#17372c] sm:text-4xl lg:text-5xl">
+            <h2 className="mt-4 text-3xl font-semibold tracking-[-0.025em] text-[#095540] sm:text-4xl lg:text-5xl">
               Hay mucho por descubrir alrededor del Diriá
             </h2>
-            <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-[#587267] sm:text-lg">
+            <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">
               Conoce las distintas formas en que el parque y sus comunidades se
               encuentran, crecen y comparten su identidad.
             </p>
@@ -203,7 +203,7 @@ function Informativo() {
               <article
                 id={modulo.id}
                 key={modulo.id}
-                className="group relative isolate min-h-[390px] scroll-mt-28 overflow-hidden rounded-[1.75rem] bg-[#095540] shadow-[0_14px_35px_rgba(7,63,49,0.12)] motion-safe:transition motion-safe:duration-500 motion-safe:ease-out hover:shadow-[0_22px_50px_rgba(7,63,49,0.2)] motion-safe:hover:-translate-y-1 motion-reduce:transform-none"
+                className="group relative isolate min-h-[390px] scroll-mt-28 overflow-hidden rounded-[1.75rem] bg-[#095540] shadow-[0_14px_35px_rgba(9,85,64,0.12)] motion-safe:transition motion-safe:duration-500 motion-safe:ease-out hover:shadow-[0_22px_50px_rgba(9,85,64,0.2)] motion-safe:hover:-translate-y-1 motion-reduce:transform-none"
               >
                 <img
                   src={modulo.imagen}
@@ -213,7 +213,7 @@ function Informativo() {
                   className="absolute inset-0 h-full w-full object-cover motion-safe:transition-transform motion-safe:duration-700 motion-safe:ease-out motion-safe:group-hover:scale-[1.035] motion-reduce:transform-none"
                 />
                 <div
-                  className="absolute inset-0 bg-gradient-to-t from-[#052f25]/95 via-[#073f31]/35 to-black/10"
+                  className="absolute inset-0 bg-gradient-to-t from-[#095540]/95 via-[#095540]/35 to-black/10"
                   aria-hidden="true"
                 />
 
@@ -223,10 +223,10 @@ function Informativo() {
                   </span>
 
                   <div>
-                    <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-[#d9d823] text-xl text-[#073f31] shadow-lg motion-safe:transition motion-safe:duration-300 group-hover:bg-[#8dc63f]" aria-hidden="true">
+                    <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-[#d9d823] text-xl text-[#095540] shadow-lg motion-safe:transition motion-safe:duration-300 group-hover:bg-[#8dc63f]" aria-hidden="true">
                       ↗
                     </div>
-                    <h3 className="text-2xl font-semibold tracking-[-0.02em] text-white">
+                    <h3 className="font-brand text-2xl font-bold tracking-[-0.02em] text-white">
                       {modulo.titulo}
                     </h3>
                     <p className="mt-2 text-sm leading-6 text-white/80">

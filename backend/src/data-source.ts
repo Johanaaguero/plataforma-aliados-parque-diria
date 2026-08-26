@@ -11,6 +11,7 @@ import { HistorialCambioRol } from './models/HistorialCambioRol';
 import { IntentoAcceso } from './models/IntentoAcceso';
 import { CategoriaEmprendimiento } from './models/CategoriaEmprendimiento';
 import { Emprendimiento } from './models/Emprendimiento';
+import { EmprendimientoImagen } from './models/EmprendimientoImagen';
 
 dotenv.config();
 
@@ -45,6 +46,7 @@ export const AppDataSource = new DataSource({
     HistorialCambioRol,
     CategoriaEmprendimiento,
     Emprendimiento,
+    EmprendimientoImagen,
   ],
  
 

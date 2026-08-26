@@ -126,7 +126,7 @@ export default function RestablecerContrasena() {
   };
 
   return (
-    <main className="relative isolate flex min-h-screen items-center justify-center overflow-hidden bg-[#0b3b2e] px-4 py-24 font-sans sm:px-6 lg:px-8">
+    <main className="relative isolate flex min-h-screen items-center justify-center overflow-hidden bg-[#095540] px-4 py-24 font-sans sm:px-6 lg:px-8">
       <img
         src={parqueImage}
         alt=""
@@ -134,7 +134,7 @@ export default function RestablecerContrasena() {
         className="absolute inset-0 -z-30 h-full w-full object-cover object-center"
       />
       <div
-        className="absolute inset-0 -z-20 bg-gradient-to-br from-[#06251d]/90 via-[#0a4938]/76 to-[#132f25]/90"
+        className="absolute inset-0 -z-20 bg-gradient-to-br from-[#095540]/90 via-[#095540]/76 to-black/60"
         aria-hidden="true"
       />
       <div
@@ -150,7 +150,7 @@ export default function RestablecerContrasena() {
         aria-labelledby="restablecer-titulo"
       >
         <div
-          className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-[#0b4d3a] via-[#36a269] to-[#a8d84e]"
+          className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-[#095540] via-[#009444] to-[#8DC63F]"
           aria-hidden="true"
         />
 
@@ -160,7 +160,7 @@ export default function RestablecerContrasena() {
           </span>
           <h1
             id="restablecer-titulo"
-            className="text-3xl font-bold tracking-tight text-[#123a2c] sm:text-[2rem]"
+            className="font-brand text-3xl font-bold tracking-tight text-[#095540] sm:text-[2rem]"
           >
             Restablecer contraseña
           </h1>

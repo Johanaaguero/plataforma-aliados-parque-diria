@@ -8,6 +8,7 @@ import {
 import { CategoriaEmprendimiento } from '../../../models/CategoriaEmprendimiento';
 
 import { Usuario } from '../../../models/Usuario';
+import { EmprendimientoImagen } from '../../../models/EmprendimientoImagen';
 
 const emprendimientoRepository =
   AppDataSource.getRepository(Emprendimiento);
@@ -17,6 +18,9 @@ const categoriaRepository =
 
 const usuarioRepository =
   AppDataSource.getRepository(Usuario);
+
+const imagenRepository =
+  AppDataSource.getRepository(EmprendimientoImagen);
 
 // ============================================================
 // DTO CREAR
@@ -32,6 +36,7 @@ interface CrearEmprendimientoDto {
   correoElectronico?: string;
   telefono?: string;
   imagen?: Buffer;
+  imagenes?: { buffer: Buffer; tipoMime: string }[];
   asociadoId?: number;
 
   // Estado explícito, si se utiliza
@@ -55,6 +60,11 @@ interface ActualizarEmprendimientoDto {
   correoElectronico?: string;
   telefono?: string;
   imagen?: Buffer;
+  imagenes?: { buffer: Buffer; tipoMime: string }[];
+  imagenesConservadas?: number[];
+  portadaImagenId?: number;
+  portadaNueva?: boolean;
+  eliminarImagen?: boolean;
 
   // IMPORTANTE:
   // borrador = guardar como borrador
@@ -278,6 +288,7 @@ export class EmprendimientoService {
       relations: {
         categoria: true,
         asociado: true,
+        imagenes: true,
       },
     });
   }
@@ -421,9 +432,24 @@ async crear(
   // GUARDAR
   // ============================================================
 
-  return await emprendimientoRepository.save(
+  const guardado = await emprendimientoRepository.save(
     emprendimiento,
   );
+
+  if (dto.imagenes?.length) {
+    await imagenRepository.save(
+      dto.imagenes.map((imagen, indice) =>
+        imagenRepository.create({
+          emprendimiento: guardado,
+          imagen: imagen.buffer,
+          tipoMime: imagen.tipoMime,
+          esPortada: indice === 0,
+        }),
+      ),
+    );
+  }
+
+  return guardado;
 }
   // ============================================================
   // OBTENER TODOS
@@ -940,6 +966,34 @@ async crear(
         dto.imagen;
     }
 
+    if (dto.eliminarImagen) {
+      delete emprendimiento.imagen;
+    }
+
+    if (dto.imagenesConservadas !== undefined) {
+      const conservadas = new Set(dto.imagenesConservadas);
+      const imagenesActuales = emprendimiento.imagenes ?? [];
+
+      await imagenRepository.remove(
+        imagenesActuales.filter((imagen) => !conservadas.has(imagen.id)),
+      );
+    }
+
+    let imagenesNuevas: EmprendimientoImagen[] = [];
+
+    if (dto.imagenes?.length) {
+      imagenesNuevas = await imagenRepository.save(
+        dto.imagenes.map((imagen) =>
+          imagenRepository.create({
+            emprendimiento,
+            imagen: imagen.buffer,
+            tipoMime: imagen.tipoMime,
+            esPortada: false,
+          }),
+        ),
+      );
+    }
+
     // ========================================================
     // ESTADO SEGÚN MODO DE GUARDADO
     // ========================================================
@@ -992,6 +1046,40 @@ async crear(
       await emprendimientoRepository.save(
         emprendimiento,
       );
+
+    if (dto.portadaImagenId !== undefined) {
+      const imagenes = await imagenRepository.find({
+        where: { emprendimiento: { id: actualizado.id } },
+      });
+
+      await imagenRepository.save(
+        imagenes.map((imagen) => ({
+          ...imagen,
+          esPortada: imagen.id === dto.portadaImagenId,
+        })),
+      );
+
+      const portada = imagenes.find(
+        (imagen) => imagen.id === dto.portadaImagenId,
+      );
+
+      if (portada) {
+        actualizado.imagen = portada.imagen;
+      }
+    }
+
+    if (dto.portadaNueva && imagenesNuevas.length > 0) {
+      const imagenes = await imagenRepository.find({
+        where: { emprendimiento: { id: actualizado.id } },
+      });
+      await imagenRepository.save(
+        imagenes.map((imagen) => ({
+          ...imagen,
+          esPortada: imagen.id === imagenesNuevas[0]!.id,
+        })),
+      );
+      actualizado.imagen = imagenesNuevas[0]!.imagen;
+    }
 
     // ========================================================
     // DEVOLVER CON RELACIONES ACTUALIZADAS

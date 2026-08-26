@@ -5,12 +5,14 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
+  OneToMany,
   JoinColumn,
   Index,
 } from 'typeorm';
 
 import { CategoriaEmprendimiento } from './CategoriaEmprendimiento';
 import { Usuario } from './Usuario';
+import { EmprendimientoImagen } from './EmprendimientoImagen';
 
 export enum EstadoPublicacion {
   BORRADOR = 'borrador',
@@ -97,6 +99,12 @@ export class Emprendimiento {
   })
   imagen?: Buffer;
 
+  @OneToMany(
+    () => EmprendimientoImagen,
+    (imagen) => imagen.emprendimiento,
+  )
+  imagenes!: EmprendimientoImagen[];
+
   @CreateDateColumn({ name: 'fecha_creacion' })
   fechaCreacion!: Date;
 
@@ -153,7 +161,7 @@ export class Emprendimiento {
     }
   }
 
-  toPublic() {
+  toPublic(incluirGaleria = true) {
     return {
       id: this.id,
       nombre: this.nombre,
@@ -171,6 +179,16 @@ export class Emprendimiento {
       imagen: this.imagen
         ? `data:image/jpeg;base64,${this.imagen.toString('base64')}`
         : null,
+
+      ...(incluirGaleria
+        ? {
+            imagenes: (this.imagenes ?? []).map((imagen) => ({
+              id: imagen.id,
+              imagen: `data:${imagen.tipoMime};base64,${imagen.imagen.toString('base64')}`,
+              esPortada: imagen.esPortada,
+            })),
+          }
+        : {}),
 
       fechaCreacion: this.fechaCreacion,
       fechaActualizacion: this.fechaActualizacion,

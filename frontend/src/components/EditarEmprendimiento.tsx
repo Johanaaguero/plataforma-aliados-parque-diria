@@ -2,7 +2,9 @@ import {
   useState,
   useEffect,
   useCallback,
+  useRef,
   type ChangeEvent,
+  type DragEvent,
   type SyntheticEvent,
 } from 'react';
 
@@ -34,6 +36,17 @@ interface FormErrors {
   longitud?: string;
   correoElectronico?: string;
   telefono?: string;
+}
+
+interface ImagenExistente {
+  id: number;
+  imagen: string;
+  esPortada: boolean;
+}
+
+interface ImagenNueva {
+  archivo: File;
+  preview: string;
 }
 
 type ModoGuardado = 'cambios' | 'borrador';
@@ -206,10 +219,12 @@ function EditarEmprendimiento({
   const [form, setForm] = useState<FormState>(INITIAL_FORM);
   const [errores, setErrores] = useState<FormErrors>({});
 
-  const [imagen, setImagen] = useState<File | null>(null);
-  const [imagenActual, setImagenActual] = useState<string | null>(null);
-  const [imagenPreview, setImagenPreview] = useState<string | null>(null);
-  const [eliminarImagenActual, setEliminarImagenActual] = useState(false);
+  const [imagenesExistentes, setImagenesExistentes] = useState<ImagenExistente[]>([]);
+  const [imagenesNuevas, setImagenesNuevas] = useState<ImagenNueva[]>([]);
+  const [portadaNueva, setPortadaNueva] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const imagenesNuevasRef = useRef<ImagenNueva[]>([]);
+  const dragDepth = useRef(0);
 
   const [guardando, setGuardando] = useState(false);
   const [modoGuardando, setModoGuardando] = useState<ModoGuardado | null>(null);
@@ -277,10 +292,14 @@ function EditarEmprendimiento({
         telefono: emprendimiento.telefono ?? '',
       });
 
-      setImagenActual(emprendimiento.imagen ?? null);
-      setImagen(null);
-      setImagenPreview(null);
-      setEliminarImagenActual(false);
+      setImagenesExistentes(emprendimiento.imagenes?.length
+        ? emprendimiento.imagenes
+        : emprendimiento.imagen
+          ? [{ id: 0, imagen: emprendimiento.imagen, esPortada: true }]
+          : []);
+      imagenesNuevasRef.current.forEach((imagen) => URL.revokeObjectURL(imagen.preview));
+      setImagenesNuevas([]);
+      setPortadaNueva(false);
       setErrores({});
       setError(null);
     } catch (err) {
@@ -299,13 +318,9 @@ function EditarEmprendimiento({
   }, [cargarCategorias, cargarEmprendimiento]);
 
  
-  useEffect(() => {
-    return () => {
-      if (imagenPreview) {
-        URL.revokeObjectURL(imagenPreview);
-      }
-    };
-  }, [imagenPreview]);
+  useEffect(() => () => {
+    imagenesNuevasRef.current.forEach((imagen) => URL.revokeObjectURL(imagen.preview));
+  }, []);
 
   
   const handleChange = (
@@ -352,56 +367,56 @@ function EditarEmprendimiento({
   };
 
 
-  const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) {
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      setError('La imagen no debe superar los 5MB.');
-      e.target.value = '';
-      return;
-    }
-
+  const agregarImagenes = (archivos: FileList | File[]) => {
     const tiposPermitidos = ['image/png', 'image/jpeg', 'image/webp'];
-
-    if (!tiposPermitidos.includes(file.type)) {
-      setError('La imagen debe ser PNG, JPG o WEBP.');
-      e.target.value = '';
-      return;
+    const existentes = new Set(imagenesNuevas.map(({ archivo }) => `${archivo.name}-${archivo.size}-${archivo.lastModified}`));
+    const nuevas: ImagenNueva[] = [];
+    Array.from(archivos).forEach((archivo) => {
+      const clave = `${archivo.name}-${archivo.size}-${archivo.lastModified}`;
+      if (existentes.has(clave)) return;
+      if (archivo.size > 5 * 1024 * 1024 || !tiposPermitidos.includes(archivo.type)) {
+        setError('Las imágenes deben ser PNG, JPG o WEBP y no superar los 5MB cada una.');
+        return;
+      }
+      existentes.add(clave);
+      nuevas.push({ archivo, preview: URL.createObjectURL(archivo) });
+    });
+    if (nuevas.length) {
+      setImagenesNuevas((actuales) => {
+        const siguientes = [...actuales, ...nuevas];
+        imagenesNuevasRef.current = siguientes;
+        return siguientes;
+      });
+      setError(null);
+      setExito(false);
     }
+  };
 
-    if (imagenPreview) {
-      URL.revokeObjectURL(imagenPreview);
-    }
+  const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) agregarImagenes(e.target.files);
+    e.target.value = '';
+  };
 
-    const nuevaPreview = URL.createObjectURL(file);
+  const handleDrop = (e: DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    dragDepth.current = 0;
+    setIsDragging(false);
+    agregarImagenes(e.dataTransfer.files);
+  };
 
-    setImagen(file);
-    setImagenPreview(nuevaPreview);
-    setEliminarImagenActual(false);
+  const handleRemoveNewImage = (indice: number) => {
+    setImagenesNuevas((actuales) => {
+      const imagen = actuales[indice];
+      if (imagen) URL.revokeObjectURL(imagen.preview);
+      const restantes = actuales.filter((_, index) => index !== indice);
+      imagenesNuevasRef.current = restantes;
+      return restantes;
+    });
+  };
+
+  const handleRemoveCurrentImage = (indice: number) => {
+    setImagenesExistentes((actuales) => actuales.filter((_, index) => index !== indice));
     setError(null);
-    setExito(false);
-  };
-
-  const handleRemoveNewImage = () => {
-    if (imagenPreview) {
-      URL.revokeObjectURL(imagenPreview);
-    }
-    setImagen(null);
-    setImagenPreview(null);
-  };
-
-  const handleRemoveCurrentImage = () => {
-    setImagenActual(null);
-    setEliminarImagenActual(true);
-    setError(null);
-  };
-
-  const handleRestoreCurrentImage = () => {
-    setEliminarImagenActual(false);
-    void cargarEmprendimiento();
   };
 
  
@@ -444,14 +459,12 @@ function EditarEmprendimiento({
       // Modo de guardado: 'cambios' o 'borrador'
       formData.append('modo', modo);
 
-      // Si el usuario marcó eliminar la imagen actual sin subir una nueva
-      if (eliminarImagenActual && !imagen) {
-        formData.append('eliminarImagen', 'true');
-      }
-
-      if (imagen) {
-        formData.append('imagen', imagen);
-      }
+      formData.append('imagenesConservadas', JSON.stringify(imagenesExistentes.filter((imagen) => imagen.id > 0).map((imagen) => imagen.id)));
+      imagenesNuevas.forEach(({ archivo }) => formData.append('imagenes', archivo));
+      const portadaExistente = imagenesExistentes.find((imagen) => imagen.esPortada);
+      if (portadaNueva && imagenesNuevas.length > 0) formData.append('portadaNueva', 'true');
+      else if (portadaExistente && portadaExistente.id > 0) formData.append('portadaImagenId', String(portadaExistente.id));
+      else if (!imagenesExistentes.length && !imagenesNuevas.length) formData.append('eliminarImagen', 'true');
 
       await actualizarEmprendimiento(id, formData);
 
@@ -695,87 +708,35 @@ function EditarEmprendimiento({
             </p>
           </div>
 
-          {imagenPreview ? (
-            <div className="relative max-w-sm overflow-hidden rounded-3xl border border-emerald-200 bg-stone-100 shadow-sm">
-              <img
-                src={imagenPreview}
-                alt="Nueva imagen seleccionada"
-                className="h-56 w-full object-cover"
-              />
-
-              <div className="absolute left-3 top-3 rounded-full bg-emerald-800 px-3 py-1 text-xs font-bold text-white shadow">
-                Nueva imagen
-              </div>
-
-              <button
-                type="button"
-                onClick={handleRemoveNewImage}
-                className="absolute right-3 top-3 rounded-full bg-red-700 p-2 text-white shadow-md motion-safe:transition-colors hover:bg-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-red-700"
-                title="Cancelar nueva imagen"
-                aria-label="Eliminar imagen nueva"
-              >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-          ) : imagenActual ? (
-            <div className="relative max-w-sm overflow-hidden rounded-3xl border border-stone-200 bg-stone-100 shadow-sm">
-              <img
-                src={imagenActual}
-                alt="Imagen actual del emprendimiento"
-                loading="lazy"
-                decoding="async"
-                className={`h-56 w-full object-cover ${
-                  eliminarImagenActual ? 'opacity-40 grayscale' : ''
-                }`}
-              />
-
-              <div className="absolute left-3 top-3 rounded-full bg-emerald-950/85 px-3 py-1 text-xs font-bold text-white shadow backdrop-blur-sm">
-                Imagen actual
-              </div>
-
-              {!eliminarImagenActual ? (
-                <button
-                  type="button"
-                  onClick={handleRemoveCurrentImage}
-                  className="absolute right-3 top-3 rounded-full bg-red-700 p-2 text-white shadow-md motion-safe:transition-colors hover:bg-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-red-700"
-                  title="Quitar imagen"
-                  aria-label="Eliminar imagen actual"
-                >
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {imagenesExistentes.map((imagen, indice) => (
+              <div key={imagen.id || imagen.imagen} className="relative overflow-hidden rounded-2xl border border-emerald-950/10 bg-stone-100 shadow-sm">
+                <img src={imagen.imagen} alt={`Imagen existente ${indice + 1}`} className="aspect-square h-full w-full object-cover" />
+                {imagen.esPortada && <span className="absolute left-2 top-2 rounded-full bg-[#095540]/90 px-2 py-1 text-[10px] font-bold text-white">Portada</span>}
+                {!imagen.esPortada && imagen.id > 0 && <button type="button" onClick={() => setImagenesExistentes((actuales) => actuales.map((actual) => ({ ...actual, esPortada: actual.id === imagen.id })))} className="absolute bottom-2 left-2 rounded-lg bg-white/90 px-2 py-1 text-[10px] font-bold text-[#095540] backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444]">Hacer portada</button>}
+                <button type="button" onClick={() => handleRemoveCurrentImage(indice)} className="absolute right-2 top-2 rounded-full bg-red-700 p-1.5 text-white shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white" aria-label={`Eliminar fotografía existente ${indice + 1}`}>
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleRestoreCurrentImage}
-                  className="absolute bottom-3 right-3 rounded-xl bg-emerald-800 px-3 py-2 text-xs font-bold text-white shadow-md motion-safe:transition-colors hover:bg-emerald-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 focus-visible:ring-offset-emerald-800 sm:bottom-auto sm:top-3"
-                >
-                  Conservar imagen
+              </div>
+            ))}
+            {imagenesNuevas.map((imagen, indice) => (
+              <div key={imagen.preview} className="relative overflow-hidden rounded-2xl border border-[#8DC63F]/50 bg-stone-100 shadow-sm">
+                <img src={imagen.preview} alt={`Nueva fotografía ${indice + 1}`} className="aspect-square h-full w-full object-cover" />
+                {portadaNueva && indice === 0 && <span className="absolute left-2 top-2 rounded-full bg-[#095540]/90 px-2 py-1 text-[10px] font-bold text-white">Portada</span>}
+                {!portadaNueva && <button type="button" onClick={() => setPortadaNueva(true)} className="absolute bottom-2 left-2 rounded-lg bg-white/90 px-2 py-1 text-[10px] font-bold text-[#095540] backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444]">Hacer portada</button>}
+                <button type="button" onClick={() => handleRemoveNewImage(indice)} className="absolute right-2 top-2 rounded-full bg-red-700 p-1.5 text-white shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white" aria-label={`Eliminar fotografía nueva ${indice + 1}`}>
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
-              )}
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
-              <p className="text-sm font-semibold text-amber-800">
-                Este emprendimiento no tiene una imagen registrada.
-              </p>
-            </div>
-          )}
+              </div>
+            ))}
+          </div>
 
-          <label className="flex cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed border-stone-300 bg-stone-50/70 p-6 text-center motion-safe:transition-colors motion-safe:duration-200 hover:border-emerald-600 hover:bg-emerald-50/70 focus-within:border-emerald-700 focus-within:ring-4 focus-within:ring-emerald-100">
+          <label className={`flex cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed p-6 text-center motion-safe:transition-colors motion-safe:duration-200 ${isDragging ? 'border-[#009444] bg-[#8DC63F]/15' : 'border-stone-300 bg-stone-50/70 hover:border-emerald-600 hover:bg-emerald-50/70'} focus-within:border-emerald-700 focus-within:ring-4 focus-within:ring-emerald-100`}
+            onDragEnter={(event) => { event.preventDefault(); dragDepth.current += 1; setIsDragging(true); }}
+            onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = 'copy'; }}
+            onDragLeave={(event) => { event.preventDefault(); dragDepth.current -= 1; if (dragDepth.current <= 0) { dragDepth.current = 0; setIsDragging(false); } }}
+            onDrop={handleDrop}
+          >
             <svg className="h-8 w-8 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
@@ -786,13 +747,14 @@ function EditarEmprendimiento({
             </svg>
 
             <span className="mt-2 text-sm font-semibold text-stone-700">
-              Seleccionar nueva imagen
+              {isDragging ? 'Soltá las fotografías aquí' : 'Arrastrá tus fotografías aquí o seleccioná archivos'}
             </span>
 
-            <span className="mt-1 text-xs text-stone-500">PNG, JPG o WEBP · Máximo 5MB</span>
+            <span className="mt-1 text-xs text-stone-500">PNG, JPG o WEBP · Máximo 5MB cada una</span>
 
             <input
               type="file"
+              multiple
               accept="image/png, image/jpeg, image/webp"
               onChange={handleImageChange}
               className="hidden"

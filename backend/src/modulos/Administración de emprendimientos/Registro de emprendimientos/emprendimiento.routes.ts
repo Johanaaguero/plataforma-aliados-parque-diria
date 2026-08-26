@@ -20,7 +20,7 @@ router.post(
   '/',
   verificarToken,
   autorizarRoles('administrador', 'asociado'),
-  upload.single('imagen'),
+  upload.any(),
   emprendimientoController.crear.bind(
     emprendimientoController,
   ),
@@ -36,6 +36,13 @@ router.post(
 router.get(
   '/catalogo',
   emprendimientoController.obtenerCatalogoPublico.bind(
+    emprendimientoController,
+  ),
+);
+
+router.get(
+  '/catalogo/:id',
+  emprendimientoController.obtenerDetalleCatalogoPublico.bind(
     emprendimientoController,
   ),
 );
@@ -117,7 +124,7 @@ router.put(
   '/:id',
   verificarToken,
   autorizarRoles('administrador', 'asociado'),
-  upload.single('imagen'),
+  upload.any(),
   emprendimientoController.actualizar.bind(
     emprendimientoController,
   ),

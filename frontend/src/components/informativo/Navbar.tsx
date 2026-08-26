@@ -6,9 +6,12 @@ interface NavbarProps {
   onRegistro: () => void;
   onLogin: () => void;
   rolAutenticado: string | null;
+  nombreUsuario: string | null;
+  onCerrarSesion: () => void;
   onGestionRoles: () => void;
   onIrInicio: () => void;
   onIrEmprendimientos: () => void;
+  seccionActiva?: 'inicio' | 'emprendimientos';
   modoAdministracion?: boolean;
 }
 
@@ -16,9 +19,12 @@ function Navbar({
   onRegistro,
   onLogin,
   rolAutenticado,
+  nombreUsuario,
+  onCerrarSesion,
   onGestionRoles,
   onIrInicio,
   onIrEmprendimientos,
+  seccionActiva = 'inicio',
   modoAdministracion = false,
 }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false);
@@ -59,9 +65,13 @@ function Navbar({
   };
 
   const claseNavegacion =
-    'rounded-full px-3 py-2 text-sm font-semibold text-[#17372c] motion-safe:transition motion-safe:duration-200 hover:bg-[#eef7e7] hover:text-[#095540] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2';
+    'rounded-full border border-transparent px-3 py-2 text-sm font-semibold text-[#17372c] motion-safe:transition-all motion-safe:duration-200 motion-safe:ease-out hover:bg-[#eef7e7]/70 hover:text-[#095540] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2';
+  const claseNavegacionActiva =
+    'border-white/60 bg-white/65 text-[#095540] shadow-sm backdrop-blur-lg';
   const claseNavegacionMovil =
-    'w-full rounded-2xl px-4 py-3 text-left text-sm font-semibold text-[#17372c] motion-safe:transition motion-safe:duration-200 hover:bg-[#eef7e7] hover:text-[#095540] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f]';
+    'w-full rounded-2xl border border-transparent px-4 py-3 text-left text-sm font-semibold text-[#17372c] motion-safe:transition-all motion-safe:duration-200 motion-safe:ease-out hover:bg-[#eef7e7]/70 hover:text-[#095540] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f]';
+  const claseNavegacionMovilActiva =
+    'border-white/60 bg-white/65 text-[#095540] shadow-sm backdrop-blur-lg';
 
   return (
     <nav
@@ -70,7 +80,7 @@ function Navbar({
     >
       <div
         className={`mx-auto max-w-7xl overflow-hidden border border-white/70 bg-white/90 backdrop-blur-xl motion-safe:transition-all motion-safe:duration-300 motion-reduce:transition-none ${
-          menuAbierto ? 'rounded-[1.75rem] lg:rounded-full' : 'rounded-full'
+          menuAbierto ? 'rounded-[1.75rem] xl:rounded-full' : 'rounded-full'
         } ${
           modoAdministracion || scrolled
             ? 'shadow-[0_16px_45px_rgba(7,63,49,0.16)]'
@@ -84,11 +94,11 @@ function Navbar({
             className="group flex min-w-0 shrink-0 items-center gap-2 rounded-full pr-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2"
             aria-label="Ir al inicio"
           >
-            <span className="flex h-11 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white sm:w-16">
+            <span className="flex h-12 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white p-1 sm:w-16">
               <img
                 src={logo}
                 alt=""
-                className="h-full w-full object-cover object-[center_18%] motion-safe:transition motion-safe:duration-300 motion-safe:group-hover:scale-105 motion-reduce:transform-none"
+                className="h-full w-full object-contain motion-safe:transition motion-safe:duration-300 motion-safe:group-hover:scale-105 motion-reduce:transform-none"
               />
             </span>
             <span className="hidden min-w-0 sm:block">
@@ -101,8 +111,8 @@ function Navbar({
             </span>
           </button>
 
-          <div className="hidden items-center gap-0.5 lg:flex xl:gap-1">
-            <button type="button" onClick={irInicio} className={claseNavegacion}>
+          <div className="hidden items-center gap-0.5 xl:flex xl:gap-1">
+            <button type="button" onClick={irInicio} className={`${claseNavegacion} ${seccionActiva === 'inicio' ? claseNavegacionActiva : ''}`} aria-current={seccionActiva === 'inicio' ? 'page' : undefined}>
               Inicio
             </button>
             <button
@@ -115,7 +125,8 @@ function Navbar({
             <button
               type="button"
               onClick={irEmprendimientos}
-              className={claseNavegacion}
+              className={`${claseNavegacion} ${seccionActiva === 'emprendimientos' ? claseNavegacionActiva : ''}`}
+              aria-current={seccionActiva === 'emprendimientos' ? 'page' : undefined}
             >
               Emprendimientos
             </button>
@@ -128,20 +139,20 @@ function Navbar({
             </button>
           </div>
 
-          <div className="hidden shrink-0 items-center gap-2 lg:flex">
+          <div className="hidden shrink-0 items-center gap-2 xl:flex">
             {!rolAutenticado && (
               <>
                 <button
                   type="button"
                   onClick={onRegistro}
-                  className="min-h-10 rounded-full border border-[#dce9d7] bg-[#f8fbf4] px-4 py-2 text-sm font-bold text-[#095540] motion-safe:transition motion-safe:duration-200 hover:border-[#8dc63f] hover:bg-[#eef7e7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2"
+                  className="min-h-10 rounded-full border border-[#8DC63F] bg-[#8DC63F] px-4 py-2 text-sm font-bold text-[#095540] motion-safe:transition motion-safe:duration-200 hover:border-[#009444] hover:bg-[#009444] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8DC63F] focus-visible:ring-offset-2"
                 >
                   Registrarse
                 </button>
                 <button
                   type="button"
                   onClick={onLogin}
-                  className="min-h-10 rounded-full bg-[#095540] px-5 py-2 text-sm font-bold text-white shadow-md shadow-[#095540]/20 motion-safe:transition motion-safe:duration-200 hover:bg-[#073f31] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 motion-safe:hover:-translate-y-0.5 motion-reduce:transform-none"
+                  className="min-h-10 rounded-full bg-[#095540] px-5 py-2 text-sm font-bold text-white shadow-md shadow-[#095540]/20 motion-safe:transition motion-safe:duration-200 hover:bg-[#009444] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8DC63F] focus-visible:ring-offset-2 motion-safe:hover:-translate-y-0.5 motion-reduce:transform-none"
                 >
                   Ingresar
                 </button>
@@ -157,12 +168,32 @@ function Navbar({
                 Gestionar roles
               </button>
             )}
+
+            {rolAutenticado && (
+              <>
+                {nombreUsuario && (
+                  <span
+                    className="max-w-36 truncate rounded-full border border-[#8DC63F]/45 bg-[#8DC63F]/15 px-4 py-2 text-sm font-bold text-[#095540]"
+                    title={nombreUsuario}
+                  >
+                    {nombreUsuario}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={onCerrarSesion}
+                  className="min-h-10 rounded-full bg-[#095540] px-5 py-2 text-sm font-bold text-white shadow-md shadow-[#095540]/20 motion-safe:transition motion-safe:duration-200 hover:bg-[#009444] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8DC63F] focus-visible:ring-offset-2 motion-safe:hover:-translate-y-0.5 motion-reduce:transform-none"
+                >
+                  Cerrar sesión
+                </button>
+              </>
+            )}
           </div>
 
           <button
             type="button"
             onClick={() => setMenuAbierto(!menuAbierto)}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#095540] text-white shadow-sm motion-safe:transition motion-safe:duration-200 hover:bg-[#073f31] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 lg:hidden"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#095540] text-white shadow-sm motion-safe:transition motion-safe:duration-200 hover:bg-[#009444] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8DC63F] focus-visible:ring-offset-2 xl:hidden"
             aria-label={menuAbierto ? 'Cerrar menú' : 'Abrir menú'}
             aria-expanded={menuAbierto}
             aria-controls="menu-principal-movil"
@@ -196,10 +227,10 @@ function Navbar({
         {menuAbierto && (
           <div
             id="menu-principal-movil"
-            className="border-t border-[#e2ebe5] px-3 pb-4 pt-3 lg:hidden"
+            className="border-t border-[#e2ebe5] px-3 pb-4 pt-3 xl:hidden"
           >
             <div className="flex flex-col gap-1">
-              <button type="button" onClick={irInicio} className={claseNavegacionMovil}>
+              <button type="button" onClick={irInicio} className={`${claseNavegacionMovil} ${seccionActiva === 'inicio' ? claseNavegacionMovilActiva : ''}`} aria-current={seccionActiva === 'inicio' ? 'page' : undefined}>
                 Inicio
               </button>
               <button
@@ -212,7 +243,8 @@ function Navbar({
               <button
                 type="button"
                 onClick={irEmprendimientos}
-                className={claseNavegacionMovil}
+                className={`${claseNavegacionMovil} ${seccionActiva === 'emprendimientos' ? claseNavegacionMovilActiva : ''}`}
+                aria-current={seccionActiva === 'emprendimientos' ? 'page' : undefined}
               >
                 Emprendimientos
               </button>
@@ -233,7 +265,7 @@ function Navbar({
                     setMenuAbierto(false);
                     onRegistro();
                   }}
-                  className="min-h-12 rounded-full border border-[#b9d6af] bg-[#f8fbf4] px-4 py-3 text-sm font-bold text-[#095540] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f]"
+                  className="min-h-12 rounded-full border border-[#8DC63F] bg-[#8DC63F] px-4 py-3 text-sm font-bold text-[#095540] motion-safe:transition motion-safe:duration-200 hover:border-[#009444] hover:bg-[#009444] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8DC63F]"
                 >
                   Registrarse
                 </button>
@@ -243,9 +275,32 @@ function Navbar({
                     setMenuAbierto(false);
                     onLogin();
                   }}
-                  className="min-h-12 rounded-full bg-[#095540] px-4 py-3 text-sm font-bold text-white shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f]"
+                  className="min-h-12 rounded-full bg-[#095540] px-4 py-3 text-sm font-bold text-white shadow-md motion-safe:transition motion-safe:duration-200 hover:bg-[#009444] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8DC63F]"
                 >
                   Ingresar
+                </button>
+              </div>
+            )}
+
+            {rolAutenticado && (
+              <div className="mt-3 grid min-w-0 gap-2 border-t border-[#e2ebe5] pt-3 sm:grid-cols-2">
+                {nombreUsuario && (
+                  <span
+                    className="min-w-0 truncate rounded-full border border-[#8DC63F]/45 bg-[#8DC63F]/15 px-4 py-3 text-center text-sm font-bold text-[#095540]"
+                    title={nombreUsuario}
+                  >
+                    {nombreUsuario}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuAbierto(false);
+                    onCerrarSesion();
+                  }}
+                  className="min-h-12 rounded-full bg-[#095540] px-4 py-3 text-sm font-bold text-white shadow-md motion-safe:transition motion-safe:duration-200 hover:bg-[#009444] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8DC63F]"
+                >
+                  Cerrar sesión
                 </button>
               </div>
             )}

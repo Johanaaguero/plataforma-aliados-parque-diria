@@ -30,6 +30,7 @@ export interface CrearEmprendimientoDto {
   correoElectronico?: string;
   telefono?: string;
   imagen?: File | string;
+  imagenes?: File[];
   modo?: 'cambios' | 'borrador';
 }
 
@@ -47,6 +48,9 @@ export interface ActualizarEmprendimientoDto {
   correoElectronico?: string;
   telefono?: string;
   imagen?: File | string;
+  imagenes?: File[];
+  imagenesConservadas?: number[];
+  portadaImagenId?: number;
   modo?: 'cambios' | 'borrador';
 }
 
@@ -87,6 +91,12 @@ export interface Emprendimiento {
   fechaPublicacion?: string | null;
 
   imagen?: string | null;
+
+  imagenes?: {
+    id: number;
+    imagen: string;
+    esPortada: boolean;
+  }[];
 
   fechaCreacion: string;
 
@@ -460,6 +470,20 @@ export async function actualizarEmprendimiento(
 
       mensajeError:
         'No se pudo actualizar el emprendimiento',
+    },
+  );
+}
+
+export async function obtenerDetalleCatalogoPublicado(
+  id: number,
+): Promise<Emprendimiento> {
+  return api.solicitar<Emprendimiento>(
+    `/emprendimientos/catalogo/${id}`,
+    { method: 'GET' },
+    {
+      incluirAuth: false,
+      desempaquetarData: false,
+      mensajeError: 'No se pudo cargar el detalle del emprendimiento',
     },
   );
 }

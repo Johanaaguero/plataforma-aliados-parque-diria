@@ -5,6 +5,7 @@ import {
   obtenerCatalogoPublicado,
   obtenerEmprendimientosAdministrativos,
   eliminarEmprendimiento,
+  obtenerDetalleCatalogoPublicado,
   type Emprendimiento,
   type EstadoPublicacion,
   type EstadoPublicacionSolicitado,
@@ -156,6 +157,10 @@ function ListaEmprendimientos({
 
   const [emprendimientoSeleccionado, setEmprendimientoSeleccionado] =
     useState<Emprendimiento | null>(null);
+  const [detalleSeleccionado, setDetalleSeleccionado] =
+    useState<Emprendimiento | null>(null);
+  const [imagenDetalle, setImagenDetalle] = useState(0);
+  const [cargandoDetalle, setCargandoDetalle] = useState(false);
   const [transicionSeleccionada, setTransicionSeleccionada] =
     useState<TransicionDisponible | null>(null);
   const [idProcesando, setIdProcesando] = useState<number | null>(null);
@@ -172,7 +177,26 @@ function ListaEmprendimientos({
 
   const esAdministrador = rolAutenticado === 'administrador';
   const esAsociado = rolAutenticado === 'asociado';
+  const esCatalogoPublico = !esAdministrador && !esAsociado;
   const puedeRegistrar = esAdministrador || esAsociado;
+
+  const abrirDetalle = async (emprendimiento: Emprendimiento) => {
+    if (!esCatalogoPublico) return;
+
+    setCargandoDetalle(true);
+    setImagenDetalle(0);
+    try {
+      const detalle = await obtenerDetalleCatalogoPublicado(emprendimiento.id);
+      setDetalleSeleccionado(detalle);
+    } catch (err: unknown) {
+      setMensajeAccion({
+        tipo: 'error',
+        texto: obtenerMensajeError(err, 'No se pudo cargar el detalle del emprendimiento.'),
+      });
+    } finally {
+      setCargandoDetalle(false);
+    }
+  };
 
   useEffect(() => {
     const mostrarErrorAutorizacion = (event: Event) => {
@@ -360,6 +384,15 @@ function ListaEmprendimientos({
       botonQueAbrioModal.current = null;
     };
   }, [emprendimientoSeleccionado]);
+
+  useEffect(() => {
+    if (!detalleSeleccionado) return;
+    const cerrarConEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setDetalleSeleccionado(null);
+    };
+    document.addEventListener('keydown', cerrarConEscape);
+    return () => document.removeEventListener('keydown', cerrarConEscape);
+  }, [detalleSeleccionado]);
 useEffect(() => {
   if (!mensajeAccion) return;
 
@@ -409,10 +442,10 @@ useEffect(() => {
     switch (estado) {
       case 'publicado':
         return {
-          fondo: 'bg-emerald-50',
-          texto: 'text-emerald-700',
-          borde: 'border-emerald-200',
-          punto: 'bg-emerald-500',
+          fondo: 'bg-white/85',
+          texto: 'text-[#095540]',
+          borde: 'border-white/70',
+          punto: 'bg-[#009444]',
           etiqueta: 'Publicado',
         };
       case 'no_publicado':
@@ -530,7 +563,8 @@ useEffect(() => {
     <section className="min-h-screen overflow-x-clip bg-[#f5f7f1] px-4 py-8 sm:px-6 lg:px-10">
       <div className="mx-auto max-w-7xl">
         {/* ENCABEZADO */}
-        <div className="relative mb-8 overflow-hidden rounded-[2rem] bg-gradient-to-br from-emerald-950 via-emerald-900 to-green-800 px-5 py-8 text-white shadow-[0_24px_70px_rgba(20,83,45,0.2)] sm:px-10">
+        {!esCatalogoPublico && (
+        <div className="relative mb-8 overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#095540] via-[#095540] to-[#009444] px-5 py-8 text-white shadow-[0_24px_70px_rgba(9,85,64,0.2)] sm:px-10">
           <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-[#d9d823]/15 blur-3xl" aria-hidden="true" />
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="relative max-w-3xl">
@@ -550,7 +584,7 @@ useEffect(() => {
                   ? 'Administre los emprendimientos registrados y gestione su estado de publicación.'
                   : esAsociado
                   ? 'Consultá y registrá emprendimientos de la comunidad. El estado de publicación es gestionado por los administradores.'
-                  : 'Conocé los emprendimientos publicados de la comunidad alrededor del Parque Nacional Diriá.'}
+                  : 'Conocé las propuestas de la comunidad alrededor del Parque Nacional Diriá.'}
               </p>
             </div>
 
@@ -595,6 +629,23 @@ useEffect(() => {
             </div>
           </div>
         </div>
+        )}
+
+        {esCatalogoPublico && (
+          <header className="relative mb-6 overflow-hidden rounded-3xl bg-gradient-to-r from-[#095540] via-[#095540] to-[#009444] px-5 py-5 text-white shadow-[0_14px_35px_rgba(9,85,64,0.12)] sm:px-7 sm:py-6">
+            <div className="relative">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8DC63F]">
+                Comunidad Diriá
+              </p>
+              <h1 className="mt-1 font-brand text-2xl font-bold tracking-tight sm:text-3xl">
+                Emprendimientos locales
+              </h1>
+              <p className="mt-1 text-sm text-white/80">
+                Propuestas de la comunidad alrededor del Parque Nacional Diriá.
+              </p>
+            </div>
+          </header>
+        )}
 
         {/* MENSAJE DE ACCIÓN */}
        {mensajeAccion && (
@@ -680,36 +731,8 @@ useEffect(() => {
           </div>
         )}
 
-        {!rolAutenticado && (
-          <div className="mb-6 rounded-3xl border border-stone-200 bg-[#fffef9] p-5 shadow-sm">
-            <div className="flex items-start gap-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth="2"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M13.5 21v-7.5a.75.75 0 0 1 .75-.75h3a.75.75 0 0 1 .75.75V21m-4.5 0H2.25a.75.75 0 0 1-.75-.75V8.25a.75.75 0 0 1 .225-.53l7.5-7.5a.75.75 0 0 1 1.05 0l7.5 7.5a.75.75 0 0 1 .225.53V20.25a.75.75 0 0 1-.75.75H13.5z"
-                  />
-                </svg>
-              </div>
-              <div>
-                <h2 className="font-bold text-slate-900">Emprendimientos publicados</h2>
-                <p className="mt-0.5 text-sm text-slate-600">
-                  Estos son los emprendimientos actualmente disponibles para el público.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* BUSCADOR Y FILTROS INTERACTIVOS TIPO TAB */}
-        <div className="mb-8 space-y-4 rounded-3xl border border-emerald-950/10 bg-[#fffef9] p-4 shadow-sm sm:p-5">
+        <div className="mb-8 space-y-4 rounded-3xl border border-[#095540]/10 bg-white p-4 shadow-[0_12px_35px_rgba(9,85,64,0.07)] sm:p-5">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             {/* Buscador de texto */}
             <div className="relative flex-1">
@@ -731,7 +754,7 @@ useEffect(() => {
                 placeholder="Buscar por nombre o descripción..."
                 value={busquedaTexto}
                 onChange={(e) => setBusquedaTexto(e.target.value)}
-                className="w-full rounded-2xl border border-stone-200 bg-stone-50/70 py-3 pl-10 pr-4 text-sm font-medium text-stone-800 placeholder:text-stone-400 outline-none motion-safe:transition-[border-color,background-color,box-shadow] motion-safe:duration-200 focus-visible:border-emerald-700 focus-visible:bg-white focus-visible:ring-4 focus-visible:ring-emerald-100"
+                className="w-full rounded-2xl border border-[#095540]/15 bg-[#f7faf5] py-3 pl-10 pr-4 text-sm font-medium text-slate-800 placeholder:text-slate-400 outline-none motion-safe:transition-[border-color,background-color,box-shadow] motion-safe:duration-200 focus-visible:border-[#009444] focus-visible:bg-white focus-visible:ring-4 focus-visible:ring-[#009444]/15"
               />
             </div>
 
@@ -916,7 +939,7 @@ useEffect(() => {
        
 {/* TARJETAS DE EMPRENDIMIENTO */}
 {emprendimientosFiltrados.length > 0 && (
-  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3 xl:gap-7">
+  <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3 xl:gap-7">
     {emprendimientosFiltrados.map((emprendimiento) => {
       const estiloEstado = obtenerEstiloEstado(
         emprendimiento.estadoPublicacion,
@@ -947,16 +970,25 @@ useEffect(() => {
       return (
         <article
           key={emprendimiento.id}
+          onClick={() => { void abrirDetalle(emprendimiento); }}
+          onKeyDown={(event) => {
+            if (esCatalogoPublico && (event.key === 'Enter' || event.key === ' ')) {
+              event.preventDefault();
+              void abrirDetalle(emprendimiento);
+            }
+          }}
+          role={esCatalogoPublico ? 'button' : undefined}
+          tabIndex={esCatalogoPublico ? 0 : undefined}
           className="
             group flex h-full flex-col overflow-hidden
             rounded-[1.75rem]
-            border border-emerald-950/10
-            bg-[#fffef9]
-            shadow-[0_8px_28px_rgba(20,83,45,0.07)]
+            border border-[#095540]/10
+            bg-white
+            shadow-[0_8px_28px_rgba(9,85,64,0.07)]
             motion-safe:transition-all motion-safe:duration-300
             motion-safe:hover:-translate-y-1
-            hover:border-emerald-200
-            hover:shadow-[0_20px_50px_rgba(20,83,45,0.13)]
+            hover:border-[#8DC63F]/60
+            hover:shadow-[0_20px_50px_rgba(9,85,64,0.13)]
             motion-reduce:transform-none motion-reduce:transition-none
           "
         >
@@ -1425,6 +1457,51 @@ useEffect(() => {
 
 
         {/* MODAL CAMBIO ESTADO */}
+        {cargandoDetalle && (
+          <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#052f25]/60 p-4 backdrop-blur-sm" role="status" aria-live="polite">
+            <div className="rounded-2xl bg-white/95 px-5 py-4 text-sm font-semibold text-[#095540] shadow-xl">Cargando detalle...</div>
+          </div>
+        )}
+
+        {detalleSeleccionado && (() => {
+          const imagenes = detalleSeleccionado.imagenes?.length
+            ? detalleSeleccionado.imagenes
+            : detalleSeleccionado.imagen
+              ? [{ id: 0, imagen: detalleSeleccionado.imagen, esPortada: true }]
+              : [];
+          const indice = Math.min(imagenDetalle, Math.max(imagenes.length - 1, 0));
+          const imagenActual = imagenes[indice];
+          return (
+            <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#052f25]/70 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="titulo-detalle-emprendimiento" onClick={() => setDetalleSeleccionado(null)}>
+              <div className="max-h-[calc(100dvh-2rem)] w-full max-w-4xl overflow-y-auto rounded-3xl border border-white/60 bg-[#fffef9]/95 p-5 shadow-[0_24px_70px_rgba(5,47,37,0.3)] backdrop-blur-xl sm:p-7" onClick={(event) => event.stopPropagation()}>
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#009444]">Detalle del emprendimiento</p>
+                    <h2 id="titulo-detalle-emprendimiento" className="mt-1 font-brand text-2xl font-bold text-[#095540] sm:text-3xl">{detalleSeleccionado.nombre}</h2>
+                  </div>
+                  <button type="button" onClick={() => setDetalleSeleccionado(null)} className="rounded-full p-2 text-[#095540] hover:bg-[#8DC63F]/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444]" aria-label="Cerrar detalles">×</button>
+                </div>
+                {imagenActual && (
+                  <div className="mt-5">
+                    <img src={imagenActual.imagen} alt={detalleSeleccionado.nombre} className="max-h-[50vh] w-full rounded-2xl object-contain" />
+                    {imagenes.length > 1 && <div className="mt-3 flex flex-wrap gap-2">
+                      <button type="button" onClick={() => setImagenDetalle((actual) => (actual - 1 + imagenes.length) % imagenes.length)} className="rounded-xl border border-[#095540]/15 bg-white px-3 py-2 text-xs font-bold text-[#095540] hover:bg-[#8DC63F]/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444]" aria-label="Ver imagen anterior">Anterior</button>
+                      {imagenes.map((imagen, indiceMiniatura) => <button key={imagen.id || imagen.imagen} type="button" onClick={() => setImagenDetalle(indiceMiniatura)} className={`h-16 w-16 overflow-hidden rounded-xl border-2 ${indiceMiniatura === indice ? 'border-[#009444]' : 'border-transparent'}`} aria-label={`Ver imagen ${indiceMiniatura + 1}`}><img src={imagen.imagen} alt="" className="h-full w-full object-cover" /></button>)}
+                      <button type="button" onClick={() => setImagenDetalle((actual) => (actual + 1) % imagenes.length)} className="rounded-xl border border-[#095540]/15 bg-white px-3 py-2 text-xs font-bold text-[#095540] hover:bg-[#8DC63F]/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444]" aria-label="Ver imagen siguiente">Siguiente</button>
+                    </div>}
+                  </div>
+                )}
+                <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                  {detalleSeleccionado.descripcion && <p className="sm:col-span-2 text-sm leading-6 text-slate-600">{detalleSeleccionado.descripcion}</p>}
+                  {detalleSeleccionado.direccion && <p className="text-sm text-slate-700"><strong className="block text-xs uppercase tracking-wider text-slate-400">Ubicación</strong>{detalleSeleccionado.direccion}</p>}
+                  {detalleSeleccionado.telefono && <p className="text-sm text-slate-700"><strong className="block text-xs uppercase tracking-wider text-slate-400">Teléfono</strong>{detalleSeleccionado.telefono}</p>}
+                  {detalleSeleccionado.correoElectronico && <p className="text-sm text-slate-700"><strong className="block text-xs uppercase tracking-wider text-slate-400">Correo</strong>{detalleSeleccionado.correoElectronico}</p>}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
         {emprendimientoSeleccionado && (
           <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-emerald-950/65 p-4 backdrop-blur-sm starting:opacity-0 motion-safe:transition-opacity motion-safe:duration-200 motion-reduce:backdrop-blur-none"

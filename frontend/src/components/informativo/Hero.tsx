@@ -73,7 +73,7 @@ function Hero() {
   return (
     <section
       id="inicio"
-      className="relative isolate min-h-[720px] overflow-hidden bg-[#073f31] text-white sm:min-h-[760px] lg:min-h-[820px]"
+      className="relative isolate min-h-[720px] overflow-hidden bg-[#095540] text-white sm:min-h-[760px] lg:min-h-[820px]"
       aria-roledescription="carrusel"
       aria-label="Paisajes y experiencias del Parque Nacional Diriá"
       onMouseEnter={() => setPunteroSobreCarrusel(true)}
@@ -105,11 +105,11 @@ function Hero() {
       </div>
 
       <div
-        className="absolute inset-0 bg-gradient-to-r from-[#052f25]/95 via-[#073f31]/70 to-[#073f31]/20"
+        className="absolute inset-0 bg-gradient-to-r from-[#095540]/95 via-[#095540]/70 to-[#095540]/20"
         aria-hidden="true"
       />
       <div
-        className="absolute inset-0 bg-gradient-to-t from-[#052f25]/80 via-transparent to-[#052f25]/25"
+        className="absolute inset-0 bg-gradient-to-t from-[#095540]/80 via-transparent to-[#095540]/25"
         aria-hidden="true"
       />
       <div
@@ -124,9 +124,9 @@ function Hero() {
             Guanacaste, Costa Rica
           </div>
 
-          <h1 className="max-w-4xl text-4xl font-semibold leading-[1.04] tracking-[-0.035em] text-white sm:text-5xl md:text-6xl lg:text-7xl">
+          <h1 className="font-brand max-w-4xl text-4xl font-bold leading-[1.04] tracking-[-0.035em] text-white sm:text-5xl md:text-6xl lg:text-7xl">
             Naturaleza que inspira,
-            <span className="block text-[#bde56d]">comunidades que conectan.</span>
+            <span className="block text-[#8dc63f]">comunidades que conectan.</span>
           </h1>
 
           <p className="mt-6 max-w-2xl text-base leading-7 text-white/85 sm:text-lg sm:leading-8 lg:text-xl">
@@ -137,7 +137,7 @@ function Hero() {
           <div className="mt-8 flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
             <a
               href="#atractivos"
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#8dc63f] px-6 py-3 text-sm font-bold text-[#073f31] shadow-lg shadow-black/15 motion-safe:transition motion-safe:duration-300 motion-safe:ease-out hover:bg-[#b2db68] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#d9d823]/55 motion-safe:hover:-translate-y-0.5 motion-reduce:transform-none sm:text-base"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#8dc63f] px-6 py-3 text-sm font-bold text-[#095540] shadow-lg shadow-black/15 motion-safe:transition motion-safe:duration-300 motion-safe:ease-out hover:bg-[#009444] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#d9d823]/55 motion-safe:hover:-translate-y-0.5 motion-safe:active:scale-[0.98] motion-reduce:transform-none sm:text-base"
             >
               Explorar el parque
               <span aria-hidden="true">→</span>
@@ -145,7 +145,7 @@ function Hero() {
 
             <a
               href="#eventos"
-              className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/50 bg-white/10 px-6 py-3 text-sm font-bold text-white backdrop-blur-sm motion-safe:transition motion-safe:duration-300 hover:border-white hover:bg-white hover:text-[#073f31] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/40 sm:text-base"
+              className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/50 bg-white/10 px-6 py-3 text-sm font-bold text-white backdrop-blur-sm motion-safe:transition motion-safe:duration-300 hover:border-white hover:bg-white hover:text-[#095540] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/40 motion-safe:active:scale-[0.98] motion-reduce:transform-none sm:text-base"
             >
               Ver eventos
             </a>
@@ -162,7 +162,7 @@ function Hero() {
         {DIAPOSITIVAS[indiceActual].nombre}
       </p>
 
-      <div className="absolute bottom-5 left-1/2 z-20 flex max-w-[calc(100%-2rem)] -translate-x-1/2 items-center gap-1 rounded-full border border-white/20 bg-[#052f25]/65 p-1.5 shadow-xl backdrop-blur-md sm:bottom-7 sm:gap-2">
+      <div className="absolute bottom-5 left-1/2 z-20 flex max-w-[calc(100%-2rem)] -translate-x-1/2 items-center gap-1 rounded-full border border-white/20 bg-[#095540]/65 p-1.5 shadow-xl backdrop-blur-md sm:bottom-7 sm:gap-2">
         <button
           type="button"
           onClick={mostrarAnterior}
@@ -191,7 +191,7 @@ function Hero() {
               key={diapositiva.nombre}
               type="button"
               onClick={() => setIndiceActual(index)}
-              className="group flex h-6 w-6 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d9d823] focus-visible:ring-offset-1 focus-visible:ring-offset-[#073f31]"
+              className="group flex h-6 w-6 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d9d823] focus-visible:ring-offset-1 focus-visible:ring-offset-[#095540]"
               aria-label={`Mostrar diapositiva ${index + 1}: ${diapositiva.nombre}`}
               aria-current={indiceActual === index ? 'true' : undefined}
             >

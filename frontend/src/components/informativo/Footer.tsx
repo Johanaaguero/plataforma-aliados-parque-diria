@@ -2,10 +2,10 @@ import logo from '../../assets/logo.png';
 
 function Footer() {
   const claseEnlace =
-    'w-fit rounded text-sm text-white/75 motion-safe:transition motion-safe:duration-200 hover:text-[#d9d823] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-4 focus-visible:ring-offset-[#073f31]';
+    'w-fit rounded text-sm text-white/75 motion-safe:transition motion-safe:duration-200 hover:text-[#d9d823] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-4 focus-visible:ring-offset-[#095540]';
 
   return (
-    <footer className="relative overflow-hidden rounded-t-[2.5rem] bg-[#073f31] text-white sm:rounded-t-[3.5rem]">
+    <footer className="relative overflow-hidden rounded-t-[2.5rem] bg-[#095540] text-white sm:rounded-t-[3.5rem]">
       <div
         className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[#8dc63f]/10 blur-3xl"
         aria-hidden="true"
@@ -14,16 +14,16 @@ function Footer() {
       <div className="relative mx-auto grid max-w-7xl gap-10 px-6 py-14 sm:px-8 sm:py-16 md:grid-cols-2 lg:grid-cols-[1.25fr_0.75fr_0.75fr] lg:gap-16">
         <div className="max-w-md">
           <div className="flex items-center gap-3">
-            <span className="flex h-12 w-16 items-center justify-center overflow-hidden rounded-2xl bg-white">
+            <span className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-white p-1.5">
               <img
                 src={logo}
                 alt=""
-                className="h-full w-full object-cover object-[center_18%]"
+                className="h-full w-full object-contain"
               />
             </span>
             <div>
-              <p className="font-bold text-white">Aliados del Parque</p>
-              <p className="text-xs uppercase tracking-[0.16em] text-[#bde56d]">
+              <p className="font-brand font-bold text-white">Aliados del Parque</p>
+              <p className="text-xs uppercase tracking-[0.16em] text-[#8dc63f]">
                 Parque Nacional Diriá
               </p>
             </div>

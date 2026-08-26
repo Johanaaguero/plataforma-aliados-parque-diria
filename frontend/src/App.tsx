@@ -105,6 +105,21 @@ const obtenerRolDesdeToken = (): NombreRol | null => {
   return null;
 };
 
+const obtenerNombreUsuarioDesdeToken = (): string | null => {
+  const payload = obtenerPayloadDesdeToken();
+
+  if (
+    !payload ||
+    typeof payload.nombreUsuario !== 'string'
+  ) {
+    return null;
+  }
+
+  const nombreUsuario = payload.nombreUsuario.trim();
+
+  return nombreUsuario || null;
+};
+
 const obtenerUsuarioIdDesdeToken = (): number | null => {
   const payload = obtenerPayloadDesdeToken();
 
@@ -197,6 +212,11 @@ function App() {
       obtenerRolDesdeToken()
     );
 
+  const [nombreUsuario, setNombreUsuario] =
+    useState<string | null>(
+      obtenerNombreUsuarioDesdeToken()
+    );
+
   const [usuarioId, setUsuarioId] =
     useState<number | null>(
       obtenerUsuarioIdDesdeToken()
@@ -212,6 +232,10 @@ function App() {
     const sincronizarSesion = () => {
       setRolAutenticado(
         obtenerRolDesdeToken()
+      );
+
+      setNombreUsuario(
+        obtenerNombreUsuarioDesdeToken()
       );
 
       setUsuarioId(
@@ -242,6 +266,7 @@ function App() {
       setMostrarErrorModal(true);
 
       setRolAutenticado(null);
+      setNombreUsuario(null);
 
       setMostrarCuentasBloqueadas(false);
 
@@ -369,6 +394,7 @@ function App() {
       await api.logout();
     } finally {
       setRolAutenticado(null);
+      setNombreUsuario(null);
       setUsuarioId(null);
       setMostrarGestionRoles(false);
 
@@ -383,6 +409,7 @@ function App() {
 
   const cerrarSesionPorInactividad = () => {
     setRolAutenticado(null);
+    setNombreUsuario(null);
     setUsuarioId(null);
     setMostrarGestionRoles(false);
 
@@ -464,6 +491,10 @@ function App() {
         <Login
           onLogin={(rol) => {
             setRolAutenticado(rol);
+
+            setNombreUsuario(
+              obtenerNombreUsuarioDesdeToken()
+            );
 
             setUsuarioId(
               obtenerUsuarioIdDesdeToken()
@@ -666,13 +697,15 @@ function App() {
    */
 
   if (
-    seccionActual ===
-    'emprendimientos'
+    seccionActual === 'emprendimientos' &&
+    !mostrarLogin &&
+    !mostrarRegistro
   ) {
     return (
       <>
         <Navbar
           modoAdministracion
+          seccionActiva="emprendimientos"
           onRegistro={() =>
             setMostrarRegistro(true)
           }
@@ -682,6 +715,10 @@ function App() {
           rolAutenticado={
             rolAutenticado
           }
+          nombreUsuario={nombreUsuario}
+          onCerrarSesion={() => {
+            void cerrarSesion();
+          }}
           onGestionRoles={() =>
             setMostrarGestionRoles(
               true
@@ -790,6 +827,10 @@ function App() {
             onLogin={(rol) => {
               setRolAutenticado(rol);
 
+              setNombreUsuario(
+                obtenerNombreUsuarioDesdeToken()
+              );
+
               setUsuarioId(
                 obtenerUsuarioIdDesdeToken()
               );
@@ -816,6 +857,10 @@ function App() {
 
               setRolAutenticado(
                 obtenerRolDesdeToken()
+              );
+
+              setNombreUsuario(
+                obtenerNombreUsuarioDesdeToken()
               );
 
               setUsuarioId(
@@ -850,6 +895,10 @@ function App() {
                 obtenerRolDesdeToken()
               );
 
+              setNombreUsuario(
+                obtenerNombreUsuarioDesdeToken()
+              );
+
               setUsuarioId(
                 obtenerUsuarioIdDesdeToken()
               );
@@ -869,6 +918,7 @@ function App() {
       ) : (
         <>
           <Navbar
+            seccionActiva="inicio"
             onRegistro={() =>
               setMostrarRegistro(
                 true
@@ -882,6 +932,10 @@ function App() {
             rolAutenticado={
               rolAutenticado
             }
+            nombreUsuario={nombreUsuario}
+            onCerrarSesion={() => {
+              void cerrarSesion();
+            }}
             onGestionRoles={() =>
               setMostrarGestionRoles(
                 true
@@ -923,25 +977,6 @@ function App() {
               }}
             >
               Cuentas bloqueadas
-            </button>
-          )}
-
-          {rolAutenticado && (
-            <button
-              type="button"
-              className="fixed bottom-4 right-4 z-40 inline-flex h-12 w-12 items-center justify-center gap-2 rounded-full bg-[#095540] p-0 text-sm font-bold text-white shadow-[0_12px_35px_rgba(7,63,49,0.28)] motion-safe:transition motion-safe:duration-200 hover:bg-[#073f31] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 motion-safe:hover:-translate-y-0.5 motion-reduce:transform-none sm:bottom-6 sm:right-6 sm:w-auto sm:px-5"
-              aria-label="Cerrar sesión"
-              onClick={() => {
-                void cerrarSesion();
-              }}
-            >
-              <span className="text-lg leading-none" aria-hidden="true">
-                ↗
-              </span>
-
-              <span className="hidden sm:inline">
-                Cerrar sesión
-              </span>
             </button>
           )}
 
