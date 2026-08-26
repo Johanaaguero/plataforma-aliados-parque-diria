@@ -30,6 +30,14 @@ const convertirEstadoPublicacion = (
   return ESTADOS_TEXTO[valor] ?? null;
 };
 
+const obtenerArchivos = (
+  archivos: Express.Multer.File[] | { [campo: string]: Express.Multer.File[] },
+): Express.Multer.File[] =>
+  (Array.isArray(archivos)
+    ? archivos
+    : Object.values(archivos).flat()
+  ).filter((archivo) => archivo.fieldname === 'imagen' || archivo.fieldname === 'imagenes');
+
 
 const validarActualizacion = (
   body: Record<string, unknown>,
@@ -205,6 +213,10 @@ export class EmprendimientoController {
           estadoConvertido;
       }
 
+      const archivos = req.files
+        ? obtenerArchivos(req.files)
+        : [];
+
       const dto = {
 
         nombre:
@@ -253,9 +265,13 @@ export class EmprendimientoController {
           req.body.telefono ||
           undefined,
 
-        ...(req.file?.buffer !== undefined
+          ...(archivos.length > 0
           ? {
-              imagen: req.file.buffer,
+              imagen: archivos[0]!.buffer,
+            imagenes: archivos.map((archivo) => ({
+                buffer: archivo.buffer,
+                tipoMime: archivo.mimetype,
+              })),
             }
           : {}),
 
@@ -452,6 +468,8 @@ export class EmprendimientoController {
                     )}`
                   : null,
 
+                  imagenes: emprendimiento.toPublic().imagenes,
+
               fechaCreacion:
                 emprendimiento.fechaCreacion,
 
@@ -474,7 +492,7 @@ export class EmprendimientoController {
         .json(
           emprendimientos.map(
             (emprendimiento) =>
-              emprendimiento.toPublic(),
+              emprendimiento.toPublic(false),
           ),
         );
 
@@ -510,6 +528,25 @@ export class EmprendimientoController {
 
     } catch (error: unknown) {
 
+      next(error);
+    }
+  }
+
+  async obtenerDetalleCatalogoPublico(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<Response | void> {
+    try {
+      const id = Number(req.params.id);
+      const emprendimiento = await emprendimientoService.obtenerPorId(id);
+
+      if (emprendimiento.estadoPublicacion !== EstadoPublicacion.PUBLICADO) {
+        return res.status(404).json({ mensaje: 'Emprendimiento no encontrado' });
+      }
+
+      return res.status(200).json(emprendimiento.toPublic());
+    } catch (error: unknown) {
       next(error);
     }
   }
@@ -757,6 +794,8 @@ export class EmprendimientoController {
                   )}`
                 : null,
 
+              imagenes: emprendimiento.toPublic().imagenes,
+
             fechaCreacion:
               emprendimiento.fechaCreacion,
 
@@ -921,9 +960,29 @@ export class EmprendimientoController {
       // CONSTRUIR DTO
       // ========================================================
 
+      const archivos = req.files
+        ? obtenerArchivos(req.files)
+        : [];
+
       const dto = {
 
         ...req.body,
+
+        ...(typeof req.body.imagenesConservadas === 'string'
+          ? { imagenesConservadas: JSON.parse(req.body.imagenesConservadas) as number[] }
+          : {}),
+
+        ...(req.body.portadaImagenId !== undefined && req.body.portadaImagenId !== ''
+          ? { portadaImagenId: Number(req.body.portadaImagenId) }
+          : {}),
+
+        ...(req.body.portadaNueva === 'true'
+          ? { portadaNueva: true }
+          : {}),
+
+        ...(req.body.eliminarImagen === 'true'
+          ? { eliminarImagen: true }
+          : {}),
 
         ...(req.body.categoriaId !== undefined &&
         req.body.categoriaId !== ''
@@ -955,10 +1014,13 @@ export class EmprendimientoController {
             }
           : {}),
 
-        ...(req.file?.buffer !== undefined
+          ...(archivos.length > 0
           ? {
-              imagen:
-                req.file.buffer,
+              imagen: archivos[0]!.buffer,
+            imagenes: archivos.map((archivo) => ({
+                buffer: archivo.buffer,
+                tipoMime: archivo.mimetype,
+              })),
             }
           : {}),
       };

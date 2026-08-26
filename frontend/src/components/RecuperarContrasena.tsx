@@ -72,7 +72,7 @@ export default function RecuperarContrasena() {
   };
 
   return (
-    <main className="relative isolate flex min-h-screen items-center justify-center overflow-hidden bg-[#0b3b2e] px-4 py-24 font-sans sm:px-6 lg:px-8">
+    <main className="relative isolate flex min-h-screen items-center justify-center overflow-hidden bg-[#095540] px-4 py-24 font-sans sm:px-6 lg:px-8">
       <img
         src={parqueImage}
         alt=""
@@ -80,7 +80,7 @@ export default function RecuperarContrasena() {
         className="absolute inset-0 -z-30 h-full w-full object-cover object-center"
       />
       <div
-        className="absolute inset-0 -z-20 bg-gradient-to-br from-[#06251d]/90 via-[#0a4938]/76 to-[#132f25]/90"
+        className="absolute inset-0 -z-20 bg-gradient-to-br from-[#095540]/90 via-[#095540]/76 to-black/60"
         aria-hidden="true"
       />
       <div
@@ -96,7 +96,7 @@ export default function RecuperarContrasena() {
         aria-labelledby="recuperar-titulo"
       >
         <div
-          className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-[#0b4d3a] via-[#36a269] to-[#a8d84e]"
+          className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-[#095540] via-[#009444] to-[#8DC63F]"
           aria-hidden="true"
         />
 
@@ -106,7 +106,7 @@ export default function RecuperarContrasena() {
           </span>
           <h1
             id="recuperar-titulo"
-            className="text-3xl font-bold tracking-tight text-[#123a2c] sm:text-[2rem]"
+            className="font-brand text-3xl font-bold tracking-tight text-[#095540] sm:text-[2rem]"
           >
             Recuperar contraseña
           </h1>
@@ -174,7 +174,7 @@ export default function RecuperarContrasena() {
         <div className="mt-7">
           <button
             type="submit"
-            className="inline-flex w-full items-center justify-center rounded-2xl bg-[#0b6246] px-5 py-3 text-sm font-bold text-white shadow-[0_10px_24px_rgba(11,98,70,0.24)] outline-none motion-safe:hover:-translate-y-0.5 hover:bg-[#084c37] hover:shadow-[0_14px_30px_rgba(11,98,70,0.3)] focus-visible:ring-4 focus-visible:ring-[#8dc63f]/40 focus-visible:ring-offset-2 active:translate-y-0 disabled:cursor-not-allowed disabled:bg-emerald-900/45 disabled:shadow-none motion-safe:transition-[transform,background-color,box-shadow] motion-safe:duration-200 motion-safe:ease-out motion-reduce:transform-none motion-reduce:transition-none"
+            className="inline-flex w-full items-center justify-center rounded-2xl bg-[#095540] px-5 py-3 text-sm font-bold text-white shadow-[0_10px_24px_rgba(9,85,64,0.24)] outline-none motion-safe:hover:-translate-y-0.5 hover:bg-[#009444] hover:shadow-[0_14px_30px_rgba(0,148,68,0.3)] focus-visible:ring-4 focus-visible:ring-[#8DC63F]/40 focus-visible:ring-offset-2 active:translate-y-0 disabled:cursor-not-allowed disabled:bg-[#095540]/45 disabled:shadow-none motion-safe:transition-[transform,background-color,box-shadow] motion-safe:duration-200 motion-safe:ease-out motion-reduce:transform-none motion-reduce:transition-none"
             disabled={estado === 'cargando' || estado === 'exito'}
           >
             {estado === 'cargando'
