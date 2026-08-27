@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-
+import MapaUbicacion from './MapaUbicacion'; 
 import {
   cambiarEstadoPublicacion,
   obtenerCatalogoPublicado,
@@ -1208,6 +1208,55 @@ useEffect(() => {
             </div>
           </div>
 
+
+          {/* =========================
+    MAPA DE UBICACIÓN
+========================== */}
+<div className="mt-5 border-t border-slate-100 pt-5">
+  <div className="mb-3 flex items-center gap-2">
+    <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
+      <svg
+        className="h-4 w-4"
+        fill="none"
+        viewBox="0 0 24 24"
+        strokeWidth="1.8"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"
+        />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"
+        />
+      </svg>
+    </div>
+
+    <div>
+      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+        Ubicación en el mapa
+      </p>
+
+      <p className="text-xs font-semibold text-slate-700">
+        {emprendimiento.nombre}
+      </p>
+    </div>
+  </div>
+
+  <MapaUbicacion
+    latitud={emprendimiento.latitud}
+    longitud={emprendimiento.longitud}
+    nombre={emprendimiento.nombre}
+  />
+</div>
+
+
+
+
+
           {/* =========================
               ACCIONES
           ========================== */}
@@ -1504,7 +1553,7 @@ useEffect(() => {
 
         {emprendimientoSeleccionado && (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-emerald-950/65 p-4 backdrop-blur-sm starting:opacity-0 motion-safe:transition-opacity motion-safe:duration-200 motion-reduce:backdrop-blur-none"
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-emerald-950/65 p-4 backdrop-blur-sm starting:opacity-0 motion-safe:transition-opacity motion-safe:duration-200 motion-reduce:backdrop-blur-none"
             onMouseDown={(e) => {
               if (e.target === e.currentTarget) cerrarConfirmacion();
             }}
@@ -1575,7 +1624,7 @@ useEffect(() => {
         {/* MODAL ELIMINAR */}
         {emprendimientoAEliminar && (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-emerald-950/65 p-4 backdrop-blur-sm starting:opacity-0 motion-safe:transition-opacity motion-safe:duration-200 motion-reduce:backdrop-blur-none"
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-emerald-950/65 p-4 backdrop-blur-sm starting:opacity-0 motion-safe:transition-opacity motion-safe:duration-200 motion-reduce:backdrop-blur-none"
             onMouseDown={(e) => {
               if (e.target === e.currentTarget && !eliminando) setEmprendimientoAEliminar(null);
             }}

@@ -16,10 +16,15 @@ import {
   actualizarEmprendimiento,
 } from '../services/emprendimientoService';
 
+import SelectorUbicacion from './SelectorUbicacion';
+
 interface FormState {
   nombre: string;
   descripcion: string;
   categoriaId: string;
+  provincia: string;
+  canton: string;
+  distrito: string;
   direccion: string;
   latitud: string;
   longitud: string;
@@ -31,6 +36,9 @@ interface FormErrors {
   nombre?: string;
   descripcion?: string;
   categoriaId?: string;
+  provincia?: string;
+  canton?: string;
+  distrito?: string;
   direccion?: string;
   latitud?: string;
   longitud?: string;
@@ -61,6 +69,9 @@ const INITIAL_FORM: FormState = {
   nombre: '',
   descripcion: '',
   categoriaId: '',
+  provincia: '',
+  canton: '',
+  distrito: '',
   direccion: '',
   latitud: '',
   longitud: '',
@@ -81,7 +92,9 @@ const validarNumero = (valor: string): boolean => {
   if (!valor.trim()) {
     return false;
   }
+
   const numero = Number(valor);
+
   return Number.isFinite(numero);
 };
 
@@ -101,16 +114,52 @@ const validarFormulario = (form: FormState): FormErrors => {
   }
 
   if (form.descripcion.trim().length > 500) {
-    errores.descripcion = 'La descripción no puede superar los 500 caracteres.';
+    errores.descripcion =
+      'La descripción no puede superar los 500 caracteres.';
   }
 
   if (!form.categoriaId) {
     errores.categoriaId = 'Debe seleccionar una categoría.';
   }
 
-  if (form.direccion.trim().length > 250) {
-    errores.direccion = 'La dirección no puede superar los 250 caracteres.';
+  /* ==========================================================
+     PROVINCIA
+  ========================================================== */
+
+  if (!form.provincia.trim()) {
+    errores.provincia = 'La provincia es obligatoria.';
   }
+
+  /* ==========================================================
+     CANTÓN
+  ========================================================== */
+
+  if (!form.canton.trim()) {
+    errores.canton = 'El cantón es obligatorio.';
+  }
+
+  /* ==========================================================
+     DISTRITO
+  ========================================================== */
+
+  if (!form.distrito.trim()) {
+    errores.distrito = 'El distrito es obligatorio.';
+  }
+
+  /* ==========================================================
+     DIRECCIÓN
+  ========================================================== */
+
+  if (!form.direccion.trim()) {
+    errores.direccion = 'La dirección es obligatoria.';
+  } else if (form.direccion.trim().length > 250) {
+    errores.direccion =
+      'La dirección no puede superar los 250 caracteres.';
+  }
+
+  /* ==========================================================
+     LATITUD
+  ========================================================== */
 
   if (!form.latitud.trim()) {
     errores.latitud = 'La latitud es obligatoria.';
@@ -118,10 +167,16 @@ const validarFormulario = (form: FormState): FormErrors => {
     errores.latitud = 'Ingrese una latitud válida.';
   } else {
     const latitud = Number(form.latitud);
+
     if (latitud < -90 || latitud > 90) {
-      errores.latitud = 'La latitud debe estar entre -90 y 90.';
+      errores.latitud =
+        'La latitud debe estar entre -90 y 90.';
     }
   }
+
+  /* ==========================================================
+     LONGITUD
+  ========================================================== */
 
   if (!form.longitud.trim()) {
     errores.longitud = 'La longitud es obligatoria.';
@@ -129,33 +184,55 @@ const validarFormulario = (form: FormState): FormErrors => {
     errores.longitud = 'Ingrese una longitud válida.';
   } else {
     const longitud = Number(form.longitud);
+
     if (longitud < -180 || longitud > 180) {
-      errores.longitud = 'La longitud debe estar entre -180 y 180.';
+      errores.longitud =
+        'La longitud debe estar entre -180 y 180.';
     }
   }
 
+  /* ==========================================================
+     CORREO
+  ========================================================== */
+
   if (!form.correoElectronico.trim()) {
-    errores.correoElectronico = 'El correo electrónico es obligatorio.';
+    errores.correoElectronico =
+      'El correo electrónico es obligatorio.';
   } else if (!validarCorreo(form.correoElectronico)) {
-    errores.correoElectronico = 'Ingrese un correo electrónico válido.';
+    errores.correoElectronico =
+      'Ingrese un correo electrónico válido.';
   }
 
+  /* ==========================================================
+     TELÉFONO
+  ========================================================== */
+
   if (!form.telefono.trim()) {
-    errores.telefono = 'El teléfono es obligatorio.';
+    errores.telefono =
+      'El teléfono es obligatorio.';
   } else if (!validarTelefono(form.telefono)) {
-    errores.telefono = 'El teléfono debe contener exactamente 8 números.';
+    errores.telefono =
+      'El teléfono debe contener exactamente 8 números.';
   }
 
   return errores;
 };
 
+/* ============================================================
+   VALIDACIÓN PARA BORRADOR
+============================================================ */
 
-const validarFormularioBorrador = (form: FormState): FormErrors => {
+const validarFormularioBorrador = (
+  form: FormState,
+): FormErrors => {
   const errores: FormErrors = {};
 
   if (
     form.nombre.trim() &&
-    (form.nombre.trim().length < 3 || form.nombre.trim().length > 150)
+    (
+      form.nombre.trim().length < 3 ||
+      form.nombre.trim().length > 150
+    )
   ) {
     errores.nombre =
       form.nombre.trim().length < 3
@@ -164,60 +241,96 @@ const validarFormularioBorrador = (form: FormState): FormErrors => {
   }
 
   if (form.descripcion.trim().length > 500) {
-    errores.descripcion = 'La descripción no puede superar los 500 caracteres.';
+    errores.descripcion =
+      'La descripción no puede superar los 500 caracteres.';
+  }
+
+  if (
+    form.provincia.trim().length > 100
+  ) {
+    errores.provincia =
+      'La provincia no puede superar los 100 caracteres.';
+  }
+
+  if (
+    form.canton.trim().length > 100
+  ) {
+    errores.canton =
+      'El cantón no puede superar los 100 caracteres.';
+  }
+
+  if (
+    form.distrito.trim().length > 100
+  ) {
+    errores.distrito =
+      'El distrito no puede superar los 100 caracteres.';
   }
 
   if (form.direccion.trim().length > 250) {
-    errores.direccion = 'La dirección no puede superar los 250 caracteres.';
+    errores.direccion =
+      'La dirección no puede superar los 250 caracteres.';
   }
 
   if (form.latitud.trim()) {
     if (!validarNumero(form.latitud)) {
-      errores.latitud = 'Ingrese una latitud válida.';
+      errores.latitud =
+        'Ingrese una latitud válida.';
     } else {
       const latitud = Number(form.latitud);
+
       if (latitud < -90 || latitud > 90) {
-        errores.latitud = 'La latitud debe estar entre -90 y 90.';
+        errores.latitud =
+          'La latitud debe estar entre -90 y 90.';
       }
     }
   }
 
   if (form.longitud.trim()) {
     if (!validarNumero(form.longitud)) {
-      errores.longitud = 'Ingrese una longitud válida.';
+      errores.longitud =
+        'Ingrese una longitud válida.';
     } else {
       const longitud = Number(form.longitud);
+
       if (longitud < -180 || longitud > 180) {
-        errores.longitud = 'La longitud debe estar entre -180 y 180.';
+        errores.longitud =
+          'La longitud debe estar entre -180 y 180.';
       }
     }
   }
 
-  if (form.correoElectronico.trim() && !validarCorreo(form.correoElectronico)) {
-    errores.correoElectronico = 'Ingrese un correo electrónico válido.';
+  if (
+    form.correoElectronico.trim() &&
+    !validarCorreo(form.correoElectronico)
+  ) {
+    errores.correoElectronico =
+      'Ingrese un correo electrónico válido.';
   }
 
-  if (form.telefono.trim() && !validarTelefono(form.telefono)) {
-    errores.telefono = 'El teléfono debe contener exactamente 8 números.';
+  if (
+    form.telefono.trim() &&
+    !validarTelefono(form.telefono)
+  ) {
+    errores.telefono =
+      'El teléfono debe contener exactamente 8 números.';
   }
 
   return errores;
 };
-
 
 function EditarEmprendimiento({
   id,
   onActualizado,
   onCancelar,
 }: EditarEmprendimientoProps) {
-  const [categorias, setCategorias] = useState<CategoriaEmprendimiento[]>([]);
-  const [cargando, setCargando] = useState(true);
-  const [cargandoCategorias, setCargandoCategorias] = useState(true);
-  const [errorCarga, setErrorCarga] = useState<string | null>(null);
-  const [errorCategorias, setErrorCategorias] = useState<string | null>(null);
+  const [categorias, setCategorias] =
+    useState<CategoriaEmprendimiento[]>([]);
 
-  const [form, setForm] = useState<FormState>(INITIAL_FORM);
-  const [errores, setErrores] = useState<FormErrors>({});
+  const [cargando, setCargando] =
+    useState(true);
+
+    const [cargandoCategorias, setCargandoCategorias] =
+  useState(true);
 
   const [imagenesExistentes, setImagenesExistentes] = useState<ImagenExistente[]>([]);
   const [imagenesNuevas, setImagenesNuevas] = useState<ImagenNueva[]>([]);
@@ -226,11 +339,44 @@ function EditarEmprendimiento({
   const imagenesNuevasRef = useRef<ImagenNueva[]>([]);
   const dragDepth = useRef(0);
 
-  const [guardando, setGuardando] = useState(false);
-  const [modoGuardando, setModoGuardando] = useState<ModoGuardado | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [exito, setExito] = useState(false);
-  const [modoExito, setModoExito] = useState<ModoGuardado | null>(null);
+  const [errorCarga, setErrorCarga] =
+    useState<string | null>(null);
+
+  const [errorCategorias, setErrorCategorias] =
+    useState<string | null>(null);
+
+  const [form, setForm] =
+    useState<FormState>(INITIAL_FORM);
+
+  const [errores, setErrores] =
+    useState<FormErrors>({});
+
+  const [imagen, setImagen] =
+    useState<File | null>(null);
+
+  const [imagenActual, setImagenActual] =
+   useState<string | null>(null);
+
+  const [imagenPreview, setImagenPreview] =
+    useState<string | null>(null);
+
+  const [eliminarImagenActual, setEliminarImagenActual] =
+    useState(false);
+
+  const [guardando, setGuardando] =
+    useState(false);
+
+  const [modoGuardando, setModoGuardando] =
+    useState<ModoGuardado | null>(null);
+
+  const [error, setError] =
+    useState<string | null>(null);
+
+  const [exito, setExito] =
+    useState(false);
+
+  const [modoExito, setModoExito] =
+    useState<ModoGuardado | null>(null);
 
   /* ==========================================================
      CARGAR CATEGORÍAS
@@ -242,10 +388,13 @@ function EditarEmprendimiento({
 
     try {
       const data = await obtenerCategorias();
+
       setCategorias(data);
     } catch (err) {
       setErrorCategorias(
-        err instanceof Error ? err.message : 'Error al obtener categorías',
+        err instanceof Error
+          ? err.message
+          : 'Error al obtener categorías',
       );
     } finally {
       setCargandoCategorias(false);
@@ -258,7 +407,10 @@ function EditarEmprendimiento({
 
   const cargarEmprendimiento = useCallback(async () => {
     if (!Number.isInteger(id) || id <= 0) {
-      setErrorCarga('El ID del emprendimiento no es válido.');
+      setErrorCarga(
+        'El ID del emprendimiento no es válido.',
+      );
+
       setCargando(false);
       return;
     }
@@ -267,29 +419,67 @@ function EditarEmprendimiento({
     setErrorCarga(null);
 
     try {
-      const emprendimiento = await obtenerEmprendimientoPorId(id);
+      const emprendimiento =
+        await obtenerEmprendimientoPorId(id);
+
+       // console.log('EMPRENDIMIENTO CARGADO:', emprendimiento);
+        //console.log('LATITUD:', emprendimiento.latitud);
+        //console.log('LONGITUD:', emprendimiento.longitud);
+
+
 
       let categoriaId = '';
 
-      if (emprendimiento.categoria && typeof emprendimiento.categoria === 'object') {
-        categoriaId = String(emprendimiento.categoria.id);
+      if (
+        emprendimiento.categoria &&
+        typeof emprendimiento.categoria === 'object'
+      ) {
+        categoriaId =
+          String(emprendimiento.categoria.id);
       }
 
       setForm({
-        nombre: emprendimiento.nombre ?? '',
-        descripcion: emprendimiento.descripcion ?? '',
+        nombre:
+          emprendimiento.nombre ?? '',
+
+        descripcion:
+          emprendimiento.descripcion ?? '',
+
         categoriaId,
-        direccion: emprendimiento.direccion ?? '',
+
+        /* ======================================================
+           NUEVOS CAMPOS DE UBICACIÓN
+        ====================================================== */
+
+        provincia:
+          emprendimiento.provincia ?? '',
+
+        canton:
+          emprendimiento.canton ?? '',
+
+        distrito:
+          emprendimiento.distrito ?? '',
+
+        direccion:
+          emprendimiento.direccion ?? '',
+
         latitud:
-          emprendimiento.latitud !== null && emprendimiento.latitud !== undefined
+          emprendimiento.latitud !== null &&
+          emprendimiento.latitud !== undefined
             ? String(emprendimiento.latitud)
             : '',
+
         longitud:
-          emprendimiento.longitud !== null && emprendimiento.longitud !== undefined
+          emprendimiento.longitud !== null &&
+          emprendimiento.longitud !== undefined
             ? String(emprendimiento.longitud)
             : '',
-        correoElectronico: emprendimiento.correoElectronico ?? '',
-        telefono: emprendimiento.telefono ?? '',
+
+        correoElectronico:
+          emprendimiento.correoElectronico ?? '',
+
+        telefono:
+          emprendimiento.telefono ?? '',
       });
 
       setImagenesExistentes(emprendimiento.imagenes?.length
@@ -300,36 +490,72 @@ function EditarEmprendimiento({
       imagenesNuevasRef.current.forEach((imagen) => URL.revokeObjectURL(imagen.preview));
       setImagenesNuevas([]);
       setPortadaNueva(false);
+      setImagenActual(
+        emprendimiento.imagen ?? null,
+      );
+
+      setImagen(null);
+      setImagenPreview(null);
+      setEliminarImagenActual(false);
       setErrores({});
       setError(null);
     } catch (err) {
       setErrorCarga(
-        err instanceof Error ? err.message : 'No se pudo cargar el emprendimiento.',
+        err instanceof Error
+          ? err.message
+          : 'No se pudo cargar el emprendimiento.',
       );
     } finally {
       setCargando(false);
     }
   }, [id]);
 
-
   useEffect(() => {
     void cargarCategorias();
     void cargarEmprendimiento();
-  }, [cargarCategorias, cargarEmprendimiento]);
+  }, [
+    cargarCategorias,
+    cargarEmprendimiento,
+  ]);
+
+  /* ==========================================================
+     LIMPIAR PREVIEW
+  ========================================================== */
 
  
   useEffect(() => () => {
     imagenesNuevasRef.current.forEach((imagen) => URL.revokeObjectURL(imagen.preview));
   }, []);
+  useEffect(() => {
+    return () => {
+      if (imagenPreview) {
+        URL.revokeObjectURL(imagenPreview);
+      }
+    };
+  }, [imagenPreview]);
 
-  
+  /* ==========================================================
+     CAMBIOS DEL FORMULARIO
+  ========================================================== */
+
   const handleChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
+    e: ChangeEvent<
+      HTMLInputElement |
+      HTMLTextAreaElement |
+      HTMLSelectElement
+    >,
   ) => {
     const { name, value } = e.target;
 
+    /* ========================================================
+       TELÉFONO
+    ======================================================== */
+
     if (name === 'telefono') {
-      const solamenteNumeros = value.replace(/\D/g, '').slice(0, 8);
+      const solamenteNumeros =
+        value
+          .replace(/\D/g, '')
+          .slice(0, 8);
 
       setForm((prev) => ({
         ...prev,
@@ -348,24 +574,73 @@ function EditarEmprendimiento({
 
       setError(null);
       setExito(false);
+
       return;
     }
 
-    const nuevoFormulario = { ...form, [name]: value } as FormState;
+    const nuevoFormulario = {
+      ...form,
+      [name]: value,
+    } as FormState;
+
     setForm(nuevoFormulario);
 
-    
-    const nuevosErrores = validarFormulario(nuevoFormulario);
+    const nuevosErrores =
+      validarFormulario(nuevoFormulario);
 
     setErrores((prev) => ({
       ...prev,
-      [name]: nuevosErrores[name as keyof FormErrors],
+      [name]:
+        nuevosErrores[
+          name as keyof FormErrors
+        ],
     }));
 
     setError(null);
     setExito(false);
   };
 
+  /* ==========================================================
+     CAMBIO DE UBICACIÓN DESDE EL MAPA
+  ========================================================== */
+
+ const handleUbicacionChange = (
+  latitud: number,
+  longitud: number,
+) => {
+  const nuevaLatitud = Number.isFinite(latitud)
+    ? latitud.toFixed(6)
+    : '';
+
+  const nuevaLongitud = Number.isFinite(longitud)
+    ? longitud.toFixed(6)
+    : '';
+
+  setForm((prev) => ({
+    ...prev,
+    latitud: nuevaLatitud,
+    longitud: nuevaLongitud,
+  }));
+
+  setErrores((prev) => ({
+    ...prev,
+    latitud: undefined,
+    longitud: undefined,
+  }));
+
+  setError(null);
+  setExito(false);
+};
+
+  /* ==========================================================
+     IMAGEN
+  ========================================================== */
+
+  //const handleImageChange = (
+    //e: ChangeEvent<HTMLInputElement>,
+  //) => {
+    //const file =
+     // e.target.files?.[0];
 
   const agregarImagenes = (archivos: FileList | File[]) => {
     const tiposPermitidos = ['image/png', 'image/jpeg', 'image/webp'];
@@ -419,25 +694,37 @@ function EditarEmprendimiento({
     setError(null);
   };
 
- 
-  const handleGuardar = async (e: SyntheticEvent, modo: ModoGuardado) => {
+  /* ==========================================================
+     GUARDAR
+  ========================================================== */
+
+  const handleGuardar = async (
+    e: SyntheticEvent,
+    modo: ModoGuardado,
+  ) => {
     e.preventDefault();
 
     setError(null);
     setExito(false);
 
-   
     const erroresFormulario =
-      modo === 'cambios' ? validarFormulario(form) : validarFormularioBorrador(form);
+      modo === 'cambios'
+        ? validarFormulario(form)
+        : validarFormularioBorrador(form);
 
     setErrores(erroresFormulario);
 
-    if (Object.keys(erroresFormulario).length > 0) {
+    if (
+      Object.keys(
+        erroresFormulario,
+      ).length > 0
+    ) {
       setError(
         modo === 'cambios'
           ? 'Por favor, complete todos los campos obligatorios y corrija los campos indicados antes de continuar.'
           : 'Por favor, corrija los campos indicados antes de guardar el borrador.',
       );
+
       return;
     }
 
@@ -445,19 +732,17 @@ function EditarEmprendimiento({
     setModoGuardando(modo);
 
     try {
-      const formData = new FormData();
+      const formData =
+        new FormData();
 
-      formData.append('nombre', form.nombre.trim());
-      formData.append('descripcion', form.descripcion.trim());
-      formData.append('categoriaId', form.categoriaId);
-      formData.append('direccion', form.direccion.trim());
-      formData.append('latitud', form.latitud);
-      formData.append('longitud', form.longitud);
-      formData.append('correoElectronico', form.correoElectronico.trim());
-      formData.append('telefono', form.telefono);
+      /* ======================================================
+         INFORMACIÓN GENERAL
+      ====================================================== */
 
-      // Modo de guardado: 'cambios' o 'borrador'
-      formData.append('modo', modo);
+      formData.append(
+        'nombre',
+        form.nombre.trim(),
+      );
 
       formData.append('imagenesConservadas', JSON.stringify(imagenesExistentes.filter((imagen) => imagen.id > 0).map((imagen) => imagen.id)));
       imagenesNuevas.forEach(({ archivo }) => formData.append('imagenes', archivo));
@@ -465,8 +750,102 @@ function EditarEmprendimiento({
       if (portadaNueva && imagenesNuevas.length > 0) formData.append('portadaNueva', 'true');
       else if (portadaExistente && portadaExistente.id > 0) formData.append('portadaImagenId', String(portadaExistente.id));
       else if (!imagenesExistentes.length && !imagenesNuevas.length) formData.append('eliminarImagen', 'true');
+      formData.append(
+        'descripcion',
+        form.descripcion.trim(),
+      );
 
-      await actualizarEmprendimiento(id, formData);
+      formData.append(
+        'categoriaId',
+        form.categoriaId,
+      );
+
+      /* ======================================================
+         UBICACIÓN
+      ====================================================== */
+
+      formData.append(
+        'provincia',
+        form.provincia.trim(),
+      );
+
+      formData.append(
+        'canton',
+        form.canton.trim(),
+      );
+
+      formData.append(
+        'distrito',
+        form.distrito.trim(),
+      );
+
+      formData.append(
+        'direccion',
+        form.direccion.trim(),
+      );
+
+      formData.append(
+        'latitud',
+        form.latitud,
+      );
+
+      formData.append(
+        'longitud',
+        form.longitud,
+      );
+
+      /* ======================================================
+         CONTACTO
+      ====================================================== */
+
+      formData.append(
+        'correoElectronico',
+        form.correoElectronico.trim(),
+      );
+
+      formData.append(
+        'telefono',
+        form.telefono,
+      );
+
+      /* ======================================================
+         MODO
+      ====================================================== */
+
+      formData.append(
+        'modo',
+        modo,
+      );
+
+      /* ======================================================
+         IMAGEN
+      ====================================================== */
+
+      if (
+        eliminarImagenActual &&
+        !imagen
+      ) {
+        formData.append(
+          'eliminarImagen',
+          'true',
+        );
+      }
+
+      if (imagen) {
+        formData.append(
+          'imagen',
+          imagen,
+        );
+      }
+
+      /* ======================================================
+         ACTUALIZAR
+      ====================================================== */
+
+      await actualizarEmprendimiento(
+        id,
+        formData,
+      );
 
       setExito(true);
       setModoExito(modo);
@@ -491,11 +870,16 @@ function EditarEmprendimiento({
     }
   };
 
+  /* ==========================================================
+     ESTILOS
+  ========================================================== */
 
   const inputClase =
     'w-full rounded-2xl border bg-[#fffef9] px-4 py-3 text-stone-800 outline-none motion-safe:transition-[border-color,background-color,box-shadow] motion-safe:duration-200 focus-visible:ring-4 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-500';
 
-  const obtenerClaseInput = (campo: keyof FormErrors) => {
+  const obtenerClaseInput = (
+    campo: keyof FormErrors,
+  ) => {
     return `${inputClase} ${
       errores[campo]
         ? 'border-red-400 bg-red-50 focus-visible:border-red-500 focus-visible:ring-red-100'
@@ -503,33 +887,57 @@ function EditarEmprendimiento({
     }`;
   };
 
-  const labelClase = 'flex flex-col gap-1.5 text-sm font-semibold text-stone-700';
+  const labelClase =
+    'flex flex-col gap-1.5 text-sm font-semibold text-stone-700';
 
-  if (cargando || cargandoCategorias) {
+  /* ==========================================================
+     CARGANDO
+  ========================================================== */
+
+  if (
+    cargando ||
+    cargandoCategorias
+  ) {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="flex items-center gap-3 text-stone-600">
           <span className="h-5 w-5 rounded-full border-2 border-emerald-800 border-t-transparent motion-safe:animate-spin motion-reduce:animate-none" />
-          <span>Cargando información...</span>
+
+          <span>
+            Cargando información...
+          </span>
         </div>
       </div>
     );
   }
 
+  /* ==========================================================
+     ERROR CARGA
+  ========================================================== */
+
   if (errorCarga) {
     return (
-      <div className="mx-auto max-w-xl rounded-2xl border border-red-200 bg-red-50 p-6 text-center shadow-sm" role="alert">
-        <div className="text-3xl">⚠</div>
+      <div
+        className="mx-auto max-w-xl rounded-2xl border border-red-200 bg-red-50 p-6 text-center shadow-sm"
+        role="alert"
+      >
+        <div className="text-3xl">
+          ⚠
+        </div>
 
         <h3 className="mt-3 font-bold text-red-800">
           No se pudo cargar el emprendimiento
         </h3>
 
-        <p className="mt-2 text-sm text-red-700">{errorCarga}</p>
+        <p className="mt-2 text-sm text-red-700">
+          {errorCarga}
+        </p>
 
         <button
           type="button"
-          onClick={() => void cargarEmprendimiento()}
+          onClick={() =>
+            void cargarEmprendimiento()
+          }
           className="mt-4 rounded-xl bg-red-700 px-4 py-2 text-sm font-semibold text-white motion-safe:transition-colors hover:bg-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
         >
           Reintentar
@@ -548,16 +956,26 @@ function EditarEmprendimiento({
     );
   }
 
+  /* ==========================================================
+     ERROR CATEGORÍAS
+  ========================================================== */
+
   if (errorCategorias) {
     return (
-      <div className="mx-auto max-w-xl rounded-2xl border border-red-200 bg-red-50 p-6 text-center shadow-sm" role="alert">
+      <div
+        className="mx-auto max-w-xl rounded-2xl border border-red-200 bg-red-50 p-6 text-center shadow-sm"
+        role="alert"
+      >
         <p className="font-medium text-red-700">
-          Error al cargar categorías: {errorCategorias}
+          Error al cargar categorías:{' '}
+          {errorCategorias}
         </p>
 
         <button
           type="button"
-          onClick={() => void cargarCategorias()}
+          onClick={() =>
+            void cargarCategorias()
+          }
           className="mt-3 rounded-lg text-sm font-semibold text-red-800 underline underline-offset-4 hover:text-red-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
         >
           Reintentar
@@ -565,6 +983,10 @@ function EditarEmprendimiento({
       </div>
     );
   }
+
+  /* ==========================================================
+     SIN CATEGORÍAS
+  ========================================================== */
 
   if (categorias.length === 0) {
     return (
@@ -580,12 +1002,26 @@ function EditarEmprendimiento({
     );
   }
 
+  /* ==========================================================
+     FORMULARIO
+  ========================================================== */
+
   return (
     <div className="mx-auto w-full max-w-3xl overflow-hidden rounded-[2rem] border border-emerald-950/10 bg-[#fffef9] p-5 shadow-[0_24px_70px_rgba(20,83,45,0.12)] sm:p-8">
+
+      {/* ======================================================
+          ENCABEZADO
+      ====================================================== */}
+
       <div className="relative mb-8 overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-950 via-emerald-900 to-green-800 p-6 text-white shadow-lg sm:p-8">
-        <div className="pointer-events-none absolute -right-12 -top-16 h-44 w-44 rounded-full bg-[#d9d823]/15 blur-3xl" aria-hidden="true" />
+        <div
+          className="pointer-events-none absolute -right-12 -top-16 h-44 w-44 rounded-full bg-[#d9d823]/15 blur-3xl"
+          aria-hidden="true"
+        />
+
         <div className="relative mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-emerald-50 backdrop-blur-sm">
           <span className="h-2 w-2 rounded-full bg-[#d9d823]" />
+
           Edición de emprendimiento
         </div>
 
@@ -599,8 +1035,18 @@ function EditarEmprendimiento({
         </p>
       </div>
 
-   
-      <form onSubmit={(e) => handleGuardar(e, 'cambios')} noValidate className="space-y-8">
+      <form
+        onSubmit={(e) =>
+          handleGuardar(e, 'cambios')
+        }
+        noValidate
+        className="space-y-8"
+      >
+
+        {/* ====================================================
+            INFORMACIÓN GENERAL
+        ==================================================== */}
+
         <div className="space-y-5">
           <div>
             <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-800">
@@ -613,17 +1059,21 @@ function EditarEmprendimiento({
           </div>
 
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+
             {/* NOMBRE */}
 
             <label className={labelClase}>
               Nombre del emprendimiento *
+
               <input
                 name="nombre"
                 value={form.nombre}
                 onChange={handleChange}
                 maxLength={150}
                 placeholder="Ej. Artesanías Diriá"
-                className={obtenerClaseInput('nombre')}
+                className={obtenerClaseInput(
+                  'nombre',
+                )}
               />
 
               {errores.nombre && (
@@ -638,19 +1088,29 @@ function EditarEmprendimiento({
 
             <label className={labelClase}>
               Categoría *
+
               <select
                 name="categoriaId"
                 value={form.categoriaId}
                 onChange={handleChange}
-                className={obtenerClaseInput('categoriaId')}
+                className={obtenerClaseInput(
+                  'categoriaId',
+                )}
               >
-                <option value="">Selecciona una categoría</option>
+                <option value="">
+                  Selecciona una categoría
+                </option>
 
-                {categorias.map((categoria) => (
-                  <option key={categoria.id} value={categoria.id}>
-                    {categoria.nombre}
-                  </option>
-                ))}
+                {categorias.map(
+                  (categoria) => (
+                    <option
+                      key={categoria.id}
+                      value={categoria.id}
+                    >
+                      {categoria.nombre}
+                    </option>
+                  ),
+                )}
               </select>
 
               {errores.categoriaId && (
@@ -666,6 +1126,7 @@ function EditarEmprendimiento({
 
           <label className={labelClase}>
             Descripción
+
             <textarea
               name="descripcion"
               value={form.descripcion}
@@ -673,7 +1134,9 @@ function EditarEmprendimiento({
               rows={4}
               maxLength={500}
               placeholder="Escribe una breve descripción del emprendimiento..."
-              className={obtenerClaseInput('descripcion')}
+              className={obtenerClaseInput(
+                'descripcion',
+              )}
             />
 
             <div className="flex justify-between">
@@ -742,7 +1205,7 @@ function EditarEmprendimiento({
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth="2"
-                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 002-2V6a2 2 0 00-2 2v12a2 2 0 002 2z"
               />
             </svg>
 
@@ -767,25 +1230,130 @@ function EditarEmprendimiento({
         ================================================== */}
 
         <div className="space-y-5">
+
           <div>
             <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-800">
-              3. Ubicación
+              3. Ubicación geográfica
             </h3>
 
             <p className="mt-1 text-xs text-stone-500">
-              Indique dónde se encuentra ubicado el emprendimiento.
+              Seleccione la ubicación en el mapa o ingrese las coordenadas manualmente.
             </p>
           </div>
 
+          {/* ==================================================
+              MAPA
+          ================================================== */}
+
+          <SelectorUbicacion
+            latitud={
+              form.latitud
+                ? Number(form.latitud)
+                : null
+            }
+            longitud={
+              form.longitud
+                ? Number(form.longitud)
+                : null
+            }
+            onChange={handleUbicacionChange}
+          />
+
+          {/* ==================================================
+              PROVINCIA / CANTÓN / DISTRITO
+          ================================================== */}
+
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+
+            {/* PROVINCIA */}
+
+            <label className={labelClase}>
+              Provincia *
+
+              <input
+                name="provincia"
+                value={form.provincia}
+                onChange={handleChange}
+                maxLength={100}
+                placeholder="Ej. Guanacaste"
+                className={obtenerClaseInput(
+                  'provincia',
+                )}
+              />
+
+              {errores.provincia && (
+                <p className="flex items-center gap-1 text-xs font-medium text-red-600">
+                  <span>⚠</span>
+                  {errores.provincia}
+                </p>
+              )}
+            </label>
+
+            {/* CANTÓN */}
+
+            <label className={labelClase}>
+              Cantón *
+
+              <input
+                name="canton"
+                value={form.canton}
+                onChange={handleChange}
+                maxLength={100}
+                placeholder="Ej. Nicoya"
+                className={obtenerClaseInput(
+                  'canton',
+                )}
+              />
+
+              {errores.canton && (
+                <p className="flex items-center gap-1 text-xs font-medium text-red-600">
+                  <span>⚠</span>
+                  {errores.canton}
+                </p>
+              )}
+            </label>
+
+            {/* DISTRITO */}
+
+            <label className={labelClase}>
+              Distrito *
+
+              <input
+                name="distrito"
+                value={form.distrito}
+                onChange={handleChange}
+                maxLength={100}
+                placeholder="Ej. Nicoya"
+                className={obtenerClaseInput(
+                  'distrito',
+                )}
+              />
+
+              {errores.distrito && (
+                <p className="flex items-center gap-1 text-xs font-medium text-red-600">
+                  <span>⚠</span>
+                  {errores.distrito}
+                </p>
+              )}
+            </label>
+          </div>
+
+          {/* ==================================================
+              DIRECCIÓN
+          ================================================== */}
+
           <label className={labelClase}>
-            Dirección
+            Dirección exacta *
+
             <input
               name="direccion"
               value={form.direccion}
               onChange={handleChange}
               maxLength={250}
               placeholder="Ej. 200m Norte del Parque Central"
-              className={obtenerClaseInput('direccion')}
+              className={obtenerClaseInput(
+                'direccion',
+              )}
             />
 
             {errores.direccion && (
@@ -796,11 +1364,17 @@ function EditarEmprendimiento({
             )}
           </label>
 
+          {/* ==================================================
+              COORDENADAS
+          ================================================== */}
+
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+
             {/* LATITUD */}
 
             <label className={labelClase}>
               Latitud *
+
               <input
                 name="latitud"
                 type="number"
@@ -808,7 +1382,9 @@ function EditarEmprendimiento({
                 value={form.latitud}
                 onChange={handleChange}
                 placeholder="10.123456"
-                className={obtenerClaseInput('latitud')}
+                className={obtenerClaseInput(
+                  'latitud',
+                )}
               />
 
               {errores.latitud && (
@@ -823,6 +1399,7 @@ function EditarEmprendimiento({
 
             <label className={labelClase}>
               Longitud *
+
               <input
                 name="longitud"
                 type="number"
@@ -830,7 +1407,9 @@ function EditarEmprendimiento({
                 value={form.longitud}
                 onChange={handleChange}
                 placeholder="-85.123456"
-                className={obtenerClaseInput('longitud')}
+                className={obtenerClaseInput(
+                  'longitud',
+                )}
               />
 
               {errores.longitud && (
@@ -841,6 +1420,7 @@ function EditarEmprendimiento({
               )}
             </label>
           </div>
+
         </div>
 
         {/* ==================================================
@@ -848,6 +1428,7 @@ function EditarEmprendimiento({
         ================================================== */}
 
         <div className="space-y-5">
+
           <div>
             <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-800">
               4. Datos de contacto
@@ -860,17 +1441,21 @@ function EditarEmprendimiento({
           </div>
 
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+
             {/* CORREO */}
 
             <label className={labelClase}>
               Correo electrónico *
+
               <input
                 name="correoElectronico"
                 type="email"
                 value={form.correoElectronico}
                 onChange={handleChange}
                 placeholder="contacto@emprendimiento.com"
-                className={obtenerClaseInput('correoElectronico')}
+                className={obtenerClaseInput(
+                  'correoElectronico',
+                )}
               />
 
               {errores.correoElectronico && (
@@ -885,6 +1470,7 @@ function EditarEmprendimiento({
 
             <label className={labelClase}>
               Teléfono *
+
               <input
                 name="telefono"
                 type="tel"
@@ -893,7 +1479,9 @@ function EditarEmprendimiento({
                 onChange={handleChange}
                 maxLength={8}
                 placeholder="88888888"
-                className={obtenerClaseInput('telefono')}
+                className={obtenerClaseInput(
+                  'telefono',
+                )}
               />
 
               <div className="flex justify-between">
@@ -903,12 +1491,17 @@ function EditarEmprendimiento({
                     {errores.telefono}
                   </p>
                 ) : (
-                  <p className="text-xs text-stone-400">8 dígitos numéricos</p>
+                  <p className="text-xs text-stone-400">
+                    8 dígitos numéricos
+                  </p>
                 )}
 
-                <span className="text-xs text-stone-400">{form.telefono.length}/8</span>
+                <span className="text-xs text-stone-400">
+                  {form.telefono.length}/8
+                </span>
               </div>
             </label>
+
           </div>
         </div>
 
@@ -918,7 +1511,10 @@ function EditarEmprendimiento({
 
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
           <div className="flex items-start gap-3">
-            <span className="mt-0.5 text-lg">ℹ</span>
+
+            <span className="mt-0.5 text-lg">
+              ℹ
+            </span>
 
             <div>
               <p className="font-bold text-emerald-950">
@@ -930,6 +1526,7 @@ function EditarEmprendimiento({
                 permisos correspondientes.
               </p>
             </div>
+
           </div>
         </div>
 
@@ -938,12 +1535,22 @@ function EditarEmprendimiento({
         ================================================== */}
 
         {error && (
-          <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700" role="alert">
-            <span className="text-lg">⚠</span>
+          <div
+            className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700"
+            role="alert"
+          >
+            <span className="text-lg">
+              ⚠
+            </span>
 
             <div>
-              <p className="font-bold">No se pudo actualizar el emprendimiento</p>
-              <p className="mt-1">{error}</p>
+              <p className="font-bold">
+                No se pudo actualizar el emprendimiento
+              </p>
+
+              <p className="mt-1">
+                {error}
+              </p>
             </div>
           </div>
         )}
@@ -953,8 +1560,14 @@ function EditarEmprendimiento({
         ================================================== */}
 
         {exito && (
-          <div className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800" role="status" aria-live="polite">
-            <span className="text-lg">✓</span>
+          <div
+            className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800"
+            role="status"
+            aria-live="polite"
+          >
+            <span className="text-lg">
+              ✓
+            </span>
 
             <div>
               <p className="font-bold">
@@ -977,6 +1590,7 @@ function EditarEmprendimiento({
         ================================================== */}
 
         <div className="flex flex-col gap-3 border-t border-stone-200 pt-6 sm:flex-row">
+
           {onCancelar && (
             <button
               type="button"
@@ -988,38 +1602,46 @@ function EditarEmprendimiento({
             </button>
           )}
 
-
           <button
             type="button"
-            onClick={(e) => handleGuardar(e, 'borrador')}
+            onClick={(e) =>
+              handleGuardar(
+                e,
+                'borrador',
+              )
+            }
             disabled={guardando}
             className="w-full rounded-2xl border-2 border-emerald-800 bg-white px-6 py-3.5 font-semibold text-emerald-900 shadow-sm motion-safe:transition-colors motion-safe:duration-200 hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
           >
-            {guardando && modoGuardando === 'borrador'
+            {guardando &&
+            modoGuardando ===
+              'borrador'
               ? 'Guardando borrador...'
               : 'Guardar como borrador'}
           </button>
-
-          {/* GUARDAR CAMBIOS — exige todos los campos obligatorios */}
 
           <button
             type="submit"
             disabled={guardando}
             className="w-full rounded-2xl bg-emerald-900 px-6 py-3.5 font-semibold text-white shadow-md motion-safe:transition-all motion-safe:duration-200 motion-safe:hover:-translate-y-0.5 hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transform-none"
           >
-            {guardando && modoGuardando === 'cambios'
+            {guardando &&
+            modoGuardando ===
+              'cambios'
               ? 'Guardando cambios...'
               : 'Guardar cambios'}
           </button>
         </div>
 
         <p className="text-center text-xs text-stone-400">
-          Los campos marcados con * son obligatorios para "Guardar cambios". El
-          borrador permite dejarlos vacíos.
+          Los campos marcados con * son obligatorios para "Guardar cambios".
+          El borrador permite dejarlos vacíos.
         </p>
+
       </form>
     </div>
   );
 }
+
 
 export default EditarEmprendimiento;

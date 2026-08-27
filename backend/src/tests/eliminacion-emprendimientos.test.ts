@@ -212,7 +212,7 @@ const prepararEscenario = async (): Promise<Escenario> => {
       longitud: -85.452,
       correoElectronico: `emprendimiento-${Date.now()}@test.local`,
       telefono: '88888888',
-      estadoPublicacion: EstadoPublicacion.PENDIENTE,
+      estadoPublicacion: EstadoPublicacion.NO_PUBLICADO,
     }),
   );
 

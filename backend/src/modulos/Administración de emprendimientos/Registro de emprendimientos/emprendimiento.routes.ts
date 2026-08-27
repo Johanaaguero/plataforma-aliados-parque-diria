@@ -119,6 +119,21 @@ router.patch(
 // ============================================================
 // ACTUALIZAR
 // ============================================================
+router.patch(
+  '/:id/ubicacion',
+  verificarToken,
+  autorizarRoles('administrador', 'asociado'),
+  emprendimientoController.actualizarUbicacion.bind(
+    emprendimientoController,
+  ),
+);
+
+//router.get(
+  //'/:id',
+  //verificarToken,
+ // autorizarRoles('administrador', 'asociado'),
+ // emprendimientoController.obtenerPorId.bind(emprendimientoController),
+//);
 
 router.put(
   '/:id',
