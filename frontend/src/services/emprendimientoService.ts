@@ -24,6 +24,9 @@ export interface CrearEmprendimientoDto {
   nombre: string;
   descripcion?: string;
   categoriaId?: number;
+   provincia: string | null;
+  canton: string | null;
+  distrito: string | null;
   direccion?: string;
   latitud?: number;
   longitud?: number;
@@ -42,9 +45,12 @@ export interface ActualizarEmprendimientoDto {
   nombre?: string;
   descripcion?: string;
   categoriaId?: number;
+  provincia: string | null;
+  canton: string | null;
+  distrito: string | null;
   direccion?: string;
-  latitud?: number;
-  longitud?: number;
+  latitud?: number | null;
+  longitud?: number | null;
   correoElectronico?: string;
   telefono?: string;
   imagen?: File | string;
@@ -57,6 +63,15 @@ export interface ActualizarEmprendimientoDto {
 // ============================================================
 // EMPRENDIMIENTO
 // ============================================================
+
+export interface ActualizarUbicacionDto {
+  provincia: string;
+  canton: string;
+  distrito: string;
+  direccion: string;
+  latitud: number | null;
+  longitud: number | null;
+}
 
 export interface Emprendimiento {
   id: number;
@@ -75,6 +90,11 @@ export interface Emprendimiento {
       };
 
   asociadoId: number | null;
+    provincia: string | null;
+
+  canton: string | null;
+
+  distrito: string | null;
 
   direccion?: string | null;
 
@@ -487,3 +507,23 @@ export async function obtenerDetalleCatalogoPublicado(
     },
   );
 }
+export async function actualizarUbicacion(
+  id: number,
+  datos: ActualizarUbicacionDto,
+): Promise<Emprendimiento> {
+  return api.solicitar<Emprendimiento>(
+    `/emprendimientos/${id}/ubicacion`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify(datos),
+    },
+    {
+      incluirAuth: true,
+      desempaquetarData: true,
+      mensajeError: 'No se pudo actualizar la ubicación del emprendimiento.',
+    },
+  );
+}
+
+
+

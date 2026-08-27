@@ -30,6 +30,9 @@ interface CrearEmprendimientoDto {
   nombre: string;
   descripcion?: string;
   categoriaId?: number;
+  provincia?: string;
+canton?: string;
+distrito?: string;
   direccion?: string;
   latitud?: number;
   longitud?: number;
@@ -54,9 +57,12 @@ interface ActualizarEmprendimientoDto {
   nombre?: string;
   descripcion?: string;
   categoriaId?: number;
+    provincia?: string;
+  canton?: string;
+  distrito?: string;
   direccion?: string;
-  latitud?: number;
-  longitud?: number;
+  latitud?: number | null;
+  longitud?: number | null;
   correoElectronico?: string;
   telefono?: string;
   imagen?: Buffer;
@@ -75,6 +81,16 @@ interface ActualizarEmprendimientoDto {
 // ============================================================
 // RESULTADO CAMBIO PUBLICACIÓN
 // ============================================================
+interface ActualizarUbicacionDto {
+  provincia: string;
+  canton: string;
+  distrito: string;
+  direccion: string;
+  latitud: number;
+  longitud: number;
+}
+
+
 
 type ResultadoCambioPublicacion =
   | {
@@ -394,39 +410,59 @@ async crear(
   // CREAR EMPRENDIMIENTO
   // ============================================================
 
-  const emprendimiento =
-    new Emprendimiento({
+ const emprendimiento = new Emprendimiento({
+  nombre: dto.nombre,
 
-      nombre: dto.nombre,
+  ...(dto.descripcion !== undefined
+    ? { descripcion: dto.descripcion }
+    : {}),
 
-      descripcion:
-        dto.descripcion,
+  ...(categoria !== undefined
+    ? { categoria }
+    : {}),
 
-      categoria,
+  ...(asociado !== undefined
+    ? { asociado }
+    : {}),
 
-      asociado,
+  ...(dto.provincia !== undefined
+    ? { provincia: dto.provincia }
+    : {}),
 
-      direccion:
-        dto.direccion,
+  ...(dto.canton !== undefined
+    ? { canton: dto.canton }
+    : {}),
 
-      latitud:
-        dto.latitud,
+  ...(dto.distrito !== undefined
+    ? { distrito: dto.distrito }
+    : {}),
 
-      longitud:
-        dto.longitud,
+  ...(dto.direccion !== undefined
+    ? { direccion: dto.direccion }
+    : {}),
 
-      correoElectronico:
-        dto.correoElectronico,
+  ...(dto.latitud !== undefined
+    ? { latitud: dto.latitud }
+    : {}),
 
-      telefono:
-        dto.telefono,
+  ...(dto.longitud !== undefined
+    ? { longitud: dto.longitud }
+    : {}),
 
-      imagen:
-        dto.imagen,
+  ...(dto.correoElectronico !== undefined
+    ? { correoElectronico: dto.correoElectronico }
+    : {}),
 
-      estadoPublicacion:
-        estadoInicial,
-    });
+  ...(dto.telefono !== undefined
+    ? { telefono: dto.telefono }
+    : {}),
+
+  ...(dto.imagen !== undefined
+    ? { imagen: dto.imagen }
+    : {}),
+
+  estadoPublicacion: estadoInicial,
+});
 
   // ============================================================
   // GUARDAR
@@ -808,6 +844,46 @@ async crear(
   // ACTUALIZAR
   // ============================================================
 
+  async actualizarUbicacion(
+    id: number,
+    dto: ActualizarUbicacionDto,
+  ): Promise<Emprendimiento> {
+    const emprendimiento = await this.obtenerPorId(id);
+
+    if (!tieneTexto(dto.provincia)) {
+      throw new Error('La provincia es obligatoria');
+    }
+
+    if (!tieneTexto(dto.canton)) {
+      throw new Error('El cantón es obligatorio');
+    }
+
+    if (!tieneTexto(dto.distrito)) {
+      throw new Error('El distrito es obligatorio');
+    }
+
+    if (!tieneTexto(dto.direccion)) {
+      throw new Error('La dirección es obligatoria');
+    }
+
+    if (!coordenadaValida(dto.latitud, -90, 90)) {
+      throw new Error('La latitud debe estar entre -90 y 90');
+    }
+
+    if (!coordenadaValida(dto.longitud, -180, 180)) {
+      throw new Error('La longitud debe estar entre -180 y 180');
+    }
+
+    emprendimiento.provincia = dto.provincia.trim();
+    emprendimiento.canton = dto.canton.trim();
+    emprendimiento.distrito = dto.distrito.trim();
+    emprendimiento.direccion = dto.direccion.trim();
+    emprendimiento.latitud = dto.latitud;
+    emprendimiento.longitud = dto.longitud;
+
+    return await emprendimientoRepository.save(emprendimiento);
+  }
+
   async actualizar(
     id: number,
     dto: ActualizarEmprendimientoDto,
@@ -917,6 +993,33 @@ async crear(
       emprendimiento.direccion =
         dto.direccion;
     }
+
+    // ========================================================
+// PROVINCIA
+// ========================================================
+
+if (dto.provincia !== undefined) {
+  emprendimiento.provincia =
+    dto.provincia.trim();
+}
+
+// ========================================================
+// CANTÓN
+// ========================================================
+
+if (dto.canton !== undefined) {
+  emprendimiento.canton =
+    dto.canton.trim();
+}
+
+// ========================================================
+// DISTRITO
+// ========================================================
+
+if (dto.distrito !== undefined) {
+  emprendimiento.distrito =
+    dto.distrito.trim();
+}
 
     // ========================================================
     // LATITUD

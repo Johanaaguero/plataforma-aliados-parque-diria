@@ -15,10 +15,15 @@ import { crearEmprendimiento } from '../services/emprendimientoService';
 
 import RegistroCategoria from './RegistroCategoria';
 
+import SelectorUbicacion from './SelectorUbicacion';
+
 interface FormState {
   nombre: string;
   descripcion: string;
   categoriaId: string;
+  provincia: string;
+  canton: string;
+  distrito: string;
   direccion: string;
   latitud: string;
   longitud: string;
@@ -30,6 +35,9 @@ interface FormErrors {
   nombre?: string;
   descripcion?: string;
   categoriaId?: string;
+  provincia?: string;
+  canton?: string;
+  distrito?: string;
   direccion?: string;
   latitud?: string;
   longitud?: string;
@@ -46,13 +54,15 @@ const INITIAL_FORM: FormState = {
   nombre: '',
   descripcion: '',
   categoriaId: '',
+  provincia: '',
+  canton: '',
+  distrito: '',
   direccion: '',
   latitud: '',
   longitud: '',
   correoElectronico: '',
   telefono: '',
 };
-
 
 const validarCorreo = (correo: string): boolean => {
   const regex =
@@ -74,7 +84,6 @@ const validarNumero = (valor: string): boolean => {
 
   return Number.isFinite(numero);
 };
-
 
 const validarFormulario = (
   form: FormState,
@@ -118,10 +127,57 @@ const validarFormulario = (
   }
 
   /* ----------------------------------------------------------
+     PROVINCIA
+  ---------------------------------------------------------- */
+
+  if (!form.provincia.trim()) {
+    if (!esBorrador) {
+      errores.provincia =
+        'La provincia es obligatoria.';
+    }
+  } else if (form.provincia.trim().length > 100) {
+    errores.provincia =
+      'La provincia no puede superar los 100 caracteres.';
+  }
+
+  /* ----------------------------------------------------------
+     CANTÓN
+  ---------------------------------------------------------- */
+
+  if (!form.canton.trim()) {
+    if (!esBorrador) {
+      errores.canton =
+        'El cantón es obligatorio.';
+    }
+  } else if (form.canton.trim().length > 100) {
+    errores.canton =
+      'El cantón no puede superar los 100 caracteres.';
+  }
+
+  /* ----------------------------------------------------------
+     DISTRITO
+  ---------------------------------------------------------- */
+
+  if (!form.distrito.trim()) {
+    if (!esBorrador) {
+      errores.distrito =
+        'El distrito es obligatorio.';
+    }
+  } else if (form.distrito.trim().length > 100) {
+    errores.distrito =
+      'El distrito no puede superar los 100 caracteres.';
+  }
+
+  /* ----------------------------------------------------------
      DIRECCIÓN
   ---------------------------------------------------------- */
 
-  if (form.direccion.trim().length > 250) {
+  if (!form.direccion.trim()) {
+    if (!esBorrador) {
+      errores.direccion =
+        'La dirección es obligatoria.';
+    }
+  } else if (form.direccion.trim().length > 250) {
     errores.direccion =
       'La dirección no puede superar los 250 caracteres.';
   }
@@ -291,8 +347,6 @@ function RegistroEmprendimiento({ onExito }: Props) {
   ) => {
     const { name, value } = e.target;
 
-   
-
     if (name === 'telefono') {
       const solamenteNumeros = value
         .replace(/\D/g, '')
@@ -320,7 +374,6 @@ function RegistroEmprendimiento({ onExito }: Props) {
       ...prev,
       [name]: value,
     }));
-
 
     const nuevoFormulario = {
       ...form,
@@ -425,15 +478,16 @@ function RegistroEmprendimiento({ onExito }: Props) {
       const formDataToSend =
         new FormData();
 
-     
-
       if (form.nombre.trim()) {
         formDataToSend.append(
           'nombre',
           form.nombre.trim()
         );
       } else if (!esBorrador) {
-        formDataToSend.append('nombre', form.nombre.trim());
+        formDataToSend.append(
+          'nombre',
+          form.nombre.trim()
+        );
       }
 
       if (form.descripcion.trim()) {
@@ -447,6 +501,31 @@ function RegistroEmprendimiento({ onExito }: Props) {
         formDataToSend.append(
           'categoriaId',
           form.categoriaId
+        );
+      }
+
+      /* ======================================================
+         UBICACIÓN GEOGRÁFICA
+      ====================================================== */
+
+      if (form.provincia.trim()) {
+        formDataToSend.append(
+          'provincia',
+          form.provincia.trim()
+        );
+      }
+
+      if (form.canton.trim()) {
+        formDataToSend.append(
+          'canton',
+          form.canton.trim()
+        );
+      }
+
+      if (form.distrito.trim()) {
+        formDataToSend.append(
+          'distrito',
+          form.distrito.trim()
         );
       }
 
@@ -470,6 +549,10 @@ function RegistroEmprendimiento({ onExito }: Props) {
           form.longitud
         );
       }
+
+      /* ======================================================
+         CONTACTO
+      ====================================================== */
 
       if (form.correoElectronico.trim()) {
         formDataToSend.append(
@@ -495,7 +578,7 @@ function RegistroEmprendimiento({ onExito }: Props) {
         esBorrador ? 'borrador' : 'cambios'
       );
 
-          await crearEmprendimiento(
+      await crearEmprendimiento(
         formDataToSend
       );
 
@@ -582,7 +665,10 @@ function RegistroEmprendimiento({ onExito }: Props) {
 
   if (errorCategorias) {
     return (
-      <div className="mx-auto max-w-xl rounded-2xl border border-red-200 bg-red-50 p-6 text-center shadow-sm" role="alert">
+      <div
+        className="mx-auto max-w-xl rounded-2xl border border-red-200 bg-red-50 p-6 text-center shadow-sm"
+        role="alert"
+      >
         <p className="font-medium text-red-700">
           Error al cargar categorías:{' '}
           {errorCategorias}
@@ -634,7 +720,11 @@ function RegistroEmprendimiento({ onExito }: Props) {
       {/* ENCABEZADO */}
 
       <div className="relative mb-8 overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-950 via-emerald-900 to-green-800 p-6 text-white shadow-lg sm:p-8">
-        <div className="pointer-events-none absolute -right-12 -top-16 h-44 w-44 rounded-full bg-[#d9d823]/15 blur-3xl" aria-hidden="true" />
+        <div
+          className="pointer-events-none absolute -right-12 -top-16 h-44 w-44 rounded-full bg-[#d9d823]/15 blur-3xl"
+          aria-hidden="true"
+        />
+
         <div className="relative mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-emerald-50 backdrop-blur-sm">
           <span className="h-2 w-2 rounded-full bg-[#d9d823]" />
           Directorio de emprendimientos
@@ -847,29 +937,149 @@ function RegistroEmprendimiento({ onExito }: Props) {
         </div>
 
         {/* ====================================================
-            UBICACIÓN
+            UBICACIÓN GEOGRÁFICA
         ==================================================== */}
 
         <div className="space-y-5">
 
           <div>
             <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-800">
-              3. Ubicación
+              3. Ubicación geográfica
             </h3>
 
             <p className="mt-1 text-xs text-stone-500">
-              Indique dónde se encuentra ubicado el
-              emprendimiento.
+              Seleccione la ubicación en el mapa o ingrese las
+              coordenadas manualmente.
             </p>
           </div>
 
+          {/* ==================================================
+              MAPA INTERACTIVO
+          ================================================== */}
+
+          <SelectorUbicacion
+            latitud={
+              form.latitud
+                ? Number(form.latitud)
+                : null
+            }
+            longitud={
+              form.longitud
+                ? Number(form.longitud)
+                : null
+            }
+            onChange={(latitud, longitud) => {
+              setForm((prev) => ({
+                ...prev,
+                latitud: latitud.toFixed(6),
+                longitud: longitud.toFixed(6),
+              }));
+
+              setErrores((prev) => ({
+                ...prev,
+                latitud: undefined,
+                longitud: undefined,
+              }));
+
+              setError(null);
+            }}
+          />
+
+          {/* ==================================================
+              DIVISIÓN TERRITORIAL
+          ================================================== */}
+
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+
+            {/* PROVINCIA */}
+
+            <label className={labelClase}>
+              Provincia *
+
+              <input
+                name="provincia"
+                value={form.provincia}
+                onChange={handleChange}
+                required
+                maxLength={100}
+                placeholder="Ej. Guanacaste"
+                className={obtenerClaseInput(
+                  'provincia'
+                )}
+              />
+
+              {errores.provincia && (
+                <p className="flex items-center gap-1 text-xs font-medium text-red-600">
+                  <span>⚠</span>
+                  {errores.provincia}
+                </p>
+              )}
+            </label>
+
+            {/* CANTÓN */}
+
+            <label className={labelClase}>
+              Cantón *
+
+              <input
+                name="canton"
+                value={form.canton}
+                onChange={handleChange}
+                required
+                maxLength={100}
+                placeholder="Ej. Nicoya"
+                className={obtenerClaseInput(
+                  'canton'
+                )}
+              />
+
+              {errores.canton && (
+                <p className="flex items-center gap-1 text-xs font-medium text-red-600">
+                  <span>⚠</span>
+                  {errores.canton}
+                </p>
+              )}
+            </label>
+
+            {/* DISTRITO */}
+
+            <label className={labelClase}>
+              Distrito *
+
+              <input
+                name="distrito"
+                value={form.distrito}
+                onChange={handleChange}
+                required
+                maxLength={100}
+                placeholder="Ej. Nicoya"
+                className={obtenerClaseInput(
+                  'distrito'
+                )}
+              />
+
+              {errores.distrito && (
+                <p className="flex items-center gap-1 text-xs font-medium text-red-600">
+                  <span>⚠</span>
+                  {errores.distrito}
+                </p>
+              )}
+            </label>
+
+          </div>
+
+          {/* ==================================================
+              DIRECCIÓN EXACTA
+          ================================================== */}
+
           <label className={labelClase}>
-            Dirección
+            Dirección exacta *
 
             <input
               name="direccion"
               value={form.direccion}
               onChange={handleChange}
+              required
               maxLength={250}
               placeholder="Ej. 200m Norte del Parque Central"
               className={obtenerClaseInput(
@@ -885,60 +1095,6 @@ function RegistroEmprendimiento({ onExito }: Props) {
             )}
           </label>
 
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-
-            {/* LATITUD */}
-
-            <label className={labelClase}>
-              Latitud *
-
-              <input
-                name="latitud"
-                type="number"
-                step="any"
-                value={form.latitud}
-                onChange={handleChange}
-                required
-                placeholder="10.123456"
-                className={obtenerClaseInput(
-                  'latitud'
-                )}
-              />
-
-              {errores.latitud && (
-                <p className="flex items-center gap-1 text-xs font-medium text-red-600">
-                  <span>⚠</span>
-                  {errores.latitud}
-                </p>
-              )}
-            </label>
-
-            {/* LONGITUD */}
-
-            <label className={labelClase}>
-              Longitud *
-
-              <input
-                name="longitud"
-                type="number"
-                step="any"
-                value={form.longitud}
-                onChange={handleChange}
-                required
-                placeholder="-85.123456"
-                className={obtenerClaseInput(
-                  'longitud'
-                )}
-              />
-
-              {errores.longitud && (
-                <p className="flex items-center gap-1 text-xs font-medium text-red-600">
-                  <span>⚠</span>
-                  {errores.longitud}
-                </p>
-              )}
-            </label>
-          </div>
         </div>
 
         {/* ====================================================
@@ -1022,6 +1178,7 @@ function RegistroEmprendimiento({ onExito }: Props) {
                 </span>
               </div>
             </label>
+
           </div>
         </div>
 
@@ -1030,7 +1187,10 @@ function RegistroEmprendimiento({ onExito }: Props) {
         ==================================================== */}
 
         {error && (
-          <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700" role="alert">
+          <div
+            className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700"
+            role="alert"
+          >
             <span className="text-lg">⚠</span>
 
             <div>
@@ -1050,7 +1210,11 @@ function RegistroEmprendimiento({ onExito }: Props) {
         ==================================================== */}
 
         {exito && (
-          <div className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800" role="status" aria-live="polite">
+          <div
+            className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800"
+            role="status"
+            aria-live="polite"
+          >
             <span className="text-lg">✓</span>
 
             <div>
@@ -1072,6 +1236,7 @@ function RegistroEmprendimiento({ onExito }: Props) {
         <div className="border-t border-stone-200 pt-6">
 
           <div className="flex flex-col gap-3 sm:flex-row">
+
             <button
               type="submit"
               disabled={procesando}
@@ -1092,13 +1257,16 @@ function RegistroEmprendimiento({ onExito }: Props) {
                 ? 'Guardando borrador...'
                 : 'Guardar como borrador'}
             </button>
+
           </div>
 
           <p className="mt-3 text-center text-xs text-stone-400">
             Los campos marcados con * son obligatorios para el registro completo.
             Al guardar como borrador puede dejarlos vacíos.
           </p>
+
         </div>
+
       </form>
     </div>
   );

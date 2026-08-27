@@ -235,9 +235,23 @@ export class EmprendimientoController {
             }
           : {}),
 
+          provincia:
+  req.body.provincia ||
+  undefined,
+
+canton:
+  req.body.canton ||
+  undefined,
+
+distrito:
+  req.body.distrito ||
+  undefined,
+
+
         direccion:
           req.body.direccion ||
           undefined,
+
 
         ...(req.body.latitud !== undefined &&
         req.body.latitud !== ''
@@ -442,6 +456,14 @@ export class EmprendimientoController {
 
               direccion:
                 emprendimiento.direccion,
+                provincia:
+  emprendimiento.provincia,
+
+canton:
+  emprendimiento.canton,
+
+distrito:
+  emprendimiento.distrito,
 
               latitud:
                 emprendimiento.latitud,
@@ -769,6 +791,15 @@ export class EmprendimientoController {
             direccion:
               emprendimiento.direccion,
 
+              provincia:
+  emprendimiento.provincia,
+
+canton:
+  emprendimiento.canton,
+
+distrito:
+  emprendimiento.distrito,
+
             latitud:
               emprendimiento.latitud,
 
@@ -853,11 +884,48 @@ export class EmprendimientoController {
   // ACTUALIZAR
   // ============================================================
 
-  async actualizar(
-    req: Request,
-    res: Response,
-  ): Promise<Response> {
+ 
 
+async actualizarUbicacion(
+  req: Request,
+  res: Response,
+): Promise<Response> {
+  try {
+    const id = Number(req.params.id);
+
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({
+        ok: false,
+        message: 'El ID del emprendimiento no es válido',
+      });
+    }
+
+    const dto = {
+      provincia: String(req.body.provincia ?? '').trim(),
+      canton: String(req.body.canton ?? '').trim(),
+      distrito: String(req.body.distrito ?? '').trim(),
+      direccion: String(req.body.direccion ?? '').trim(),
+      latitud: Number(req.body.latitud),
+      longitud: Number(req.body.longitud),
+    };
+
+    const emprendimiento =
+      await emprendimientoService.actualizarUbicacion(id, dto);
+
+    return res.status(200).json({
+      ok: true,
+      message: 'Ubicación actualizada correctamente',
+      data: emprendimiento.toPublic(),
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      ok: false,
+      message: error.message,
+    });
+  }
+}
+
+  async actualizar(req: Request, res: Response): Promise<Response> {
     try {
 
       const id =
@@ -965,8 +1033,14 @@ export class EmprendimientoController {
         : [];
 
       const dto = {
-
         ...req.body,
+
+  ...(req.body.categoriaId !== undefined &&
+  req.body.categoriaId !== ''
+    ? {
+        categoriaId: Number(req.body.categoriaId),
+      }
+    : {}),
 
         ...(typeof req.body.imagenesConservadas === 'string'
           ? { imagenesConservadas: JSON.parse(req.body.imagenesConservadas) as number[] }
@@ -1023,8 +1097,14 @@ export class EmprendimientoController {
               })),
             }
           : {}),
-      };
+      
 
+  ...(req.file?.buffer !== undefined
+    ? {
+        imagen: req.file.buffer,
+      }
+    : {}),
+};
       // ========================================================
       // ACTUALIZAR
       // ========================================================

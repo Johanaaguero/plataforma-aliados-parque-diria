@@ -58,11 +58,21 @@ export class Emprendimiento {
   @Column({ type: 'varchar', length: 255, nullable: true })
   direccion?: string;
 
+  
+ @Column({ type: 'varchar', length: 100, nullable: true })
+provincia?: string | null;
+
+@Column({ type: 'varchar', length: 100, nullable: true })
+canton?: string | null;
+
+@Column({ type: 'varchar', length: 100, nullable: true })
+distrito?: string | null;
+
   @Column({ type: 'decimal', precision: 10, scale: 8, nullable: true })
-  latitud?: number;
+  latitud!: number | null;
 
   @Column({ type: 'decimal', precision: 11, scale: 8, nullable: true })
-  longitud?: number;
+  longitud?: number | null;
 
   @Column({
     type: 'varchar',
@@ -118,12 +128,16 @@ export class Emprendimiento {
     categoria?: CategoriaEmprendimiento | undefined;
     asociado?: Usuario | null | undefined;
     direccion?: string | undefined;
-    latitud?: number | undefined;
-    longitud?: number | undefined;
+    latitud?: number |null| undefined;
+    longitud?: number | null | undefined;
     correoElectronico?: string | undefined;
     telefono?: string | undefined;
     estadoPublicacion?: EstadoPublicacion;
     imagen?: Buffer | undefined;
+provincia?: string | null;
+canton?: string | null;
+distrito?: string | null;
+
   }) {
     if (!params) return;
 
@@ -139,10 +153,23 @@ export class Emprendimiento {
       this.asociado = params.asociado;
     }
     if (params.direccion !== undefined) {
-      this.direccion = params.direccion;
-    }
+  this.direccion = params.direccion;
+}
+
+if (params.provincia !== undefined) {
+  this.provincia = params.provincia;
+}
+
+if (params.canton !== undefined) {
+  this.canton = params.canton;
+}
+
+if (params.distrito !== undefined) {
+  this.distrito = params.distrito;
+}
+
     if (params.latitud !== undefined) {
-      this.latitud = params.latitud;
+     this.latitud = params.latitud;
     }
     if (params.longitud !== undefined) {
       this.longitud = params.longitud;
@@ -169,6 +196,9 @@ export class Emprendimiento {
       categoria: this.categoria ? this.categoria.nombre : null,
       asociadoId: this.asociado ? this.asociado.id : null,
       direccion: this.direccion,
+      provincia: this.provincia,
+canton: this.canton,
+distrito: this.distrito,
       latitud: this.latitud,
       longitud: this.longitud,
       correoElectronico: this.correoElectronico,
