@@ -354,7 +354,7 @@ function EditarEmprendimiento({
   const [imagen, setImagen] =
     useState<File | null>(null);
 
-  const [imagenActual, setImagenActual] =
+  const [, setImagenActual] =
    useState<string | null>(null);
 
   const [imagenPreview, setImagenPreview] =
