@@ -9,6 +9,7 @@ interface NavbarProps {
   nombreUsuario: string | null;
   onCerrarSesion: () => void;
   onGestionRoles: () => void;
+  onCuentasBloqueadas?: () => void;
   onIrInicio: () => void;
   onIrEmprendimientos: () => void;
   seccionActiva?: 'inicio' | 'emprendimientos';
@@ -22,6 +23,7 @@ function Navbar({
   nombreUsuario,
   onCerrarSesion,
   onGestionRoles,
+  onCuentasBloqueadas,
   onIrInicio,
   onIrEmprendimientos,
   seccionActiva = 'inicio',
@@ -166,6 +168,16 @@ function Navbar({
                 className="min-h-10 rounded-full bg-[#d9d823] px-4 py-2 text-sm font-bold text-[#073f31] motion-safe:transition motion-safe:duration-200 hover:bg-[#c7cc22] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2"
               >
                 Gestionar roles
+              </button>
+            )}
+
+            {rolAutenticado === 'super_admin' && onCuentasBloqueadas && (
+              <button
+                type="button"
+                onClick={onCuentasBloqueadas}
+                className="min-h-10 rounded-full bg-[#d9d823] px-4 py-2 text-sm font-bold text-[#073f31] motion-safe:transition motion-safe:duration-200 hover:bg-[#c7cc22] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2"
+              >
+                Cuentas bloqueadas
               </button>
             )}
 
@@ -315,6 +327,16 @@ function Navbar({
                 className="mt-3 min-h-12 w-full rounded-full bg-[#d9d823] px-4 py-3 text-sm font-bold text-[#073f31] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f]"
               >
                 Gestionar roles
+              </button>
+            )}
+
+            {rolAutenticado === 'super_admin' && onCuentasBloqueadas && (
+              <button
+                type="button"
+                onClick={onCuentasBloqueadas}
+                className="mt-3 min-h-[42px] w-full cursor-pointer rounded-[9px] border border-[#095540] bg-white px-4 py-0 text-[13px] font-bold text-[#095540] shadow-[0_5px_14px_rgba(23,48,31,0.14)] [font-family:inherit] [transition:0.2s_ease] hover:bg-[#095540] hover:text-white hover:[transform:translateY(-1px)]"
+              >
+                Cuentas bloqueadas
               </button>
             )}
           </div>
