@@ -849,7 +849,7 @@ function App() {
         <section>
           <button
             type="button"
-            className="boton-volver"
+              className="fixed left-3 top-3 z-[60] inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-[#b9d6af] bg-white/95 px-4 py-2 text-sm font-bold text-[#095540] shadow-[0_10px_30px_rgba(7,63,49,0.15)] backdrop-blur-md motion-safe:transition motion-safe:duration-200 hover:border-[#8dc63f] hover:bg-[#eef7e7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 motion-safe:hover:-translate-y-0.5 motion-reduce:transform-none sm:left-5 sm:top-5"
             onClick={() => {
               setMostrarCuentasBloqueadas(
                 false
@@ -868,7 +868,7 @@ function App() {
               );
             }}
           >
-            <span className="boton-volver-icono">
+            <span className="text-lg leading-none" aria-hidden="true">
               ←
             </span>
 
@@ -941,6 +941,15 @@ function App() {
                 true
               )
             }
+            onCuentasBloqueadas={() => {
+              setMostrarGestionRoles(
+                false
+              );
+
+              setMostrarCuentasBloqueadas(
+                true
+              );
+            }}
             onIrInicio={() =>
               setSeccionActual(
                 'inicio'
@@ -960,25 +969,6 @@ function App() {
           </main>
 
           <Footer />
-
-          {rolAutenticado ===
-            'super_admin' && (
-            <button
-              type="button"
-              className="fixed right-6 bottom-[86px] z-[100] min-h-[42px] cursor-pointer rounded-[9px] border border-[#095540] bg-white px-4 py-0 text-[13px] font-bold text-[#095540] shadow-[0_5px_14px_rgba(23,48,31,0.14)] [font-family:inherit] [transition:0.2s_ease] hover:bg-[#095540] hover:text-white hover:[transform:translateY(-1px)] max-[520px]:right-4 max-[520px]:bottom-[76px]"
-              onClick={() => {
-                setMostrarGestionRoles(
-                  false
-                );
-
-                setMostrarCuentasBloqueadas(
-                  true
-                );
-              }}
-            >
-              Cuentas bloqueadas
-            </button>
-          )}
 
           {mostrarErrorModal &&
             errorAutenticacion && (
