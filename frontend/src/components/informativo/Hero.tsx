@@ -140,7 +140,7 @@ function Hero() {
               className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#8dc63f] px-6 py-3 text-sm font-bold text-[#095540] shadow-lg shadow-black/15 motion-safe:transition motion-safe:duration-300 motion-safe:ease-out hover:bg-[#009444] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#d9d823]/55 motion-safe:hover:-translate-y-0.5 motion-safe:active:scale-[0.98] motion-reduce:transform-none sm:text-base"
             >
               Explorar el parque
-              <span aria-hidden="true">→</span>
+              <span aria-hidden="true"></span>
             </a>
 
             <a

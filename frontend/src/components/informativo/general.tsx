@@ -223,9 +223,6 @@ function Informativo() {
                   </span>
 
                   <div>
-                    <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-[#d9d823] text-xl text-[#095540] shadow-lg motion-safe:transition motion-safe:duration-300 group-hover:bg-[#8dc63f]" aria-hidden="true">
-                      ↗
-                    </div>
                     <h3 className="font-brand text-2xl font-bold tracking-[-0.02em] text-white">
                       {modulo.titulo}
                     </h3>
