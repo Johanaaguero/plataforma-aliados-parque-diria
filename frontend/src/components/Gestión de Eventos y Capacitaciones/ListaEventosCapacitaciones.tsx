@@ -1,16 +1,24 @@
 import { useEffect, useMemo, useState } from 'react';
+
 import RegistroEventoCapacitacion from './RegistroEventoCapacitacion';
+
 import PortadaEventoCapacitacion from './Portadaeventocapacitacion';
 
 interface EventoCapacitacion {
   id: number;
-  nombre: string;
-  descripcion: string;
-  fecha: string;
-  hora: string;
-  lugar: string;
+  nombre: string | null;
+  descripcion: string | null;
+  fecha: string | null;
+  hora: string | null;
+  lugar: string | null;
   tipoActividad: 'evento' | 'capacitacion';
   cupoMaximo: number | null;
+  estado:
+    | 'borrador'
+    | 'publicado'
+    | 'no_publicado'
+    | 'desactivado';
+  temporada: 'seca' | 'lluviosa' | null;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -25,7 +33,29 @@ interface ListaEventosCapacitacionesProps {
   rolAutenticado: NombreRol | null;
 }
 
-type FiltroActividad = 'todos' | 'evento' | 'capacitacion';
+type FiltroActividad =
+  | 'todos'
+  | 'evento'
+  | 'capacitacion';
+
+type EstadoEvento =
+  | 'borrador'
+  | 'publicado'
+  | 'no_publicado'
+  | 'desactivado';
+
+interface RespuestaApi {
+  mensaje?: string;
+  message?: string;
+}
+
+type TipoNotificacion = 'exito' | 'error';
+
+interface Notificacion {
+  tipo: TipoNotificacion;
+  titulo: string;
+  mensaje: string;
+}
 
 function obtenerUrlBaseApi(): string {
   const url = import.meta.env.VITE_API_URL?.trim();
@@ -39,96 +69,144 @@ function obtenerUrlBaseApi(): string {
   return url.replace(/\/+$/, '');
 }
 
+function obtenerToken(): string | null {
+  return (
+    sessionStorage.getItem('token') ??
+    localStorage.getItem('token')
+  );
+}
+
 export default function ListaEventosCapacitaciones({
   rolAutenticado,
 }: ListaEventosCapacitacionesProps) {
   const [eventos, setEventos] = useState<EventoCapacitacion[]>([]);
+
   const [cargando, setCargando] = useState(true);
+
   const [error, setError] = useState<string | null>(null);
 
-  const [mostrarRegistro, setMostrarRegistro] = useState(false);
+  const [notificacion, setNotificacion] =
+    useState<Notificacion | null>(null);
+
+  const [mostrarRegistro, setMostrarRegistro] =
+    useState(false);
 
   const [filtro, setFiltro] =
     useState<FiltroActividad>('todos');
 
+  const [estadoAbierto, setEstadoAbierto] =
+    useState<number | null>(null);
+
+  const [cambiandoEstado, setCambiandoEstado] =
+    useState<number | null>(null);
 
   const esAdministrador =
     rolAutenticado === 'administrador';
 
-  const urlBaseApi = obtenerUrlBaseApi();
+  const urlBaseApi = useMemo(
+    () => obtenerUrlBaseApi(),
+    [],
+  );
 
-  /*
-   * ============================================================
-   * CARGAR EVENTOS Y CAPACITACIONES
-   * ============================================================
-   */
- async function cargarDatos() {
-  try {
-    setCargando(true);
-    setError(null);
+  useEffect(() => {
+    if (!notificacion) return;
 
-    const respuesta = await fetch(
-      `${urlBaseApi}/api/eventos-capacitaciones`,
-      {
-        headers: {
-          Accept: 'application/json',
+    const temporizador = window.setTimeout(() => {
+      setNotificacion(null);
+    }, 5000);
+
+    return () => {
+      window.clearTimeout(temporizador);
+    };
+  }, [notificacion]);
+
+  function mostrarNotificacion(
+    tipo: TipoNotificacion,
+    titulo: string,
+    mensaje: string,
+  ) {
+    setNotificacion({
+      tipo,
+      titulo,
+      mensaje,
+    });
+  }
+
+  async function cargarDatos() {
+    try {
+      setCargando(true);
+      setError(null);
+
+      const token = obtenerToken();
+
+      const headers: HeadersInit = {
+        Accept: 'application/json',
+      };
+
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      const respuesta = await fetch(
+        `${urlBaseApi}/api/eventos-capacitaciones`,
+        {
+          method: 'GET',
+          headers,
         },
-      },
-    );
-
-    if (!respuesta.ok) {
-      throw new Error(
-        `Error al obtener los eventos. Código: ${respuesta.status}`,
       );
+
+      if (!respuesta.ok) {
+        let mensaje =
+          `Error al obtener los eventos. Código: ${respuesta.status}`;
+
+        try {
+          const resultado =
+            (await respuesta.json()) as RespuestaApi;
+
+          mensaje =
+            resultado.mensaje ??
+            resultado.message ??
+            mensaje;
+        } catch {}
+
+        throw new Error(mensaje);
+      }
+
+      const datos =
+        (await respuesta.json()) as EventoCapacitacion[];
+
+      setEventos(datos);
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : 'No se pudieron cargar los eventos.',
+      );
+    } finally {
+      setCargando(false);
     }
-
-    const datos =
-      (await respuesta.json()) as EventoCapacitacion[];
-
-    setEventos(datos);
-  } catch (error) {
-    setError(
-      error instanceof Error
-        ? error.message
-        : 'No se pudieron cargar los eventos.',
-    );
-  } finally {
-    setCargando(false);
-  }
-}
-
-useEffect(() => {
-  void cargarDatos();
-}, [urlBaseApi]);
-  /*
-   * ============================================================
-   * FORMATEAR FECHA
-   * ============================================================
-   */
-  function formatearFecha(fecha: string) {
-    const fechaLocal =
-      new Date(`${fecha}T00:00:00`);
-
-    return fechaLocal.toLocaleDateString(
-      'es-CR',
-      {
-        day: '2-digit',
-        month: 'long',
-        year: 'numeric',
-      },
-    );
   }
 
-  /*
-   * ============================================================
-   * FORMATEAR HORA
-   * ============================================================
-   */
-  function formatearHora(hora: string) {
-    if (!hora) return '';
+  useEffect(() => {
+    void cargarDatos();
+  }, [urlBaseApi]);
 
-    const [horas, minutos] =
-      hora.split(':');
+  function formatearFecha(fecha: string | null) {
+    if (!fecha) return 'Fecha pendiente';
+
+    const fechaLocal = new Date(`${fecha}T00:00:00`);
+
+    return fechaLocal.toLocaleDateString('es-CR', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+    });
+  }
+
+  function formatearHora(hora: string | null) {
+    if (!hora) return 'Hora pendiente';
+
+    const [horas, minutos] = hora.split(':');
 
     const fecha = new Date();
 
@@ -139,21 +217,13 @@ useEffect(() => {
       0,
     );
 
-    return fecha.toLocaleTimeString(
-      'es-CR',
-      {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true,
-      },
-    );
+    return fecha.toLocaleTimeString('es-CR', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    });
   }
 
-  /*
-   * ============================================================
-   * NOMBRE DEL TIPO
-   * ============================================================
-   */
   function obtenerNombreTipo(
     tipo: EventoCapacitacion['tipoActividad'],
   ) {
@@ -162,11 +232,6 @@ useEffect(() => {
       : 'Capacitación';
   }
 
-  /*
-   * ============================================================
-   * COLORES DEL TIPO
-   * ============================================================
-   */
   function obtenerColorTipo(
     tipo: EventoCapacitacion['tipoActividad'],
   ) {
@@ -183,61 +248,222 @@ useEffect(() => {
     };
   }
 
-  /*
-   * ============================================================
-   * ABRIR FORMULARIO
-   * ============================================================
-   *
-   * Aunque el botón solamente se muestra al administrador,
-   * también verificamos el rol antes de abrir el formulario.
-   */
-  function abrirRegistro() {
-    if (!esAdministrador) {
-      return;
+  function obtenerNombreEstado(
+    estado: EstadoEvento,
+  ) {
+    switch (estado) {
+      case 'borrador':
+        return 'Borrador';
+
+      case 'publicado':
+        return 'Publicado';
+
+      case 'no_publicado':
+        return 'No publicado';
+
+      case 'desactivado':
+        return 'Desactivado';
+
+      default:
+        return estado;
     }
+  }
+
+  function obtenerClaseEstado(
+    estado: EstadoEvento,
+  ) {
+    switch (estado) {
+      case 'borrador':
+        return 'bg-slate-100 text-slate-700 border-slate-200';
+
+      case 'publicado':
+        return 'bg-[#8DC63F]/15 text-[#095540] border-[#8DC63F]/30';
+
+      case 'no_publicado':
+        return 'bg-[#D9D823]/15 text-[#6B6900] border-[#D9D823]/40';
+
+      case 'desactivado':
+        return 'bg-red-50 text-red-700 border-red-200';
+
+      default:
+        return 'bg-slate-100 text-slate-700 border-slate-200';
+    }
+  }
+
+  function obtenerEstadosPermitidos(
+    estadoActual: EstadoEvento,
+  ): EstadoEvento[] {
+    switch (estadoActual) {
+      case 'borrador':
+        return ['no_publicado'];
+
+      case 'no_publicado':
+        return [
+          'publicado',
+          'desactivado',
+        ];
+
+      case 'publicado':
+        return [
+          'no_publicado',
+          'desactivado',
+        ];
+
+      case 'desactivado':
+        return ['no_publicado'];
+
+      default:
+        return [];
+    }
+  }
+
+  function abrirRegistro() {
+    if (!esAdministrador) return;
 
     setMostrarRegistro(true);
   }
 
-  /*
-   * ============================================================
-   * FILTRADO
-   * ============================================================
-   */
-  const eventosFiltrados = useMemo(() => {
-    if (filtro === 'todos') {
+  async function cambiarEstado(
+    evento: EventoCapacitacion,
+    nuevoEstado: EstadoEvento,
+  ) {
+    if (!esAdministrador) return;
+
+    if (evento.estado === nuevoEstado) {
+      setEstadoAbierto(null);
+      return;
+    }
+
+    const estadosPermitidos =
+      obtenerEstadosPermitidos(evento.estado);
+
+    if (!estadosPermitidos.includes(nuevoEstado)) {
+      mostrarNotificacion(
+        'error',
+        'Cambio de estado no permitido',
+        `No se puede cambiar el estado de "${obtenerNombreEstado(
+          evento.estado,
+        )}" a "${obtenerNombreEstado(
+          nuevoEstado,
+        )}".`,
+      );
+
+      setEstadoAbierto(null);
+      return;
+    }
+
+    const token = obtenerToken();
+
+    if (!token) {
+      mostrarNotificacion(
+        'error',
+        'Sesión no disponible',
+        'No se encontró el token de autenticación. Inicia sesión nuevamente.',
+      );
+
+      setEstadoAbierto(null);
+      return;
+    }
+
+    try {
+      setCambiandoEstado(evento.id);
+      setEstadoAbierto(null);
+      setNotificacion(null);
+
+      const respuesta = await fetch(
+        `${urlBaseApi}/api/eventos-capacitaciones/${evento.id}/estado`,
+        {
+          method: 'PATCH',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            estado: nuevoEstado,
+          }),
+        },
+      );
+
+      let resultado: RespuestaApi = {};
+
+      try {
+        resultado =
+          (await respuesta.json()) as RespuestaApi;
+      } catch {}
+
+      if (!respuesta.ok) {
+        throw new Error(
+          resultado.mensaje ??
+            resultado.message ??
+            `No se pudo cambiar el estado. Código: ${respuesta.status}`,
+        );
+      }
+
+      setEventos((prev) =>
+        prev.map((item) =>
+          item.id === evento.id
+            ? {
+                ...item,
+                estado: nuevoEstado,
+              }
+            : item,
+        ),
+      );
+
+      mostrarNotificacion(
+        'exito',
+        'Estado actualizado',
+        `La actividad ahora se encuentra en estado "${obtenerNombreEstado(
+          nuevoEstado,
+        )}".`,
+      );
+    } catch (error) {
+      mostrarNotificacion(
+        'error',
+        'No se pudo cambiar el estado',
+        error instanceof Error
+          ? error.message
+          : 'No se pudo cambiar el estado.',
+      );
+    } finally {
+      setCambiandoEstado(null);
+    }
+  }
+
+  const eventosVisibles = useMemo(() => {
+    if (esAdministrador) {
       return eventos;
     }
 
     return eventos.filter(
+      (evento) => evento.estado === 'publicado',
+    );
+  }, [eventos, esAdministrador]);
+
+  const eventosFiltrados = useMemo(() => {
+    if (filtro === 'todos') {
+      return eventosVisibles;
+    }
+
+    return eventosVisibles.filter(
       (evento) =>
         evento.tipoActividad === filtro,
     );
-  }, [eventos, filtro]);
+  }, [eventosVisibles, filtro]);
 
-  /*
-   * ============================================================
-   * CANTIDADES
-   * ============================================================
-   */
   const cantidadEventos =
-    eventos.filter(
+    eventosVisibles.filter(
       (evento) =>
         evento.tipoActividad === 'evento',
     ).length;
 
   const cantidadCapacitaciones =
-    eventos.filter(
+    eventosVisibles.filter(
       (evento) =>
-        evento.tipoActividad ===
-        'capacitacion',
+        evento.tipoActividad === 'capacitacion',
     ).length;
 
-  /*
-   * ============================================================
-   * FORMULARIO DE REGISTRO
-   * ============================================================
-   */
   if (mostrarRegistro) {
     return (
       <>
@@ -249,32 +475,142 @@ useEffect(() => {
           </div>
         </section>
 
-   <RegistroEventoCapacitacion
-  isOpen={mostrarRegistro}
-  onClose={() => setMostrarRegistro(false)}
-  onRegistrado={async () => {
-    setMostrarRegistro(false);
-    setFiltro('todos');
-    await cargarDatos();
-  }}
-/>
+        <RegistroEventoCapacitacion
+          isOpen={mostrarRegistro}
+          onClose={() =>
+            setMostrarRegistro(false)
+          }
+          onRegistrado={async () => {
+            setMostrarRegistro(false);
+            setFiltro('todos');
+
+            await cargarDatos();
+
+            mostrarNotificacion(
+              'exito',
+              'Actividad registrada',
+              'La actividad fue registrada correctamente.',
+            );
+          }}
+        />
       </>
     );
   }
 
-  /*
-   * ============================================================
-   * VISTA PRINCIPAL
-   * ============================================================
-   */
   return (
-    <section className="min-h-screen bg-[#f5f8f6] px-4 py-12 sm:px-6 lg:px-8">
+    <section className="relative min-h-screen bg-[#f5f8f6] px-4 py-12 sm:px-6 lg:px-8">
+      {notificacion && (
+        <div
+          className="fixed right-5 top-5 z-[9999] w-[calc(100%-2.5rem)] max-w-md"
+          role="alert"
+          aria-live="polite"
+        >
+          <div
+            className={`overflow-hidden rounded-2xl border bg-white shadow-2xl ${
+              notificacion.tipo === 'error'
+                ? 'border-red-200'
+                : 'border-[#8DC63F]/40'
+            }`}
+          >
+            <div className="flex items-start gap-3 p-4">
+              <div
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                  notificacion.tipo === 'error'
+                    ? 'bg-red-50 text-red-600'
+                    : 'bg-[#8DC63F]/10 text-[#095540]'
+                }`}
+              >
+                {notificacion.tipo === 'error' ? (
+                  <svg
+                    className="h-5 w-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M12 8v5M12 16h.01"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
+
+                    <path
+                      d="M10.3 4.6L3.4 16.5A2 2 0 005.1 19.5h13.8a2 2 0 001.7-3L13.7 4.6a2 2 0 00-3.4 0z"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                ) : (
+                  <svg
+                    className="h-5 w-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M5 12.5l4 4L19 7"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                )}
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <p
+                  className={`text-sm font-bold ${
+                    notificacion.tipo === 'error'
+                      ? 'text-red-800'
+                      : 'text-[#095540]'
+                  }`}
+                >
+                  {notificacion.titulo}
+                </p>
+
+                <p className="mt-1.5 text-sm leading-5 text-slate-600">
+                  {notificacion.mensaje}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setNotificacion(null)
+                }
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                aria-label="Cerrar notificación"
+              >
+                <svg
+                  className="h-4 w-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M6 6l12 12M18 6L6 18"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            <div
+              className={`h-1 ${
+                notificacion.tipo === 'error'
+                  ? 'bg-red-500'
+                  : 'bg-[#8DC63F]'
+              }`}
+            />
+          </div>
+        </div>
+      )}
+
       <div className="mx-auto max-w-7xl">
-
-        {/* ======================================================
-            ENCABEZADO
-            ====================================================== */}
-
         <div className="mb-8 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
           <div>
             <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#8DC63F]/40 bg-[#8DC63F]/10 px-3 py-1.5">
@@ -290,14 +626,11 @@ useEffect(() => {
             </h1>
 
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
-              Consulte las actividades, eventos y capacitaciones
-              disponibles en el Parque Nacional Diriá.
+              Consulte las actividades, eventos y
+              capacitaciones disponibles en el
+              Parque Nacional Diriá.
             </p>
           </div>
-
-          {/* ====================================================
-              BOTÓN SOLO PARA ADMINISTRADOR
-              ==================================================== */}
 
           {esAdministrador && (
             <button
@@ -324,29 +657,24 @@ useEffect(() => {
           )}
         </div>
 
-        {/* ======================================================
-            FILTROS
-            ====================================================== */}
-
         {!cargando &&
           !error &&
-          eventos.length > 0 && (
+          eventosVisibles.length > 0 && (
             <div className="mb-8 flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-
               <div>
                 <p className="text-sm font-semibold text-slate-800">
-                  Actividades disponibles
+                  {esAdministrador
+                    ? 'Todas las actividades'
+                    : 'Actividades disponibles'}
                 </p>
 
                 <p className="mt-0.5 text-xs text-slate-500">
-                  Filtre el contenido según el tipo de actividad.
+                  Filtre el contenido según el tipo
+                  de actividad.
                 </p>
               </div>
 
               <div className="flex w-full overflow-x-auto rounded-xl border border-slate-200 bg-slate-50 p-1 sm:w-auto">
-
-                {/* TODOS */}
-
                 <button
                   type="button"
                   onClick={() =>
@@ -367,11 +695,9 @@ useEffect(() => {
                         : 'bg-slate-200 text-slate-500'
                     }`}
                   >
-                    {eventos.length}
+                    {eventosVisibles.length}
                   </span>
                 </button>
-
-                {/* EVENTOS */}
 
                 <button
                   type="button"
@@ -397,14 +723,10 @@ useEffect(() => {
                   </span>
                 </button>
 
-                {/* CAPACITACIONES */}
-
                 <button
                   type="button"
                   onClick={() =>
-                    setFiltro(
-                      'capacitacion',
-                    )
+                    setFiltro('capacitacion')
                   }
                   className={`flex shrink-0 items-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold transition-all duration-200 ${
                     filtro === 'capacitacion'
@@ -416,8 +738,7 @@ useEffect(() => {
 
                   <span
                     className={`rounded-md px-1.5 py-0.5 text-[10px] ${
-                      filtro ===
-                      'capacitacion'
+                      filtro === 'capacitacion'
                         ? 'bg-[#00AEEF]/10 text-[#087AA8]'
                         : 'bg-slate-200 text-slate-500'
                     }`}
@@ -428,10 +749,6 @@ useEffect(() => {
               </div>
             </div>
           )}
-
-        {/* ======================================================
-            CARGANDO
-            ====================================================== */}
 
         {cargando && (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
@@ -465,10 +782,6 @@ useEffect(() => {
             ))}
           </div>
         )}
-
-        {/* ======================================================
-            ERROR
-            ====================================================== */}
 
         {!cargando && error && (
           <div className="rounded-2xl border border-red-200 bg-white p-8 text-center shadow-sm">
@@ -505,9 +818,7 @@ useEffect(() => {
 
             <button
               type="button"
-              onClick={() =>
-                window.location.reload()
-              }
+              onClick={() => void cargarDatos()}
               className="mt-5 rounded-xl bg-[#095540] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#009444]"
             >
               Intentar nuevamente
@@ -515,13 +826,9 @@ useEffect(() => {
           </div>
         )}
 
-        {/* ======================================================
-            SIN REGISTROS
-            ====================================================== */}
-
         {!cargando &&
           !error &&
-          eventos.length === 0 && (
+          eventosVisibles.length === 0 && (
             <div className="rounded-2xl border border-slate-200 bg-white px-6 py-16 text-center shadow-sm">
               <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-xl bg-[#8DC63F]/10 text-[#095540]">
                 <svg
@@ -550,22 +857,22 @@ useEffect(() => {
               </div>
 
               <h2 className="text-xl font-bold text-[#095540]">
-                No hay actividades registradas
+                {esAdministrador
+                  ? 'No hay actividades registradas'
+                  : 'No hay actividades disponibles'}
               </h2>
 
               <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
-                Actualmente no existen eventos o capacitaciones disponibles.
+                {esAdministrador
+                  ? 'Actualmente no existen eventos o capacitaciones registrados.'
+                  : 'Actualmente no existen eventos o capacitaciones publicados.'}
               </p>
             </div>
           )}
 
-        {/* ======================================================
-            SIN RESULTADOS DEL FILTRO
-            ====================================================== */}
-
         {!cargando &&
           !error &&
-          eventos.length > 0 &&
+          eventosVisibles.length > 0 &&
           eventosFiltrados.length === 0 && (
             <div className="rounded-2xl border border-slate-200 bg-white px-6 py-14 text-center shadow-sm">
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
@@ -597,7 +904,8 @@ useEffect(() => {
               </h2>
 
               <p className="mt-2 text-sm text-slate-500">
-                No existen actividades correspondientes al filtro seleccionado.
+                No existen actividades correspondientes
+                al filtro seleccionado.
               </p>
 
               <button
@@ -612,10 +920,6 @@ useEffect(() => {
             </div>
           )}
 
-        {/* ======================================================
-            TARJETAS
-            ====================================================== */}
-
         {!cargando &&
           !error &&
           eventosFiltrados.length > 0 && (
@@ -626,23 +930,28 @@ useEffect(() => {
                     item.tipoActividad,
                   );
 
+                const menuEstadoAbierto =
+                  estadoAbierto === item.id;
+
+                const estaCambiando =
+                  cambiandoEstado === item.id;
+
+                const estadosPermitidos =
+                  obtenerEstadosPermitidos(
+                    item.estado,
+                  );
+
                 return (
                   <article
                     key={item.id}
                     className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-xl"
                   >
-                    {/* IMAGEN */}
-
                     <div className="relative">
                       <PortadaEventoCapacitacion
                         eventoId={item.id}
                         urlBaseApi={urlBaseApi}
-                        colorAcento={
-                          colores.fondo
-                        }
+                        colorAcento={colores.fondo}
                       />
-
-                      {/* TIPO */}
 
                       <div className="absolute left-4 top-4">
                         <span
@@ -659,34 +968,158 @@ useEffect(() => {
                           )}
                         </span>
                       </div>
+
+                      {esAdministrador && (
+                        <div className="absolute right-4 top-4">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setEstadoAbierto(
+                                menuEstadoAbierto
+                                  ? null
+                                  : item.id,
+                              )
+                            }
+                            disabled={estaCambiando}
+                            className="inline-flex items-center gap-2 rounded-lg border border-white/60 bg-white/95 px-3 py-2 text-[10px] font-bold text-[#095540] shadow-md backdrop-blur-sm transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {estaCambiando ? (
+                              <>
+                                <span className="h-3 w-3 animate-spin rounded-full border-2 border-[#095540]/30 border-t-[#095540]" />
+                                Actualizando
+                              </>
+                            ) : (
+                              <>
+                                Cambiar estado
+
+                                <svg
+                                  className={`h-3 w-3 transition-transform ${
+                                    menuEstadoAbierto
+                                      ? 'rotate-180'
+                                      : ''
+                                  }`}
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  aria-hidden="true"
+                                >
+                                  <path
+                                    d="M6 9l6 6 6-6"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  />
+                                </svg>
+                              </>
+                            )}
+                          </button>
+
+                          {menuEstadoAbierto && (
+                            <div className="absolute right-0 top-full z-30 mt-2 w-52 overflow-hidden rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl">
+                              <div className="border-b border-slate-100 px-3 py-2">
+                                <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-slate-400">
+                                  Cambiar a
+                                </p>
+                              </div>
+
+                              {estadosPermitidos.length > 0 ? (
+                                estadosPermitidos.map(
+                                  (estado) => (
+                                    <button
+                                      key={estado}
+                                      type="button"
+                                      onClick={() =>
+                                        void cambiarEstado(
+                                          item,
+                                          estado,
+                                        )
+                                      }
+                                      disabled={
+                                        estaCambiando
+                                      }
+                                      className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-xs font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-[#095540] disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                      <span>
+                                        {obtenerNombreEstado(
+                                          estado,
+                                        )}
+                                      </span>
+
+                                      <svg
+                                        className="h-4 w-4 text-[#009444]"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        aria-hidden="true"
+                                      >
+                                        <path
+                                          d="M5 13l4 4L19 7"
+                                          stroke="currentColor"
+                                          strokeWidth="2.5"
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                        />
+                                      </svg>
+                                    </button>
+                                  ),
+                                )
+                              ) : (
+                                <div className="px-3 py-2.5 text-xs text-slate-500">
+                                  No hay cambios de estado disponibles.
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
 
-                    {/* CONTENIDO */}
-
                     <div className="p-5">
+                      <div className="mb-3 flex flex-wrap items-center gap-2">
+                        <span
+                          className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em] ${obtenerClaseEstado(
+                            item.estado,
+                          )}`}
+                        >
+                          {obtenerNombreEstado(
+                            item.estado,
+                          )}
+                        </span>
 
-                      {/* TÍTULO */}
+                        {item.temporada && (
+                          <span
+                            className={`inline-flex items-center gap-2 rounded-lg border px-2.5 py-1 text-[10px] font-semibold ${
+                              item.temporada === 'seca'
+                                ? 'border-[#D9D823]/40 bg-[#D9D823]/10 text-[#6B6900]'
+                                : 'border-[#00AEEF]/30 bg-[#00AEEF]/10 text-[#087AA8]'
+                            }`}
+                          >
+                            <span
+                              className={`h-1.5 w-1.5 rounded-full ${
+                                item.temporada === 'seca'
+                                  ? 'bg-[#D9D823]'
+                                  : 'bg-[#00AEEF]'
+                              }`}
+                            />
+
+                            {item.temporada === 'seca'
+                              ? 'Época seca'
+                              : 'Época lluviosa'}
+                          </span>
+                        )}
+                      </div>
 
                       <h2 className="line-clamp-2 min-h-[3.5rem] text-lg font-bold leading-7 text-[#095540] transition-colors duration-200 group-hover:text-[#009444]">
-                        {item.nombre}
+                        {item.nombre ??
+                          'Sin nombre'}
                       </h2>
 
-                      {/* DESCRIPCIÓN */}
-
                       <p className="mt-2.5 line-clamp-2 min-h-[3rem] text-sm leading-6 text-slate-500">
-                        {item.descripcion}
+                        {item.descripcion ??
+                          'Sin descripción'}
                       </p>
 
-                      {/* INFORMACIÓN */}
-
                       <div className="mt-5 border-t border-slate-100 pt-5">
-
-                        {/* FECHA + HORA */}
-
                         <div className="grid grid-cols-2 gap-4">
-
-                          {/* FECHA */}
-
                           <div className="flex min-w-0 items-start gap-2.5">
                             <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#8DC63F]/10 text-[#095540]">
                               <svg
@@ -726,8 +1159,6 @@ useEffect(() => {
                               </p>
                             </div>
                           </div>
-
-                          {/* HORA */}
 
                           <div className="flex min-w-0 items-start gap-2.5">
                             <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#00AEEF]/10 text-[#087AA8]">
@@ -769,8 +1200,6 @@ useEffect(() => {
                           </div>
                         </div>
 
-                        {/* LUGAR */}
-
                         <div className="mt-4 flex items-start gap-2.5">
                           <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#095540]/10 text-[#095540]">
                             <svg
@@ -802,60 +1231,63 @@ useEffect(() => {
 
                             <p
                               className="mt-0.5 truncate text-xs font-semibold leading-5 text-slate-700"
-                              title={item.lugar}
+                              title={
+                                item.lugar ??
+                                undefined
+                              }
                             >
-                              {item.lugar}
+                              {item.lugar ??
+                                'Lugar pendiente'}
                             </p>
                           </div>
                         </div>
 
-                        {/* CAPACIDAD */}
+                        <div className="mt-4 flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2.5">
+                          <div className="flex items-center gap-2.5">
+                            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white text-[#095540] shadow-sm">
+                              <svg
+                                className="h-3.5 w-3.5"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                aria-hidden="true"
+                              >
+                                <circle
+                                  cx="9"
+                                  cy="8"
+                                  r="3"
+                                  stroke="currentColor"
+                                  strokeWidth="1.7"
+                                />
 
-                        {item.cupoMaximo !== null && (
-                          <div className="mt-4 flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2.5">
-                            <div className="flex items-center gap-2.5">
-                              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white text-[#095540] shadow-sm">
-                                <svg
-                                  className="h-3.5 w-3.5"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  aria-hidden="true"
-                                >
-                                  <circle
-                                    cx="9"
-                                    cy="8"
-                                    r="3"
-                                    stroke="currentColor"
-                                    strokeWidth="1.7"
-                                  />
+                                <path
+                                  d="M3.5 19a5.5 5.5 0 0111 0"
+                                  stroke="currentColor"
+                                  strokeWidth="1.7"
+                                  strokeLinecap="round"
+                                />
 
-                                  <path
-                                    d="M3.5 19a5.5 5.5 0 0111 0"
-                                    stroke="currentColor"
-                                    strokeWidth="1.7"
-                                    strokeLinecap="round"
-                                  />
-
-                                  <path
-                                    d="M16 6.5a3 3 0 010 5.8M17 15a5.2 5.2 0 013.5 4"
-                                    stroke="currentColor"
-                                    strokeWidth="1.7"
-                                    strokeLinecap="round"
-                                  />
-                                </svg>
-                              </div>
-
-                              <span className="text-xs font-medium text-slate-500">
-                                Capacidad máxima
-                              </span>
+                                <path
+                                  d="M16 6.5a3 3 0 010 5.8M17 15a5.2 5.2 0 013.5 4"
+                                  stroke="currentColor"
+                                  strokeWidth="1.7"
+                                  strokeLinecap="round"
+                                />
+                              </svg>
                             </div>
 
-                            <span className="text-xs font-bold text-[#095540]">
-                              {item.cupoMaximo}{' '}
-                              personas
+                            <span className="text-xs font-medium text-slate-500">
+                              {item.cupoMaximo !== null
+                                ? 'Capacidad máxima'
+                                : 'Cupo'}
                             </span>
                           </div>
-                        )}
+
+                          <span className="text-xs font-bold text-[#095540]">
+                            {item.cupoMaximo !== null
+                              ? `${item.cupoMaximo} personas`
+                              : 'Cupo libre'}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </article>

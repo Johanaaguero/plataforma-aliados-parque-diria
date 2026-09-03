@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 
 import Registro from './components/Registro';
@@ -7,20 +8,16 @@ import CuentasBloqueadas from './components/CuentasBloqueadas';
 import RecuperarContrasena from './components/RecuperarContrasena';
 import RestablecerContrasena from './components/RestablecerContrasena';
 import ListaEventosCapacitaciones from './components/Gestión de Eventos y Capacitaciones/ListaEventosCapacitaciones';
-
 import { api } from './services/api';
 import { useInactividad } from './services/useInactividad';
-
 import RegistroEmprendimiento from './components/RegistroEmprendimiento';
 import ListaEmprendimientos from './components/ListaEmprendimientos';
 import RegistroCategoria from './components/RegistroCategoria';
 import EditarEmprendimiento from './components/EditarEmprendimiento';
-
 import Navbar from './components/informativo/Navbar';
 import Hero from './components/informativo/Hero';
 import Footer from './components/informativo/Footer';
 import Informativo from './components/informativo/general';
-
 import type { Emprendimiento } from './services/emprendimientoService';
 
 type NombreRol =
@@ -35,9 +32,6 @@ interface ErrorDeAutenticacion {
   status: number;
 }
 
-/**
- * Obtiene el token actualmente almacenado.
- */
 const obtenerToken = (): string | null => {
   return (
     sessionStorage.getItem('token') ??
@@ -45,10 +39,7 @@ const obtenerToken = (): string | null => {
   );
 };
 
-const obtenerPayloadDesdeToken = (): Record<
-  string,
-  unknown
-> | null => {
+const obtenerPayloadDesdeToken = (): Record<string, unknown> | null => {
   const token = obtenerToken();
 
   if (!token) {
@@ -173,7 +164,10 @@ function BotonVolverInicio({
         }
       }}
     >
-      <span className="text-lg leading-none" aria-hidden="true">
+      <span
+        className="text-lg leading-none"
+        aria-hidden="true"
+      >
         ←
       </span>
 
@@ -261,21 +255,17 @@ function App() {
       const customEvent =
         event as CustomEvent<ErrorDeAutenticacion>;
 
-      setErrorAutenticacion(
-        customEvent.detail
-      );
+      const error = customEvent.detail;
 
+      if (error?.code === 'INVALID_CREDENTIALS') {
+        return;
+      }
+
+      setErrorAutenticacion(error);
       setMostrarErrorModal(true);
-
       setRolAutenticado(null);
       setNombreUsuario(null);
-
       setMostrarCuentasBloqueadas(false);
-
-      /**
-       * NUEVO:
-       * Limpiamos también el ID.
-       */
       setUsuarioId(null);
     };
 
@@ -330,10 +320,7 @@ function App() {
       setMostrarCuentasBloqueadas(false);
     }
 
-    if (
-      rolAutenticado !==
-      'administrador'
-    ) {
+    if (rolAutenticado !== 'administrador') {
       setMostrarGestionRoles(false);
     }
 
@@ -368,7 +355,6 @@ function App() {
         'editarEmprendimiento'
     ) {
       setEmprendimientoEditar(null);
-
       setSeccionActual(
         'emprendimientos'
       );
@@ -399,11 +385,11 @@ function App() {
       setNombreUsuario(null);
       setUsuarioId(null);
       setMostrarGestionRoles(false);
-
       setMostrarCuentasBloqueadas(false);
-
       setMostrarLogin(false);
       setMostrarRegistro(false);
+      setMostrarErrorModal(false);
+      setErrorAutenticacion(null);
       setEmprendimientoEditar(null);
       setSeccionActual('inicio');
     }
@@ -414,12 +400,11 @@ function App() {
     setNombreUsuario(null);
     setUsuarioId(null);
     setMostrarGestionRoles(false);
-
     setMostrarCuentasBloqueadas(false);
-
     setMostrarLogin(false);
     setMostrarRegistro(false);
     setMostrarErrorModal(false);
+    setErrorAutenticacion(null);
     setEmprendimientoEditar(null);
     setSeccionActual('inicio');
   };
@@ -441,12 +426,6 @@ function App() {
       ''
     ) || '/';
 
-  /*
-   * =========================================================
-   * RECUPERAR CONTRASEÑA
-   * =========================================================
-   */
-
   if (
     rutaActual ===
     '/recuperar-contrasena'
@@ -454,17 +433,10 @@ function App() {
     return (
       <>
         <BotonVolverInicio />
-
         <RecuperarContrasena />
       </>
     );
   }
-
-  /*
-   * =========================================================
-   * RESTABLECER CONTRASEÑA
-   * =========================================================
-   */
 
   if (
     rutaActual ===
@@ -473,17 +445,10 @@ function App() {
     return (
       <>
         <BotonVolverInicio />
-
         <RestablecerContrasena />
       </>
     );
   }
-
-  /*
-   * =========================================================
-   * LOGIN
-   * =========================================================
-   */
 
   if (rutaActual === '/login') {
     return (
@@ -493,11 +458,9 @@ function App() {
         <Login
           onLogin={(rol) => {
             setRolAutenticado(rol);
-
             setNombreUsuario(
               obtenerNombreUsuarioDesdeToken()
             );
-
             setUsuarioId(
               obtenerUsuarioIdDesdeToken()
             );
@@ -506,12 +469,6 @@ function App() {
       </>
     );
   }
-
-  /*
-   * =========================================================
-   * REGISTRO DE CATEGORÍA
-   * =========================================================
-   */
 
   if (
     rutaActual ===
@@ -558,12 +515,6 @@ function App() {
       </section>
     );
   }
-
-  /*
-   * =========================================================
-   * REGISTRO DE EMPRENDIMIENTO
-   * =========================================================
-   */
 
   if (
     rutaActual ===
@@ -625,12 +576,6 @@ function App() {
     );
   }
 
-  /*
-   * =========================================================
-   * EDITAR EMPRENDIMIENTO
-   * =========================================================
-   */
-
   if (
     seccionActual ===
     'editarEmprendimiento'
@@ -654,7 +599,6 @@ function App() {
           className="fixed right-3 top-3 z-[60] flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/90 text-2xl font-light leading-none text-[#355448] shadow-[0_10px_30px_rgba(7,63,49,0.16)] backdrop-blur-md motion-safe:transition motion-safe:duration-200 hover:bg-white hover:text-[#095540] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 motion-safe:hover:scale-105 motion-reduce:transform-none sm:right-5 sm:top-5"
           onClick={() => {
             setEmprendimientoEditar(null);
-
             setSeccionActual(
               'emprendimientos'
             );
@@ -673,7 +617,6 @@ function App() {
             setEmprendimientoEditar(
               null
             );
-
             setSeccionActual(
               'emprendimientos'
             );
@@ -682,7 +625,6 @@ function App() {
             setEmprendimientoEditar(
               null
             );
-
             setSeccionActual(
               'emprendimientos'
             );
@@ -692,48 +634,61 @@ function App() {
     );
   }
 
-  /*
-   * =========================================================
-   * EMPRENDIMIENTOS
-   * =========================================================
-   */
-  /*
- * =========================================================
- * EVENTOS Y CAPACITACIONES
- * =========================================================
- */
+  if (
+    seccionActual === 'eventos' &&
+    !mostrarLogin &&
+    !mostrarRegistro
+  ) {
+    return (
+      <>
+        <Navbar
+          modoAdministracion
+          seccionActiva="eventos"
+          onRegistro={() =>
+            setMostrarRegistro(true)
+          }
+          onLogin={() =>
+            setMostrarLogin(true)
+          }
+          rolAutenticado={
+            rolAutenticado
+          }
+          nombreUsuario={
+            nombreUsuario
+          }
+          onCerrarSesion={() => {
+            void cerrarSesion();
+          }}
+          onGestionRoles={() =>
+            setMostrarGestionRoles(
+              true
+            )
+          }
+          onIrInicio={() =>
+            setSeccionActual('inicio')
+          }
+          onIrEmprendimientos={() =>
+            setSeccionActual(
+              'emprendimientos'
+            )
+          }
+          onIrEventos={() =>
+            setSeccionActual('eventos')
+          }
+        />
 
-if (
-  seccionActual === 'eventos' &&
-  !mostrarLogin &&
-  !mostrarRegistro
-) {
-  return (
-    <>
-      <Navbar
-        modoAdministracion
-        seccionActiva="eventos"
-        onRegistro={() => setMostrarRegistro(true)}
-        onLogin={() => setMostrarLogin(true)}
-        rolAutenticado={rolAutenticado}
-        nombreUsuario={nombreUsuario}
-        onCerrarSesion={() => {
-          void cerrarSesion();
-        }}
-        onGestionRoles={() => setMostrarGestionRoles(true)}
-        onIrInicio={() => setSeccionActual('inicio')}
-        onIrEmprendimientos={() => setSeccionActual('emprendimientos')}
-        onIrEventos={() => setSeccionActual('eventos')}
-      />
+        <main className="min-h-[80vh] overflow-x-hidden bg-[#f5f7ef] pt-24 sm:pt-28">
+          <ListaEventosCapacitaciones
+            rolAutenticado={
+              rolAutenticado
+            }
+          />
+        </main>
 
-     <main className="min-h-[80vh] overflow-x-hidden bg-[#f5f7ef] pt-24 sm:pt-28">
-  <ListaEventosCapacitaciones rolAutenticado={rolAutenticado} />
-</main>
-
-      <Footer />
-    </>
-  );
-}
+        <Footer />
+      </>
+    );
+  }
 
   if (
     seccionActual === 'emprendimientos' &&
@@ -754,7 +709,9 @@ if (
           rolAutenticado={
             rolAutenticado
           }
-          nombreUsuario={nombreUsuario}
+          nombreUsuario={
+            nombreUsuario
+          }
           onCerrarSesion={() => {
             void cerrarSesion();
           }}
@@ -764,9 +721,7 @@ if (
             )
           }
           onIrInicio={() =>
-            setSeccionActual(
-              'inicio'
-            )
+            setSeccionActual('inicio')
           }
           onIrEmprendimientos={() =>
             setSeccionActual(
@@ -774,16 +729,15 @@ if (
             )
           }
           onIrEventos={() =>
-             setSeccionActual(
-              'eventos'
-            )
+            setSeccionActual('eventos')
           }
         />
 
         <main className="min-h-[80vh] overflow-x-hidden bg-[#f5f7ef] pt-24 sm:pt-28">
           <ListaEmprendimientos
             rolAutenticado={
-              rolAutenticado === 'super_admin'
+              rolAutenticado ===
+              'super_admin'
                 ? null
                 : rolAutenticado
             }
@@ -798,9 +752,7 @@ if (
                 'registroCategoria'
               )
             }
-            onEditar={(
-              emprendimiento
-            ) => {
+            onEditar={(emprendimiento) => {
               setEmprendimientoEditar(
                 emprendimiento
               );
@@ -817,12 +769,6 @@ if (
     );
   }
 
-  /*
-   * =========================================================
-   * PÁGINA PRINCIPAL
-   * =========================================================
-   */
-
   return (
     <>
       {mostrarRegistro ? (
@@ -831,9 +777,7 @@ if (
             type="button"
             className="fixed right-3 top-3 z-[60] flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/90 text-2xl font-light leading-none text-[#355448] shadow-[0_10px_30px_rgba(7,63,49,0.16)] backdrop-blur-md motion-safe:transition motion-safe:duration-200 hover:bg-white hover:text-[#095540] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 motion-safe:hover:scale-105 motion-reduce:transform-none sm:right-5 sm:top-5"
             onClick={() =>
-              setMostrarRegistro(
-                false
-              )
+              setMostrarRegistro(false)
             }
             aria-label="Cerrar formulario"
             title="Cerrar"
@@ -857,9 +801,7 @@ if (
             type="button"
             className="fixed right-3 top-3 z-[60] flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/90 text-2xl font-light leading-none text-[#355448] shadow-[0_10px_30px_rgba(7,63,49,0.16)] backdrop-blur-md motion-safe:transition motion-safe:duration-200 hover:bg-white hover:text-[#095540] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 motion-safe:hover:scale-105 motion-reduce:transform-none sm:right-5 sm:top-5"
             onClick={() =>
-              setMostrarLogin(
-                false
-              )
+              setMostrarLogin(false)
             }
             aria-label="Cerrar formulario"
             title="Cerrar"
@@ -870,30 +812,23 @@ if (
           <Login
             onLogin={(rol) => {
               setRolAutenticado(rol);
-
               setNombreUsuario(
                 obtenerNombreUsuarioDesdeToken()
               );
-
               setUsuarioId(
                 obtenerUsuarioIdDesdeToken()
               );
-
-              setMostrarLogin(
-                false
-              );
+              setMostrarLogin(false);
             }}
           />
         </section>
-      ) : (
-        mostrarCuentasBloqueadas &&
+      ) : mostrarCuentasBloqueadas &&
         rolAutenticado ===
-          'super_admin'
-      ) ? (
+          'super_admin' ? (
         <section>
           <button
             type="button"
-              className="fixed left-3 top-3 z-[60] inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-[#b9d6af] bg-white/95 px-4 py-2 text-sm font-bold text-[#095540] shadow-[0_10px_30px_rgba(7,63,49,0.15)] backdrop-blur-md motion-safe:transition motion-safe:duration-200 hover:border-[#8dc63f] hover:bg-[#eef7e7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 motion-safe:hover:-translate-y-0.5 motion-reduce:transform-none sm:left-5 sm:top-5"
+            className="fixed left-3 top-3 z-[60] inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-[#b9d6af] bg-white/95 px-4 py-2 text-sm font-bold text-[#095540] shadow-[0_10px_30px_rgba(7,63,49,0.15)] backdrop-blur-md motion-safe:transition motion-safe:duration-200 hover:border-[#8dc63f] hover:bg-[#eef7e7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 motion-safe:hover:-translate-y-0.5 motion-reduce:transform-none sm:left-5 sm:top-5"
             onClick={() => {
               setMostrarCuentasBloqueadas(
                 false
@@ -912,20 +847,23 @@ if (
               );
             }}
           >
-            <span className="text-lg leading-none" aria-hidden="true">
+            <span
+              className="text-lg leading-none"
+              aria-hidden="true"
+            >
               ←
             </span>
 
-            <span>Volver</span>
+            <span>
+              Volver
+            </span>
           </button>
 
           <CuentasBloqueadas />
         </section>
-      ) : (
-        mostrarGestionRoles &&
+      ) : mostrarGestionRoles &&
         rolAutenticado ===
-          'administrador'
-      ) ? (
+          'administrador' ? (
         <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef] pt-20 sm:pt-24">
           <button
             type="button"
@@ -948,7 +886,10 @@ if (
               );
             }}
           >
-            <span className="text-lg leading-none" aria-hidden="true">
+            <span
+              className="text-lg leading-none"
+              aria-hidden="true"
+            >
               ←
             </span>
 
@@ -964,19 +905,17 @@ if (
           <Navbar
             seccionActiva="inicio"
             onRegistro={() =>
-              setMostrarRegistro(
-                true
-              )
+              setMostrarRegistro(true)
             }
             onLogin={() =>
-              setMostrarLogin(
-                true
-              )
+              setMostrarLogin(true)
             }
             rolAutenticado={
               rolAutenticado
             }
-            nombreUsuario={nombreUsuario}
+            nombreUsuario={
+              nombreUsuario
+            }
             onCerrarSesion={() => {
               void cerrarSesion();
             }}
@@ -995,25 +934,20 @@ if (
               );
             }}
             onIrInicio={() =>
-              setSeccionActual(
-                'inicio'
-              )
+              setSeccionActual('inicio')
             }
             onIrEmprendimientos={() =>
               setSeccionActual(
                 'emprendimientos'
               )
             }
-             onIrEventos={() =>
-               setSeccionActual(
-                'eventos'
-              )
+            onIrEventos={() =>
+              setSeccionActual('eventos')
             }
           />
 
           <main>
             <Hero />
-
             <Informativo />
           </main>
 
@@ -1027,9 +961,7 @@ if (
                 aria-modal="true"
                 aria-labelledby="titulo-error-autenticacion"
               >
-                <div
-                  className="w-full max-w-md rounded-[1.75rem] border border-white/70 bg-[#fffef9] p-6 shadow-[0_24px_70px_rgba(5,47,37,0.3)] motion-safe:transition motion-safe:duration-200 starting:scale-[0.98] starting:opacity-0 motion-reduce:transform-none motion-reduce:transition-none sm:p-8"
-                >
+                <div className="w-full max-w-md rounded-[1.75rem] border border-white/70 bg-[#fffef9] p-6 shadow-[0_24px_70px_rgba(5,47,37,0.3)] motion-safe:transition motion-safe:duration-200 starting:scale-[0.98] starting:opacity-0 motion-reduce:transform-none motion-reduce:transition-none sm:p-8">
                   <h2
                     id="titulo-error-autenticacion"
                     className="text-xl font-bold tracking-[-0.015em] text-[#17372c] sm:text-2xl"
@@ -1040,24 +972,11 @@ if (
                       : 'Acceso denegado'}
                   </h2>
 
-                  <p
-                    className="mt-3 text-sm leading-6 text-[#587267] sm:text-base"
-                  >
+                  <p className="mt-3 text-sm leading-6 text-[#587267] sm:text-base">
                     {
                       errorAutenticacion.message
                     }
                   </p>
-
-                  {errorAutenticacion.code && (
-                    <p
-                      className="mt-3 rounded-xl bg-[#eef4ea] px-3 py-2 font-mono text-xs text-[#587267]"
-                    >
-                      Código:{' '}
-                      {
-                        errorAutenticacion.code
-                      }
-                    </p>
-                  )}
 
                   <button
                     type="button"

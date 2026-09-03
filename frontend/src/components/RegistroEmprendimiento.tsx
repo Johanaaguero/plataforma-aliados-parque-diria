@@ -10,11 +10,8 @@ import {
 
 import { obtenerCategorias } from '../services/categoriaEmprendimientoService';
 import type { CategoriaEmprendimiento } from '../services/categoriaEmprendimientoService';
-
 import { crearEmprendimiento } from '../services/emprendimientoService';
-
 import RegistroCategoria from './RegistroCategoria';
-
 import SelectorUbicacion from './SelectorUbicacion';
 
 interface FormState {
@@ -65,9 +62,7 @@ const INITIAL_FORM: FormState = {
 };
 
 const validarCorreo = (correo: string): boolean => {
-  const regex =
-    /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
   return regex.test(correo.trim());
 };
 
@@ -81,7 +76,6 @@ const validarNumero = (valor: string): boolean => {
   }
 
   const numero = Number(valor);
-
   return Number.isFinite(numero);
 };
 
@@ -91,142 +85,84 @@ const validarFormulario = (
 ): FormErrors => {
   const errores: FormErrors = {};
 
-  /* ----------------------------------------------------------
-     NOMBRE
-  ---------------------------------------------------------- */
-
   if (!form.nombre.trim()) {
     if (!esBorrador) {
-      errores.nombre =
-        'El nombre del emprendimiento es obligatorio.';
+      errores.nombre = 'El nombre del emprendimiento es obligatorio.';
     }
   } else if (form.nombre.trim().length < 3) {
-    errores.nombre =
-      'El nombre debe tener al menos 3 caracteres.';
+    errores.nombre = 'El nombre debe tener al menos 3 caracteres.';
   } else if (form.nombre.trim().length > 150) {
-    errores.nombre =
-      'El nombre no puede superar los 150 caracteres.';
+    errores.nombre = 'El nombre no puede superar los 150 caracteres.';
   }
-
-  /* ----------------------------------------------------------
-     DESCRIPCIÓN
-  ---------------------------------------------------------- */
 
   if (form.descripcion.trim().length > 500) {
     errores.descripcion =
       'La descripción no puede superar los 500 caracteres.';
   }
 
-  /* ----------------------------------------------------------
-     CATEGORÍA
-  ---------------------------------------------------------- */
-
   if (!form.categoriaId && !esBorrador) {
-    errores.categoriaId =
-      'Debe seleccionar una categoría.';
+    errores.categoriaId = 'Debe seleccionar una categoría.';
   }
-
-  /* ----------------------------------------------------------
-     PROVINCIA
-  ---------------------------------------------------------- */
 
   if (!form.provincia.trim()) {
     if (!esBorrador) {
-      errores.provincia =
-        'La provincia es obligatoria.';
+      errores.provincia = 'La provincia es obligatoria.';
     }
   } else if (form.provincia.trim().length > 100) {
-    errores.provincia =
-      'La provincia no puede superar los 100 caracteres.';
+    errores.provincia = 'La provincia no puede superar los 100 caracteres.';
   }
-
-  /* ----------------------------------------------------------
-     CANTÓN
-  ---------------------------------------------------------- */
 
   if (!form.canton.trim()) {
     if (!esBorrador) {
-      errores.canton =
-        'El cantón es obligatorio.';
+      errores.canton = 'El cantón es obligatorio.';
     }
   } else if (form.canton.trim().length > 100) {
-    errores.canton =
-      'El cantón no puede superar los 100 caracteres.';
+    errores.canton = 'El cantón no puede superar los 100 caracteres.';
   }
-
-  /* ----------------------------------------------------------
-     DISTRITO
-  ---------------------------------------------------------- */
 
   if (!form.distrito.trim()) {
     if (!esBorrador) {
-      errores.distrito =
-        'El distrito es obligatorio.';
+      errores.distrito = 'El distrito es obligatorio.';
     }
   } else if (form.distrito.trim().length > 100) {
-    errores.distrito =
-      'El distrito no puede superar los 100 caracteres.';
+    errores.distrito = 'El distrito no puede superar los 100 caracteres.';
   }
-
-  /* ----------------------------------------------------------
-     DIRECCIÓN
-  ---------------------------------------------------------- */
 
   if (!form.direccion.trim()) {
     if (!esBorrador) {
-      errores.direccion =
-        'La dirección es obligatoria.';
+      errores.direccion = 'La dirección es obligatoria.';
     }
   } else if (form.direccion.trim().length > 250) {
-    errores.direccion =
-      'La dirección no puede superar los 250 caracteres.';
+    errores.direccion = 'La dirección no puede superar los 250 caracteres.';
   }
-
-  /* ----------------------------------------------------------
-     LATITUD
-  ---------------------------------------------------------- */
 
   if (!form.latitud.trim()) {
     if (!esBorrador) {
-      errores.latitud =
-        'La latitud es obligatoria.';
+      errores.latitud = 'La latitud es obligatoria.';
     }
   } else if (!validarNumero(form.latitud)) {
-    errores.latitud =
-      'Ingrese una latitud válida.';
+    errores.latitud = 'Ingrese una latitud válida.';
   } else {
     const latitud = Number(form.latitud);
 
     if (latitud < -90 || latitud > 90) {
-      errores.latitud =
-        'La latitud debe estar entre -90 y 90.';
+      errores.latitud = 'La latitud debe estar entre -90 y 90.';
     }
   }
 
-  /* ----------------------------------------------------------
-     LONGITUD
-  ---------------------------------------------------------- */
-
   if (!form.longitud.trim()) {
     if (!esBorrador) {
-      errores.longitud =
-        'La longitud es obligatoria.';
+      errores.longitud = 'La longitud es obligatoria.';
     }
   } else if (!validarNumero(form.longitud)) {
-    errores.longitud =
-      'Ingrese una longitud válida.';
+    errores.longitud = 'Ingrese una longitud válida.';
   } else {
     const longitud = Number(form.longitud);
 
     if (longitud < -180 || longitud > 180) {
-      errores.longitud =
-        'La longitud debe estar entre -180 y 180.';
+      errores.longitud = 'La longitud debe estar entre -180 y 180.';
     }
   }
-
-  /* ----------------------------------------------------------
-     CORREO
-  ---------------------------------------------------------- */
 
   if (!form.correoElectronico.trim()) {
     if (!esBorrador) {
@@ -238,14 +174,9 @@ const validarFormulario = (
       'Ingrese un correo electrónico válido.';
   }
 
-  /* ----------------------------------------------------------
-     TELÉFONO
-  ---------------------------------------------------------- */
-
   if (!form.telefono.trim()) {
     if (!esBorrador) {
-      errores.telefono =
-        'El teléfono es obligatorio.';
+      errores.telefono = 'El teléfono es obligatorio.';
     }
   } else if (!validarTelefono(form.telefono)) {
     errores.telefono =
@@ -255,53 +186,29 @@ const validarFormulario = (
   return errores;
 };
 
-/* ============================================================
-   COMPONENTE
-============================================================ */
-
 interface Props {
   onExito?: () => void;
 }
 
 function RegistroEmprendimiento({ onExito }: Props) {
-  const [categorias, setCategorias] =
-    useState<CategoriaEmprendimiento[]>([]);
-
-  const [cargandoCategorias, setCargandoCategorias] =
-    useState(true);
-
-  const [errorCategorias, setErrorCategorias] =
-    useState<string | null>(null);
-
-  const [form, setForm] =
-    useState<FormState>(INITIAL_FORM);
-
-  const [errores, setErrores] =
-    useState<FormErrors>({});
-
+  const [categorias, setCategorias] = useState<CategoriaEmprendimiento[]>([]);
+  const [cargandoCategorias, setCargandoCategorias] = useState(true);
+  const [errorCategorias, setErrorCategorias] = useState<string | null>(null);
+  const [form, setForm] = useState<FormState>(INITIAL_FORM);
+  const [errores, setErrores] = useState<FormErrors>({});
   const [imagenes, setImagenes] = useState<ImagenSeleccionada[]>([]);
   const imagenesRef = useRef<ImagenSeleccionada[]>([]);
   const [portadaIndex, setPortadaIndex] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const dragDepth = useRef(0);
-
-  const [enviando, setEnviando] =
-    useState(false);
-
-  const [guardandoBorrador, setGuardandoBorrador] =
-    useState(false);
-
-  const [error, setError] =
-    useState<string | null>(null);
-
-  const [exito, setExito] =
-    useState(false);
+  const [enviando, setEnviando] = useState(false);
+  const [guardandoBorrador, setGuardandoBorrador] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [exito, setExito] = useState(false);
+  const [categoriaAbierta, setCategoriaAbierta] = useState(false);
+  const categoriaRef = useRef<HTMLDivElement>(null);
 
   const procesando = enviando || guardandoBorrador;
-
-  /* ==========================================================
-     CATEGORÍAS
-  ========================================================== */
 
   const cargarCategorias = useCallback(async () => {
     setCargandoCategorias(true);
@@ -309,13 +216,12 @@ function RegistroEmprendimiento({ onExito }: Props) {
 
     try {
       const data = await obtenerCategorias();
-
       setCategorias(data);
     } catch (err) {
       setErrorCategorias(
         err instanceof Error
           ? err.message
-          : 'Error al obtener categorías'
+          : 'Error al obtener categorías',
       );
     } finally {
       setCargandoCategorias(false);
@@ -326,24 +232,36 @@ function RegistroEmprendimiento({ onExito }: Props) {
     void cargarCategorias();
   }, [cargarCategorias]);
 
-  /* ==========================================================
-     LIMPIAR URL DE IMAGEN
-  ========================================================== */
+  useEffect(
+    () => () => {
+      imagenesRef.current.forEach((imagen) =>
+        URL.revokeObjectURL(imagen.preview),
+      );
+    },
+    [],
+  );
 
-  useEffect(() => () => {
-    imagenesRef.current.forEach((imagen) => URL.revokeObjectURL(imagen.preview));
+  useEffect(() => {
+    const manejarClickFuera = (event: MouseEvent) => {
+      if (
+        categoriaRef.current &&
+        !categoriaRef.current.contains(event.target as Node)
+      ) {
+        setCategoriaAbierta(false);
+      }
+    };
+
+    document.addEventListener('mousedown', manejarClickFuera);
+
+    return () => {
+      document.removeEventListener('mousedown', manejarClickFuera);
+    };
   }, []);
-
-  /* ==========================================================
-     CAMBIOS DEL FORMULARIO
-  ========================================================== */
 
   const handleChange = (
     e: ChangeEvent<
-      HTMLInputElement |
-      HTMLTextAreaElement |
-      HTMLSelectElement
-    >
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
   ) => {
     const { name, value } = e.target;
 
@@ -380,58 +298,299 @@ function RegistroEmprendimiento({ onExito }: Props) {
       [name]: value,
     };
 
-    const nuevosErrores =
-      validarFormulario(nuevoFormulario, false);
+    const nuevosErrores = validarFormulario(
+      nuevoFormulario,
+      false,
+    );
 
     setErrores((prev) => ({
       ...prev,
-      [name]: nuevosErrores[
-        name as keyof FormErrors
-      ],
+      [name]: nuevosErrores[name as keyof FormErrors],
     }));
 
     setError(null);
     setExito(false);
   };
 
-  /* ==========================================================
-     IMAGEN
-  ========================================================== */
+  const seleccionarCategoria = (categoriaId: string) => {
+    setForm((prev) => ({
+      ...prev,
+      categoriaId,
+    }));
+
+    const nuevoFormulario = {
+      ...form,
+      categoriaId,
+    };
+
+    const nuevosErrores = validarFormulario(
+      nuevoFormulario,
+      false,
+    );
+
+    setErrores((prev) => ({
+      ...prev,
+      categoriaId: nuevosErrores.categoriaId,
+    }));
+
+    setCategoriaAbierta(false);
+    setError(null);
+    setExito(false);
+  };
+
+  const obtenerIconoCategoria = (nombre: string) => {
+    const texto = nombre.toLowerCase();
+
+    if (
+      texto.includes('hotel') ||
+      texto.includes('hosped') ||
+      texto.includes('aloj') ||
+      texto.includes('cabina')
+    ) {
+      return (
+        <svg
+          className="h-6 w-6"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="1.8"
+            d="M3 21h18M5 21V7a2 2 0 012-2h10a2 2 0 012 2v14M8 9h2M8 13h2M14 9h2M14 13h2M9 21v-4h6v4"
+          />
+        </svg>
+      );
+    }
+
+    if (
+      texto.includes('restaurante') ||
+      texto.includes('aliment') ||
+      texto.includes('comida') ||
+      texto.includes('gastr')
+    ) {
+      return (
+        <svg
+          className="h-6 w-6"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="1.8"
+            d="M4 3v7a3 3 0 003 3h1V3M7 3v5M10 3v5M8 13v8M16 3v18M16 3c2.2 0 4-1.8 4-4V3h-4z"
+          />
+        </svg>
+      );
+    }
+
+    if (
+      texto.includes('turismo') ||
+      texto.includes('tour') ||
+      texto.includes('aventura') ||
+      texto.includes('actividad')
+    ) {
+      return (
+        <svg
+          className="h-6 w-6"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="1.8"
+            d="M3 20l6-8 4 5 3-4 5 7M3 20h18M15 6a2 2 0 100-4 2 2 0 000 4z"
+          />
+        </svg>
+      );
+    }
+
+    if (
+      texto.includes('artesan') ||
+      texto.includes('manual') ||
+      texto.includes('arte')
+    ) {
+      return (
+        <svg
+          className="h-6 w-6"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="1.8"
+            d="M12 3l2.5 5.5L20 11l-5.5 2.5L12 19l-2.5-5.5L4 11l5.5-2.5L12 3zM19 17l.7 1.3L21 19l-1.3.7L19 21l-.7-1.3L17 19l1.3-.7L19 17z"
+          />
+        </svg>
+      );
+    }
+
+    if (
+      texto.includes('transporte') ||
+      texto.includes('viaje') ||
+      texto.includes('movilidad')
+    ) {
+      return (
+        <svg
+          className="h-6 w-6"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="1.8"
+            d="M5 17h14l1-5-2-6H6L4 12l1 5zM7 17v2M17 17v2M6 12h12M8 15h.01M16 15h.01"
+          />
+        </svg>
+      );
+    }
+
+    return (
+      <svg
+        className="h-6 w-6"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.8"
+          d="M4 5a2 2 0 012-2h12a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V5zM8 7h8M8 11h8M8 15h5"
+        />
+      </svg>
+    );
+  };
+
+  const obtenerDescripcionCategoria = (nombre: string) => {
+    const texto = nombre.toLowerCase();
+
+    if (
+      texto.includes('hotel') ||
+      texto.includes('hosped') ||
+      texto.includes('aloj') ||
+      texto.includes('cabina')
+    ) {
+      return 'Alojamientos y servicios de hospedaje';
+    }
+
+    if (
+      texto.includes('restaurante') ||
+      texto.includes('aliment') ||
+      texto.includes('comida') ||
+      texto.includes('gastr')
+    ) {
+      return 'Restaurantes y servicios gastronómicos';
+    }
+
+    if (
+      texto.includes('turismo') ||
+      texto.includes('tour') ||
+      texto.includes('aventura') ||
+      texto.includes('actividad')
+    ) {
+      return 'Tours, experiencias y actividades';
+    }
+
+    if (
+      texto.includes('artesan') ||
+      texto.includes('manual') ||
+      texto.includes('arte')
+    ) {
+      return 'Productos y trabajos artesanales';
+    }
+
+    if (
+      texto.includes('transporte') ||
+      texto.includes('viaje') ||
+      texto.includes('movilidad')
+    ) {
+      return 'Servicios de transporte y movilidad';
+    }
+
+    return 'Servicios y actividades del emprendimiento';
+  };
 
   const agregarImagenes = (archivos: FileList | File[]) => {
-    const tiposPermitidos = ['image/png', 'image/jpeg', 'image/webp'];
+    const tiposPermitidos = [
+      'image/png',
+      'image/jpeg',
+      'image/webp',
+    ];
+
     const existentes = new Set(
-      imagenes.map(({ archivo }) => `${archivo.name}-${archivo.size}-${archivo.lastModified}`),
+      imagenes.map(
+        ({ archivo }) =>
+          `${archivo.name}-${archivo.size}-${archivo.lastModified}`,
+      ),
     );
+
     const nuevas: ImagenSeleccionada[] = [];
 
     Array.from(archivos).forEach((archivo) => {
       const clave = `${archivo.name}-${archivo.size}-${archivo.lastModified}`;
+
       if (existentes.has(clave)) return;
-      if (archivo.size > 5 * 1024 * 1024 || !tiposPermitidos.includes(archivo.type)) {
-        setError('Las imágenes deben ser PNG, JPG o WEBP y no superar los 5MB cada una.');
+
+      if (
+        archivo.size > 5 * 1024 * 1024 ||
+        !tiposPermitidos.includes(archivo.type)
+      ) {
+        setError(
+          'Las imágenes deben ser PNG, JPG o WEBP y no superar los 5MB cada una.',
+        );
         return;
       }
+
       existentes.add(clave);
-      nuevas.push({ archivo, preview: URL.createObjectURL(archivo) });
+
+      nuevas.push({
+        archivo,
+        preview: URL.createObjectURL(archivo),
+      });
     });
 
     if (nuevas.length) {
       setImagenes((actuales) => {
         const siguientes = [...actuales, ...nuevas];
+
         imagenesRef.current = siguientes;
+
         return siguientes;
       });
+
       setError(null);
     }
   };
 
-  const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) agregarImagenes(e.target.files);
+  const handleImageChange = (
+    e: ChangeEvent<HTMLInputElement>,
+  ) => {
+    if (e.target.files) {
+      agregarImagenes(e.target.files);
+    }
+
     e.target.value = '';
   };
 
-  const handleDrop = (e: DragEvent<HTMLLabelElement>) => {
+  const handleDrop = (
+    e: DragEvent<HTMLLabelElement>,
+  ) => {
     e.preventDefault();
     dragDepth.current = 0;
     setIsDragging(false);
@@ -441,10 +600,23 @@ function RegistroEmprendimiento({ onExito }: Props) {
   const handleRemoveImage = (indice: number) => {
     setImagenes((actuales) => {
       const imagen = actuales[indice];
-      if (imagen) URL.revokeObjectURL(imagen.preview);
-      const restantes = actuales.filter((_, index) => index !== indice);
+
+      if (imagen) {
+        URL.revokeObjectURL(imagen.preview);
+      }
+
+      const restantes = actuales.filter(
+        (_, index) => index !== indice,
+      );
+
       imagenesRef.current = restantes;
-      setPortadaIndex((actual) => restantes.length ? Math.min(actual, restantes.length - 1) : 0);
+
+      setPortadaIndex((actual) =>
+        restantes.length
+          ? Math.min(actual, restantes.length - 1)
+          : 0,
+      );
+
       return restantes;
     });
   };
@@ -453,8 +625,10 @@ function RegistroEmprendimiento({ onExito }: Props) {
     setError(null);
     setExito(false);
 
-    const erroresFormulario =
-      validarFormulario(form, esBorrador);
+    const erroresFormulario = validarFormulario(
+      form,
+      esBorrador,
+    );
 
     setErrores(erroresFormulario);
 
@@ -462,7 +636,7 @@ function RegistroEmprendimiento({ onExito }: Props) {
       setError(
         esBorrador
           ? 'Algunos campos tienen un formato inválido. Corríjalos o déjelos vacíos.'
-          : 'Por favor, corrija los campos indicados antes de continuar.'
+          : 'Por favor, corrija los campos indicados antes de continuar.',
       );
 
       return;
@@ -475,117 +649,124 @@ function RegistroEmprendimiento({ onExito }: Props) {
     }
 
     try {
-      const formDataToSend =
-        new FormData();
+      const formDataToSend = new FormData();
 
       if (form.nombre.trim()) {
         formDataToSend.append(
           'nombre',
-          form.nombre.trim()
+          form.nombre.trim(),
         );
       } else if (!esBorrador) {
         formDataToSend.append(
           'nombre',
-          form.nombre.trim()
+          form.nombre.trim(),
         );
       }
 
       if (form.descripcion.trim()) {
         formDataToSend.append(
           'descripcion',
-          form.descripcion.trim()
+          form.descripcion.trim(),
         );
       }
 
       if (form.categoriaId) {
         formDataToSend.append(
           'categoriaId',
-          form.categoriaId
+          form.categoriaId,
         );
       }
-
-      /* ======================================================
-         UBICACIÓN GEOGRÁFICA
-      ====================================================== */
 
       if (form.provincia.trim()) {
         formDataToSend.append(
           'provincia',
-          form.provincia.trim()
+          form.provincia.trim(),
         );
       }
 
       if (form.canton.trim()) {
         formDataToSend.append(
           'canton',
-          form.canton.trim()
+          form.canton.trim(),
         );
       }
 
       if (form.distrito.trim()) {
         formDataToSend.append(
           'distrito',
-          form.distrito.trim()
+          form.distrito.trim(),
         );
       }
 
       if (form.direccion.trim()) {
         formDataToSend.append(
           'direccion',
-          form.direccion.trim()
+          form.direccion.trim(),
         );
       }
 
       if (form.latitud.trim()) {
         formDataToSend.append(
           'latitud',
-          form.latitud
+          form.latitud,
         );
       }
 
       if (form.longitud.trim()) {
         formDataToSend.append(
           'longitud',
-          form.longitud
+          form.longitud,
         );
       }
-
-      /* ======================================================
-         CONTACTO
-      ====================================================== */
 
       if (form.correoElectronico.trim()) {
         formDataToSend.append(
           'correoElectronico',
-          form.correoElectronico.trim()
+          form.correoElectronico.trim(),
         );
       }
 
       if (form.telefono.trim()) {
         formDataToSend.append(
           'telefono',
-          form.telefono
+          form.telefono,
         );
       }
 
-              const imagenesOrdenadas = portadaIndex > 0
-                ? [imagenes[portadaIndex], ...imagenes.filter((_, indice) => indice !== portadaIndex)]
-                : imagenes;
-              imagenesOrdenadas.forEach(({ archivo }) => formDataToSend.append('imagenes', archivo));
+      const imagenesOrdenadas =
+        portadaIndex > 0
+          ? [
+              imagenes[portadaIndex],
+              ...imagenes.filter(
+                (_, indice) =>
+                  indice !== portadaIndex,
+              ),
+            ]
+          : imagenes;
+
+      imagenesOrdenadas.forEach(({ archivo }) =>
+        formDataToSend.append(
+          'imagenes',
+          archivo,
+        ),
+      );
 
       formDataToSend.append(
         'modo',
-        esBorrador ? 'borrador' : 'cambios'
+        esBorrador ? 'borrador' : 'cambios',
       );
 
-      await crearEmprendimiento(
-        formDataToSend
-      );
+      await crearEmprendimiento(formDataToSend);
 
       setExito(true);
       setForm(INITIAL_FORM);
       setErrores({});
-      imagenes.forEach(({ preview }) => URL.revokeObjectURL(preview));
+      setCategoriaAbierta(false);
+
+      imagenes.forEach(({ preview }) =>
+        URL.revokeObjectURL(preview),
+      );
+
       setImagenes([]);
       imagenesRef.current = [];
       setPortadaIndex(0);
@@ -595,7 +776,6 @@ function RegistroEmprendimiento({ onExito }: Props) {
           onExito();
         }, 1200);
       }
-
     } catch (err) {
       const mensaje =
         err instanceof Error
@@ -603,7 +783,6 @@ function RegistroEmprendimiento({ onExito }: Props) {
           : 'Ocurrió un error al guardar el emprendimiento.';
 
       setError(mensaje);
-
     } finally {
       setEnviando(false);
       setGuardandoBorrador(false);
@@ -611,7 +790,7 @@ function RegistroEmprendimiento({ onExito }: Props) {
   };
 
   const handleSubmit = async (
-    e: SyntheticEvent<HTMLFormElement>
+    e: SyntheticEvent<HTMLFormElement>,
   ) => {
     e.preventDefault();
     await procesarEnvio(false);
@@ -621,15 +800,11 @@ function RegistroEmprendimiento({ onExito }: Props) {
     await procesarEnvio(true);
   };
 
-  /* ==========================================================
-     ESTILOS
-  ========================================================== */
-
   const inputClase =
-    'w-full rounded-2xl border bg-[#fffef9] px-4 py-3 text-stone-800 outline-none motion-safe:transition-[border-color,background-color,box-shadow] motion-safe:duration-200 focus-visible:ring-4 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-500 ';
+    'w-full rounded-2xl border bg-[#fffef9] px-4 py-3 text-stone-800 outline-none motion-safe:transition-[border-color,background-color,box-shadow] motion-safe:duration-200 focus-visible:ring-4 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-500';
 
   const obtenerClaseInput = (
-    campo: keyof FormErrors
+    campo: keyof FormErrors,
   ) => {
     return `${inputClase} ${
       errores[campo]
@@ -641,27 +816,21 @@ function RegistroEmprendimiento({ onExito }: Props) {
   const labelClase =
     'flex flex-col gap-1.5 text-sm font-semibold text-stone-700';
 
-  /* ==========================================================
-     CARGANDO CATEGORÍAS
-  ========================================================== */
+  const categoriaSeleccionada = categorias.find(
+    (categoria) =>
+      String(categoria.id) === form.categoriaId,
+  );
 
   if (cargandoCategorias) {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="flex items-center gap-3 text-stone-600">
           <span className="h-5 w-5 rounded-full border-2 border-emerald-800 border-t-transparent motion-safe:animate-spin motion-reduce:animate-none" />
-
-          <span>
-            Cargando categorías...
-          </span>
+          <span>Cargando categorías...</span>
         </div>
       </div>
     );
   }
-
-  /* ==========================================================
-     ERROR CATEGORÍAS
-  ========================================================== */
 
   if (errorCategorias) {
     return (
@@ -670,8 +839,7 @@ function RegistroEmprendimiento({ onExito }: Props) {
         role="alert"
       >
         <p className="font-medium text-red-700">
-          Error al cargar categorías:{' '}
-          {errorCategorias}
+          Error al cargar categorías: {errorCategorias}
         </p>
 
         <button
@@ -685,10 +853,6 @@ function RegistroEmprendimiento({ onExito }: Props) {
     );
   }
 
-  /* ==========================================================
-     SIN CATEGORÍAS
-  ========================================================== */
-
   if (categorias.length === 0) {
     return (
       <div className="mx-auto max-w-xl">
@@ -698,8 +862,7 @@ function RegistroEmprendimiento({ onExito }: Props) {
           </strong>
 
           <p className="mt-1 text-sm text-amber-800">
-            Debes crear al menos una categoría
-            antes de registrar un emprendimiento.
+            Debes crear al menos una categoría antes de registrar un emprendimiento.
           </p>
         </div>
 
@@ -710,180 +873,361 @@ function RegistroEmprendimiento({ onExito }: Props) {
     );
   }
 
-  /* ==========================================================
-     FORMULARIO
-  ========================================================== */
-
   return (
-    <div className="mx-auto w-full max-w-3xl overflow-hidden rounded-[2rem] border border-emerald-950/10 bg-[#fffef9] p-5 shadow-[0_24px_70px_rgba(20,83,45,0.12)] sm:p-8">
+    <div className="mx-auto w-full max-w-4xl px-4 sm:px-6">
+      <div className="overflow-hidden rounded-[2rem] border border-emerald-950/10 bg-[#fffef9] p-5 shadow-[0_24px_70px_rgba(20,83,45,0.12)] sm:p-8">
+        <div className="relative mb-8 overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-950 via-emerald-900 to-green-800 p-6 text-white shadow-lg sm:p-8">
+          <div
+            className="pointer-events-none absolute -right-12 -top-16 h-44 w-44 rounded-full bg-[#d9d823]/15 blur-3xl"
+            aria-hidden="true"
+          />
 
-      {/* ENCABEZADO */}
+          <div className="relative mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-emerald-50 backdrop-blur-sm">
+            <span className="h-2 w-2 rounded-full bg-[#d9d823]" />
+            Directorio de emprendimientos
+          </div>
 
-      <div className="relative mb-8 overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-950 via-emerald-900 to-green-800 p-6 text-white shadow-lg sm:p-8">
-        <div
-          className="pointer-events-none absolute -right-12 -top-16 h-44 w-44 rounded-full bg-[#d9d823]/15 blur-3xl"
-          aria-hidden="true"
-        />
+          <h2 className="relative text-2xl font-bold tracking-tight text-white sm:text-3xl">
+            Registrar nuevo emprendimiento
+          </h2>
 
-        <div className="relative mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-emerald-50 backdrop-blur-sm">
-          <span className="h-2 w-2 rounded-full bg-[#d9d823]" />
-          Directorio de emprendimientos
+          <p className="relative mt-2 max-w-2xl text-sm leading-6 text-emerald-50/85">
+            Complete la información solicitada para registrar un nuevo emprendimiento en el directorio del Parque Nacional Diriá.
+          </p>
         </div>
 
-        <h2 className="relative text-2xl font-bold tracking-tight text-white sm:text-3xl">
-          Registrar nuevo emprendimiento
-        </h2>
+        <form
+          onSubmit={handleSubmit}
+          noValidate
+          className="space-y-8"
+        >
+          <div className="space-y-5">
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-800">
+                1. Información general
+              </h3>
 
-        <p className="relative mt-2 max-w-2xl text-sm leading-6 text-emerald-50/85">
-          Complete la información solicitada para
-          registrar un nuevo emprendimiento en el
-          directorio del Parque Nacional Diriá.
-        </p>
-      </div>
-
-      <form
-        onSubmit={handleSubmit}
-        noValidate
-        className="space-y-8"
-      >
-
-        {/* ====================================================
-            INFORMACIÓN GENERAL
-        ==================================================== */}
-
-        <div className="space-y-5">
-          <div>
-            <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-800">
-              1. Información general
-            </h3>
-
-            <p className="mt-1 text-xs text-stone-500">
-              Información principal del emprendimiento.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-
-            {/* NOMBRE */}
-
-            <label className={labelClase}>
-              Nombre del emprendimiento *
-
-              <input
-                name="nombre"
-                value={form.nombre}
-                onChange={handleChange}
-                required
-                maxLength={150}
-                placeholder="Ej. Artesanías Diriá"
-                className={obtenerClaseInput(
-                  'nombre'
-                )}
-              />
-
-              {errores.nombre && (
-                <p className="flex items-center gap-1 text-xs font-medium text-red-600">
-                  <span>⚠</span>
-                  {errores.nombre}
-                </p>
-              )}
-            </label>
-
-            {/* CATEGORÍA */}
-
-            <label className={labelClase}>
-              Categoría *
-
-              <select
-                name="categoriaId"
-                value={form.categoriaId}
-                onChange={handleChange}
-                required
-                className={obtenerClaseInput(
-                  'categoriaId'
-                )}
-              >
-                <option value="">
-                  Selecciona una categoría
-                </option>
-
-                {categorias.map((cat) => (
-                  <option
-                    key={cat.id}
-                    value={cat.id}
-                  >
-                    {cat.nombre}
-                  </option>
-                ))}
-              </select>
-
-              {errores.categoriaId && (
-                <p className="flex items-center gap-1 text-xs font-medium text-red-600">
-                  <span>⚠</span>
-                  {errores.categoriaId}
-                </p>
-              )}
-            </label>
-          </div>
-
-          {/* DESCRIPCIÓN */}
-
-          <label className={labelClase}>
-            Descripción
-
-            <textarea
-              name="descripcion"
-              value={form.descripcion}
-              onChange={handleChange}
-              rows={4}
-              maxLength={500}
-              placeholder="Escribe una breve descripción del emprendimiento..."
-              className={obtenerClaseInput(
-                'descripcion'
-              )}
-            />
-
-            <div className="flex justify-between">
-              {errores.descripcion ? (
-                <p className="flex items-center gap-1 text-xs font-medium text-red-600">
-                  <span>⚠</span>
-                  {errores.descripcion}
-                </p>
-              ) : (
-                <span />
-              )}
-
-              <span className="text-xs text-stone-400">
-                {form.descripcion.length}/500
-              </span>
+              <p className="mt-1 text-xs text-stone-500">
+                Información principal del emprendimiento.
+              </p>
             </div>
-          </label>
-        </div>
 
-        {/* ====================================================
-            IMAGEN
-        ==================================================== */}
+            <div className="space-y-5">
+              <label className={labelClase}>
+                Nombre del emprendimiento *
 
-        <div className="space-y-3">
-          <div>
-            <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-800">
-              2. Imagen representativa
-            </h3>
+                <input
+                  name="nombre"
+                  value={form.nombre}
+                  onChange={handleChange}
+                  required
+                  maxLength={150}
+                  placeholder="Ej. Artesanías Diriá"
+                  className={obtenerClaseInput('nombre')}
+                />
 
-            <p className="mt-1 text-xs text-stone-500">
-              Agregue una imagen para identificar
-              visualmente el emprendimiento.
-            </p>
+                {errores.nombre && (
+                  <p className="flex items-center gap-1 text-xs font-medium text-red-600">
+                    <span>⚠</span>
+                    {errores.nombre}
+                  </p>
+                )}
+              </label>
+
+              <div
+                ref={categoriaRef}
+                className={`mx-auto w-full max-w-2xl rounded-3xl border p-5 transition-all duration-200 ${
+                  errores.categoriaId
+                    ? 'border-red-300 bg-red-50/40'
+                    : categoriaAbierta
+                      ? 'border-emerald-400 bg-white shadow-[0_15px_40px_rgba(20,83,45,0.12)]'
+                      : 'border-stone-200 bg-white shadow-sm hover:border-emerald-200 hover:shadow-md'
+                }`}
+              >
+                <div className="mb-4 flex items-center gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-800">
+                    <svg
+                      className="h-5 w-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="1.8"
+                        d="M4 6a2 2 0 012-2h4v6H4V6zM14 4h4a2 2 0 012 2v4h-6V4zM4 14h6v6H6a2 2 0 01-2-2v-4zM14 14h6v4a2 2 0 01-2 2h-4v-6z"
+                      />
+                    </svg>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="categoriaId"
+                      className="block text-sm font-bold text-stone-800"
+                    >
+                      Categoría{' '}
+                      <span className="text-emerald-700">
+                        *
+                      </span>
+                    </label>
+
+                    <p className="mt-0.5 text-xs font-normal text-stone-500">
+                      Seleccione la categoría que mejor representa su emprendimiento.
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  id="categoriaId"
+                  type="button"
+                  aria-haspopup="listbox"
+                  aria-expanded={categoriaAbierta}
+                  onClick={() =>
+                    setCategoriaAbierta(
+                      (actual) => !actual,
+                    )
+                  }
+                  className={`flex w-full items-center justify-between gap-4 rounded-2xl border bg-[#fffef9] px-4 py-3 text-left outline-none transition-all duration-200 focus-visible:border-emerald-700 focus-visible:bg-white focus-visible:ring-4 focus-visible:ring-emerald-100 ${
+                    errores.categoriaId
+                      ? 'border-red-400 bg-red-50'
+                      : categoriaAbierta
+                        ? 'border-emerald-500 bg-white'
+                        : 'border-stone-200 hover:border-emerald-300 hover:bg-white'
+                  }`}
+                >
+                  {categoriaSeleccionada ? (
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-800">
+                        {obtenerIconoCategoria(
+                          categoriaSeleccionada.nombre,
+                        )}
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-bold text-stone-800">
+                          {categoriaSeleccionada.nombre}
+                        </p>
+
+                        <p className="truncate text-xs font-normal text-stone-500">
+                          {obtenerDescripcionCategoria(
+                            categoriaSeleccionada.nombre,
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-stone-100 text-stone-500">
+                        <svg
+                          className="h-5 w-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          aria-hidden="true"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="1.8"
+                            d="M4 6a2 2 0 012-2h4v6H4V6zM14 4h4a2 2 0 012 2v4h-6V4zM4 14h6v6H6a2 2 0 01-2-2v-4zM14 14h6v4a2 2 0 01-2 2h-4v-6z"
+                          />
+                        </svg>
+                      </div>
+
+                      <div>
+                        <p className="text-sm font-semibold text-stone-600">
+                          Seleccionar categoría
+                        </p>
+
+                        <p className="text-xs font-normal text-stone-400">
+                          Elija una opción de la lista
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  <svg
+                    className={`h-5 w-5 shrink-0 text-emerald-800 transition-transform duration-200 ${
+                      categoriaAbierta
+                        ? 'rotate-180'
+                        : ''
+                    }`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="m6 9 6 6 6-6"
+                    />
+                  </svg>
+                </button>
+
+                {categoriaAbierta && (
+                  <div className="mt-3 max-h-80 overflow-y-auto rounded-2xl border border-stone-200 bg-white p-2 shadow-[0_18px_45px_rgba(20,83,45,0.14)]">
+                    <div
+                      role="listbox"
+                      aria-label="Categorías disponibles"
+                      className="space-y-1"
+                    >
+                      {categorias.map((categoria) => {
+                        const seleccionada =
+                          String(categoria.id) ===
+                          form.categoriaId;
+
+                        return (
+                          <button
+                            key={categoria.id}
+                            type="button"
+                            role="option"
+                            aria-selected={seleccionada}
+                            onClick={() =>
+                              seleccionarCategoria(
+                                String(categoria.id),
+                              )
+                            }
+                            className={`group flex w-full items-center gap-3 rounded-xl p-3 text-left transition-all duration-200 ${
+                              seleccionada
+                                ? 'bg-emerald-50 ring-1 ring-emerald-200'
+                                : 'hover:bg-stone-50'
+                            }`}
+                          >
+                            <div
+                              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-colors duration-200 ${
+                                seleccionada
+                                  ? 'bg-emerald-800 text-white'
+                                  : 'bg-emerald-50 text-emerald-800 group-hover:bg-emerald-100'
+                              }`}
+                            >
+                              {obtenerIconoCategoria(
+                                categoria.nombre,
+                              )}
+                            </div>
+
+                            <div className="min-w-0 flex-1">
+                              <p
+                                className={`text-sm font-bold ${
+                                  seleccionada
+                                    ? 'text-emerald-900'
+                                    : 'text-stone-800'
+                                }`}
+                              >
+                                {categoria.nombre}
+                              </p>
+
+                              <p className="mt-0.5 text-xs font-normal text-stone-500">
+                                {obtenerDescripcionCategoria(
+                                  categoria.nombre,
+                                )}
+                              </p>
+                            </div>
+
+                            {seleccionada && (
+                              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-800 text-white">
+                                <svg
+                                  className="h-4 w-4"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                  aria-hidden="true"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="2"
+                                    d="m5 12 4 4L19 6"
+                                  />
+                                </svg>
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {errores.categoriaId && (
+                  <p className="mt-2 flex items-center gap-1 text-xs font-medium text-red-600">
+                    <span>⚠</span>
+                    {errores.categoriaId}
+                  </p>
+                )}
+              </div>
+
+              <label className={labelClase}>
+                Descripción
+
+                <textarea
+                  name="descripcion"
+                  value={form.descripcion}
+                  onChange={handleChange}
+                  rows={4}
+                  maxLength={500}
+                  placeholder="Escribe una breve descripción del emprendimiento..."
+                  className={obtenerClaseInput('descripcion')}
+                />
+
+                <div className="flex justify-between">
+                  {errores.descripcion ? (
+                    <p className="flex items-center gap-1 text-xs font-medium text-red-600">
+                      <span>⚠</span>
+                      {errores.descripcion}
+                    </p>
+                  ) : (
+                    <span />
+                  )}
+
+                  <span className="text-xs text-stone-400">
+                    {form.descripcion.length}/500
+                  </span>
+                </div>
+              </label>
+            </div>
           </div>
 
-          <label
-            className={`flex cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed p-6 text-center motion-safe:transition-colors motion-safe:duration-200 sm:p-8 ${isDragging ? 'border-[#009444] bg-[#8DC63F]/15' : 'border-stone-300 bg-stone-50/70 hover:border-emerald-600 hover:bg-emerald-50/70'} focus-within:border-emerald-700 focus-within:ring-4 focus-within:ring-emerald-100`}
-            onDragEnter={(event) => { event.preventDefault(); dragDepth.current += 1; setIsDragging(true); }}
-            onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = 'copy'; }}
-            onDragLeave={(event) => { event.preventDefault(); dragDepth.current -= 1; if (dragDepth.current <= 0) { dragDepth.current = 0; setIsDragging(false); } }}
-            onDrop={handleDrop}
-          >
+          <div className="space-y-3">
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-800">
+                2. Imagen representativa
+              </h3>
 
+              <p className="mt-1 text-xs text-stone-500">
+                Agregue una imagen para identificar visualmente el emprendimiento.
+              </p>
+            </div>
+
+            <label
+              className={`flex cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed p-6 text-center motion-safe:transition-colors motion-safe:duration-200 sm:p-8 ${
+                isDragging
+                  ? 'border-[#009444] bg-[#8DC63F]/15'
+                  : 'border-stone-300 bg-stone-50/70 hover:border-emerald-600 hover:bg-emerald-50/70'
+              } focus-within:border-emerald-700 focus-within:ring-4 focus-within:ring-emerald-100`}
+              onDragEnter={(event) => {
+                event.preventDefault();
+                dragDepth.current += 1;
+                setIsDragging(true);
+              }}
+              onDragOver={(event) => {
+                event.preventDefault();
+                event.dataTransfer.dropEffect = 'copy';
+              }}
+              onDragLeave={(event) => {
+                event.preventDefault();
+                dragDepth.current -= 1;
+
+                if (dragDepth.current <= 0) {
+                  dragDepth.current = 0;
+                  setIsDragging(false);
+                }
+              }}
+              onDrop={handleDrop}
+            >
               <svg
                 className="h-10 w-10 text-emerald-700"
                 fill="none"
@@ -899,7 +1243,9 @@ function RegistroEmprendimiento({ onExito }: Props) {
               </svg>
 
               <span className="mt-3 text-sm font-semibold text-stone-700">
-                {isDragging ? 'Soltá las fotografías aquí' : 'Arrastrá tus fotografías aquí o seleccioná archivos'}
+                {isDragging
+                  ? 'Soltá las fotografías aquí'
+                  : 'Arrastrá tus fotografías aquí o seleccioná archivos'}
               </span>
 
               <span className="mt-1 text-xs text-stone-500">
@@ -914,360 +1260,344 @@ function RegistroEmprendimiento({ onExito }: Props) {
                 className="hidden"
               />
             </label>
-          {imagenes.length > 0 && (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {imagenes.map((imagenSeleccionada, indice) => (
-                <div key={imagenSeleccionada.preview} className="relative overflow-hidden rounded-2xl border border-emerald-950/10 bg-stone-100 shadow-sm">
-                  <img src={imagenSeleccionada.preview} alt={`Vista previa ${indice + 1}`} className="aspect-square h-full w-full object-cover" />
-                  <span className="absolute left-2 top-2 rounded-full bg-[#095540]/90 px-2 py-1 text-[10px] font-bold text-white">
-                    {indice === portadaIndex ? 'Portada' : `Foto ${indice + 1}`}
-                  </span>
-                  {indice !== portadaIndex && (
-                    <button type="button" onClick={() => setPortadaIndex(indice)} className="absolute bottom-2 left-2 rounded-lg bg-white/90 px-2 py-1 text-[10px] font-bold text-[#095540] backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444]">
-                      Hacer portada
-                    </button>
-                  )}
-                  <button type="button" onClick={() => handleRemoveImage(indice)} className="absolute right-2 top-2 rounded-full bg-red-700 p-1.5 text-white shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white" aria-label={`Eliminar fotografía ${indice + 1}`}>
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                  </button>
-                </div>
-              ))}
+
+            {imagenes.length > 0 && (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {imagenes.map(
+                  (
+                    imagenSeleccionada,
+                    indice,
+                  ) => (
+                    <div
+                      key={imagenSeleccionada.preview}
+                      className="relative overflow-hidden rounded-2xl border border-emerald-950/10 bg-stone-100 shadow-sm"
+                    >
+                      <img
+                        src={imagenSeleccionada.preview}
+                        alt={`Vista previa ${indice + 1}`}
+                        className="aspect-square h-full w-full object-cover"
+                      />
+
+                      <span className="absolute left-2 top-2 rounded-full bg-[#095540]/90 px-2 py-1 text-[10px] font-bold text-white">
+                        {indice === portadaIndex
+                          ? 'Portada'
+                          : `Foto ${indice + 1}`}
+                      </span>
+
+                      {indice !== portadaIndex && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setPortadaIndex(indice)
+                          }
+                          className="absolute bottom-2 left-2 rounded-lg bg-white/90 px-2 py-1 text-[10px] font-bold text-[#095540] backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444]"
+                        >
+                          Hacer portada
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleRemoveImage(indice)
+                        }
+                        className="absolute right-2 top-2 rounded-full bg-red-700 p-1.5 text-white shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                        aria-label={`Eliminar fotografía ${indice + 1}`}
+                      >
+                        <svg
+                          className="h-4 w-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          aria-hidden="true"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  ),
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-5">
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-800">
+                3. Ubicación geográfica
+              </h3>
+
+              <p className="mt-1 text-xs text-stone-500">
+                Seleccione la ubicación en el mapa o ingrese las coordenadas manualmente.
+              </p>
             </div>
-          )}
-        </div>
 
-        {/* ====================================================
-            UBICACIÓN GEOGRÁFICA
-        ==================================================== */}
+            <SelectorUbicacion
+              latitud={
+                form.latitud
+                  ? Number(form.latitud)
+                  : null
+              }
+              longitud={
+                form.longitud
+                  ? Number(form.longitud)
+                  : null
+              }
+              onChange={(latitud, longitud) => {
+                setForm((prev) => ({
+                  ...prev,
+                  latitud: latitud.toFixed(6),
+                  longitud: longitud.toFixed(6),
+                }));
 
-        <div className="space-y-5">
+                setErrores((prev) => ({
+                  ...prev,
+                  latitud: undefined,
+                  longitud: undefined,
+                }));
 
-          <div>
-            <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-800">
-              3. Ubicación geográfica
-            </h3>
-
-            <p className="mt-1 text-xs text-stone-500">
-              Seleccione la ubicación en el mapa o ingrese las
-              coordenadas manualmente.
-            </p>
-          </div>
-
-          {/* ==================================================
-              MAPA INTERACTIVO
-          ================================================== */}
-
-          <SelectorUbicacion
-            latitud={
-              form.latitud
-                ? Number(form.latitud)
-                : null
-            }
-            longitud={
-              form.longitud
-                ? Number(form.longitud)
-                : null
-            }
-            onChange={(latitud, longitud) => {
-              setForm((prev) => ({
-                ...prev,
-                latitud: latitud.toFixed(6),
-                longitud: longitud.toFixed(6),
-              }));
-
-              setErrores((prev) => ({
-                ...prev,
-                latitud: undefined,
-                longitud: undefined,
-              }));
-
-              setError(null);
-            }}
-          />
-
-          {/* ==================================================
-              DIVISIÓN TERRITORIAL
-          ================================================== */}
-
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
-
-            {/* PROVINCIA */}
-
-            <label className={labelClase}>
-              Provincia *
-
-              <input
-                name="provincia"
-                value={form.provincia}
-                onChange={handleChange}
-                required
-                maxLength={100}
-                placeholder="Ej. Guanacaste"
-                className={obtenerClaseInput(
-                  'provincia'
-                )}
-              />
-
-              {errores.provincia && (
-                <p className="flex items-center gap-1 text-xs font-medium text-red-600">
-                  <span>⚠</span>
-                  {errores.provincia}
-                </p>
-              )}
-            </label>
-
-            {/* CANTÓN */}
-
-            <label className={labelClase}>
-              Cantón *
-
-              <input
-                name="canton"
-                value={form.canton}
-                onChange={handleChange}
-                required
-                maxLength={100}
-                placeholder="Ej. Nicoya"
-                className={obtenerClaseInput(
-                  'canton'
-                )}
-              />
-
-              {errores.canton && (
-                <p className="flex items-center gap-1 text-xs font-medium text-red-600">
-                  <span>⚠</span>
-                  {errores.canton}
-                </p>
-              )}
-            </label>
-
-            {/* DISTRITO */}
-
-            <label className={labelClase}>
-              Distrito *
-
-              <input
-                name="distrito"
-                value={form.distrito}
-                onChange={handleChange}
-                required
-                maxLength={100}
-                placeholder="Ej. Nicoya"
-                className={obtenerClaseInput(
-                  'distrito'
-                )}
-              />
-
-              {errores.distrito && (
-                <p className="flex items-center gap-1 text-xs font-medium text-red-600">
-                  <span>⚠</span>
-                  {errores.distrito}
-                </p>
-              )}
-            </label>
-
-          </div>
-
-          {/* ==================================================
-              DIRECCIÓN EXACTA
-          ================================================== */}
-
-          <label className={labelClase}>
-            Dirección exacta *
-
-            <input
-              name="direccion"
-              value={form.direccion}
-              onChange={handleChange}
-              required
-              maxLength={250}
-              placeholder="Ej. 200m Norte del Parque Central"
-              className={obtenerClaseInput(
-                'direccion'
-              )}
+                setError(null);
+              }}
             />
 
-            {errores.direccion && (
-              <p className="flex items-center gap-1 text-xs font-medium text-red-600">
-                <span>⚠</span>
-                {errores.direccion}
-              </p>
-            )}
-          </label>
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+              <label className={labelClase}>
+                Provincia *
 
-        </div>
+                <input
+                  name="provincia"
+                  value={form.provincia}
+                  onChange={handleChange}
+                  required
+                  maxLength={100}
+                  placeholder="Ej. Guanacaste"
+                  className={obtenerClaseInput('provincia')}
+                />
 
-        {/* ====================================================
-            CONTACTO
-        ==================================================== */}
+                {errores.provincia && (
+                  <p className="flex items-center gap-1 text-xs font-medium text-red-600">
+                    <span>⚠</span>
+                    {errores.provincia}
+                  </p>
+                )}
+              </label>
 
-        <div className="space-y-5">
+              <label className={labelClase}>
+                Cantón *
 
-          <div>
-            <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-800">
-              4. Datos de contacto
-            </h3>
+                <input
+                  name="canton"
+                  value={form.canton}
+                  onChange={handleChange}
+                  required
+                  maxLength={100}
+                  placeholder="Ej. Nicoya"
+                  className={obtenerClaseInput('canton')}
+                />
 
-            <p className="mt-1 text-xs text-stone-500">
-              Información mediante la cual los visitantes
-              podrán contactar al emprendimiento.
-            </p>
-          </div>
+                {errores.canton && (
+                  <p className="flex items-center gap-1 text-xs font-medium text-red-600">
+                    <span>⚠</span>
+                    {errores.canton}
+                  </p>
+                )}
+              </label>
 
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <label className={labelClase}>
+                Distrito *
 
-            {/* CORREO */}
+                <input
+                  name="distrito"
+                  value={form.distrito}
+                  onChange={handleChange}
+                  required
+                  maxLength={100}
+                  placeholder="Ej. Nicoya"
+                  className={obtenerClaseInput('distrito')}
+                />
+
+                {errores.distrito && (
+                  <p className="flex items-center gap-1 text-xs font-medium text-red-600">
+                    <span>⚠</span>
+                    {errores.distrito}
+                  </p>
+                )}
+              </label>
+            </div>
 
             <label className={labelClase}>
-              Correo electrónico *
+              Dirección exacta *
 
               <input
-                name="correoElectronico"
-                type="email"
-                value={form.correoElectronico}
+                name="direccion"
+                value={form.direccion}
                 onChange={handleChange}
                 required
-                placeholder="contacto@emprendimiento.com"
-                className={obtenerClaseInput(
-                  'correoElectronico'
-                )}
+                maxLength={250}
+                placeholder="Ej. 200m Norte del Parque Central"
+                className={obtenerClaseInput('direccion')}
               />
 
-              {errores.correoElectronico && (
+              {errores.direccion && (
                 <p className="flex items-center gap-1 text-xs font-medium text-red-600">
                   <span>⚠</span>
-                  {errores.correoElectronico}
+                  {errores.direccion}
                 </p>
               )}
             </label>
+          </div>
 
-            {/* TELÉFONO */}
+          <div className="space-y-5">
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-800">
+                4. Datos de contacto
+              </h3>
 
-            <label className={labelClase}>
-              Teléfono *
+              <p className="mt-1 text-xs text-stone-500">
+                Información mediante la cual los visitantes podrán contactar al emprendimiento.
+              </p>
+            </div>
 
-              <input
-                name="telefono"
-                type="tel"
-                inputMode="numeric"
-                value={form.telefono}
-                onChange={handleChange}
-                required
-                maxLength={8}
-                placeholder="88888888"
-                className={obtenerClaseInput(
-                  'telefono'
-                )}
-              />
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <label className={labelClase}>
+                Correo electrónico *
 
-              <div className="flex justify-between">
+                <input
+                  name="correoElectronico"
+                  type="email"
+                  value={form.correoElectronico}
+                  onChange={handleChange}
+                  required
+                  placeholder="contacto@emprendimiento.com"
+                  className={obtenerClaseInput(
+                    'correoElectronico',
+                  )}
+                />
 
-                {errores.telefono ? (
+                {errores.correoElectronico && (
                   <p className="flex items-center gap-1 text-xs font-medium text-red-600">
                     <span>⚠</span>
-                    {errores.telefono}
-                  </p>
-                ) : (
-                  <p className="text-xs text-stone-400">
-                    8 dígitos numéricos
+                    {errores.correoElectronico}
                   </p>
                 )}
+              </label>
 
-                <span className="text-xs text-stone-400">
-                  {form.telefono.length}/8
-                </span>
+              <label className={labelClase}>
+                Teléfono *
+
+                <input
+                  name="telefono"
+                  type="tel"
+                  inputMode="numeric"
+                  value={form.telefono}
+                  onChange={handleChange}
+                  required
+                  maxLength={8}
+                  placeholder="88888888"
+                  className={obtenerClaseInput('telefono')}
+                />
+
+                <div className="flex justify-between">
+                  {errores.telefono ? (
+                    <p className="flex items-center gap-1 text-xs font-medium text-red-600">
+                      <span>⚠</span>
+                      {errores.telefono}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-stone-400">
+                      8 dígitos numéricos
+                    </p>
+                  )}
+
+                  <span className="text-xs text-stone-400">
+                    {form.telefono.length}/8
+                  </span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          {error && (
+            <div
+              className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700"
+              role="alert"
+            >
+              <span className="text-lg">
+                ⚠
+              </span>
+
+              <div>
+                <p className="font-bold">
+                  No se pudo guardar el emprendimiento
+                </p>
+
+                <p className="mt-1">
+                  {error}
+                </p>
               </div>
-            </label>
-
-          </div>
-        </div>
-
-        {/* ====================================================
-            ALERTA GENERAL
-        ==================================================== */}
-
-        {error && (
-          <div
-            className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700"
-            role="alert"
-          >
-            <span className="text-lg">⚠</span>
-
-            <div>
-              <p className="font-bold">
-                No se pudo guardar el emprendimiento
-              </p>
-
-              <p className="mt-1">
-                {error}
-              </p>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* ====================================================
-            ÉXITO
-        ==================================================== */}
+          {exito && (
+            <div
+              className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800"
+              role="status"
+              aria-live="polite"
+            >
+              <span className="text-lg">
+                ✓
+              </span>
 
-        {exito && (
-          <div
-            className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800"
-            role="status"
-            aria-live="polite"
-          >
-            <span className="text-lg">✓</span>
+              <div>
+                <p className="font-bold">
+                  ¡Emprendimiento guardado correctamente!
+                </p>
 
-            <div>
-              <p className="font-bold">
-                ¡Emprendimiento guardado correctamente!
-              </p>
-
-              <p className="mt-1">
-                La información fue enviada correctamente.
-              </p>
+                <p className="mt-1">
+                  La información fue enviada correctamente.
+                </p>
+              </div>
             </div>
+          )}
+
+          <div className="border-t border-stone-200 pt-6">
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <button
+                type="submit"
+                disabled={procesando}
+                className="flex-1 rounded-2xl bg-emerald-900 px-6 py-3.5 font-semibold text-white shadow-md motion-safe:transition-all motion-safe:duration-200 motion-safe:hover:-translate-y-0.5 hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transform-none"
+              >
+                {enviando
+                  ? 'Guardando registro...'
+                  : 'Registrar emprendimiento'}
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  void handleGuardarBorrador()
+                }
+                disabled={procesando}
+                className="flex-1 rounded-2xl border-2 border-emerald-800 bg-white px-6 py-3.5 font-semibold text-emerald-900 shadow-sm motion-safe:transition-colors motion-safe:duration-200 hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {guardandoBorrador
+                  ? 'Guardando borrador...'
+                  : 'Guardar como borrador'}
+              </button>
+            </div>
+
+            <p className="mt-3 text-center text-xs text-stone-400">
+              Los campos marcados con * son obligatorios para el registro completo.
+              Al guardar como borrador puede dejarlos vacíos.
+            </p>
           </div>
-        )}
-
-        {/* ====================================================
-            BOTONES
-        ==================================================== */}
-
-        <div className="border-t border-stone-200 pt-6">
-
-          <div className="flex flex-col gap-3 sm:flex-row">
-
-            <button
-              type="submit"
-              disabled={procesando}
-              className="flex-1 rounded-2xl bg-emerald-900 px-6 py-3.5 font-semibold text-white shadow-md motion-safe:transition-all motion-safe:duration-200 motion-safe:hover:-translate-y-0.5 hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transform-none"
-            >
-              {enviando
-                ? 'Guardando registro...'
-                : 'Registrar emprendimiento'}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => void handleGuardarBorrador()}
-              disabled={procesando}
-              className="flex-1 rounded-2xl border-2 border-emerald-800 bg-white px-6 py-3.5 font-semibold text-emerald-900 shadow-sm motion-safe:transition-colors motion-safe:duration-200 hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {guardandoBorrador
-                ? 'Guardando borrador...'
-                : 'Guardar como borrador'}
-            </button>
-
-          </div>
-
-          <p className="mt-3 text-center text-xs text-stone-400">
-            Los campos marcados con * son obligatorios para el registro completo.
-            Al guardar como borrador puede dejarlos vacíos.
-          </p>
-
-        </div>
-
-      </form>
+        </form>
+      </div>
     </div>
   );
 }
