@@ -7,15 +7,12 @@ import {
   type DragEvent,
   type SyntheticEvent,
 } from 'react';
-
 import { obtenerCategorias } from '../services/categoriaEmprendimientoService';
 import type { CategoriaEmprendimiento } from '../services/categoriaEmprendimientoService';
-
 import {
   obtenerEmprendimientoPorId,
   actualizarEmprendimiento,
 } from '../services/emprendimientoService';
-
 import SelectorUbicacion from './SelectorUbicacion';
 
 interface FormState {
@@ -94,14 +91,9 @@ const validarNumero = (valor: string): boolean => {
   }
 
   const numero = Number(valor);
-
   return Number.isFinite(numero);
 };
 
-/* ============================================================
-   VALIDACIÓN COMPLETA — para "Guardar cambios"
-   Todos los campos obligatorios deben estar completos.
-============================================================ */
 const validarFormulario = (form: FormState): FormErrors => {
   const errores: FormErrors = {};
 
@@ -122,44 +114,23 @@ const validarFormulario = (form: FormState): FormErrors => {
     errores.categoriaId = 'Debe seleccionar una categoría.';
   }
 
-  /* ==========================================================
-     PROVINCIA
-  ========================================================== */
-
   if (!form.provincia.trim()) {
     errores.provincia = 'La provincia es obligatoria.';
   }
-
-  /* ==========================================================
-     CANTÓN
-  ========================================================== */
 
   if (!form.canton.trim()) {
     errores.canton = 'El cantón es obligatorio.';
   }
 
-  /* ==========================================================
-     DISTRITO
-  ========================================================== */
-
   if (!form.distrito.trim()) {
     errores.distrito = 'El distrito es obligatorio.';
   }
 
-  /* ==========================================================
-     DIRECCIÓN
-  ========================================================== */
-
   if (!form.direccion.trim()) {
     errores.direccion = 'La dirección es obligatoria.';
   } else if (form.direccion.trim().length > 250) {
-    errores.direccion =
-      'La dirección no puede superar los 250 caracteres.';
+    errores.direccion = 'La dirección no puede superar los 250 caracteres.';
   }
-
-  /* ==========================================================
-     LATITUD
-  ========================================================== */
 
   if (!form.latitud.trim()) {
     errores.latitud = 'La latitud es obligatoria.';
@@ -169,14 +140,9 @@ const validarFormulario = (form: FormState): FormErrors => {
     const latitud = Number(form.latitud);
 
     if (latitud < -90 || latitud > 90) {
-      errores.latitud =
-        'La latitud debe estar entre -90 y 90.';
+      errores.latitud = 'La latitud debe estar entre -90 y 90.';
     }
   }
-
-  /* ==========================================================
-     LONGITUD
-  ========================================================== */
 
   if (!form.longitud.trim()) {
     errores.longitud = 'La longitud es obligatoria.';
@@ -186,14 +152,9 @@ const validarFormulario = (form: FormState): FormErrors => {
     const longitud = Number(form.longitud);
 
     if (longitud < -180 || longitud > 180) {
-      errores.longitud =
-        'La longitud debe estar entre -180 y 180.';
+      errores.longitud = 'La longitud debe estar entre -180 y 180.';
     }
   }
-
-  /* ==========================================================
-     CORREO
-  ========================================================== */
 
   if (!form.correoElectronico.trim()) {
     errores.correoElectronico =
@@ -203,13 +164,8 @@ const validarFormulario = (form: FormState): FormErrors => {
       'Ingrese un correo electrónico válido.';
   }
 
-  /* ==========================================================
-     TELÉFONO
-  ========================================================== */
-
   if (!form.telefono.trim()) {
-    errores.telefono =
-      'El teléfono es obligatorio.';
+    errores.telefono = 'El teléfono es obligatorio.';
   } else if (!validarTelefono(form.telefono)) {
     errores.telefono =
       'El teléfono debe contener exactamente 8 números.';
@@ -217,10 +173,6 @@ const validarFormulario = (form: FormState): FormErrors => {
 
   return errores;
 };
-
-/* ============================================================
-   VALIDACIÓN PARA BORRADOR
-============================================================ */
 
 const validarFormularioBorrador = (
   form: FormState,
@@ -245,23 +197,17 @@ const validarFormularioBorrador = (
       'La descripción no puede superar los 500 caracteres.';
   }
 
-  if (
-    form.provincia.trim().length > 100
-  ) {
+  if (form.provincia.trim().length > 100) {
     errores.provincia =
       'La provincia no puede superar los 100 caracteres.';
   }
 
-  if (
-    form.canton.trim().length > 100
-  ) {
+  if (form.canton.trim().length > 100) {
     errores.canton =
       'El cantón no puede superar los 100 caracteres.';
   }
 
-  if (
-    form.distrito.trim().length > 100
-  ) {
+  if (form.distrito.trim().length > 100) {
     errores.distrito =
       'El distrito no puede superar los 100 caracteres.';
   }
@@ -273,8 +219,7 @@ const validarFormularioBorrador = (
 
   if (form.latitud.trim()) {
     if (!validarNumero(form.latitud)) {
-      errores.latitud =
-        'Ingrese una latitud válida.';
+      errores.latitud = 'Ingrese una latitud válida.';
     } else {
       const latitud = Number(form.latitud);
 
@@ -287,8 +232,7 @@ const validarFormularioBorrador = (
 
   if (form.longitud.trim()) {
     if (!validarNumero(form.longitud)) {
-      errores.longitud =
-        'Ingrese una longitud válida.';
+      errores.longitud = 'Ingrese una longitud válida.';
     } else {
       const longitud = Number(form.longitud);
 
@@ -325,23 +269,25 @@ function EditarEmprendimiento({
 }: EditarEmprendimientoProps) {
   const [categorias, setCategorias] =
     useState<CategoriaEmprendimiento[]>([]);
-
-  const [cargando, setCargando] =
+  const [cargando, setCargando] = useState(true);
+  const [cargandoCategorias, setCargandoCategorias] =
     useState(true);
 
-    const [cargandoCategorias, setCargandoCategorias] =
-  useState(true);
+  const [imagenesExistentes, setImagenesExistentes] =
+    useState<ImagenExistente[]>([]);
+  const [imagenesNuevas, setImagenesNuevas] =
+    useState<ImagenNueva[]>([]);
+  const [portadaNueva, setPortadaNueva] =
+    useState(false);
 
-  const [imagenesExistentes, setImagenesExistentes] = useState<ImagenExistente[]>([]);
-  const [imagenesNuevas, setImagenesNuevas] = useState<ImagenNueva[]>([]);
-  const [portadaNueva, setPortadaNueva] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const imagenesNuevasRef = useRef<ImagenNueva[]>([]);
+
+  const imagenesNuevasRef =
+    useRef<ImagenNueva[]>([]);
   const dragDepth = useRef(0);
 
   const [errorCarga, setErrorCarga] =
     useState<string | null>(null);
-
   const [errorCategorias, setErrorCategorias] =
     useState<string | null>(null);
 
@@ -355,7 +301,7 @@ function EditarEmprendimiento({
     useState<File | null>(null);
 
   const [, setImagenActual] =
-   useState<string | null>(null);
+    useState<string | null>(null);
 
   const [imagenPreview, setImagenPreview] =
     useState<string | null>(null);
@@ -378,17 +324,12 @@ function EditarEmprendimiento({
   const [modoExito, setModoExito] =
     useState<ModoGuardado | null>(null);
 
-  /* ==========================================================
-     CARGAR CATEGORÍAS
-  ========================================================== */
-
   const cargarCategorias = useCallback(async () => {
     setCargandoCategorias(true);
     setErrorCategorias(null);
 
     try {
       const data = await obtenerCategorias();
-
       setCategorias(data);
     } catch (err) {
       setErrorCategorias(
@@ -401,16 +342,11 @@ function EditarEmprendimiento({
     }
   }, []);
 
-  /* ==========================================================
-     CARGAR EMPRENDIMIENTO
-  ========================================================== */
-
   const cargarEmprendimiento = useCallback(async () => {
     if (!Number.isInteger(id) || id <= 0) {
       setErrorCarga(
         'El ID del emprendimiento no es válido.',
       );
-
       setCargando(false);
       return;
     }
@@ -421,12 +357,6 @@ function EditarEmprendimiento({
     try {
       const emprendimiento =
         await obtenerEmprendimientoPorId(id);
-
-       // console.log('EMPRENDIMIENTO CARGADO:', emprendimiento);
-        //console.log('LATITUD:', emprendimiento.latitud);
-        //console.log('LONGITUD:', emprendimiento.longitud);
-
-
 
       let categoriaId = '';
 
@@ -439,57 +369,49 @@ function EditarEmprendimiento({
       }
 
       setForm({
-        nombre:
-          emprendimiento.nombre ?? '',
-
-        descripcion:
-          emprendimiento.descripcion ?? '',
-
+        nombre: emprendimiento.nombre ?? '',
+        descripcion: emprendimiento.descripcion ?? '',
         categoriaId,
-
-        /* ======================================================
-           NUEVOS CAMPOS DE UBICACIÓN
-        ====================================================== */
-
-        provincia:
-          emprendimiento.provincia ?? '',
-
-        canton:
-          emprendimiento.canton ?? '',
-
-        distrito:
-          emprendimiento.distrito ?? '',
-
-        direccion:
-          emprendimiento.direccion ?? '',
-
+        provincia: emprendimiento.provincia ?? '',
+        canton: emprendimiento.canton ?? '',
+        distrito: emprendimiento.distrito ?? '',
+        direccion: emprendimiento.direccion ?? '',
         latitud:
           emprendimiento.latitud !== null &&
           emprendimiento.latitud !== undefined
             ? String(emprendimiento.latitud)
             : '',
-
         longitud:
           emprendimiento.longitud !== null &&
           emprendimiento.longitud !== undefined
             ? String(emprendimiento.longitud)
             : '',
-
         correoElectronico:
           emprendimiento.correoElectronico ?? '',
-
-        telefono:
-          emprendimiento.telefono ?? '',
+        telefono: emprendimiento.telefono ?? '',
       });
 
-      setImagenesExistentes(emprendimiento.imagenes?.length
-        ? emprendimiento.imagenes
-        : emprendimiento.imagen
-          ? [{ id: 0, imagen: emprendimiento.imagen, esPortada: true }]
-          : []);
-      imagenesNuevasRef.current.forEach((imagen) => URL.revokeObjectURL(imagen.preview));
+      setImagenesExistentes(
+        emprendimiento.imagenes?.length
+          ? emprendimiento.imagenes
+          : emprendimiento.imagen
+            ? [
+                {
+                  id: 0,
+                  imagen: emprendimiento.imagen,
+                  esPortada: true,
+                },
+              ]
+            : [],
+      );
+
+      imagenesNuevasRef.current.forEach(
+        (imagen) => URL.revokeObjectURL(imagen.preview),
+      );
+
       setImagenesNuevas([]);
       setPortadaNueva(false);
+
       setImagenActual(
         emprendimiento.imagen ?? null,
       );
@@ -518,14 +440,16 @@ function EditarEmprendimiento({
     cargarEmprendimiento,
   ]);
 
-  /* ==========================================================
-     LIMPIAR PREVIEW
-  ========================================================== */
+  useEffect(
+    () => () => {
+      imagenesNuevasRef.current.forEach(
+        (imagen) =>
+          URL.revokeObjectURL(imagen.preview),
+      );
+    },
+    [],
+  );
 
- 
-  useEffect(() => () => {
-    imagenesNuevasRef.current.forEach((imagen) => URL.revokeObjectURL(imagen.preview));
-  }, []);
   useEffect(() => {
     return () => {
       if (imagenPreview) {
@@ -533,10 +457,6 @@ function EditarEmprendimiento({
       }
     };
   }, [imagenPreview]);
-
-  /* ==========================================================
-     CAMBIOS DEL FORMULARIO
-  ========================================================== */
 
   const handleChange = (
     e: ChangeEvent<
@@ -547,15 +467,10 @@ function EditarEmprendimiento({
   ) => {
     const { name, value } = e.target;
 
-    /* ========================================================
-       TELÉFONO
-    ======================================================== */
-
     if (name === 'telefono') {
-      const solamenteNumeros =
-        value
-          .replace(/\D/g, '')
-          .slice(0, 8);
+      const solamenteNumeros = value
+        .replace(/\D/g, '')
+        .slice(0, 8);
 
       setForm((prev) => ({
         ...prev,
@@ -574,7 +489,6 @@ function EditarEmprendimiento({
 
       setError(null);
       setExito(false);
-
       return;
     }
 
@@ -600,103 +514,147 @@ function EditarEmprendimiento({
     setExito(false);
   };
 
-  /* ==========================================================
-     CAMBIO DE UBICACIÓN DESDE EL MAPA
-  ========================================================== */
+  const handleUbicacionChange = (
+    latitud: number,
+    longitud: number,
+  ) => {
+    const nuevaLatitud =
+      Number.isFinite(latitud)
+        ? latitud.toFixed(6)
+        : '';
 
- const handleUbicacionChange = (
-  latitud: number,
-  longitud: number,
-) => {
-  const nuevaLatitud = Number.isFinite(latitud)
-    ? latitud.toFixed(6)
-    : '';
+    const nuevaLongitud =
+      Number.isFinite(longitud)
+        ? longitud.toFixed(6)
+        : '';
 
-  const nuevaLongitud = Number.isFinite(longitud)
-    ? longitud.toFixed(6)
-    : '';
+    setForm((prev) => ({
+      ...prev,
+      latitud: nuevaLatitud,
+      longitud: nuevaLongitud,
+    }));
 
-  setForm((prev) => ({
-    ...prev,
-    latitud: nuevaLatitud,
-    longitud: nuevaLongitud,
-  }));
+    setErrores((prev) => ({
+      ...prev,
+      latitud: undefined,
+      longitud: undefined,
+    }));
 
-  setErrores((prev) => ({
-    ...prev,
-    latitud: undefined,
-    longitud: undefined,
-  }));
+    setError(null);
+    setExito(false);
+  };
 
-  setError(null);
-  setExito(false);
-};
+  const agregarImagenes = (
+    archivos: FileList | File[],
+  ) => {
+    const tiposPermitidos = [
+      'image/png',
+      'image/jpeg',
+      'image/webp',
+    ];
 
-  /* ==========================================================
-     IMAGEN
-  ========================================================== */
+    const existentes = new Set(
+      imagenesNuevas.map(
+        ({ archivo }) =>
+          `${archivo.name}-${archivo.size}-${archivo.lastModified}`,
+      ),
+    );
 
-  //const handleImageChange = (
-    //e: ChangeEvent<HTMLInputElement>,
-  //) => {
-    //const file =
-     // e.target.files?.[0];
-
-  const agregarImagenes = (archivos: FileList | File[]) => {
-    const tiposPermitidos = ['image/png', 'image/jpeg', 'image/webp'];
-    const existentes = new Set(imagenesNuevas.map(({ archivo }) => `${archivo.name}-${archivo.size}-${archivo.lastModified}`));
     const nuevas: ImagenNueva[] = [];
+
     Array.from(archivos).forEach((archivo) => {
-      const clave = `${archivo.name}-${archivo.size}-${archivo.lastModified}`;
+      const clave =
+        `${archivo.name}-${archivo.size}-${archivo.lastModified}`;
+
       if (existentes.has(clave)) return;
-      if (archivo.size > 5 * 1024 * 1024 || !tiposPermitidos.includes(archivo.type)) {
-        setError('Las imágenes deben ser PNG, JPG o WEBP y no superar los 5MB cada una.');
+
+      if (
+        archivo.size > 5 * 1024 * 1024 ||
+        !tiposPermitidos.includes(archivo.type)
+      ) {
+        setError(
+          'Las imágenes deben ser PNG, JPG o WEBP y no superar los 5MB cada una.',
+        );
         return;
       }
+
       existentes.add(clave);
-      nuevas.push({ archivo, preview: URL.createObjectURL(archivo) });
+
+      nuevas.push({
+        archivo,
+        preview: URL.createObjectURL(archivo),
+      });
     });
+
     if (nuevas.length) {
       setImagenesNuevas((actuales) => {
-        const siguientes = [...actuales, ...nuevas];
-        imagenesNuevasRef.current = siguientes;
+        const siguientes = [
+          ...actuales,
+          ...nuevas,
+        ];
+
+        imagenesNuevasRef.current =
+          siguientes;
+
         return siguientes;
       });
+
       setError(null);
       setExito(false);
     }
   };
 
-  const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) agregarImagenes(e.target.files);
+  const handleImageChange = (
+    e: ChangeEvent<HTMLInputElement>,
+  ) => {
+    if (e.target.files) {
+      agregarImagenes(e.target.files);
+    }
+
     e.target.value = '';
   };
 
-  const handleDrop = (e: DragEvent<HTMLLabelElement>) => {
+  const handleDrop = (
+    e: DragEvent<HTMLLabelElement>,
+  ) => {
     e.preventDefault();
     dragDepth.current = 0;
     setIsDragging(false);
     agregarImagenes(e.dataTransfer.files);
   };
 
-  const handleRemoveNewImage = (indice: number) => {
+  const handleRemoveNewImage = (
+    indice: number,
+  ) => {
     setImagenesNuevas((actuales) => {
       const imagen = actuales[indice];
-      if (imagen) URL.revokeObjectURL(imagen.preview);
-      const restantes = actuales.filter((_, index) => index !== indice);
-      imagenesNuevasRef.current = restantes;
+
+      if (imagen) {
+        URL.revokeObjectURL(imagen.preview);
+      }
+
+      const restantes = actuales.filter(
+        (_, index) => index !== indice,
+      );
+
+      imagenesNuevasRef.current =
+        restantes;
+
       return restantes;
     });
   };
 
-  const handleRemoveCurrentImage = (indice: number) => {
-    setImagenesExistentes((actuales) => actuales.filter((_, index) => index !== indice));
+  const handleRemoveCurrentImage = (
+    indice: number,
+  ) => {
+    setImagenesExistentes((actuales) =>
+      actuales.filter(
+        (_, index) => index !== indice,
+      ),
+    );
+
     setError(null);
   };
-
-  /* ==========================================================
-     GUARDAR
-  ========================================================== */
 
   const handleGuardar = async (
     e: SyntheticEvent,
@@ -715,9 +673,7 @@ function EditarEmprendimiento({
     setErrores(erroresFormulario);
 
     if (
-      Object.keys(
-        erroresFormulario,
-      ).length > 0
+      Object.keys(erroresFormulario).length > 0
     ) {
       setError(
         modo === 'cambios'
@@ -732,24 +688,60 @@ function EditarEmprendimiento({
     setModoGuardando(modo);
 
     try {
-      const formData =
-        new FormData();
-
-      /* ======================================================
-         INFORMACIÓN GENERAL
-      ====================================================== */
+      const formData = new FormData();
 
       formData.append(
         'nombre',
         form.nombre.trim(),
       );
 
-      formData.append('imagenesConservadas', JSON.stringify(imagenesExistentes.filter((imagen) => imagen.id > 0).map((imagen) => imagen.id)));
-      imagenesNuevas.forEach(({ archivo }) => formData.append('imagenes', archivo));
-      const portadaExistente = imagenesExistentes.find((imagen) => imagen.esPortada);
-      if (portadaNueva && imagenesNuevas.length > 0) formData.append('portadaNueva', 'true');
-      else if (portadaExistente && portadaExistente.id > 0) formData.append('portadaImagenId', String(portadaExistente.id));
-      else if (!imagenesExistentes.length && !imagenesNuevas.length) formData.append('eliminarImagen', 'true');
+      formData.append(
+        'imagenesConservadas',
+        JSON.stringify(
+          imagenesExistentes
+            .filter((imagen) => imagen.id > 0)
+            .map((imagen) => imagen.id),
+        ),
+      );
+
+      imagenesNuevas.forEach(({ archivo }) =>
+        formData.append(
+          'imagenes',
+          archivo,
+        ),
+      );
+
+      const portadaExistente =
+        imagenesExistentes.find(
+          (imagen) => imagen.esPortada,
+        );
+
+      if (
+        portadaNueva &&
+        imagenesNuevas.length > 0
+      ) {
+        formData.append(
+          'portadaNueva',
+          'true',
+        );
+      } else if (
+        portadaExistente &&
+        portadaExistente.id > 0
+      ) {
+        formData.append(
+          'portadaImagenId',
+          String(portadaExistente.id),
+        );
+      } else if (
+        !imagenesExistentes.length &&
+        !imagenesNuevas.length
+      ) {
+        formData.append(
+          'eliminarImagen',
+          'true',
+        );
+      }
+
       formData.append(
         'descripcion',
         form.descripcion.trim(),
@@ -759,10 +751,6 @@ function EditarEmprendimiento({
         'categoriaId',
         form.categoriaId,
       );
-
-      /* ======================================================
-         UBICACIÓN
-      ====================================================== */
 
       formData.append(
         'provincia',
@@ -794,10 +782,6 @@ function EditarEmprendimiento({
         form.longitud,
       );
 
-      /* ======================================================
-         CONTACTO
-      ====================================================== */
-
       formData.append(
         'correoElectronico',
         form.correoElectronico.trim(),
@@ -808,18 +792,10 @@ function EditarEmprendimiento({
         form.telefono,
       );
 
-      /* ======================================================
-         MODO
-      ====================================================== */
-
       formData.append(
         'modo',
         modo,
       );
-
-      /* ======================================================
-         IMAGEN
-      ====================================================== */
 
       if (
         eliminarImagenActual &&
@@ -837,10 +813,6 @@ function EditarEmprendimiento({
           imagen,
         );
       }
-
-      /* ======================================================
-         ACTUALIZAR
-      ====================================================== */
 
       await actualizarEmprendimiento(
         id,
@@ -870,10 +842,6 @@ function EditarEmprendimiento({
     }
   };
 
-  /* ==========================================================
-     ESTILOS
-  ========================================================== */
-
   const inputClase =
     'w-full rounded-2xl border bg-[#fffef9] px-4 py-3 text-stone-800 outline-none motion-safe:transition-[border-color,background-color,box-shadow] motion-safe:duration-200 focus-visible:ring-4 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-500';
 
@@ -890,10 +858,6 @@ function EditarEmprendimiento({
   const labelClase =
     'flex flex-col gap-1.5 text-sm font-semibold text-stone-700';
 
-  /* ==========================================================
-     CARGANDO
-  ========================================================== */
-
   if (
     cargando ||
     cargandoCategorias
@@ -902,7 +866,6 @@ function EditarEmprendimiento({
       <div className="flex items-center justify-center py-20">
         <div className="flex items-center gap-3 text-stone-600">
           <span className="h-5 w-5 rounded-full border-2 border-emerald-800 border-t-transparent motion-safe:animate-spin motion-reduce:animate-none" />
-
           <span>
             Cargando información...
           </span>
@@ -910,10 +873,6 @@ function EditarEmprendimiento({
       </div>
     );
   }
-
-  /* ==========================================================
-     ERROR CARGA
-  ========================================================== */
 
   if (errorCarga) {
     return (
@@ -956,10 +915,6 @@ function EditarEmprendimiento({
     );
   }
 
-  /* ==========================================================
-     ERROR CATEGORÍAS
-  ========================================================== */
-
   if (errorCategorias) {
     return (
       <div
@@ -984,10 +939,6 @@ function EditarEmprendimiento({
     );
   }
 
-  /* ==========================================================
-     SIN CATEGORÍAS
-  ========================================================== */
-
   if (categorias.length === 0) {
     return (
       <div className="mx-auto max-w-xl rounded-2xl border border-amber-200 bg-amber-50 p-6">
@@ -1002,17 +953,8 @@ function EditarEmprendimiento({
     );
   }
 
-  /* ==========================================================
-     FORMULARIO
-  ========================================================== */
-
   return (
     <div className="mx-auto w-full max-w-3xl overflow-hidden rounded-[2rem] border border-emerald-950/10 bg-[#fffef9] p-5 shadow-[0_24px_70px_rgba(20,83,45,0.12)] sm:p-8">
-
-      {/* ======================================================
-          ENCABEZADO
-      ====================================================== */}
-
       <div className="relative mb-8 overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-950 via-emerald-900 to-green-800 p-6 text-white shadow-lg sm:p-8">
         <div
           className="pointer-events-none absolute -right-12 -top-16 h-44 w-44 rounded-full bg-[#d9d823]/15 blur-3xl"
@@ -1021,7 +963,6 @@ function EditarEmprendimiento({
 
         <div className="relative mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-emerald-50 backdrop-blur-sm">
           <span className="h-2 w-2 rounded-full bg-[#d9d823]" />
-
           Edición de emprendimiento
         </div>
 
@@ -1042,11 +983,6 @@ function EditarEmprendimiento({
         noValidate
         className="space-y-8"
       >
-
-        {/* ====================================================
-            INFORMACIÓN GENERAL
-        ==================================================== */}
-
         <div className="space-y-5">
           <div>
             <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-800">
@@ -1058,44 +994,100 @@ function EditarEmprendimiento({
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          <label className={labelClase}>
+            Nombre del emprendimiento *
 
-            {/* NOMBRE */}
-
-            <label className={labelClase}>
-              Nombre del emprendimiento *
-
-              <input
-                name="nombre"
-                value={form.nombre}
-                onChange={handleChange}
-                maxLength={150}
-                placeholder="Ej. Artesanías Diriá"
-                className={obtenerClaseInput(
-                  'nombre',
-                )}
-              />
-
-              {errores.nombre && (
-                <p className="flex items-center gap-1 text-xs font-medium text-red-600">
-                  <span>⚠</span>
-                  {errores.nombre}
-                </p>
+            <input
+              name="nombre"
+              value={form.nombre}
+              onChange={handleChange}
+              maxLength={150}
+              placeholder="Ej. Artesanías Diriá"
+              className={obtenerClaseInput(
+                'nombre',
               )}
-            </label>
+            />
 
-            {/* CATEGORÍA */}
+            {errores.nombre && (
+              <p className="flex items-center gap-1 text-xs font-medium text-red-600">
+                <span>⚠</span>
+                {errores.nombre}
+              </p>
+            )}
+          </label>
 
-            <label className={labelClase}>
-              Categoría *
+          <div className="mx-auto w-full max-w-2xl rounded-3xl border border-emerald-900/10 bg-white p-5 shadow-sm">
+            <div className="mb-4 flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-800">
+                <svg
+                  className="h-5 w-5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  aria-hidden="true"
+                >
+                  <rect
+                    x="3"
+                    y="3"
+                    width="7"
+                    height="7"
+                    rx="1"
+                    strokeWidth="2"
+                  />
+                  <rect
+                    x="14"
+                    y="3"
+                    width="7"
+                    height="7"
+                    rx="1"
+                    strokeWidth="2"
+                  />
+                  <rect
+                    x="3"
+                    y="14"
+                    width="7"
+                    height="7"
+                    rx="1"
+                    strokeWidth="2"
+                  />
+                  <rect
+                    x="14"
+                    y="14"
+                    width="7"
+                    height="7"
+                    rx="1"
+                    strokeWidth="2"
+                  />
+                </svg>
+              </div>
 
+              <div>
+                <label
+                  htmlFor="categoriaId"
+                  className="block text-sm font-bold text-stone-800"
+                >
+                  Categoría{' '}
+                  <span className="text-emerald-800">
+                    *
+                  </span>
+                </label>
+
+                <p className="mt-1 text-xs font-normal text-stone-500">
+                  Seleccione la categoría que mejor representa su emprendimiento.
+                </p>
+              </div>
+            </div>
+
+            <div className="relative">
               <select
+                id="categoriaId"
                 name="categoriaId"
                 value={form.categoriaId}
                 onChange={handleChange}
-                className={obtenerClaseInput(
+                required
+                className={`${obtenerClaseInput(
                   'categoriaId',
-                )}
+                )} appearance-none pr-12`}
               >
                 <option value="">
                   Selecciona una categoría
@@ -1113,16 +1105,29 @@ function EditarEmprendimiento({
                 )}
               </select>
 
-              {errores.categoriaId && (
-                <p className="flex items-center gap-1 text-xs font-medium text-red-600">
-                  <span>⚠</span>
-                  {errores.categoriaId}
-                </p>
-              )}
-            </label>
-          </div>
+              <svg
+                className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-emerald-800"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  d="m6 9 6 6 6-6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                />
+              </svg>
+            </div>
 
-          {/* DESCRIPCIÓN */}
+            {errores.categoriaId && (
+              <p className="mt-2 flex items-center gap-1 text-xs font-medium text-red-600">
+                <span>⚠</span>
+                {errores.categoriaId}
+              </p>
+            )}
+          </div>
 
           <label className={labelClase}>
             Descripción
@@ -1156,10 +1161,6 @@ function EditarEmprendimiento({
           </label>
         </div>
 
-        {/* ==================================================
-            IMAGEN
-        ================================================== */}
-
         <div className="space-y-3">
           <div>
             <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-800">
@@ -1172,48 +1173,190 @@ function EditarEmprendimiento({
           </div>
 
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {imagenesExistentes.map((imagen, indice) => (
-              <div key={imagen.id || imagen.imagen} className="relative overflow-hidden rounded-2xl border border-emerald-950/10 bg-stone-100 shadow-sm">
-                <img src={imagen.imagen} alt={`Imagen existente ${indice + 1}`} className="aspect-square h-full w-full object-cover" />
-                {imagen.esPortada && <span className="absolute left-2 top-2 rounded-full bg-[#095540]/90 px-2 py-1 text-[10px] font-bold text-white">Portada</span>}
-                {!imagen.esPortada && imagen.id > 0 && <button type="button" onClick={() => setImagenesExistentes((actuales) => actuales.map((actual) => ({ ...actual, esPortada: actual.id === imagen.id })))} className="absolute bottom-2 left-2 rounded-lg bg-white/90 px-2 py-1 text-[10px] font-bold text-[#095540] backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444]">Hacer portada</button>}
-                <button type="button" onClick={() => handleRemoveCurrentImage(indice)} className="absolute right-2 top-2 rounded-full bg-red-700 p-1.5 text-white shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white" aria-label={`Eliminar fotografía existente ${indice + 1}`}>
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
-              </div>
-            ))}
-            {imagenesNuevas.map((imagen, indice) => (
-              <div key={imagen.preview} className="relative overflow-hidden rounded-2xl border border-[#8DC63F]/50 bg-stone-100 shadow-sm">
-                <img src={imagen.preview} alt={`Nueva fotografía ${indice + 1}`} className="aspect-square h-full w-full object-cover" />
-                {portadaNueva && indice === 0 && <span className="absolute left-2 top-2 rounded-full bg-[#095540]/90 px-2 py-1 text-[10px] font-bold text-white">Portada</span>}
-                {!portadaNueva && <button type="button" onClick={() => setPortadaNueva(true)} className="absolute bottom-2 left-2 rounded-lg bg-white/90 px-2 py-1 text-[10px] font-bold text-[#095540] backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444]">Hacer portada</button>}
-                <button type="button" onClick={() => handleRemoveNewImage(indice)} className="absolute right-2 top-2 rounded-full bg-red-700 p-1.5 text-white shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white" aria-label={`Eliminar fotografía nueva ${indice + 1}`}>
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
-              </div>
-            ))}
+            {imagenesExistentes.map(
+              (imagen, indice) => (
+                <div
+                  key={
+                    imagen.id ||
+                    imagen.imagen
+                  }
+                  className="relative overflow-hidden rounded-2xl border border-emerald-950/10 bg-stone-100 shadow-sm"
+                >
+                  <img
+                    src={imagen.imagen}
+                    alt={`Imagen existente ${indice + 1}`}
+                    className="aspect-square h-full w-full object-cover"
+                  />
+
+                  {imagen.esPortada && (
+                    <span className="absolute left-2 top-2 rounded-full bg-[#095540]/90 px-2 py-1 text-[10px] font-bold text-white">
+                      Portada
+                    </span>
+                  )}
+
+                  {!imagen.esPortada &&
+                    imagen.id > 0 && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setImagenesExistentes(
+                            (actuales) =>
+                              actuales.map(
+                                (actual) => ({
+                                  ...actual,
+                                  esPortada:
+                                    actual.id ===
+                                    imagen.id,
+                                }),
+                              ),
+                          )
+                        }
+                        className="absolute bottom-2 left-2 rounded-lg bg-white/90 px-2 py-1 text-[10px] font-bold text-[#095540] backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444]"
+                      >
+                        Hacer portada
+                      </button>
+                    )}
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleRemoveCurrentImage(
+                        indice,
+                      )
+                    }
+                    className="absolute right-2 top-2 rounded-full bg-red-700 p-1.5 text-white shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                    aria-label={`Eliminar fotografía existente ${indice + 1}`}
+                  >
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              ),
+            )}
+
+            {imagenesNuevas.map(
+              (imagen, indice) => (
+                <div
+                  key={imagen.preview}
+                  className="relative overflow-hidden rounded-2xl border border-[#8DC63F]/50 bg-stone-100 shadow-sm"
+                >
+                  <img
+                    src={imagen.preview}
+                    alt={`Nueva fotografía ${indice + 1}`}
+                    className="aspect-square h-full w-full object-cover"
+                  />
+
+                  {portadaNueva &&
+                    indice === 0 && (
+                      <span className="absolute left-2 top-2 rounded-full bg-[#095540]/90 px-2 py-1 text-[10px] font-bold text-white">
+                        Portada
+                      </span>
+                    )}
+
+                  {!portadaNueva && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setPortadaNueva(true)
+                      }
+                      className="absolute bottom-2 left-2 rounded-lg bg-white/90 px-2 py-1 text-[10px] font-bold text-[#095540] backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444]"
+                    >
+                      Hacer portada
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleRemoveNewImage(
+                        indice,
+                      )
+                    }
+                    className="absolute right-2 top-2 rounded-full bg-red-700 p-1.5 text-white shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                    aria-label={`Eliminar fotografía nueva ${indice + 1}`}
+                  >
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              ),
+            )}
           </div>
 
-          <label className={`flex cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed p-6 text-center motion-safe:transition-colors motion-safe:duration-200 ${isDragging ? 'border-[#009444] bg-[#8DC63F]/15' : 'border-stone-300 bg-stone-50/70 hover:border-emerald-600 hover:bg-emerald-50/70'} focus-within:border-emerald-700 focus-within:ring-4 focus-within:ring-emerald-100`}
-            onDragEnter={(event) => { event.preventDefault(); dragDepth.current += 1; setIsDragging(true); }}
-            onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = 'copy'; }}
-            onDragLeave={(event) => { event.preventDefault(); dragDepth.current -= 1; if (dragDepth.current <= 0) { dragDepth.current = 0; setIsDragging(false); } }}
+          <label
+            className={`flex cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed p-6 text-center motion-safe:transition-colors motion-safe:duration-200 ${
+              isDragging
+                ? 'border-[#009444] bg-[#8DC63F]/15'
+                : 'border-stone-300 bg-stone-50/70 hover:border-emerald-600 hover:bg-emerald-50/70'
+            } focus-within:border-emerald-700 focus-within:ring-4 focus-within:ring-emerald-100`}
+            onDragEnter={(event) => {
+              event.preventDefault();
+              dragDepth.current += 1;
+              setIsDragging(true);
+            }}
+            onDragOver={(event) => {
+              event.preventDefault();
+              event.dataTransfer.dropEffect =
+                'copy';
+            }}
+            onDragLeave={(event) => {
+              event.preventDefault();
+              dragDepth.current -= 1;
+
+              if (dragDepth.current <= 0) {
+                dragDepth.current = 0;
+                setIsDragging(false);
+              }
+            }}
             onDrop={handleDrop}
           >
-            <svg className="h-8 w-8 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg
+              className="h-8 w-8 text-emerald-700"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth="2"
-                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 002-2V6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
               />
             </svg>
 
             <span className="mt-2 text-sm font-semibold text-stone-700">
-              {isDragging ? 'Soltá las fotografías aquí' : 'Arrastrá tus fotografías aquí o seleccioná archivos'}
+              {isDragging
+                ? 'Soltá las fotografías aquí'
+                : 'Arrastrá tus fotografías aquí o seleccioná archivos'}
             </span>
 
-            <span className="mt-1 text-xs text-stone-500">PNG, JPG o WEBP · Máximo 5MB cada una</span>
+            <span className="mt-1 text-xs text-stone-500">
+              PNG, JPG o WEBP · Máximo 5MB cada una
+            </span>
 
             <input
               type="file"
@@ -1225,12 +1368,7 @@ function EditarEmprendimiento({
           </label>
         </div>
 
-        {/* ==================================================
-            UBICACIÓN
-        ================================================== */}
-
         <div className="space-y-5">
-
           <div>
             <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-800">
               3. Ubicación geográfica
@@ -1240,10 +1378,6 @@ function EditarEmprendimiento({
               Seleccione la ubicación en el mapa o ingrese las coordenadas manualmente.
             </p>
           </div>
-
-          {/* ==================================================
-              MAPA
-          ================================================== */}
 
           <SelectorUbicacion
             latitud={
@@ -1256,17 +1390,12 @@ function EditarEmprendimiento({
                 ? Number(form.longitud)
                 : null
             }
-            onChange={handleUbicacionChange}
+            onChange={
+              handleUbicacionChange
+            }
           />
 
-          {/* ==================================================
-              PROVINCIA / CANTÓN / DISTRITO
-          ================================================== */}
-
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
-
-            {/* PROVINCIA */}
-
             <label className={labelClase}>
               Provincia *
 
@@ -1289,8 +1418,6 @@ function EditarEmprendimiento({
               )}
             </label>
 
-            {/* CANTÓN */}
-
             <label className={labelClase}>
               Cantón *
 
@@ -1312,8 +1439,6 @@ function EditarEmprendimiento({
                 </p>
               )}
             </label>
-
-            {/* DISTRITO */}
 
             <label className={labelClase}>
               Distrito *
@@ -1338,10 +1463,6 @@ function EditarEmprendimiento({
             </label>
           </div>
 
-          {/* ==================================================
-              DIRECCIÓN
-          ================================================== */}
-
           <label className={labelClase}>
             Dirección exacta *
 
@@ -1364,14 +1485,7 @@ function EditarEmprendimiento({
             )}
           </label>
 
-          {/* ==================================================
-              COORDENADAS
-          ================================================== */}
-
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-
-            {/* LATITUD */}
-
             <label className={labelClase}>
               Latitud *
 
@@ -1394,8 +1508,6 @@ function EditarEmprendimiento({
                 </p>
               )}
             </label>
-
-            {/* LONGITUD */}
 
             <label className={labelClase}>
               Longitud *
@@ -1420,37 +1532,29 @@ function EditarEmprendimiento({
               )}
             </label>
           </div>
-
         </div>
 
-        {/* ==================================================
-            CONTACTO
-        ================================================== */}
-
         <div className="space-y-5">
-
           <div>
             <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-800">
               4. Datos de contacto
             </h3>
 
             <p className="mt-1 text-xs text-stone-500">
-              Información mediante la cual los visitantes podrán contactar al
-              emprendimiento.
+              Información mediante la cual los visitantes podrán contactar al emprendimiento.
             </p>
           </div>
 
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-
-            {/* CORREO */}
-
             <label className={labelClase}>
               Correo electrónico *
 
               <input
                 name="correoElectronico"
                 type="email"
-                value={form.correoElectronico}
+                value={
+                  form.correoElectronico
+                }
                 onChange={handleChange}
                 placeholder="contacto@emprendimiento.com"
                 className={obtenerClaseInput(
@@ -1461,12 +1565,12 @@ function EditarEmprendimiento({
               {errores.correoElectronico && (
                 <p className="flex items-center gap-1 text-xs font-medium text-red-600">
                   <span>⚠</span>
-                  {errores.correoElectronico}
+                  {
+                    errores.correoElectronico
+                  }
                 </p>
               )}
             </label>
-
-            {/* TELÉFONO */}
 
             <label className={labelClase}>
               Teléfono *
@@ -1501,17 +1605,11 @@ function EditarEmprendimiento({
                 </span>
               </div>
             </label>
-
           </div>
         </div>
 
-        {/* ==================================================
-            ESTADO
-        ================================================== */}
-
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
           <div className="flex items-start gap-3">
-
             <span className="mt-0.5 text-lg">
               ℹ
             </span>
@@ -1522,17 +1620,11 @@ function EditarEmprendimiento({
               </p>
 
               <p className="mt-1 text-sm leading-5 text-emerald-800">
-                El estado del emprendimiento se administra por separado según los
-                permisos correspondientes.
+                El estado del emprendimiento se administra por separado según los permisos correspondientes.
               </p>
             </div>
-
           </div>
         </div>
-
-        {/* ==================================================
-            ERROR GENERAL
-        ================================================== */}
 
         {error && (
           <div
@@ -1554,10 +1646,6 @@ function EditarEmprendimiento({
             </div>
           </div>
         )}
-
-        {/* ==================================================
-            ÉXITO
-        ================================================== */}
 
         {exito && (
           <div
@@ -1585,12 +1673,7 @@ function EditarEmprendimiento({
           </div>
         )}
 
-        {/* ==================================================
-            BOTONES
-        ================================================== */}
-
         <div className="flex flex-col gap-3 border-t border-stone-200 pt-6 sm:flex-row">
-
           {onCancelar && (
             <button
               type="button"
@@ -1637,11 +1720,9 @@ function EditarEmprendimiento({
           Los campos marcados con * son obligatorios para "Guardar cambios".
           El borrador permite dejarlos vacíos.
         </p>
-
       </form>
     </div>
   );
 }
-
 
 export default EditarEmprendimiento;

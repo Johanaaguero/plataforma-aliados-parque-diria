@@ -1,35 +1,123 @@
 import { Router } from 'express';
 import { EventosCapacitacionesController } from './eventosCapacitaciones.controller';
+import { verificarToken } from '../../../middlewares/auth.middleware';
+
+
+import { autorizarRoles } from '../../../middlewares/authorization.middleware';
 
 const router = Router();
 const controller = new EventosCapacitacionesController();
 
-// POST /eventos-capacitaciones
-router.post('/', (req, res) => controller.create(req, res));
+/*
+ * ============================================================
+ * CREAR EVENTO / CAPACITACIÓN
+ * Solo administrador
+ * ============================================================
+ */
+router.post(
+  '/',
+  verificarToken,
+  autorizarRoles('administrador'),
+  (req, res) => controller.create(req, res),
+);
 
-// GET /eventos-capacitaciones
-router.get('/', (req, res) => controller.findAll(req, res));
+/*
+ * ============================================================
+ * OBTENER EVENTOS Y CAPACITACIONES
+ * Público / usuarios autenticados
+ * ============================================================
+ */
+router.get(
+  '/',
+  (req, res) => controller.findAll(req, res),
+);
 
-// PUT /eventos-capacitaciones/:id
-router.put('/:id', (req, res) => controller.update(req, res));
+router.patch('/:id/estado', (req, res) =>
+  controller.cambiarEstado(req, res),
+);
+/*
+ * ============================================================
+ * ACTUALIZAR EVENTO / CAPACITACIÓN
+ * Solo administrador
+ * ============================================================
+ */
+router.put(
+  '/:id',
+  verificarToken,
+  autorizarRoles('administrador'),
+  (req, res) => controller.update(req, res),
+);
 
-// DELETE /eventos-capacitaciones/:id
-router.delete('/:id', (req, res) => controller.remove(req, res));
+/*
+ * ============================================================
+ * ELIMINAR EVENTO / CAPACITACIÓN
+ * Solo administrador
+ * ============================================================
+ */
+router.delete(
+  '/:id',
+  verificarToken,
+  autorizarRoles('administrador'),
+  (req, res) => controller.remove(req, res),
+);
 
-// POST /eventos-capacitaciones/:id/imagenes
-// body JSON: { "imagenBase64": "...", "tipoMime": "image/png", "nombreArchivo": "foto.png" }
-router.post('/:id/imagenes', (req, res) => controller.uploadImagen(req, res));
+/*
+ * ============================================================
+ * SUBIR IMAGEN
+ * Solo administrador
+ * ============================================================
+ */
+router.post(
+  '/:id/imagenes',
+  verificarToken,
+  autorizarRoles('administrador'),
+  (req, res) => controller.uploadImagen(req, res),
+);
 
-// GET /eventos-capacitaciones/:id/imagenes  (lista metadatos, sin el binario)
-router.get('/:id/imagenes', (req, res) => controller.getImagenes(req, res));
+/*
+ * ============================================================
+ * OBTENER IMÁGENES
+ * Público
+ * ============================================================
+ */
+router.get(
+  '/:id/imagenes',
+  (req, res) => controller.getImagenes(req, res),
+);
 
-// GET /eventos-capacitaciones/imagenes/:imagenId  (sirve el binario crudo, para <img src="...">)
-router.get('/imagenes/:imagenId', (req, res) => controller.getImagen(req, res));
+/*
+ * ============================================================
+ * OBTENER IMAGEN
+ * Público
+ * ============================================================
+ */
+router.get(
+  '/imagenes/:imagenId',
+  (req, res) => controller.getImagen(req, res),
+);
 
-// GET /eventos-capacitaciones/imagenes/:imagenId/base64  (la misma imagen envuelta en JSON)
-router.get('/imagenes/:imagenId/base64', (req, res) => controller.getImagenBase64(req, res));
+/*
+ * ============================================================
+ * OBTENER IMAGEN EN BASE64
+ * Público
+ * ============================================================
+ */
+router.get(
+  '/imagenes/:imagenId/base64',
+  (req, res) => controller.getImagenBase64(req, res),
+);
 
-// DELETE /eventos-capacitaciones/imagenes/:imagenId
-router.delete('/imagenes/:imagenId', (req, res) => controller.removeImagen(req, res));
+/*
+ * ============================================================
+ * ELIMINAR IMAGEN
+ * Solo administrador
+ * ============================================================
+ */
+router.delete(
+  '/imagenes/:imagenId',
+  verificarToken,
+  autorizarRoles('administrador'),
+  (req, res) => controller.removeImagen(req, res),
+);
 
 export default router;
