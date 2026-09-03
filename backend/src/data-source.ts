@@ -12,6 +12,8 @@ import { IntentoAcceso } from './models/IntentoAcceso';
 import { CategoriaEmprendimiento } from './models/CategoriaEmprendimiento';
 import { Emprendimiento } from './models/Emprendimiento';
 import { EmprendimientoImagen } from './models/EmprendimientoImagen';
+import { EventosCapacitaciones } from './models/EventosCapacitaciones'; 
+import { EventoCapacitacionImagen } from './models/EventoCapacitacionImagen';
 
 dotenv.config();
 
@@ -47,6 +49,8 @@ export const AppDataSource = new DataSource({
     CategoriaEmprendimiento,
     Emprendimiento,
     EmprendimientoImagen,
+    EventoCapacitacionImagen,
+      EventosCapacitaciones,
   ],
  
 

@@ -12,8 +12,8 @@ interface NavbarProps {
   onCuentasBloqueadas?: () => void;
   onIrInicio: () => void;
   onIrEmprendimientos: () => void;
-  seccionActiva?: 'inicio' | 'emprendimientos';
-  modoAdministracion?: boolean;
+   onIrEventos: () => void;
+ seccionActiva?: 'inicio' | 'emprendimientos' | 'eventos';  modoAdministracion?: boolean;
 }
 
 function Navbar({
@@ -26,6 +26,7 @@ function Navbar({
   onCuentasBloqueadas,
   onIrInicio,
   onIrEmprendimientos,
+   onIrEventos,
   seccionActiva = 'inicio',
   modoAdministracion = false,
 }: NavbarProps) {
@@ -132,13 +133,14 @@ function Navbar({
             >
               Emprendimientos
             </button>
-            <button
-              type="button"
-              onClick={() => irSeccion('eventos')}
-              className={claseNavegacion}
-            >
-              Eventos
-            </button>
+           <button
+  type="button"
+  onClick={onIrEventos}
+  className={`${claseNavegacion} ${seccionActiva === 'eventos' ? claseNavegacionActiva : ''}`}
+  aria-current={seccionActiva === 'eventos' ? 'page' : undefined}
+>
+  Eventos y Capacitaciones
+</button>
           </div>
 
           <div className="hidden shrink-0 items-center gap-2 xl:flex">
@@ -260,13 +262,17 @@ function Navbar({
               >
                 Emprendimientos
               </button>
-              <button
-                type="button"
-                onClick={() => irSeccion('eventos')}
-                className={claseNavegacionMovil}
-              >
-                Eventos
-              </button>
+             <button
+  type="button"
+  onClick={() => {
+    setMenuAbierto(false);
+    onIrEventos();
+  }}
+  className={`${claseNavegacionMovil} ${seccionActiva === 'eventos' ? claseNavegacionMovilActiva : ''}`}
+  aria-current={seccionActiva === 'eventos' ? 'page' : undefined}
+>
+  Eventos y Capacitaciones
+</button>
             </div>
 
             {!rolAutenticado && (
