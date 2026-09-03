@@ -6,6 +6,7 @@ import GestionRoles from './components/GestionRoles';
 import CuentasBloqueadas from './components/CuentasBloqueadas';
 import RecuperarContrasena from './components/RecuperarContrasena';
 import RestablecerContrasena from './components/RestablecerContrasena';
+import ListaEventosCapacitaciones from './components/Gestión de Eventos y Capacitaciones/ListaEventosCapacitaciones';
 
 import { api } from './services/api';
 import { useInactividad } from './services/useInactividad';
@@ -199,6 +200,7 @@ function App() {
   const [seccionActual, setSeccionActual] = useState<
     | 'inicio'
     | 'emprendimientos'
+    | 'eventos'
     | 'registroEmprendimiento'
     | 'registroCategoria'
     | 'editarEmprendimiento'
@@ -695,6 +697,43 @@ function App() {
    * EMPRENDIMIENTOS
    * =========================================================
    */
+  /*
+ * =========================================================
+ * EVENTOS Y CAPACITACIONES
+ * =========================================================
+ */
+
+if (
+  seccionActual === 'eventos' &&
+  !mostrarLogin &&
+  !mostrarRegistro
+) {
+  return (
+    <>
+      <Navbar
+        modoAdministracion
+        seccionActiva="eventos"
+        onRegistro={() => setMostrarRegistro(true)}
+        onLogin={() => setMostrarLogin(true)}
+        rolAutenticado={rolAutenticado}
+        nombreUsuario={nombreUsuario}
+        onCerrarSesion={() => {
+          void cerrarSesion();
+        }}
+        onGestionRoles={() => setMostrarGestionRoles(true)}
+        onIrInicio={() => setSeccionActual('inicio')}
+        onIrEmprendimientos={() => setSeccionActual('emprendimientos')}
+        onIrEventos={() => setSeccionActual('eventos')}
+      />
+
+     <main className="min-h-[80vh] overflow-x-hidden bg-[#f5f7ef] pt-24 sm:pt-28">
+  <ListaEventosCapacitaciones rolAutenticado={rolAutenticado} />
+</main>
+
+      <Footer />
+    </>
+  );
+}
 
   if (
     seccionActual === 'emprendimientos' &&
@@ -732,6 +771,11 @@ function App() {
           onIrEmprendimientos={() =>
             setSeccionActual(
               'emprendimientos'
+            )
+          }
+          onIrEventos={() =>
+             setSeccionActual(
+              'eventos'
             )
           }
         />
@@ -958,6 +1002,11 @@ function App() {
             onIrEmprendimientos={() =>
               setSeccionActual(
                 'emprendimientos'
+              )
+            }
+             onIrEventos={() =>
+               setSeccionActual(
+                'eventos'
               )
             }
           />

@@ -53,7 +53,7 @@ function Footer() {
               Emprendimientos
             </a>
             <a href="#eventos" className={claseEnlace}>
-              Eventos
+              Eventos y Capacitaciones
             </a>
           </nav>
         </div>
