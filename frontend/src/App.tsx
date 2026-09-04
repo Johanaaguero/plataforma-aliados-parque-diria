@@ -4,10 +4,12 @@ import { useEffect, useState } from 'react';
 import Registro from './components/Registro';
 import Login from './components/login';
 import GestionRoles from './components/GestionRoles';
-import CuentasBloqueadas from './components/CuentasBloqueadas';
+import CuentasBloqueadas from './components/Super_admin/CuentasBloqueadas';
 import RecuperarContrasena from './components/RecuperarContrasena';
 import RestablecerContrasena from './components/RestablecerContrasena';
 import ListaEventosCapacitaciones from './components/Gestión de Eventos y Capacitaciones/ListaEventosCapacitaciones';
+import Bitacora from './components/Super_admin/Bitacora';
+
 import { api } from './services/api';
 import { useInactividad } from './services/useInactividad';
 import RegistroEmprendimiento from './components/RegistroEmprendimiento';
@@ -449,6 +451,39 @@ function App() {
       </>
     );
   }
+
+  /*
+ * =========================================================
+ * BITÁCORA
+ * =========================================================
+ */
+
+if (
+  rutaActual === '/bitacora' &&
+  rolAutenticado === 'super_admin'
+) {
+  return (
+    <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef] pt-20 sm:pt-24">
+      <button
+        type="button"
+        className="fixed left-3 top-3 z-[60] inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-[#b9d6af] bg-white/95 px-4 py-2 text-sm font-bold text-[#095540] shadow-[0_10px_30px_rgba(7,63,49,0.15)] sm:left-5 sm:top-5"
+        onClick={() => {
+          window.location.href = '/';
+        }}
+      >
+        ← Volver
+      </button>
+
+      <Bitacora />
+    </section>
+  );
+}
+
+  /*
+   * =========================================================
+   * LOGIN
+   * =========================================================
+   */
 
   if (rutaActual === '/login') {
     return (
@@ -933,6 +968,10 @@ function App() {
                 true
               );
             }}
+            onBitacora={() => {
+              window.location.href = '/bitacora';
+            }}
+
             onIrInicio={() =>
               setSeccionActual('inicio')
             }

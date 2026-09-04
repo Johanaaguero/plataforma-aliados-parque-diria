@@ -32,7 +32,7 @@ let UsuarioModel: typeof Usuario;
 let RolModel: typeof Rol;
 let LoginAttemptModel: typeof LoginAttempt;
 let AuditLogModel: typeof AuditLog;
-let unlockAccountService: typeof import('../modulos/Autenticación y gestión de usuario/Gestión de cuentas bloqueadas/cuentasBloqueadas.service').unlockAccount;
+let unlockAccountService: typeof import('../modulos/Autenticación y gestión de usuario/Super_admin/Cuentas Bloqueadas/cuentasBloqueadas.service').unlockAccount;
 let server: Server;
 let baseUrl: string;
 
@@ -193,10 +193,10 @@ before(async () => {
   const loginAttemptModule = await import('../models/LoginAttempt');
   const auditLogModule = await import('../models/AuditLog');
   const serviceModule = await import(
-    '../modulos/Autenticación y gestión de usuario/Gestión de cuentas bloqueadas/cuentasBloqueadas.service'
+    '../modulos/Autenticación y gestión de usuario/Super_admin/Cuentas Bloqueadas/cuentasBloqueadas.service'
   );
   const routeModule = await import(
-    '../modulos/Autenticación y gestión de usuario/Gestión de cuentas bloqueadas/cuentasBloqueadas.route'
+    '../modulos/Autenticación y gestión de usuario/Super_admin/Cuentas Bloqueadas/cuentasBloqueadas.route'
   );
 
   dataSource = dataSourceModule.AppDataSource;

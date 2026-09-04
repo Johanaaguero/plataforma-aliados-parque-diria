@@ -3,8 +3,8 @@ import {
   getBlockedAccounts,
   unlockAccount,
 } from './cuentasBloqueadas.controller';
-import { verificarToken } from '../../../middlewares/auth.middleware';
-import { autorizarRoles } from '../../../middlewares/authorization.middleware';
+import { verificarToken } from '../../../../middlewares/auth.middleware';
+import { autorizarRoles } from '../../../../middlewares/authorization.middleware';
 
 const router = Router();
 

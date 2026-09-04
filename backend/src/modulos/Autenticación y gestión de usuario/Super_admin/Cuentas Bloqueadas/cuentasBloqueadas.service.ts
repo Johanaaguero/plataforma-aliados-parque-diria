@@ -1,7 +1,7 @@
-import { AppDataSource } from '../../../data-source';
-import { LoginAttempt } from '../../../models/LoginAttempt';
-import { Usuario } from '../../../models/Usuario';
-import { registrarAuditoria } from '../Autenticación y seguridad de acceso al sistema/auditoria.service';
+import { AppDataSource } from '../../../../data-source';
+import { LoginAttempt } from '../../../../models/LoginAttempt';
+import { Usuario } from '../../../../models/Usuario';
+import { registrarAuditoria } from '../../Autenticación y seguridad de acceso al sistema/auditoria.service';
 
 interface UnlockAccountInput {
   usuarioId: number;

@@ -10,6 +10,7 @@ interface NavbarProps {
   onCerrarSesion: () => void;
   onGestionRoles: () => void;
   onCuentasBloqueadas?: () => void;
+  onBitacora?: () => void;
   onIrInicio: () => void;
   onIrEmprendimientos: () => void;
    onIrEventos: () => void;
@@ -24,6 +25,7 @@ function Navbar({
   onCerrarSesion,
   onGestionRoles,
   onCuentasBloqueadas,
+  onBitacora,
   onIrInicio,
   onIrEmprendimientos,
    onIrEventos,
@@ -181,6 +183,16 @@ function Navbar({
               >
                 Cuentas bloqueadas
               </button>
+            )}
+
+            {rolAutenticado === 'super_admin' && onBitacora && (
+               <button
+                type="button"
+                onClick={onBitacora}
+                className="min-h-10 rounded-full bg-[#d9d823] px-4 py-2 text-sm font-bold text-[#073f31] motion-safe:transition motion-safe:duration-200 hover:bg-[#c7cc22] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2"
+               >
+                 Bitácora
+               </button>
             )}
 
             {rolAutenticado && (
@@ -345,6 +357,20 @@ function Navbar({
                 Cuentas bloqueadas
               </button>
             )}
+
+            {rolAutenticado === 'super_admin' && onBitacora && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuAbierto(false);
+                    onBitacora();
+                  }}
+                  className="mt-3 min-h-[42px] w-full cursor-pointer rounded-[9px] border border-[#095540] bg-white px-4 py-0 text-[13px] font-bold text-[#095540] shadow-[0_5px_14px_rgba(23,48,31,0.14)] [font-family:inherit] [transition:0.2s_ease] hover:bg-[#095540] hover:text-white hover:[transform:translateY(-1px)]"
+                >
+                  Bitácora
+                </button>
+              )}
+
           </div>
         )}
       </div>
