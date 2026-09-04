@@ -1037,7 +1037,7 @@ export default function RegistroEventoCapacitacion({
                   setLugar(e.target.value);
                   limpiarError('lugar');
                 }}
-                placeholder="Ej. Salón comunal del parque"
+                placeholder="Ej. Casona del Parque"
                 disabled={
                   estado === 'cargando' ||
                   segundosRestantes !== null
