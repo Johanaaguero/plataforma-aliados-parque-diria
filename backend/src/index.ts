@@ -7,11 +7,12 @@ import authRoutes from './modulos/Autenticación y gestión de usuario/Registro 
 import loginRoutes from './modulos/Autenticación y gestión de usuario/inicio de sesion/login.route';
 import recuperacionRoutes from './modulos/Autenticación y gestión de usuario/Recuperación de contraseña/recuperacion.route';
 import rolesRoutes from './modulos/Autenticación y gestión de usuario/Gestión de Roles/roles.route';
-import cuentasBloqueadasRoutes from './modulos/Autenticación y gestión de usuario/Gestión de cuentas bloqueadas/cuentasBloqueadas.route';
+import cuentasBloqueadasRoutes from './modulos/Autenticación y gestión de usuario/Super_admin/Cuentas Bloqueadas/cuentasBloqueadas.route';
 import emprendimientoRoutes from './modulos/Administración de emprendimientos/Registro de emprendimientos/emprendimiento.routes';
 import categoriaEmprendimientoRoutes from './modulos/Administración de emprendimientos/Registro de emprendimientos/categoriaEmprendimiento.routes';
 import eliminarEmprendimientoRoutes from './modulos/Administración de emprendimientos/Eliminación de emprendimientos/eliminarEmprendimiento.route';
 import eventosCapacitacionesRoutes from './modulos/Gestión de Eventos y Capacitaciones/Crear Eventos y Capacitaciones/eventosCapacitaciones.routes';
+import bitacoraRoutes from './modulos/Autenticación y gestión de usuario/Super_admin/Bitacora/bitacora.route';
 
 import { iniciarLimpiezaTokensExpirados } from './modulos/Autenticación y gestión de usuario/Recuperación de contraseña/limpieza.service';
 import { iniciarLimpiezaTokensBlacklist } from './modulos/Autenticación y gestión de usuario/inicio de sesion/limpieza-blacklist.service';
@@ -34,6 +35,7 @@ app.use('/api/emprendimientos', emprendimientoRoutes);
 app.use('/api/categorias-emprendimientos', categoriaEmprendimientoRoutes);
 app.use('/api/emprendimientos', eliminarEmprendimientoRoutes);
 app.use('/api/eventos-capacitaciones', eventosCapacitacionesRoutes); 
+app.use('/api/admin', bitacoraRoutes);
 app.use(errorMiddleware);
 
 const PORT = process.env.PORT || 3000;

@@ -3,7 +3,7 @@ import {
   getBlockedAccounts as getBlockedAccountsService,
   unlockAccount as unlockAccountService,
 } from './cuentasBloqueadas.service';
-import { extraerIPDelRequest } from '../Autenticación y seguridad de acceso al sistema/auditoria.service';
+import { extraerIPDelRequest } from '../../Autenticación y seguridad de acceso al sistema/auditoria.service';
 
 export const getBlockedAccounts = async (_req: Request, res: Response) => {
   try {
