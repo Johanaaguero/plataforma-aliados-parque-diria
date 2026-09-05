@@ -2,6 +2,7 @@
   "dependencies": {
     "bcrypt": "^6.0.0",
     "i": "^0.3.7",
+    "libphonenumber-js": "^1.13.12",
     "lucide-react": "^1.39.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
