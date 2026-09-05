@@ -26,7 +26,7 @@ export class Usuario {
   @Column({ type: 'varchar', length: 150, unique: true, name: 'correo_electronico' })
   correo!: string;
 
-  @Column({ type: 'varchar', length: 8 })
+  @Column({ type: 'varchar', length: 20 })
   telefono!: string;
 
   @Column({ type: 'varchar', length: 255 })

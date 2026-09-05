@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { registerUser } from './autenticacion.service';
+import { parsePhoneNumberFromString } from 'libphonenumber-js';
 
 function validarPassword(password: string): string | null {
   if (password.length < 8) {
@@ -26,7 +27,8 @@ function validarPassword(password: string): string | null {
 }
 
 function validarTelefono(telefono: string): boolean {
-  return /^\d{8}$/.test(telefono.trim());
+  const numero = parsePhoneNumberFromString(telefono); 
+  return Boolean(numero && numero.isValid());
 }
 
 function validarNombreUsuario(nombreUsuario: string): string | null {
@@ -100,13 +102,12 @@ export const register = async (
       });
     }
 
-    // 4. Validar teléfono
-    if (!validarTelefono(telefono)) {
-      return res.status(400).json({
-        ok: false,
-        message: 'El teléfono debe contener exactamente 8 dígitos',
-      });
-    }
+  if (!validarTelefono(telefono)) {
+  return res.status(400).json({
+    ok: false,
+    message: 'El número de teléfono no es válido',
+  });
+}
 
     // 5. Validar contraseña
     const errorPassword = validarPassword(password);
