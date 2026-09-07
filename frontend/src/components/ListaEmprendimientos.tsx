@@ -94,6 +94,22 @@ const obtenerUbicacion = (
   return null;
 };
 
+const abrirWhatsApp = (telefono: string) => {
+  const numero = telefono.replace(/\D/g, '');
+
+  if (!numero) return;
+
+  const numeroWhatsApp = numero.startsWith('506')
+    ? numero
+    : `506${numero}`;
+
+  window.open(
+    `https://wa.me/${numeroWhatsApp}`,
+    '_blank',
+    'noopener,noreferrer',
+  );
+};
+
 
 const obtenerTransicionesDisponibles = (
   estado: EstadoPublicacion,
@@ -1146,35 +1162,44 @@ useEffect(() => {
                 </div>
               )}
 
-              {emprendimiento.telefono && (
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-500">
-                    <svg
-                      className="h-4 w-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth="1.8"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-2.826-1.07-5.02-3.264-6.09-6.09l1.293-.97c.362-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z"
-                      />
-                    </svg>
-                  </div>
+             {emprendimiento.telefono && (
+  <button
+    type="button"
+    onClick={(event) => {
+      event.stopPropagation();
+      abrirWhatsApp(emprendimiento.telefono!);
+    }}
+    className="group/telefono flex w-full items-center gap-3 rounded-xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444] focus-visible:ring-offset-2"
+    aria-label={`Contactar por WhatsApp al ${emprendimiento.telefono}`}
+  >
+    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-500 motion-safe:transition-colors motion-safe:duration-200 group-hover/telefono:bg-emerald-50 group-hover/telefono:text-emerald-700">
+      <svg
+        className="h-4 w-4"
+        fill="none"
+        viewBox="0 0 24 24"
+        strokeWidth="1.8"
+        stroke="currentColor"
+        aria-hidden="true"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-2.826-1.07-5.02-3.264-6.09-6.09l1.293-.97c.362-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z"
+        />
+      </svg>
+    </div>
 
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                      Teléfono
-                    </p>
+    <div className="min-w-0">
+      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+        WhatsApp
+      </p>
 
-                    <p className="mt-0.5 truncate text-xs font-semibold text-slate-700">
-                      {emprendimiento.telefono}
-                    </p>
-                  </div>
-                </div>
-              )}
+      <p className="mt-0.5 truncate text-xs font-semibold text-emerald-700 underline-offset-2 group-hover/telefono:underline">
+        {emprendimiento.telefono}
+      </p>
+    </div>
+  </button>
+)}
 
               {emprendimiento.correoElectronico && (
                 <div className="flex items-center gap-3">
@@ -1543,8 +1568,22 @@ useEffect(() => {
                 <div className="mt-6 grid gap-4 sm:grid-cols-2">
                   {detalleSeleccionado.descripcion && <p className="sm:col-span-2 text-sm leading-6 text-slate-600">{detalleSeleccionado.descripcion}</p>}
                   {detalleSeleccionado.direccion && <p className="text-sm text-slate-700"><strong className="block text-xs uppercase tracking-wider text-slate-400">Ubicación</strong>{detalleSeleccionado.direccion}</p>}
-                  {detalleSeleccionado.telefono && <p className="text-sm text-slate-700"><strong className="block text-xs uppercase tracking-wider text-slate-400">Teléfono</strong>{detalleSeleccionado.telefono}</p>}
-                  {detalleSeleccionado.correoElectronico && <p className="text-sm text-slate-700"><strong className="block text-xs uppercase tracking-wider text-slate-400">Correo</strong>{detalleSeleccionado.correoElectronico}</p>}
+{detalleSeleccionado.telefono && (
+  <button
+    type="button"
+    onClick={() => abrirWhatsApp(detalleSeleccionado.telefono!)}
+    className="text-left text-sm text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444] focus-visible:ring-offset-2 rounded-lg"
+    aria-label={`Contactar por WhatsApp al ${detalleSeleccionado.telefono}`}
+  >
+    <strong className="block text-xs uppercase tracking-wider text-slate-400">
+      WhatsApp
+    </strong>
+
+    <span className="font-semibold text-emerald-700 underline-offset-2 hover:underline">
+      {detalleSeleccionado.telefono}
+    </span>
+  </button>
+)}                  {detalleSeleccionado.correoElectronico && <p className="text-sm text-slate-700"><strong className="block text-xs uppercase tracking-wider text-slate-400">Correo</strong>{detalleSeleccionado.correoElectronico}</p>}
                 </div>
               </div>
             </div>
