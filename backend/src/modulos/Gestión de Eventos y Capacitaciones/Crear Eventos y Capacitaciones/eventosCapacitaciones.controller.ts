@@ -131,19 +131,33 @@ export class EventosCapacitacionesController {
     }
   }
 
+  /**
+   * DELETE /api/eventos-capacitaciones/:id
+   * Elimina físicamente una actividad. La ruta limita el acceso a
+   * administradores y la base de datos elimina sus imágenes en cascada.
+   * Respuestas: 204, 400, 401, 403, 404 o 500.
+   */
   async remove(req: Request, res: Response) {
     try {
-      const id = Number(req.params.id);
+      const idParam = req.params.id;
 
-      if (Number.isNaN(id)) {
+      if (typeof idParam !== 'string' || !/^[1-9]\d*$/.test(idParam)) {
         return res.status(400).json({
-          mensaje: 'El id debe ser numérico.',
+          mensaje: 'El id debe ser un número entero positivo.',
         });
       }
 
-      const resultado = await service.remove(id);
+      const id = Number(idParam);
 
-      return res.status(200).json(resultado);
+      if (!Number.isSafeInteger(id)) {
+        return res.status(400).json({
+          mensaje: 'El id debe ser un número entero positivo.',
+        });
+      }
+
+      await service.remove(id);
+
+      return res.status(204).send();
     } catch (error) {
       return manejarError(res, error);
     }

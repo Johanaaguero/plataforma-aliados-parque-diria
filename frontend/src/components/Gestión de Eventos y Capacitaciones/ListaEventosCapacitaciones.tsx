@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import RegistroEventoCapacitacion from './RegistroEventoCapacitacion';
 
@@ -100,6 +100,18 @@ export default function ListaEventosCapacitaciones({
   const [cambiandoEstado, setCambiandoEstado] =
     useState<number | null>(null);
 
+  const [eventoAEliminar, setEventoAEliminar] =
+    useState<EventoCapacitacion | null>(null);
+
+  const [eliminando, setEliminando] =
+    useState(false);
+
+  const botonCancelarEliminacionRef =
+    useRef<HTMLButtonElement | null>(null);
+
+  const botonQueAbrioEliminacionRef =
+    useRef<HTMLButtonElement | null>(null);
+
   const esAdministrador =
     rolAutenticado === 'administrador';
 
@@ -119,6 +131,36 @@ export default function ListaEventosCapacitaciones({
       window.clearTimeout(temporizador);
     };
   }, [notificacion]);
+
+  useEffect(() => {
+    if (!eventoAEliminar || !esAdministrador) return;
+
+    botonCancelarEliminacionRef.current?.focus();
+
+    return () => {
+      const botonQueAbrio = botonQueAbrioEliminacionRef.current;
+
+      if (botonQueAbrio?.isConnected) {
+        botonQueAbrio.focus();
+      }
+    };
+  }, [eventoAEliminar, esAdministrador]);
+
+  useEffect(() => {
+    if (!eventoAEliminar || !esAdministrador) return;
+
+    function cerrarConEscape(evento: KeyboardEvent) {
+      if (evento.key === 'Escape' && !eliminando) {
+        setEventoAEliminar(null);
+      }
+    }
+
+    document.addEventListener('keydown', cerrarConEscape);
+
+    return () => {
+      document.removeEventListener('keydown', cerrarConEscape);
+    };
+  }, [eventoAEliminar, eliminando, esAdministrador]);
 
   function mostrarNotificacion(
     tipo: TipoNotificacion,
@@ -428,6 +470,80 @@ export default function ListaEventosCapacitaciones({
       );
     } finally {
       setCambiandoEstado(null);
+    }
+  }
+
+  async function eliminarEvento() {
+    if (!esAdministrador || !eventoAEliminar || eliminando) {
+      return;
+    }
+
+    const token = obtenerToken();
+
+    if (!token) {
+      mostrarNotificacion(
+        'error',
+        'Sesión no disponible',
+        'No se encontró el token de autenticación. Inicia sesión nuevamente.',
+      );
+      return;
+    }
+
+    const eventoEliminado = eventoAEliminar;
+    const nombreEliminado =
+      eventoEliminado.nombre ?? 'La actividad';
+
+    try {
+      setEliminando(true);
+
+      const respuesta = await fetch(
+        `${urlBaseApi}/api/eventos-capacitaciones/${eventoEliminado.id}`,
+        {
+          method: 'DELETE',
+          headers: {
+            Accept: 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      let resultado: RespuestaApi = {};
+
+      try {
+        resultado =
+          (await respuesta.json()) as RespuestaApi;
+      } catch {}
+
+      if (!respuesta.ok) {
+        throw new Error(
+          resultado.mensaje ??
+            resultado.message ??
+            `No se pudo eliminar la actividad. Código: ${respuesta.status}`,
+        );
+      }
+
+      setEventos((prev) =>
+        prev.filter(
+          (evento) => evento.id !== eventoEliminado.id,
+        ),
+      );
+      setEventoAEliminar(null);
+
+      mostrarNotificacion(
+        'exito',
+        'Actividad eliminada',
+        `"${nombreEliminado}" fue eliminada correctamente.`,
+      );
+    } catch (error) {
+      mostrarNotificacion(
+        'error',
+        'No se pudo eliminar la actividad',
+        error instanceof Error
+          ? error.message
+          : 'No se pudo eliminar la actividad.',
+      );
+    } finally {
+      setEliminando(false);
     }
   }
 
@@ -1288,6 +1404,38 @@ export default function ListaEventosCapacitaciones({
                               : 'Cupo libre'}
                           </span>
                         </div>
+
+                        {esAdministrador && (
+                          <div className="mt-5 flex justify-end">
+                            <button
+                              type="button"
+                              onClick={(evento) => {
+                                botonQueAbrioEliminacionRef.current =
+                                  evento.currentTarget;
+                                setEventoAEliminar(item);
+                              }}
+                              disabled={estaCambiando || eliminando}
+                              className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-3 py-2 text-[10px] font-bold text-red-600 shadow-md transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              <svg
+                                className="h-3.5 w-3.5"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                aria-hidden="true"
+                              >
+                                <path
+                                  d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"
+                                  stroke="currentColor"
+                                  strokeWidth="1.8"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
+                              </svg>
+
+                              Eliminar
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </article>
@@ -1296,6 +1444,88 @@ export default function ListaEventosCapacitaciones({
             </div>
           )}
       </div>
+
+      {eventoAEliminar && esAdministrador && (
+        <div
+          className="fixed inset-0 z-[9998] flex items-center justify-center bg-slate-950/65 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="titulo-confirmar-eliminacion"
+          aria-describedby="descripcion-confirmar-eliminacion"
+          aria-busy={eliminando}
+        >
+          <div className="w-full max-w-lg rounded-3xl border border-slate-100 bg-white p-6 shadow-2xl sm:p-8">
+            <div>
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-red-600">
+                <svg
+                  className="h-5 w-5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
+              <h2
+                id="titulo-confirmar-eliminacion"
+                className="mt-6 text-2xl font-bold tracking-tight text-slate-900"
+              >
+                Eliminar actividad
+              </h2>
+
+              <p className="mt-3 text-base leading-7 text-slate-600">
+                ¿Desea eliminar{' '}
+                <span className="font-semibold text-slate-900">
+                  "{eventoAEliminar.nombre ?? 'Sin nombre'}"
+                </span>
+                ?
+              </p>
+
+              <p
+                id="descripcion-confirmar-eliminacion"
+                className="mt-3 text-sm font-semibold leading-6 text-red-600"
+              >
+                Esta acción es permanente e irreversible.
+              </p>
+            </div>
+
+            <div className="mt-8 flex flex-row justify-end gap-3">
+              <button
+                ref={botonCancelarEliminacionRef}
+                type="button"
+                onClick={() => setEventoAEliminar(null)}
+                disabled={eliminando}
+                className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                onClick={() => void eliminarEvento()}
+                disabled={eliminando}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {eliminando && (
+                  <span
+                    className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
+                    aria-hidden="true"
+                  />
+                )}
+                <span aria-live="polite">
+                  {eliminando ? 'Eliminando...' : 'Eliminar'}
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
