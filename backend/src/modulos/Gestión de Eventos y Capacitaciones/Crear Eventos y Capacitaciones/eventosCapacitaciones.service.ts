@@ -886,19 +886,15 @@ export class EventosCapacitacionesService {
   }
 
   // =========================================================
-  // ELIMINAR
+  // ELIMINAR FÍSICAMENTE
+  // Las imágenes relacionadas se eliminan por ON DELETE CASCADE.
   // =========================================================
 
-  async remove(id: number) {
+  async remove(id: number): Promise<void> {
     const registro =
       await this.obtenerOFallar(id);
 
     await this.repo.remove(registro);
-
-    return {
-      message:
-        'Registro eliminado correctamente.',
-    };
   }
 
   // =========================================================

@@ -50,8 +50,10 @@ router.put(
 
 /*
  * ============================================================
- * ELIMINAR EVENTO / CAPACITACIÓN
- * Solo administrador
+ * DELETE /api/eventos-capacitaciones/:id
+ * Solo administrador. Eliminación física; las imágenes relacionadas
+ * se eliminan en MySQL mediante ON DELETE CASCADE.
+ * Respuestas: 204, 400, 401, 403, 404 o 500.
  * ============================================================
  */
 router.delete(
