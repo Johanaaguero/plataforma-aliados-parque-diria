@@ -116,9 +116,7 @@ router.get(
  * ============================================================
  */
 router.delete(
-  '/imagenes/:imagenId',
-  verificarToken,
-  autorizarRoles('administrador'),
+  '/:id/imagenes/:imagenId', verificarToken, autorizarRoles('administrador'),
   (req, res) => controller.removeImagen(req, res),
 );
 
