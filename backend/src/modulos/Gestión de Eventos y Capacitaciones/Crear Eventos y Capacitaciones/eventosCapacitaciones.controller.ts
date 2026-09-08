@@ -1,11 +1,8 @@
 
 import { Request, Response } from 'express';
 import { EventosCapacitacionesService } from './eventosCapacitaciones.service';
-import {
-  TipoActividad,
-  EstadoEventoCapacitacion,
-  Temporada,
-} from '../../../models/EventosCapacitaciones';
+import { TipoActividad, EstadoEventoCapacitacion, Temporada, } from '../../../models/EventosCapacitaciones';
+import { registrarAuditoria, extraerIPDelRequest } from '../../Autenticación y gestión de usuario/Autenticación y seguridad de acceso al sistema/auditoria.service';
 
 const service = new EventosCapacitacionesService();
 
@@ -41,7 +38,7 @@ export class EventosCapacitacionesController {
     }
   }
 
-  async update(req: Request, res: Response) {
+   async update(req: Request, res: Response) {
     try {
       const id = Number(req.params.id);
 
@@ -52,6 +49,16 @@ export class EventosCapacitacionesController {
       }
 
       const actualizado = await service.update(id, req.body);
+
+      await registrarAuditoria({
+        usuarioId: req.usuario?.id ?? null,
+        action: 'ACTUALIZAR_EVENTO_CAPACITACION',
+        description: `Actualización del evento o capacitación #${id}`,
+        ipAddress: extraerIPDelRequest(req),
+        userAgent: (req.headers['user-agent'] as string | undefined) ?? null,
+        status: 'success',
+        details: JSON.stringify(req.body),
+      });
 
       return res.status(200).json(actualizado.toPublic());
     } catch (error) {
@@ -381,27 +388,28 @@ export class EventosCapacitacionesController {
     }
   }
 
-  async removeImagen(
+    async removeImagen(
     req: Request,
     res: Response,
   ) {
     try {
+      const id = Number(req.params.id);
       const imagenId =
         Number(req.params.imagenId);
 
-      if (Number.isNaN(imagenId)) {
+      if (Number.isNaN(id) || Number.isNaN(imagenId)) {
         return res.status(400).json({
           mensaje:
-            'El id de la imagen debe ser numérico.',
+            'Los ids deben ser numéricos.',
         });
       }
 
       const resultado =
-        await service.removeImagen(imagenId);
+        await service.removeImagen(id, imagenId);
 
       return res.status(200).json(resultado);
     } catch (error) {
       return manejarError(res, error);
     }
   }
-}
+  }

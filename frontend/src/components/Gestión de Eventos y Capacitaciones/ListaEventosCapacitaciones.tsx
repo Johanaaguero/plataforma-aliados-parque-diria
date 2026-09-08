@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import RegistroEventoCapacitacion from './RegistroEventoCapacitacion';
 
 import PortadaEventoCapacitacion from './Portadaeventocapacitacion';
-
+import EdicionEventoCapacitacion from './EdicionEventoCapacitacion';
 interface EventoCapacitacion {
   id: number;
   nombre: string | null;
@@ -119,6 +119,8 @@ export default function ListaEventosCapacitaciones({
     () => obtenerUrlBaseApi(),
     [],
   );
+    const [eventoEditando, setEventoEditando] =
+    useState<EventoCapacitacion | null>(null);
 
   useEffect(() => {
     if (!notificacion) return;
@@ -1041,6 +1043,7 @@ export default function ListaEventosCapacitaciones({
           eventosFiltrados.length > 0 && (
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
               {eventosFiltrados.map((item) => {
+                
                 const colores =
                   obtenerColorTipo(
                     item.tipoActividad,
@@ -1405,8 +1408,32 @@ export default function ListaEventosCapacitaciones({
                           </span>
                         </div>
 
-                        {esAdministrador && (
-                          <div className="mt-5 flex justify-end">
+                                                {esAdministrador && (
+                          <div className="mt-5 flex justify-between">
+                            <button
+                              type="button"
+                              onClick={() => setEventoEditando(item)}
+                              disabled={estaCambiando || eliminando}
+                              className="inline-flex items-center gap-2 rounded-lg border border-[#095540]/20 bg-white px-3 py-2 text-[10px] font-bold text-[#095540] shadow-md transition hover:bg-[#8DC63F]/10 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              <svg
+                                className="h-3.5 w-3.5"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                aria-hidden="true"
+                              >
+                                <path
+                                  d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"
+                                  stroke="currentColor"
+                                  strokeWidth="1.8"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
+                              </svg>
+
+                              Editar
+                            </button>
+
                             <button
                               type="button"
                               onClick={(evento) => {
@@ -1443,7 +1470,24 @@ export default function ListaEventosCapacitaciones({
               })}
             </div>
           )}
-      </div>
+            </div>
+
+      {eventoEditando && (
+        <EdicionEventoCapacitacion
+          isOpen={Boolean(eventoEditando)}
+          evento={eventoEditando}
+          onClose={() => setEventoEditando(null)}
+          onActualizado={async () => {
+            setEventoEditando(null);
+            await cargarDatos();
+            mostrarNotificacion(
+              'exito',
+              'Actividad actualizada',
+              'Los cambios se guardaron correctamente.',
+            );
+          }}
+        />
+      )}
 
       {eventoAEliminar && esAdministrador && (
         <div

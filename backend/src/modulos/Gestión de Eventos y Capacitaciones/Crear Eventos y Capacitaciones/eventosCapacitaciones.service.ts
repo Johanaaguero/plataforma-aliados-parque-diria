@@ -705,6 +705,21 @@ export class EventosCapacitacionesService {
     // ---------------------------------------------------------
 
     this.validar(data, true);
+        // ---------------------------------------------------------
+    // NO PERMITIR CAMBIAR EL TIPO DE ACTIVIDAD
+    // UNA VEZ QUE YA FUE PUBLICADO
+    // ---------------------------------------------------------
+    if (
+      data.tipoActividad !== undefined &&
+      data.tipoActividad !== registro.tipoActividad &&
+      registro.estado === EstadoEventoCapacitacion.PUBLICADO
+    ) {
+      const err = new Error(
+        'No se puede cambiar el tipo de actividad una vez que fue publicado.',
+      );
+      err.name = 'ValidationError';
+      throw err;
+    }
 
     // ---------------------------------------------------------
     // CONSTRUIR LOS DATOS FINALES
@@ -1113,14 +1128,22 @@ export class EventosCapacitacionesService {
   // =========================================================
   // ELIMINAR IMAGEN
   // =========================================================
-
   async removeImagen(
+    eventoCapacitacionId: number,
     imagenId: number,
   ) {
     const imagen =
       await this.obtenerImagenOFallar(
         imagenId,
       );
+
+    if (imagen.eventoCapacitacionId !== eventoCapacitacionId) {
+      const err = new Error(
+        'La imagen no pertenece al evento o capacitación indicado.',
+      );
+      err.name = 'ValidationError';
+      throw err;
+    }
 
     await this.imagenesRepo.remove(
       imagen,
