@@ -5,13 +5,13 @@ function Footer() {
     'w-fit rounded text-sm text-white/75 motion-safe:transition motion-safe:duration-200 hover:text-[#d9d823] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-4 focus-visible:ring-offset-[#095540]';
 
   return (
-    <footer className="relative overflow-hidden rounded-t-[2.5rem] bg-[#095540] text-white sm:rounded-t-[3.5rem]">
+    <footer className="sigtad-footer relative overflow-hidden rounded-t-[2.5rem] bg-[#095540] text-white motion-safe:transition-colors motion-safe:duration-500 sm:rounded-t-[3.5rem]">
       <div
         className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[#8dc63f]/10 blur-3xl"
         aria-hidden="true"
       />
 
-      <div className="relative mx-auto grid max-w-7xl gap-10 px-6 py-14 sm:px-8 sm:py-16 md:grid-cols-2 lg:grid-cols-[1.25fr_0.75fr_0.75fr] lg:gap-16">
+      <div className="sigtad-animate-in relative mx-auto grid max-w-7xl gap-10 px-6 py-14 sm:px-8 sm:py-16 md:grid-cols-2 lg:grid-cols-[1.25fr_0.75fr_0.75fr] lg:gap-16">
         <div className="max-w-md">
           <div className="flex items-center gap-3">
             <span className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-white p-1.5">
@@ -43,7 +43,7 @@ function Footer() {
             <a href="#inicio" className={claseEnlace}>
               Inicio
             </a>
-            <a href="#sobre-parque" className={claseEnlace}>
+            <a href="#sobre-parque" className={claseEnlace} data-sigtad-about>
               Sobre el parque
             </a>
             <a href="#atractivos" className={claseEnlace}>

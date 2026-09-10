@@ -105,11 +105,11 @@ function Hero() {
       </div>
 
       <div
-        className="absolute inset-0 bg-gradient-to-r from-[#095540]/95 via-[#095540]/70 to-[#095540]/20"
+        className="absolute inset-0 bg-gradient-to-r from-[#095540]/78 via-[#095540]/45 to-[#095540]/10"
         aria-hidden="true"
       />
       <div
-        className="absolute inset-0 bg-gradient-to-t from-[#095540]/80 via-transparent to-[#095540]/25"
+        className="absolute inset-0 bg-gradient-to-t from-[#095540]/55 via-transparent to-[#095540]/10"
         aria-hidden="true"
       />
       <div
@@ -124,9 +124,9 @@ function Hero() {
             Guanacaste, Costa Rica
           </div>
 
-          <h1 className="font-brand max-w-4xl text-4xl font-bold leading-[1.04] tracking-[-0.035em] text-white sm:text-5xl md:text-6xl lg:text-7xl">
-            Naturaleza que inspira,
-            <span className="block text-[#8dc63f]">comunidades que conectan.</span>
+          <h1 className="sigtad-animate-in font-brand max-w-4xl text-4xl font-bold leading-[1.04] tracking-[-0.035em] text-white sm:text-5xl md:text-6xl lg:text-7xl">
+            Uniendo la Conservación, la Comunidad
+            <span className="block text-[#8dc63f]">y el Desarrollo Sostenible en el Parque Nacional Diriá.</span>
           </h1>
 
           <p className="mt-6 max-w-2xl text-base leading-7 text-white/85 sm:text-lg sm:leading-8 lg:text-xl">
@@ -134,22 +134,9 @@ function Hero() {
             emprendimientos que nacen alrededor de este paisaje único.
           </p>
 
-          <div className="mt-8 flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
-            <a
-              href="#atractivos"
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#8dc63f] px-6 py-3 text-sm font-bold text-[#095540] shadow-lg shadow-black/15 motion-safe:transition motion-safe:duration-300 motion-safe:ease-out hover:bg-[#009444] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#d9d823]/55 motion-safe:hover:-translate-y-0.5 motion-safe:active:scale-[0.98] motion-reduce:transform-none sm:text-base"
-            >
-              Explorar el parque
-              <span aria-hidden="true"></span>
-            </a>
-
-            <a
-              href="#eventos"
-              className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/50 bg-white/10 px-6 py-3 text-sm font-bold text-white backdrop-blur-sm motion-safe:transition motion-safe:duration-300 hover:border-white hover:bg-white hover:text-[#095540] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/40 motion-safe:active:scale-[0.98] motion-reduce:transform-none sm:text-base"
-            >
-              Ver eventos
-            </a>
-          </div>
+          <p className="sigtad-animate-in mt-6 max-w-2xl text-sm font-semibold uppercase tracking-[0.12em] text-white/85 sm:text-base">
+            Asociación Aliados del Parque Nacional Diriá
+          </p>
         </div>
       </div>
 
@@ -162,7 +149,7 @@ function Hero() {
         {DIAPOSITIVAS[indiceActual].nombre}
       </p>
 
-      <div className="absolute bottom-5 left-1/2 z-20 flex max-w-[calc(100%-2rem)] -translate-x-1/2 items-center gap-1 rounded-full border border-white/20 bg-[#095540]/65 p-1.5 shadow-xl backdrop-blur-md sm:bottom-7 sm:gap-2">
+      <div className="hidden" aria-hidden="true">
         <button
           type="button"
           onClick={mostrarAnterior}

@@ -22,6 +22,7 @@ type NombreRol =
 
 interface LoginProps {
   onLogin: (rol: NombreRol) => void;
+  onIrRegistro?: () => void;
 }
 
 const esNombreRol = (rol: unknown): rol is NombreRol =>
@@ -74,6 +75,7 @@ const extraerRolDelToken = (): NombreRol | null => {
 
 export default function login({
   onLogin,
+  onIrRegistro,
 }: LoginProps) {
   const [identificador, setIdentificador] =
     useState('');
@@ -241,18 +243,13 @@ export default function login({
         </aside>
 
         <form
-          className="relative w-full max-w-lg justify-self-center overflow-hidden rounded-[2rem] border border-white/65 bg-white/84 p-6 pt-9 shadow-[0_30px_90px_rgba(0,0,0,0.3)] backdrop-blur-2xl motion-safe:transition-[transform,box-shadow] motion-safe:duration-500 motion-safe:ease-out motion-reduce:transition-none sm:p-8 sm:pt-11 lg:justify-self-end"
+          className="relative w-full max-w-lg justify-self-center overflow-hidden rounded-[2rem] border border-white/65 bg-white/84 p-6 shadow-[0_30px_90px_rgba(0,0,0,0.3)] backdrop-blur-2xl motion-safe:transition-[transform,box-shadow] motion-safe:duration-500 motion-safe:ease-out motion-reduce:transition-none sm:p-8 lg:justify-self-end"
           noValidate
           onSubmit={handleSubmit}
           aria-busy={
             estado === 'cargando'
           }
         >
-          <div
-            className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-[#095540] via-[#009444] to-[#8DC63F]"
-            aria-hidden="true"
-          />
-
           <div className="mb-6 flex justify-center lg:hidden">
             <div className="rounded-2xl border border-[#095540]/10 bg-white/90 p-3 shadow-sm">
               <img
@@ -467,10 +464,23 @@ export default function login({
             </button>
           </div>
 
+          {onIrRegistro && (
+            <p className="mt-7 border-t border-[#095540]/12 pt-5 text-center text-sm text-slate-600">
+              ¿No tienes cuenta?{' '}
+              <button
+                type="button"
+                className="rounded-md font-bold text-[#095540] underline-offset-4 outline-none hover:text-[#009444] hover:underline focus-visible:ring-2 focus-visible:ring-[#009444] focus-visible:ring-offset-2 motion-safe:transition-colors motion-safe:duration-200 motion-reduce:transition-none"
+                onClick={onIrRegistro}
+              >
+                Regístrate aquí
+              </button>
+            </p>
+          )}
+
           {mensaje && (
             <div className="mt-5">
               <p
-                className={`rounded-2xl border px-4 py-3 text-sm font-medium leading-5 ${
+                className={`sigtad-button-feedback rounded-2xl border px-4 py-3 text-sm font-medium leading-5 ${
                   estado === 'exito'
                     ? 'border-[#009444]/30 bg-[#009444]/10 text-[#095540]'
                     : 'border-[#D9D823]/70 bg-[#D9D823]/15 text-black'

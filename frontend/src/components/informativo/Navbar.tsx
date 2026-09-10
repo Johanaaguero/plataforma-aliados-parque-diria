@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import logo from '../../assets/logo.png';
+import logoBlanco from '../../../logo-blanco.png';
+import TemaInterfaz from '../ui/TemaInterfaz';
 
 interface NavbarProps {
   onRegistro: () => void;
@@ -32,6 +35,7 @@ function Navbar({
   seccionActiva = 'inicio',
   modoAdministracion = false,
 }: NavbarProps) {
+  const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
   const [menuAbierto, setMenuAbierto] = useState(false);
 
@@ -69,6 +73,12 @@ function Navbar({
     }
   };
 
+  const irGestionRoles = () => {
+    setMenuAbierto(false);
+    navigate('/admin/roles');
+    onGestionRoles();
+  };
+
   const claseNavegacion =
     'rounded-full border border-transparent px-3 py-2 text-sm font-semibold text-[#17372c] motion-safe:transition-all motion-safe:duration-200 motion-safe:ease-out hover:bg-[#eef7e7]/70 hover:text-[#095540] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2';
   const claseNavegacionActiva =
@@ -84,7 +94,7 @@ function Navbar({
       aria-label="Navegación principal"
     >
       <div
-        className={`mx-auto max-w-7xl overflow-hidden border border-white/70 bg-white/90 backdrop-blur-xl motion-safe:transition-all motion-safe:duration-300 motion-reduce:transition-none ${
+        className={`mx-auto max-w-7xl overflow-visible border border-white/70 bg-white/90 backdrop-blur-xl motion-safe:transition-all motion-safe:duration-300 motion-reduce:transition-none ${
           menuAbierto ? 'rounded-[1.75rem] xl:rounded-full' : 'rounded-full'
         } ${
           modoAdministracion || scrolled
@@ -92,27 +102,24 @@ function Navbar({
             : 'shadow-[0_10px_35px_rgba(7,63,49,0.11)]'
         }`}
       >
-        <div className="flex min-h-[68px] items-center justify-between gap-3 px-3 sm:px-4 lg:px-5">
+        <div className="flex min-h-[82px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-7">
           <button
             type="button"
             onClick={irInicio}
             className="group flex min-w-0 shrink-0 items-center gap-2 rounded-full pr-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2"
             aria-label="Ir al inicio"
           >
-            <span className="flex h-12 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white p-1 sm:w-16">
+            <span className="sigtad-navbar-logo flex h-16 w-[4.5rem] shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-transparent sm:h-[4.5rem] sm:w-20">
               <img
                 src={logo}
                 alt=""
-                className="h-full w-full object-contain motion-safe:transition motion-safe:duration-300 motion-safe:group-hover:scale-105 motion-reduce:transform-none"
+                className="sigtad-logo-claro h-full w-full object-contain motion-safe:transition motion-safe:duration-300 motion-safe:group-hover:scale-105 motion-reduce:transform-none"
               />
-            </span>
-            <span className="hidden min-w-0 sm:block">
-              <span className="block truncate text-sm font-bold leading-tight text-[#095540]">
-                Aliados del Parque
-              </span>
-              <span className="block truncate text-[10px] font-semibold uppercase tracking-[0.15em] text-[#587267]">
-                Parque Nacional Diriá
-              </span>
+              <img
+                src={logoBlanco}
+                alt=""
+                className="sigtad-logo-oscuro hidden h-full w-full object-contain motion-safe:transition motion-safe:duration-300 motion-safe:group-hover:scale-105 motion-reduce:transform-none"
+              />
             </span>
           </button>
 
@@ -123,9 +130,10 @@ function Navbar({
             <button
               type="button"
               onClick={() => irSeccion('sobre-parque')}
+              data-sigtad-about
               className={claseNavegacion}
             >
-              Sobre el parque
+              Sobre Aliados del Parque
             </button>
             <button
               type="button"
@@ -145,7 +153,7 @@ function Navbar({
 </button>
           </div>
 
-          <div className="hidden shrink-0 items-center gap-2 xl:flex">
+          <div className="hidden shrink-0 items-center gap-1.5 xl:flex">
             {!rolAutenticado && (
               <>
                 <button
@@ -168,7 +176,7 @@ function Navbar({
             {rolAutenticado === 'administrador' && (
               <button
                 type="button"
-                onClick={onGestionRoles}
+                onClick={irGestionRoles}
                 className="min-h-10 rounded-full bg-[#d9d823] px-4 py-2 text-sm font-bold text-[#073f31] motion-safe:transition motion-safe:duration-200 hover:bg-[#c7cc22] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2"
               >
                 Gestionar roles
@@ -216,6 +224,8 @@ function Navbar({
             )}
           </div>
 
+          <div className="flex shrink-0 items-center gap-1">
+          <TemaInterfaz enNavbar />
           <button
             type="button"
             onClick={() => setMenuAbierto(!menuAbierto)}
@@ -248,6 +258,7 @@ function Navbar({
               </svg>
             )}
           </button>
+          </div>
         </div>
 
         {menuAbierto && (
@@ -262,9 +273,10 @@ function Navbar({
               <button
                 type="button"
                 onClick={() => irSeccion('sobre-parque')}
+                data-sigtad-about
                 className={claseNavegacionMovil}
               >
-                Sobre el parque
+                Sobre Aliados del Parque
               </button>
               <button
                 type="button"
@@ -340,7 +352,7 @@ function Navbar({
                 type="button"
                 onClick={() => {
                   setMenuAbierto(false);
-                  onGestionRoles();
+                  irGestionRoles();
                 }}
                 className="mt-3 min-h-12 w-full rounded-full bg-[#d9d823] px-4 py-3 text-sm font-bold text-[#073f31] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f]"
               >

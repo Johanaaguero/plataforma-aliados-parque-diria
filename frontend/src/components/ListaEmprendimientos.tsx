@@ -648,15 +648,18 @@ useEffect(() => {
         )}
 
         {esCatalogoPublico && (
-          <header className="relative mb-6 overflow-hidden rounded-3xl bg-gradient-to-r from-[#095540] via-[#095540] to-[#009444] px-5 py-5 text-white shadow-[0_14px_35px_rgba(9,85,64,0.12)] sm:px-7 sm:py-6">
+          <header className="relative mb-8 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
             <div className="relative">
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8DC63F]">
-                Comunidad Diriá
-              </p>
-              <h1 className="mt-1 font-brand text-2xl font-bold tracking-tight sm:text-3xl">
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#8DC63F]/40 bg-[#8DC63F]/10 px-3 py-1.5">
+                <span className="h-2 w-2 rounded-full bg-[#8DC63F]" />
+                <span className="text-xs font-bold uppercase tracking-[0.16em] text-[#095540]">
+                  Comunidad Diriá
+                </span>
+              </div>
+              <h1 className="font-brand text-3xl font-bold tracking-tight text-[#095540] sm:text-4xl">
                 Emprendimientos locales
               </h1>
-              <p className="mt-1 text-sm text-white/80">
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
                 Propuestas de la comunidad alrededor del Parque Nacional Diriá.
               </p>
             </div>

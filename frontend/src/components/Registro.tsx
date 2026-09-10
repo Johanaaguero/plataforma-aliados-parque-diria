@@ -20,6 +20,7 @@ interface CampoErrores {
 }
 interface RegistroProps {
   onIrLogin: () => void;
+  onRegistroExitoso?: () => void;
 }
 
 interface RespuestaRegistro {
@@ -54,7 +55,7 @@ function obtenerUrlBaseApi(): string | null {
   return urlConfigurada ? urlConfigurada.replace(/\/+$/, '') : null;
 }
 
-export default function Registro({ onIrLogin }: RegistroProps) {
+export default function Registro({ onIrLogin, onRegistroExitoso }: RegistroProps) {
   const [nombreUsuario, setNombreUsuario] = useState('');
   const [nombre, setNombre] = useState('');
   const [apellidos, setApellidos] = useState('');
@@ -204,6 +205,7 @@ export default function Registro({ onIrLogin }: RegistroProps) {
 
       setMensaje('Cuenta creada correctamente. Bienvenido/a.');
       setEstado('exito');
+      onRegistroExitoso?.();
       setSegundosRestantes(SEGUNDOS_REDIRECCION);
 
       setNombreUsuario('');
@@ -252,16 +254,11 @@ export default function Registro({ onIrLogin }: RegistroProps) {
         </aside>
 
         <form
-          className="relative w-full max-w-3xl justify-self-center overflow-hidden rounded-[2rem] border border-white/65 bg-white/86 p-6 pt-9 shadow-[0_30px_90px_rgba(0,0,0,0.3)] backdrop-blur-2xl motion-safe:transition-[transform,box-shadow] motion-safe:duration-500 motion-safe:ease-out motion-reduce:transition-none sm:p-9 sm:pt-11 lg:justify-self-end"
+          className="relative w-full max-w-3xl justify-self-center overflow-hidden rounded-[2rem] border border-white/65 bg-white/86 p-6 shadow-[0_30px_90px_rgba(0,0,0,0.3)] backdrop-blur-2xl motion-safe:transition-[transform,box-shadow] motion-safe:duration-500 motion-safe:ease-out motion-reduce:transition-none sm:p-9 lg:justify-self-end"
           noValidate
           onSubmit={handleSubmit}
           aria-busy={estado === 'cargando'}
         >
-          <div
-            className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-[#095540] via-[#009444] to-[#8DC63F]"
-            aria-hidden="true"
-          />
-
           <div className="mb-6 flex justify-center lg:hidden">
             <div className="rounded-2xl border border-[#095540]/10 bg-white/90 p-3 shadow-sm">
               <img src={logo} alt="Logo de Aliados del Parque Nacional Diriá" className="h-auto w-32" />
@@ -514,7 +511,7 @@ export default function Registro({ onIrLogin }: RegistroProps) {
 
           {mensaje && (
             <p
-              className={`mt-5 flex items-start gap-2.5 rounded-2xl border px-4 py-3 text-sm font-medium leading-5 ${
+              className={`sigtad-button-feedback mt-5 flex items-start gap-2.5 rounded-2xl border px-4 py-3 text-sm font-medium leading-5 ${
                 estado === 'exito' ? 'border-[#009444]/30 bg-[#009444]/10 text-[#095540]' : 'border-[#D9D823]/70 bg-[#D9D823]/15 text-black'
               }`}
               role={estado === 'error' ? 'alert' : 'status'}

@@ -1,27 +1,18 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import RegistroEventoCapacitacion from './RegistroEventoCapacitacion';
 
 import PortadaEventoCapacitacion from './Portadaeventocapacitacion';
 import EdicionEventoCapacitacion from './EdicionEventoCapacitacion';
-interface EventoCapacitacion {
-  id: number;
-  nombre: string | null;
-  descripcion: string | null;
-  fecha: string | null;
-  hora: string | null;
-  lugar: string | null;
-  tipoActividad: 'evento' | 'capacitacion';
-  cupoMaximo: number | null;
-  estado:
-    | 'borrador'
-    | 'publicado'
-    | 'no_publicado'
-    | 'desactivado';
-  temporada: 'seca' | 'lluviosa' | null;
-  createdAt?: string;
-  updatedAt?: string;
-}
+import DetalleEventoCapacitacion from './DetalleEventoCapacitacion';
+import {
+  formatearCupos,
+  obtenerEventos,
+  type EventoCapacitacion,
+  type TemporadaEvento,
+} from '../../services/eventosCapacitacionesService';
+
+const EVENTOS_POR_PAGINA = 9;
 
 type NombreRol =
   | 'administrador'
@@ -94,6 +85,22 @@ export default function ListaEventosCapacitaciones({
   const [filtro, setFiltro] =
     useState<FiltroActividad>('todos');
 
+  const [busqueda, setBusqueda] = useState('');
+  const [busquedaAplicada, setBusquedaAplicada] = useState('');
+  const [temporada, setTemporada] = useState<TemporadaEvento | ''>('');
+  const [pagina, setPagina] = useState(1);
+  const [paginacionPublica, setPaginacionPublica] = useState({
+    total: 0,
+    totalPaginas: 0,
+  });
+  const [conteosPublicos, setConteosPublicos] = useState({
+    todos: 0,
+    eventos: 0,
+    capacitaciones: 0,
+  });
+  const [eventoDetalle, setEventoDetalle] = useState<EventoCapacitacion | null>(null);
+  const cargaActivaRef = useRef<AbortController | null>(null);
+
   const [estadoAbierto, setEstadoAbierto] =
     useState<number | null>(null);
 
@@ -119,8 +126,27 @@ export default function ListaEventosCapacitaciones({
     () => obtenerUrlBaseApi(),
     [],
   );
-    const [eventoEditando, setEventoEditando] =
+  const [eventoEditando, setEventoEditando] =
     useState<EventoCapacitacion | null>(null);
+
+  const parametrosPublicos = useMemo(
+    () => esAdministrador ? null : {
+      buscar: busquedaAplicada || undefined,
+      temporada: temporada || undefined,
+      tipoActividad: filtro === 'todos' ? undefined : filtro,
+      pagina,
+    },
+    [esAdministrador, busquedaAplicada, temporada, filtro, pagina],
+  );
+  const esperandoBusqueda = !esAdministrador && busqueda.trim() !== busquedaAplicada;
+
+  useEffect(() => {
+    const temporizador = window.setTimeout(() => {
+      setBusquedaAplicada(busqueda.trim());
+    }, 300);
+
+    return () => window.clearTimeout(temporizador);
+  }, [busqueda]);
 
   useEffect(() => {
     if (!notificacion) return;
@@ -176,10 +202,25 @@ export default function ListaEventosCapacitaciones({
     });
   }
 
-  async function cargarDatos() {
+  const cargarDatos = useCallback(async () => {
+    cargaActivaRef.current?.abort();
+    const controlador = new AbortController();
+    cargaActivaRef.current = controlador;
+
     try {
       setCargando(true);
       setError(null);
+
+      if (!esAdministrador) {
+        const resultado = await obtenerEventos(parametrosPublicos ?? {}, controlador.signal);
+
+        if (!controlador.signal.aborted) {
+          setEventos(resultado.data);
+          setPaginacionPublica(resultado.paginacion);
+          setConteosPublicos(resultado.conteos);
+        }
+        return;
+      }
 
       const token = obtenerToken();
 
@@ -196,6 +237,7 @@ export default function ListaEventosCapacitaciones({
         {
           method: 'GET',
           headers,
+          signal: controlador.signal,
         },
       );
 
@@ -219,21 +261,46 @@ export default function ListaEventosCapacitaciones({
       const datos =
         (await respuesta.json()) as EventoCapacitacion[];
 
-      setEventos(datos);
+      if (!controlador.signal.aborted) {
+        setEventos(datos);
+      }
     } catch (error) {
+      if (controlador.signal.aborted) return;
       setError(
         error instanceof Error
           ? error.message
           : 'No se pudieron cargar los eventos.',
       );
     } finally {
-      setCargando(false);
+      if (!controlador.signal.aborted) {
+        setCargando(false);
+      }
     }
-  }
+  }, [esAdministrador, parametrosPublicos, urlBaseApi]);
 
   useEffect(() => {
-    void cargarDatos();
-  }, [urlBaseApi]);
+    if (esperandoBusqueda) {
+      setCargando(true);
+      setError(null);
+    } else {
+      void cargarDatos();
+    }
+
+    return () => cargaActivaRef.current?.abort();
+  }, [cargarDatos, esperandoBusqueda]);
+
+  function cambiarFiltro(nuevoFiltro: FiltroActividad) {
+    setFiltro(nuevoFiltro);
+    setPagina(1);
+    setEstadoAbierto(null);
+  }
+
+  function limpiarFiltros() {
+    cambiarFiltro('todos');
+    setBusqueda('');
+    setBusquedaAplicada('');
+    setTemporada('');
+  }
 
   function formatearFecha(fecha: string | null) {
     if (!fecha) return 'Fecha pendiente';
@@ -551,16 +618,20 @@ export default function ListaEventosCapacitaciones({
 
   const eventosVisibles = useMemo(() => {
     if (esAdministrador) {
-      return eventos;
+      const nombreBuscado = busqueda.trim().toLocaleLowerCase('es-CR');
+      return eventos.filter((evento) =>
+        (!temporada || evento.temporada === temporada) &&
+        (!nombreBuscado || evento.nombre?.toLocaleLowerCase('es-CR').includes(nombreBuscado)),
+      );
     }
 
     return eventos.filter(
       (evento) => evento.estado === 'publicado',
     );
-  }, [eventos, esAdministrador]);
+  }, [eventos, esAdministrador, busqueda, temporada]);
 
   const eventosFiltrados = useMemo(() => {
-    if (filtro === 'todos') {
+    if (!esAdministrador || filtro === 'todos') {
       return eventosVisibles;
     }
 
@@ -568,19 +639,35 @@ export default function ListaEventosCapacitaciones({
       (evento) =>
         evento.tipoActividad === filtro,
     );
-  }, [eventosVisibles, filtro]);
+  }, [eventosVisibles, esAdministrador, filtro]);
 
-  const cantidadEventos =
+  const cantidadEventos = esAdministrador ?
     eventosVisibles.filter(
       (evento) =>
         evento.tipoActividad === 'evento',
-    ).length;
+    ).length : conteosPublicos.eventos;
 
-  const cantidadCapacitaciones =
+  const cantidadCapacitaciones = esAdministrador ?
     eventosVisibles.filter(
       (evento) =>
         evento.tipoActividad === 'capacitacion',
-    ).length;
+    ).length : conteosPublicos.capacitaciones;
+
+  const cantidadTodos = esAdministrador ? eventosVisibles.length : conteosPublicos.todos;
+  const totalResultados = esAdministrador ? eventosFiltrados.length : paginacionPublica.total;
+  const totalPaginas = Math.max(1, esAdministrador
+    ? Math.ceil(totalResultados / EVENTOS_POR_PAGINA)
+    : paginacionPublica.totalPaginas);
+  const eventosPagina = esAdministrador
+    ? eventosFiltrados.slice((pagina - 1) * EVENTOS_POR_PAGINA, pagina * EVENTOS_POR_PAGINA)
+    : eventosFiltrados;
+  const hayFiltros = Boolean(busqueda.trim() || temporada || filtro !== 'todos');
+
+  useEffect(() => {
+    if (!cargando && !error && pagina > totalPaginas) {
+      setPagina(totalPaginas);
+    }
+  }, [cargando, error, pagina, totalPaginas]);
 
   if (mostrarRegistro) {
     return (
@@ -600,7 +687,7 @@ export default function ListaEventosCapacitaciones({
           }
           onRegistrado={async () => {
             setMostrarRegistro(false);
-            setFiltro('todos');
+            limpiarFiltros();
 
             await cargarDatos();
 
@@ -775,10 +862,59 @@ export default function ListaEventosCapacitaciones({
           )}
         </div>
 
-        {!cargando &&
-          !error &&
-          eventosVisibles.length > 0 && (
-            <div className="mb-8 flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+        <div className="mb-8 space-y-4 rounded-3xl border border-[#095540]/10 bg-white p-4 shadow-[0_12px_35px_rgba(9,85,64,0.07)] sm:p-5">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end">
+            <div className="min-w-0 flex-1">
+              <label htmlFor="buscar-eventos" className="mb-2 block text-xs font-bold text-[#095540]">
+                Buscar por nombre
+              </label>
+              <div className="relative">
+                <svg
+                  className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth="2"
+                  stroke="currentColor"
+                  aria-hidden="true"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607z" />
+                </svg>
+                <input
+                  id="buscar-eventos"
+                  type="search"
+                  placeholder="Buscar por nombre..."
+                  value={busqueda}
+                  maxLength={150}
+                  onChange={(evento) => {
+                    setBusqueda(evento.target.value);
+                    setPagina(1);
+                    setEstadoAbierto(null);
+                  }}
+                  className="w-full rounded-2xl border border-[#095540]/15 bg-[#f7faf5] py-3 pl-10 pr-4 text-sm font-medium text-slate-800 placeholder:text-slate-400 outline-none motion-safe:transition-[border-color,background-color,box-shadow] motion-safe:duration-200 focus-visible:border-[#009444] focus-visible:bg-white focus-visible:ring-4 focus-visible:ring-[#009444]/15"
+                />
+              </div>
+            </div>
+            <div className="w-full md:w-64">
+              <label htmlFor="temporada-eventos" className="mb-2 block text-xs font-bold text-[#095540]">
+                Temporada
+              </label>
+              <select
+                id="temporada-eventos"
+                value={temporada}
+                onChange={(evento) => {
+                  setTemporada(evento.target.value as TemporadaEvento | '');
+                  setPagina(1);
+                  setEstadoAbierto(null);
+                }}
+                className="w-full rounded-2xl border border-[#095540]/15 bg-[#f7faf5] px-4 py-3 text-sm font-medium text-slate-800 outline-none motion-safe:transition-[border-color,background-color,box-shadow] motion-safe:duration-200 focus-visible:border-[#009444] focus-visible:bg-white focus-visible:ring-4 focus-visible:ring-[#009444]/15"
+              >
+                <option value="">Todas las temporadas</option>
+                <option value="seca">Temporada seca</option>
+                <option value="lluviosa">Temporada lluviosa</option>
+              </select>
+            </div>
+          </div>
+          <div className="flex flex-col gap-4 border-t border-slate-100 pt-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <p className="text-sm font-semibold text-slate-800">
                   {esAdministrador
@@ -787,18 +923,18 @@ export default function ListaEventosCapacitaciones({
                 </p>
 
                 <p className="mt-0.5 text-xs text-slate-500">
-                  Filtre el contenido según el tipo
-                  de actividad.
+                  Filtre el contenido según el tipo de actividad.
                 </p>
               </div>
 
-              <div className="flex w-full overflow-x-auto rounded-xl border border-slate-200 bg-slate-50 p-1 sm:w-auto">
+              <div className="flex w-full flex-wrap gap-1.5 rounded-2xl border border-slate-200 bg-slate-50 p-1.5 lg:w-auto" role="group" aria-label="Tipo de actividad">
                 <button
                   type="button"
                   onClick={() =>
-                    setFiltro('todos')
+                    cambiarFiltro('todos')
                   }
-                  className={`flex shrink-0 items-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold transition-all duration-200 ${
+                  aria-pressed={filtro === 'todos'}
+                  className={`flex shrink-0 items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-300 ease-in-out hover:scale-105 active:scale-95 ${
                     filtro === 'todos'
                       ? 'bg-white text-[#095540] shadow-sm'
                       : 'text-slate-500 hover:text-slate-800'
@@ -813,16 +949,17 @@ export default function ListaEventosCapacitaciones({
                         : 'bg-slate-200 text-slate-500'
                     }`}
                   >
-                    {eventosVisibles.length}
+                    {cantidadTodos}
                   </span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() =>
-                    setFiltro('evento')
+                    cambiarFiltro('evento')
                   }
-                  className={`flex shrink-0 items-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold transition-all duration-200 ${
+                  aria-pressed={filtro === 'evento'}
+                  className={`flex shrink-0 items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-300 ease-in-out hover:scale-105 active:scale-95 ${
                     filtro === 'evento'
                       ? 'bg-white text-[#095540] shadow-sm'
                       : 'text-slate-500 hover:text-slate-800'
@@ -844,9 +981,10 @@ export default function ListaEventosCapacitaciones({
                 <button
                   type="button"
                   onClick={() =>
-                    setFiltro('capacitacion')
+                    cambiarFiltro('capacitacion')
                   }
-                  className={`flex shrink-0 items-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold transition-all duration-200 ${
+                  aria-pressed={filtro === 'capacitacion'}
+                  className={`flex shrink-0 items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-300 ease-in-out hover:scale-105 active:scale-95 ${
                     filtro === 'capacitacion'
                       ? 'bg-white text-[#087AA8] shadow-sm'
                       : 'text-slate-500 hover:text-slate-800'
@@ -865,11 +1003,20 @@ export default function ListaEventosCapacitaciones({
                   </span>
                 </button>
               </div>
-            </div>
+          </div>
+          {hayFiltros && (
+            <button
+              type="button"
+              onClick={limpiarFiltros}
+              className="text-sm font-bold text-[#009444] transition hover:text-[#095540] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444]"
+            >
+              Limpiar filtros
+            </button>
           )}
+        </div>
 
         {cargando && (
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3" role="status" aria-label="Cargando actividades" aria-live="polite">
             {[1, 2, 3].map((item) => (
               <div
                 key={item}
@@ -902,7 +1049,7 @@ export default function ListaEventosCapacitaciones({
         )}
 
         {!cargando && error && (
-          <div className="rounded-2xl border border-red-200 bg-white p-8 text-center shadow-sm">
+          <div className="rounded-2xl border border-red-200 bg-white p-8 text-center shadow-sm" role="alert">
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-red-50 text-red-600">
               <svg
                 className="h-6 w-6"
@@ -946,7 +1093,7 @@ export default function ListaEventosCapacitaciones({
 
         {!cargando &&
           !error &&
-          eventosVisibles.length === 0 && (
+          totalResultados === 0 && !hayFiltros && (
             <div className="rounded-2xl border border-slate-200 bg-white px-6 py-16 text-center shadow-sm">
               <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-xl bg-[#8DC63F]/10 text-[#095540]">
                 <svg
@@ -990,8 +1137,7 @@ export default function ListaEventosCapacitaciones({
 
         {!cargando &&
           !error &&
-          eventosVisibles.length > 0 &&
-          eventosFiltrados.length === 0 && (
+          totalResultados === 0 && hayFiltros && (
             <div className="rounded-2xl border border-slate-200 bg-white px-6 py-14 text-center shadow-sm">
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
                 <svg
@@ -1028,9 +1174,7 @@ export default function ListaEventosCapacitaciones({
 
               <button
                 type="button"
-                onClick={() =>
-                  setFiltro('todos')
-                }
+                onClick={limpiarFiltros}
                 className="mt-5 text-sm font-bold text-[#009444] transition hover:text-[#095540]"
               >
                 Ver todas las actividades
@@ -1040,9 +1184,9 @@ export default function ListaEventosCapacitaciones({
 
         {!cargando &&
           !error &&
-          eventosFiltrados.length > 0 && (
+          eventosPagina.length > 0 && (
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-              {eventosFiltrados.map((item) => {
+              {eventosPagina.map((item) => {
                 
                 const colores =
                   obtenerColorTipo(
@@ -1204,7 +1348,7 @@ export default function ListaEventosCapacitaciones({
                           )}
                         </span>
 
-                        {item.temporada && (
+                        {item.temporada ? (
                           <span
                             className={`inline-flex items-center gap-2 rounded-lg border px-2.5 py-1 text-[10px] font-semibold ${
                               item.temporada === 'seca'
@@ -1223,6 +1367,10 @@ export default function ListaEventosCapacitaciones({
                             {item.temporada === 'seca'
                               ? 'Época seca'
                               : 'Época lluviosa'}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-semibold text-slate-500">
+                            Temporada por confirmar
                           </span>
                         )}
                       </div>
@@ -1361,7 +1509,7 @@ export default function ListaEventosCapacitaciones({
                           </div>
                         </div>
 
-                        <div className="mt-4 flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2.5">
+                        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-slate-50 px-3 py-2.5">
                           <div className="flex items-center gap-2.5">
                             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white text-[#095540] shadow-sm">
                               <svg
@@ -1395,20 +1543,25 @@ export default function ListaEventosCapacitaciones({
                             </div>
 
                             <span className="text-xs font-medium text-slate-500">
-                              {item.cupoMaximo !== null
-                                ? 'Capacidad máxima'
-                                : 'Cupo'}
+                              Disponibilidad
                             </span>
                           </div>
 
-                          <span className="text-xs font-bold text-[#095540]">
-                            {item.cupoMaximo !== null
-                              ? `${item.cupoMaximo} personas`
-                              : 'Cupo libre'}
+                          <span className="rounded-lg border border-[#8DC63F]/30 bg-[#8DC63F]/10 px-2.5 py-1 text-xs font-bold text-[#095540]">
+                            {formatearCupos(item)}
                           </span>
                         </div>
 
-                                                {esAdministrador && (
+                        <button
+                          type="button"
+                          onClick={() => setEventoDetalle(item)}
+                          className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#095540] px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#009444] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444] focus-visible:ring-offset-2"
+                          aria-label={`Ver detalles de ${item.nombre ?? 'la actividad'}`}
+                        >
+                          Ver detalles
+                        </button>
+
+                        {esAdministrador && (
                           <div className="mt-5 flex justify-between">
                             <button
                               type="button"
@@ -1470,7 +1623,54 @@ export default function ListaEventosCapacitaciones({
               })}
             </div>
           )}
+
+        {!cargando && !error && totalResultados > 0 && (
+          <nav
+            className="mt-8 flex flex-col items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row"
+            aria-label="Paginación de actividades"
+          >
+            <p className="text-sm text-slate-600" aria-live="polite">
+              Mostrando {(pagina - 1) * EVENTOS_POR_PAGINA + 1}–{Math.min(pagina * EVENTOS_POR_PAGINA, totalResultados)} de {totalResultados} actividades
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setPagina((actual) => Math.max(1, actual - 1));
+                  setEstadoAbierto(null);
+                }}
+                disabled={pagina <= 1}
+                className="rounded-xl border border-[#095540]/15 bg-white px-3 py-2 text-xs font-bold text-[#095540] transition hover:bg-[#8DC63F]/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Anterior
+              </button>
+              <span className="text-xs font-semibold text-slate-600">
+                Página {pagina} de {totalPaginas}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setPagina((actual) => Math.min(totalPaginas, actual + 1));
+                  setEstadoAbierto(null);
+                }}
+                disabled={pagina >= totalPaginas}
+                className="rounded-xl border border-[#095540]/15 bg-white px-3 py-2 text-xs font-bold text-[#095540] transition hover:bg-[#8DC63F]/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Siguiente
+              </button>
             </div>
+          </nav>
+        )}
+      </div>
+
+      {eventoDetalle && (
+        <DetalleEventoCapacitacion
+          eventoId={eventoDetalle.id}
+          urlBaseApi={urlBaseApi}
+          eventoAdministrativo={esAdministrador && eventoDetalle.estado !== 'publicado' ? eventoDetalle : undefined}
+          onClose={() => setEventoDetalle(null)}
+        />
+      )}
 
       {eventoEditando && (
         <EdicionEventoCapacitacion

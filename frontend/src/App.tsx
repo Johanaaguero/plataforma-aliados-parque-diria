@@ -1,5 +1,6 @@
 
 import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import Registro from './components/Registro';
 import Login from './components/login';
@@ -9,6 +10,7 @@ import RecuperarContrasena from './components/RecuperarContrasena';
 import RestablecerContrasena from './components/RestablecerContrasena';
 import ListaEventosCapacitaciones from './components/Gestión de Eventos y Capacitaciones/ListaEventosCapacitaciones';
 import Bitacora from './components/Super_admin/Bitacora';
+import { mostrarFeedback } from './components/ui/FeedbackToast';
 
 import { api } from './services/api';
 import { useInactividad } from './services/useInactividad';
@@ -20,6 +22,7 @@ import Navbar from './components/informativo/Navbar';
 import Hero from './components/informativo/Hero';
 import Footer from './components/informativo/Footer';
 import Informativo from './components/informativo/general';
+import MapaParque from './components/informativo/MapaParque';
 import type { Emprendimiento } from './services/emprendimientoService';
 
 type NombreRol =
@@ -181,8 +184,10 @@ function BotonVolverInicio({
 }
 
 function App() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [mostrarRegistro, setMostrarRegistro] =
-    useState(false);
+    useState(() => new URLSearchParams(window.location.search).get('registro') === '1');
 
   const [mostrarLogin, setMostrarLogin] =
     useState(false);
@@ -379,7 +384,33 @@ function App() {
     errorAutenticacion,
   ]);
 
+  useEffect(() => {
+    if (window.location.pathname === '/login' || mostrarLogin) {
+      document.title = 'Iniciar sesión | Aliados Diriá';
+      return;
+    }
+
+    if (mostrarRegistro) {
+      document.title = 'Registrarse | Aliados Diriá';
+      return;
+    }
+
+    const titulos: Record<string, string> = {
+      inicio: 'Inicio | Aliados Diriá',
+      emprendimientos: 'Emprendimientos | Aliados Diriá',
+      eventos: 'Eventos | Aliados Diriá',
+      registroEmprendimiento: 'Registrar emprendimiento | Aliados Diriá',
+      registroCategoria: 'Registrar categoría | Aliados Diriá',
+      editarEmprendimiento: 'Editar emprendimiento | Aliados Diriá',
+    };
+
+    document.title = titulos[seccionActual] ?? 'Aliados Diriá';
+  }, [mostrarLogin, mostrarRegistro, seccionActual]);
+
   const cerrarSesion = async () => {
+    mostrarFeedback('despedida', '¡Gracias por visitarnos! Vuelve pronto a Aliados Diriá.');
+    await new Promise((resolver) => window.setTimeout(resolver, 2000));
+
     try {
       await api.logout();
     } finally {
@@ -423,7 +454,7 @@ function App() {
   };
 
   const rutaActual =
-    window.location.pathname.replace(
+    location.pathname.replace(
       /\/+$/,
       ''
     ) || '/';
@@ -449,6 +480,26 @@ function App() {
         <BotonVolverInicio />
         <RestablecerContrasena />
       </>
+    );
+  }
+
+  if (rutaActual === '/admin/roles') {
+    if (rolAutenticado !== 'administrador') {
+      navigate('/');
+      return null;
+    }
+
+    return (
+      <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef] pt-20 sm:pt-24">
+        <button
+          type="button"
+          className="fixed left-3 top-3 z-[60] inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-[#b9d6af] bg-white/95 px-4 py-2 text-sm font-bold text-[#095540] shadow-[0_10px_30px_rgba(7,63,49,0.15)] backdrop-blur-md"
+          onClick={() => navigate('/')}
+        >
+          ← Volver
+        </button>
+        <GestionRoles />
+      </section>
     );
   }
 
@@ -491,7 +542,11 @@ if (
         <BotonVolverInicio />
 
         <Login
+          onIrRegistro={() => {
+            window.location.href = '/?registro=1';
+          }}
           onLogin={(rol) => {
+            mostrarFeedback('bienvenida', '¡Bienvenido de nuevo a Aliados del Parque Diriá!');
             setRolAutenticado(rol);
             setNombreUsuario(
               obtenerNombreUsuarioDesdeToken()
@@ -712,7 +767,7 @@ if (
           }
         />
 
-        <main className="min-h-[80vh] overflow-x-hidden bg-[#f5f7ef] pt-24 sm:pt-28">
+        <main className="sigtad-catalogo min-h-[80vh] overflow-x-hidden bg-[#f5f7ef] pt-24 sm:pt-28">
           <ListaEventosCapacitaciones
             rolAutenticado={
               rolAutenticado
@@ -768,7 +823,7 @@ if (
           }
         />
 
-        <main className="min-h-[80vh] overflow-x-hidden bg-[#f5f7ef] pt-24 sm:pt-28">
+        <main className="sigtad-catalogo min-h-[80vh] overflow-x-hidden bg-[#f5f7ef] pt-24 sm:pt-28">
           <ListaEmprendimientos
             rolAutenticado={
               rolAutenticado ===
@@ -821,6 +876,9 @@ if (
           </button>
 
           <Registro
+            onRegistroExitoso={() => {
+              mostrarFeedback('registro', '¡Registro completado con éxito! Bienvenido a la comunidad.');
+            }}
             onIrLogin={() => {
               setMostrarRegistro(
                 false
@@ -845,7 +903,12 @@ if (
           </button>
 
           <Login
+            onIrRegistro={() => {
+              setMostrarLogin(false);
+              setMostrarRegistro(true);
+            }}
             onLogin={(rol) => {
+              mostrarFeedback('bienvenida', '¡Bienvenido de nuevo a Aliados del Parque Diriá!');
               setRolAutenticado(rol);
               setNombreUsuario(
                 obtenerNombreUsuarioDesdeToken()
@@ -988,6 +1051,7 @@ if (
           <main>
             <Hero />
             <Informativo />
+            <MapaParque />
           </main>
 
           <Footer />
