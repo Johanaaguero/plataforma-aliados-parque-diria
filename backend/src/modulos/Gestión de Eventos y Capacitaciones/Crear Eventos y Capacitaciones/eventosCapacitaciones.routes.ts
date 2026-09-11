@@ -1,13 +1,13 @@
 import { Router } from 'express';
 import { EventosCapacitacionesController } from './eventosCapacitaciones.controller';
 import { verificarToken } from '../../../middlewares/auth.middleware';
-
+  import { InscripcionController } from '../Inscripción a Eventos y Capacitaciones/inscripcion.controller';
 
 import { autorizarRoles } from '../../../middlewares/authorization.middleware';
 
 const router = Router();
 const controller = new EventosCapacitacionesController();
-
+const inscripcionController = new InscripcionController();
 /*
  * ============================================================
  * CREAR EVENTO / CAPACITACIÓN
@@ -35,6 +35,19 @@ router.get(
 router.patch('/:id/estado', (req, res) =>
   controller.cambiarEstado(req, res),
 );
+
+/**
+ * ============================================================
+ * INSCRIPCIÓN A EVENTO / CAPACITACIÓN
+ * Usuario autenticado
+ * ============================================================
+ */
+router.post(
+  '/:id/inscripcion',
+  verificarToken,
+  (req, res) => inscripcionController.inscribir(req, res),
+);
+
 /*
  * ============================================================
  * ACTUALIZAR EVENTO / CAPACITACIÓN

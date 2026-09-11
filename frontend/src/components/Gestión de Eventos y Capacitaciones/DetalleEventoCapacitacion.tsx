@@ -1,9 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
-import {
-  formatearCupos,
-  obtenerDetalleEvento,
-  type EventoCapacitacion,
-} from '../../services/eventosCapacitacionesService';
+import {formatearCupos,obtenerDetalleEvento,type EventoCapacitacion,}from '../../services/eventosCapacitacionesService';
+import { inscribirseEnEvento } from '../../services/inscripcionService';
 import PortadaEventoCapacitacion from './Portadaeventocapacitacion';
 
 interface DetalleEventoCapacitacionProps {
@@ -11,6 +8,10 @@ interface DetalleEventoCapacitacionProps {
   urlBaseApi: string;
   eventoAdministrativo?: EventoCapacitacion;
   onClose: () => void;
+  onInscripcionActualizada?: (
+    eventoId: number,
+    cuposDisponibles: number | null,
+  ) => void;
 }
 
 export default function DetalleEventoCapacitacion({
@@ -18,13 +19,55 @@ export default function DetalleEventoCapacitacion({
   urlBaseApi,
   eventoAdministrativo,
   onClose,
+  onInscripcionActualizada,
 }: DetalleEventoCapacitacionProps) {
   const [evento, setEvento] = useState<EventoCapacitacion | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [intento, setIntento] = useState(0);
+  const [inscribiendo, setInscribiendo] = useState(false);
+  const [mensajeInscripcion, setMensajeInscripcion] = useState<string | null>(null);
+  const [errorInscripcion, setErrorInscripcion] = useState<string | null>(null);
   const dialogoRef = useRef<HTMLDivElement>(null);
   const cerrarRef = useRef<HTMLButtonElement>(null);
+
+  async function manejarInscripcion() {
+    if (!evento || inscribiendo) return;
+
+    setInscribiendo(true);
+    setMensajeInscripcion(null);
+    setErrorInscripcion(null);
+
+    try {
+      const resultado = await inscribirseEnEvento(evento.id);
+
+      setEvento((actual) =>
+        actual
+          ? {
+              ...actual,
+              cuposDisponibles: resultado.cuposDisponibles,
+            }
+          : actual,
+      );
+
+      onInscripcionActualizada?.(
+        evento.id,
+        resultado.cuposDisponibles,
+      );
+
+      setMensajeInscripcion(
+        '¡Inscripción realizada correctamente!',
+      );
+    } catch (error) {
+      setErrorInscripcion(
+        error instanceof Error
+          ? error.message
+          : 'No se pudo realizar la inscripción.',
+      );
+    } finally {
+      setInscribiendo(false);
+    }
+  }
 
   useEffect(() => {
     const elementoAnterior = document.activeElement;
@@ -137,7 +180,34 @@ export default function DetalleEventoCapacitacion({
               <span className="rounded-full border border-[#8DC63F]/30 bg-[#8DC63F]/15 px-3 py-1.5 text-xs font-bold text-[#095540]">
                 {formatearCupos(evento)}
               </span>
+              <button
+                type="button"
+                onClick={manejarInscripcion}
+                disabled={inscribiendo || evento.cuposDisponibles === 0}
+                className="rounded-full bg-[#095540] px-4 py-1.5 text-xs font-bold text-white transition hover:bg-[#009444] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444] focus-visible:ring-offset-2"
+              >
+                {inscribiendo ? 'Inscribiendo...' : 'Inscribirme'}
+              </button>
             </div>
+
+            {mensajeInscripcion && (
+              <p
+                role="status"
+                className="mb-5 rounded-xl border border-[#8DC63F]/40 bg-[#8DC63F]/10 px-4 py-3 text-sm font-medium text-[#095540]"
+              >
+                {mensajeInscripcion}
+              </p>
+            )}
+
+            {errorInscripcion && (
+              <p
+                role="alert"
+                className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700"
+              >
+                {errorInscripcion}
+              </p>
+            )}
+
             <PortadaEventoCapacitacion eventoId={evento.id} urlBaseApi={urlBaseApi} />
             <p className="mt-6 whitespace-pre-wrap break-words text-sm leading-6 text-slate-600">
               {evento.descripcion || 'Sin descripción disponible.'}

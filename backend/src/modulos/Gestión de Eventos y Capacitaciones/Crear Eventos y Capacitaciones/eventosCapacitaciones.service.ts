@@ -6,7 +6,9 @@ import {
   Temporada,
 } from '../../../models/EventosCapacitaciones';
 import { EventoCapacitacionImagen } from '../../../models/EventoCapacitacionImagen';
+import { Participantes } from '../../../models/Participantes';
 import { Repository } from 'typeorm';
+import { calcularCuposDisponibles } from '../cuposDisponibles';
 
 export interface CreateEventoCapacitacionDTO {
   nombre?: string | null;
@@ -43,6 +45,7 @@ const TAMANO_MAXIMO_BYTES =
 export class EventosCapacitacionesService {
   private repo: Repository<EventosCapacitaciones>;
   private imagenesRepo: Repository<EventoCapacitacionImagen>;
+  private participantesRepo: Repository<Participantes>;
 
   constructor() {
     this.repo =
@@ -53,6 +56,11 @@ export class EventosCapacitacionesService {
     this.imagenesRepo =
       AppDataSource.getRepository(
         EventoCapacitacionImagen,
+      );
+
+    this.participantesRepo =
+      AppDataSource.getRepository(
+        Participantes,
       );
   }
 
@@ -891,13 +899,50 @@ export class EventosCapacitacionesService {
         filtros.temporada;
     }
 
-    return this.repo.find({
+    const registros = await this.repo.find({
       where,
       order: {
         fecha: 'ASC',
         hora: 'ASC',
       },
     });
+
+    if (registros.length === 0) {
+      return [];
+    }
+
+    const idsEventos = registros.map((registro) => registro.id);
+    const conteos = await this.participantesRepo
+      .createQueryBuilder('participante')
+      .select(
+        'participante.eventoCapacitacionId',
+        'eventoCapacitacionId',
+      )
+      .addSelect('COUNT(*)', 'inscritos')
+      .where(
+        'participante.eventoCapacitacionId IN (:...idsEventos)',
+        { idsEventos },
+      )
+      .groupBy('participante.eventoCapacitacionId')
+      .getRawMany<{
+        eventoCapacitacionId: string | number;
+        inscritos: string | number;
+      }>();
+
+    const inscritosPorEvento = new Map(
+      conteos.map((conteo) => [
+        Number(conteo.eventoCapacitacionId),
+        Number(conteo.inscritos),
+      ]),
+    );
+
+    return registros.map((registro) => ({
+      ...registro.toPublic(),
+      cuposDisponibles: calcularCuposDisponibles(
+        registro.cupoMaximo,
+        inscritosPorEvento.get(registro.id) ?? 0,
+      ),
+    }));
   }
 
   // =========================================================
