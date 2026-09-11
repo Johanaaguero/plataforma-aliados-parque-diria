@@ -163,6 +163,13 @@ const inscribir = async (
   },
 );
 
+const consultarInscripcionesAdmin = async (
+  token?: string,
+): Promise<RespuestaHttp> => solicitar('/api/admin/inscripciones', {
+  method: 'GET',
+  ...(token ? { headers: { Authorization: `Bearer ${token}` } } : {}),
+});
+
 const obtenerDetalle = async (eventoId: number): Promise<Record<string, unknown>> => {
   const respuesta = await solicitar(`/api/eventos/${eventoId}`);
   assert.equal(respuesta.status, 200, respuesta.texto);
@@ -210,6 +217,9 @@ before(async () => {
   const rutasPublicas = await import(
     '../modulos/Gestión de Eventos y Capacitaciones/Visualización de Eventos y Capacitaciones/eventos.routes'
   );
+  const rutasAdminInscripciones = await import(
+    '../modulos/Gestión de Eventos y Capacitaciones/Inscripción a Eventos y Capacitaciones/inscripcionesAdmin.route'
+  );
 
   dataSource = dataSourceModule.AppDataSource;
   UsuarioModel = usuarioModule.Usuario;
@@ -224,6 +234,7 @@ before(async () => {
   app.use(express.json());
   app.use('/api/eventos-capacitaciones', rutasInscripcion.default);
   app.use('/api/eventos', rutasPublicas.default);
+  app.use('/api/admin', rutasAdminInscripciones.default);
   app.use(errorMiddleware);
   await new Promise<void>((resolveListen, rejectListen) => {
     server = app.listen(0, '127.0.0.1', (error?: Error) => {
@@ -261,6 +272,53 @@ after(async () => {
     if (databaseOriginal === undefined) delete process.env.DB_DATABASE;
     else process.env.DB_DATABASE = databaseOriginal;
   }
+});
+
+describe('GET /api/admin/inscripciones', () => {
+  test('permite consultar inscripciones a un administrador y devuelve usuarios y actividades relacionadas', async () => {
+    const usuario = await crearUsuario();
+    const evento = await crearEvento(5);
+    const admin = await crearUsuario();
+    await (await exigirConexionAislada()).getRepository(UsuarioModel).update(admin.id, { rol: await (await exigirConexionAislada()).getRepository(RolModel).findOneByOrFail({ nombre: 'administrador' }) });
+
+    const respuestaInscripcion = await inscribir(evento.id, crearToken(usuario.id, 'visitante'));
+    assert.equal(respuestaInscripcion.status, 201, respuestaInscripcion.texto);
+
+    const respuesta = await consultarInscripcionesAdmin(crearToken(admin.id, 'administrador'));
+
+    assert.equal(respuesta.status, 200, respuesta.texto);
+    const body = comoObjeto(respuesta.body);
+    assert.equal(body.ok, true);
+    assert.equal(body.message, 'Inscripciones consultadas correctamente.');
+    assert.ok(Array.isArray(body.data));
+    assert.equal(body.data.length, 1);
+
+    const registro = comoObjeto(body.data[0]);
+    assert.equal(registro.id, (respuestaInscripcion.body as RespuestaInscripcion).data.id);
+    assert.equal(registro.usuarioId, usuario.id);
+    assert.equal(registro.nombreUsuario, usuario.nombreUsuario);
+    assert.equal(registro.correo, usuario.correo);
+    assert.equal(registro.nombreCompleto, `${usuario.nombre} ${usuario.apellidos}`);
+    assert.equal(registro.eventoCapacitacionId, evento.id);
+    assert.equal(registro.nombreActividad, evento.nombre);
+    assert.equal(registro.tipoActividad, evento.tipoActividad);
+    assert.equal(registro.fechaActividad, evento.fecha);
+    assert.ok(typeof registro.fechaInscripcion === 'string');
+  });
+
+  test('rechaza la consulta para un usuario sin rol de administrador', async () => {
+    const usuario = await crearUsuario();
+    const evento = await crearEvento(5);
+    await inscribir(evento.id, crearToken(usuario.id, 'visitante'));
+
+    const respuesta = await consultarInscripcionesAdmin(crearToken(usuario.id, 'visitante'));
+
+    assert.equal(respuesta.status, 403, respuesta.texto);
+    assert.deepEqual(respuesta.body, {
+      ok: false,
+      message: 'No tiene permisos para realizar esta operación',
+    });
+  });
 });
 
 describe('POST /api/eventos-capacitaciones/:id/inscripcion', () => {

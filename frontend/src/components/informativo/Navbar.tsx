@@ -12,6 +12,7 @@ interface NavbarProps {
   nombreUsuario: string | null;
   onCerrarSesion: () => void;
   onGestionRoles: () => void;
+  onInscripciones?: () => void;
   onCuentasBloqueadas?: () => void;
   onBitacora?: () => void;
   onIrInicio: () => void;
@@ -28,6 +29,7 @@ function Navbar({
   nombreUsuario,
   onCerrarSesion,
   onGestionRoles,
+  onInscripciones,
   onCuentasBloqueadas,
   onBitacora,
   onIrInicio,
@@ -101,6 +103,12 @@ function Navbar({
     setMenuAbierto(false);
     navigate('/admin/roles');
     onGestionRoles();
+  };
+
+  const irInscripciones = () => {
+    setMenuAbierto(false);
+    navigate('/admin/inscripciones');
+    onInscripciones?.();
   };
 
   const claseNavegacion =
@@ -245,13 +253,23 @@ function Navbar({
             )}
 
             {rolAutenticado === 'administrador' && (
-              <button
-                type="button"
-                onClick={irGestionRoles}
-                className="min-h-10 rounded-full bg-[#d9d823] px-4 py-2 text-sm font-bold text-[#073f31] motion-safe:transition motion-safe:duration-200 hover:bg-[#c7cc22] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2"
-              >
-                Gestionar roles
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={irGestionRoles}
+                  className="min-h-10 rounded-full bg-[#d9d823] px-4 py-2 text-sm font-bold text-[#073f31] motion-safe:transition motion-safe:duration-200 hover:bg-[#c7cc22] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2"
+                >
+                  Gestionar roles
+                </button>
+
+                <button
+                  type="button"
+                  onClick={irInscripciones}
+                  className="min-h-10 rounded-full bg-[#d9d823] px-4 py-2 text-sm font-bold text-[#073f31] motion-safe:transition motion-safe:duration-200 hover:bg-[#c7cc22] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2"
+                >
+                  Inscripciones
+                </button>
+              </>
             )}
 
             {rolAutenticado === 'super_admin' && onCuentasBloqueadas && (

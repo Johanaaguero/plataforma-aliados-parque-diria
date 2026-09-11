@@ -9,6 +9,7 @@ import CuentasBloqueadas from './components/Super_admin/CuentasBloqueadas';
 import RecuperarContrasena from './components/RecuperarContrasena';
 import RestablecerContrasena from './components/RestablecerContrasena';
 import ListaEventosCapacitaciones from './components/Gestión de Eventos y Capacitaciones/ListaEventosCapacitaciones';
+import InscripcionesAdmin from './components/Gestión de Eventos y Capacitaciones/InscripcionesAdmin';
 import Bitacora from './components/Super_admin/Bitacora';
 import { mostrarFeedback } from './components/ui/FeedbackToast';
 
@@ -499,6 +500,26 @@ function App() {
           ← Volver
         </button>
         <GestionRoles />
+      </section>
+    );
+  }
+
+  if (rutaActual === '/admin/inscripciones') {
+    if (rolAutenticado !== 'administrador') {
+      navigate('/');
+      return null;
+    }
+
+    return (
+      <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef] pt-20 sm:pt-24">
+        <button
+          type="button"
+          className="fixed left-3 top-3 z-[60] inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-[#b9d6af] bg-white/95 px-4 py-2 text-sm font-bold text-[#095540] shadow-[0_10px_30px_rgba(7,63,49,0.15)] backdrop-blur-md"
+          onClick={() => navigate('/')}
+        >
+          ← Volver
+        </button>
+        <InscripcionesAdmin />
       </section>
     );
   }
