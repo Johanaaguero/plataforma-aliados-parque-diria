@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import logo from '../../assets/logo.png';
@@ -16,8 +16,9 @@ interface NavbarProps {
   onBitacora?: () => void;
   onIrInicio: () => void;
   onIrEmprendimientos: () => void;
-   onIrEventos: () => void;
- seccionActiva?: 'inicio' | 'emprendimientos' | 'eventos';  modoAdministracion?: boolean;
+  onIrEventos: () => void;
+  seccionActiva?: 'inicio' | 'emprendimientos' | 'eventos';
+  modoAdministracion?: boolean;
 }
 
 function Navbar({
@@ -31,7 +32,7 @@ function Navbar({
   onBitacora,
   onIrInicio,
   onIrEmprendimientos,
-   onIrEventos,
+  onIrEventos,
   seccionActiva = 'inicio',
   modoAdministracion = false,
 }: NavbarProps) {
@@ -39,9 +40,32 @@ function Navbar({
   const [scrolled, setScrolled] = useState(false);
   const [menuAbierto, setMenuAbierto] = useState(false);
 
+  // Controla si el navbar está visible dependiendo de la dirección del scroll
+  const [navbarVisible, setNavbarVisible] = useState(true);
+  const ultimoScrollY = useRef(0);
+  
+
   useEffect(() => {
     const manejarScroll = () => {
-      setScrolled(window.scrollY > 50);
+      const scrollActual = window.scrollY;
+
+      // Mantener visible el navbar cuando estamos arriba
+      if (scrollActual < 50) {
+        setNavbarVisible(true);
+      }
+      // Bajando → ocultar
+      else if (scrollActual > ultimoScrollY.current) {
+        setNavbarVisible(false);
+      }
+      // Subiendo → mostrar
+      else if (scrollActual < ultimoScrollY.current) {
+        setNavbarVisible(true);
+      }
+
+      // Mantener la lógica original de la sombra
+      setScrolled(scrollActual > 50);
+
+      ultimoScrollY.current = scrollActual;
     };
 
     window.addEventListener('scroll', manejarScroll);
@@ -81,16 +105,26 @@ function Navbar({
 
   const claseNavegacion =
     'rounded-full border border-transparent px-3 py-2 text-sm font-semibold text-[#17372c] motion-safe:transition-all motion-safe:duration-200 motion-safe:ease-out hover:bg-[#eef7e7]/70 hover:text-[#095540] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2';
+
   const claseNavegacionActiva =
     'border-white/60 bg-white/65 text-[#095540] shadow-sm backdrop-blur-lg';
+
   const claseNavegacionMovil =
     'w-full rounded-2xl border border-transparent px-4 py-3 text-left text-sm font-semibold text-[#17372c] motion-safe:transition-all motion-safe:duration-200 motion-safe:ease-out hover:bg-[#eef7e7]/70 hover:text-[#095540] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f]';
+
   const claseNavegacionMovilActiva =
     'border-white/60 bg-white/65 text-[#095540] shadow-sm backdrop-blur-lg';
 
   return (
     <nav
-      className="fixed inset-x-0 top-3 z-50 px-3 sm:top-4 sm:px-5"
+      className={`fixed inset-x-0 top-3 z-50 px-3 sm:top-4 sm:px-5
+        transition-transform duration-300 ease-in-out
+        ${
+          navbarVisible || menuAbierto
+            ? 'translate-y-0'
+            : '-translate-y-[150%]'
+        }
+      `}
       aria-label="Navegación principal"
     >
       <div
@@ -124,9 +158,19 @@ function Navbar({
           </button>
 
           <div className="hidden items-center gap-0.5 xl:flex xl:gap-1">
-            <button type="button" onClick={irInicio} className={`${claseNavegacion} ${seccionActiva === 'inicio' ? claseNavegacionActiva : ''}`} aria-current={seccionActiva === 'inicio' ? 'page' : undefined}>
+            <button
+              type="button"
+              onClick={irInicio}
+              className={`${claseNavegacion} ${
+                seccionActiva === 'inicio' ? claseNavegacionActiva : ''
+              }`}
+              aria-current={
+                seccionActiva === 'inicio' ? 'page' : undefined
+              }
+            >
               Inicio
             </button>
+
             <button
               type="button"
               onClick={() => irSeccion('sobre-parque')}
@@ -135,22 +179,34 @@ function Navbar({
             >
               Sobre Aliados del Parque
             </button>
+
             <button
               type="button"
               onClick={irEmprendimientos}
-              className={`${claseNavegacion} ${seccionActiva === 'emprendimientos' ? claseNavegacionActiva : ''}`}
-              aria-current={seccionActiva === 'emprendimientos' ? 'page' : undefined}
+              className={`${claseNavegacion} ${
+                seccionActiva === 'emprendimientos'
+                  ? claseNavegacionActiva
+                  : ''
+              }`}
+              aria-current={
+                seccionActiva === 'emprendimientos' ? 'page' : undefined
+              }
             >
               Emprendimientos
             </button>
-           <button
-  type="button"
-  onClick={onIrEventos}
-  className={`${claseNavegacion} ${seccionActiva === 'eventos' ? claseNavegacionActiva : ''}`}
-  aria-current={seccionActiva === 'eventos' ? 'page' : undefined}
->
-  Eventos y Capacitaciones
-</button>
+
+            <button
+              type="button"
+              onClick={onIrEventos}
+              className={`${claseNavegacion} ${
+                seccionActiva === 'eventos' ? claseNavegacionActiva : ''
+              }`}
+              aria-current={
+                seccionActiva === 'eventos' ? 'page' : undefined
+              }
+            >
+              Eventos y Capacitaciones
+            </button>
           </div>
 
           <div className="hidden shrink-0 items-center gap-1.5 xl:flex">
@@ -163,13 +219,28 @@ function Navbar({
                 >
                   Registrarse
                 </button>
-                <button
-                  type="button"
-                  onClick={onLogin}
-                  className="min-h-10 rounded-full bg-[#095540] px-5 py-2 text-sm font-bold text-white shadow-md shadow-[#095540]/20 motion-safe:transition motion-safe:duration-200 hover:bg-[#009444] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8DC63F] focus-visible:ring-offset-2 motion-safe:hover:-translate-y-0.5 motion-reduce:transform-none"
-                >
-                  Ingresar
-                </button>
+
+           <button
+  type="button"
+  onClick={onLogin}
+  className="flex h-10 w-10 items-center justify-center rounded-full bg-[#095540] text-white shadow-md shadow-[#095540]/20 motion-safe:transition motion-safe:duration-200 hover:bg-[#009444] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8DC63F] focus-visible:ring-offset-2 motion-safe:hover:-translate-y-0.5 motion-reduce:transform-none"
+  aria-label="Ingresar"
+  title="Ingresar"
+>
+  <svg
+    viewBox="0 0 24 24"
+    className="h-6 w-6"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <circle cx="12" cy="8" r="3.5" />
+    <path d="M5.5 20c.8-3.5 3.2-5.5 6.5-5.5s5.7 2 6.5 5.5" />
+  </svg>
+</button>
               </>
             )}
 
@@ -194,13 +265,13 @@ function Navbar({
             )}
 
             {rolAutenticado === 'super_admin' && onBitacora && (
-               <button
+              <button
                 type="button"
                 onClick={onBitacora}
                 className="min-h-10 rounded-full bg-[#d9d823] px-4 py-2 text-sm font-bold text-[#073f31] motion-safe:transition motion-safe:duration-200 hover:bg-[#c7cc22] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2"
-               >
-                 Bitácora
-               </button>
+              >
+                Bitácora
+              </button>
             )}
 
             {rolAutenticado && (
@@ -213,6 +284,7 @@ function Navbar({
                     {nombreUsuario}
                   </span>
                 )}
+
                 <button
                   type="button"
                   onClick={onCerrarSesion}
@@ -225,39 +297,40 @@ function Navbar({
           </div>
 
           <div className="flex shrink-0 items-center gap-1">
-          <TemaInterfaz enNavbar />
-          <button
-            type="button"
-            onClick={() => setMenuAbierto(!menuAbierto)}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#095540] text-white shadow-sm motion-safe:transition motion-safe:duration-200 hover:bg-[#009444] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8DC63F] focus-visible:ring-offset-2 xl:hidden"
-            aria-label={menuAbierto ? 'Cerrar menú' : 'Abrir menú'}
-            aria-expanded={menuAbierto}
-            aria-controls="menu-principal-movil"
-          >
-            {menuAbierto ? (
-              <svg
-                viewBox="0 0 24 24"
-                className="h-5 w-5"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                aria-hidden="true"
-              >
-                <path d="M6 6l12 12M18 6 6 18" />
-              </svg>
-            ) : (
-              <svg
-                viewBox="0 0 24 24"
-                className="h-5 w-5"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                aria-hidden="true"
-              >
-                <path d="M4 7h16M4 12h16M4 17h16" />
-              </svg>
-            )}
-          </button>
+            <TemaInterfaz enNavbar />
+
+            <button
+              type="button"
+              onClick={() => setMenuAbierto(!menuAbierto)}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#095540] text-white shadow-sm motion-safe:transition motion-safe:duration-200 hover:bg-[#009444] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8DC63F] focus-visible:ring-offset-2 xl:hidden"
+              aria-label={menuAbierto ? 'Cerrar menú' : 'Abrir menú'}
+              aria-expanded={menuAbierto}
+              aria-controls="menu-principal-movil"
+            >
+              {menuAbierto ? (
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-5 w-5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  aria-hidden="true"
+                >
+                  <path d="M6 6l12 12M18 6 6 18" />
+                </svg>
+              ) : (
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-5 w-5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  aria-hidden="true"
+                >
+                  <path d="M4 7h16M4 12h16M4 17h16" />
+                </svg>
+              )}
+            </button>
           </div>
         </div>
 
@@ -267,9 +340,21 @@ function Navbar({
             className="border-t border-[#e2ebe5] px-3 pb-4 pt-3 xl:hidden"
           >
             <div className="flex flex-col gap-1">
-              <button type="button" onClick={irInicio} className={`${claseNavegacionMovil} ${seccionActiva === 'inicio' ? claseNavegacionMovilActiva : ''}`} aria-current={seccionActiva === 'inicio' ? 'page' : undefined}>
+              <button
+                type="button"
+                onClick={irInicio}
+                className={`${claseNavegacionMovil} ${
+                  seccionActiva === 'inicio'
+                    ? claseNavegacionMovilActiva
+                    : ''
+                }`}
+                aria-current={
+                  seccionActiva === 'inicio' ? 'page' : undefined
+                }
+              >
                 Inicio
               </button>
+
               <button
                 type="button"
                 onClick={() => irSeccion('sobre-parque')}
@@ -278,25 +363,41 @@ function Navbar({
               >
                 Sobre Aliados del Parque
               </button>
+
               <button
                 type="button"
                 onClick={irEmprendimientos}
-                className={`${claseNavegacionMovil} ${seccionActiva === 'emprendimientos' ? claseNavegacionMovilActiva : ''}`}
-                aria-current={seccionActiva === 'emprendimientos' ? 'page' : undefined}
+                className={`${claseNavegacionMovil} ${
+                  seccionActiva === 'emprendimientos'
+                    ? claseNavegacionMovilActiva
+                    : ''
+                }`}
+                aria-current={
+                  seccionActiva === 'emprendimientos'
+                    ? 'page'
+                    : undefined
+                }
               >
                 Emprendimientos
               </button>
-             <button
-  type="button"
-  onClick={() => {
-    setMenuAbierto(false);
-    onIrEventos();
-  }}
-  className={`${claseNavegacionMovil} ${seccionActiva === 'eventos' ? claseNavegacionMovilActiva : ''}`}
-  aria-current={seccionActiva === 'eventos' ? 'page' : undefined}
->
-  Eventos y Capacitaciones
-</button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuAbierto(false);
+                  onIrEventos();
+                }}
+                className={`${claseNavegacionMovil} ${
+                  seccionActiva === 'eventos'
+                    ? claseNavegacionMovilActiva
+                    : ''
+                }`}
+                aria-current={
+                  seccionActiva === 'eventos' ? 'page' : undefined
+                }
+              >
+                Eventos y Capacitaciones
+              </button>
             </div>
 
             {!rolAutenticado && (
@@ -311,6 +412,7 @@ function Navbar({
                 >
                   Registrarse
                 </button>
+
                 <button
                   type="button"
                   onClick={() => {
@@ -334,6 +436,7 @@ function Navbar({
                     {nombreUsuario}
                   </span>
                 )}
+
                 <button
                   type="button"
                   onClick={() => {
@@ -371,18 +474,17 @@ function Navbar({
             )}
 
             {rolAutenticado === 'super_admin' && onBitacora && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMenuAbierto(false);
-                    onBitacora();
-                  }}
-                  className="mt-3 min-h-[42px] w-full cursor-pointer rounded-[9px] border border-[#095540] bg-white px-4 py-0 text-[13px] font-bold text-[#095540] shadow-[0_5px_14px_rgba(23,48,31,0.14)] [font-family:inherit] [transition:0.2s_ease] hover:bg-[#095540] hover:text-white hover:[transform:translateY(-1px)]"
-                >
-                  Bitácora
-                </button>
-              )}
-
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuAbierto(false);
+                  onBitacora();
+                }}
+                className="mt-3 min-h-[42px] w-full cursor-pointer rounded-[9px] border border-[#095540] bg-white px-4 py-0 text-[13px] font-bold text-[#095540] shadow-[0_5px_14px_rgba(23,48,31,0.14)] [font-family:inherit] [transition:0.2s_ease] hover:bg-[#095540] hover:text-white hover:[transform:translateY(-1px)]"
+              >
+                Bitácora
+              </button>
+            )}
           </div>
         )}
       </div>
