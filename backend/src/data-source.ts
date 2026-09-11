@@ -13,6 +13,7 @@ import { CategoriaEmprendimiento } from './models/CategoriaEmprendimiento';
 import { Emprendimiento } from './models/Emprendimiento';
 import { EmprendimientoImagen } from './models/EmprendimientoImagen';
 import { EventosCapacitaciones } from './models/EventosCapacitaciones'; 
+import { Participantes } from './models/Participantes';
 import { EventoCapacitacionImagen } from './models/EventoCapacitacionImagen';
 
 dotenv.config();
@@ -51,6 +52,7 @@ export const AppDataSource = new DataSource({
     EmprendimientoImagen,
     EventoCapacitacionImagen,
       EventosCapacitaciones,
+      Participantes,
   ],
  
 

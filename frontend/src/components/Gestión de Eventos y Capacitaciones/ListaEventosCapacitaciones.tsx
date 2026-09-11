@@ -1667,7 +1667,32 @@ export default function ListaEventosCapacitaciones({
         <DetalleEventoCapacitacion
           eventoId={eventoDetalle.id}
           urlBaseApi={urlBaseApi}
-          eventoAdministrativo={esAdministrador && eventoDetalle.estado !== 'publicado' ? eventoDetalle : undefined}
+          eventoAdministrativo={
+            esAdministrador && eventoDetalle.estado !== 'publicado'
+              ? eventoDetalle
+              : undefined
+          }
+          onInscripcionActualizada={(eventoId, cuposDisponibles) => {
+            setEventos((eventosActuales) =>
+              eventosActuales.map((evento) =>
+                evento.id === eventoId
+                  ? {
+                      ...evento,
+                      cuposDisponibles,
+                    }
+                  : evento,
+              ),
+            );
+
+            setEventoDetalle((eventoActual) =>
+              eventoActual && eventoActual.id === eventoId
+                ? {
+                    ...eventoActual,
+                    cuposDisponibles,
+                  }
+                : eventoActual,
+            );
+          }}
           onClose={() => setEventoDetalle(null)}
         />
       )}

@@ -130,9 +130,7 @@ export class EventosCapacitacionesController {
       const registros =
         await service.findAll(filtros);
 
-      return res.status(200).json(
-        registros.map((r) => r.toPublic()),
-      );
+      return res.status(200).json(registros);
     } catch (error) {
       return manejarError(res, error);
     }

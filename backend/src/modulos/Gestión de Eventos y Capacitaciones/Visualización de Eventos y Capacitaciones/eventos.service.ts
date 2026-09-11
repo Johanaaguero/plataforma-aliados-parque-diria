@@ -1,4 +1,6 @@
 import { AppDataSource } from '../../../data-source';
+import { Participantes } from '../../../models/Participantes';
+import { calcularCuposDisponibles } from '../cuposDisponibles';
 import {
   EventosCapacitaciones,
   EstadoEventoCapacitacion,
@@ -19,12 +21,32 @@ export type EventoPublico = ReturnType<EventosCapacitaciones['toPublic']> & {
   cuposDisponibles: number | null;
 };
 
-const serializarEvento = (evento: EventosCapacitaciones): EventoPublico => ({
-  ...evento.toPublic(),
-  // El modelo actual solo registra el cupo máximo y no tiene inscripciones.
-  // Se utiliza ese cupo registrado; null significa que no se ha especificado.
-  cuposDisponibles: evento.cupoMaximo,
-});
+const serializarEvento = async (
+  evento: EventosCapacitaciones,
+): Promise<EventoPublico> => {
+  if (evento.cupoMaximo === null) {
+    return {
+      ...evento.toPublic(),
+      cuposDisponibles: null,
+    };
+  }
+
+  const inscritos = await AppDataSource.getRepository(
+    Participantes,
+  ).count({
+    where: {
+      eventoCapacitacionId: evento.id,
+    },
+  });
+
+  return {
+    ...evento.toPublic(),
+    cuposDisponibles: calcularCuposDisponibles(
+      evento.cupoMaximo,
+      inscritos,
+    ),
+  };
+};
 
 export class EventosService {
   private repo = AppDataSource.getRepository(EventosCapacitaciones);
@@ -94,7 +116,7 @@ export class EventosService {
     }
 
     return {
-      data: registros.map(serializarEvento),
+      data: await Promise.all(registros.map(serializarEvento)),
       paginacion: {
         pagina,
         limite: LIMITE_EVENTOS,
@@ -119,6 +141,6 @@ export class EventosService {
       throw error;
     }
 
-    return serializarEvento(evento);
+    return await serializarEvento(evento);
   }
 }
