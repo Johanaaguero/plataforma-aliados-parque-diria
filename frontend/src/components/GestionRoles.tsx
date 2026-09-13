@@ -33,18 +33,17 @@ export default function GestionRoles() {
   const [usuarios, setUsuarios] = useState<UsuarioRol[]>([]);
   const [busqueda, setBusqueda] = useState('');
   const [filtroRol, setFiltroRol] = useState<FiltroRol>('todos');
-
+  const [mostrarFiltroRol, setMostrarFiltroRol] = useState(false);
   const [cargando, setCargando] = useState(false);
   const [guardando, setGuardando] = useState(false);
-
   const [mensaje, setMensaje] = useState('');
   const [tipoMensaje, setTipoMensaje] = useState<'exito' | 'error' | ''>('');
-
   const [usuarioSeleccionado, setUsuarioSeleccionado] =
     useState<UsuarioRol | null>(null);
-
   const [nuevoRol, setNuevoRol] = useState<NombreRol | ''>('');
   const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false);
+
+  const [mostrarSelectorRol, setMostrarSelectorRol] = useState(false);
 
   const cargarUsuarios = async () => {
     try {
@@ -107,10 +106,6 @@ export default function GestionRoles() {
     void cargarUsuarios();
   }, []);
 
-  /*
-   * El Super Administrador es el único usuario
-   * al que no se le permite cambiar el rol.
-   */
   const esSuperAdministrador = (usuario: UsuarioRol) =>
     usuario.rol === 'super_admin';
 
@@ -168,6 +163,7 @@ export default function GestionRoles() {
     setMensaje('');
     setTipoMensaje('');
     setMostrarConfirmacion(false);
+    setMostrarSelectorRol(false);
   };
 
   const cerrarCambioRol = () => {
@@ -176,6 +172,7 @@ export default function GestionRoles() {
     setUsuarioSeleccionado(null);
     setNuevoRol('');
     setMostrarConfirmacion(false);
+    setMostrarSelectorRol(false);
   };
 
   const confirmarCambioRol = () => {
@@ -193,6 +190,7 @@ export default function GestionRoles() {
 
     setMensaje('');
     setTipoMensaje('');
+    setMostrarSelectorRol(false);
     setMostrarConfirmacion(true);
   };
 
@@ -203,8 +201,6 @@ export default function GestionRoles() {
       return;
     }
 
-    // Protección adicional en la vista.
-    // La restricción principal ya existe en el backend.
     if (esSuperAdministrador(usuarioSeleccionado)) {
       setMensaje('El Super Administrador no puede cambiar de rol.');
       setTipoMensaje('error');
@@ -277,10 +273,10 @@ export default function GestionRoles() {
 
       setMensaje('Rol actualizado correctamente');
       setTipoMensaje('exito');
-
       setUsuarioSeleccionado(null);
       setNuevoRol('');
       setMostrarConfirmacion(false);
+      setMostrarSelectorRol(false);
     } catch (error) {
       console.error('Error al actualizar rol:', error);
       setMensaje('No se pudo conectar con el servidor');
@@ -326,13 +322,40 @@ export default function GestionRoles() {
     }
   };
 
+  const obtenerNombreRol = (rol: NombreRol | '') => {
+    switch (rol) {
+      case 'administrador':
+        return 'Administrador';
+      case 'asociado':
+        return 'Asociado';
+      case 'visitante':
+        return 'Visitante';
+      default:
+        return 'Selecciona un rol';
+    }
+  };
+
+  const nombreFiltroActual = () => {
+    switch (filtroRol) {
+      case 'superadmin':
+        return 'Super Admin';
+      case 'administrador':
+        return 'Administradores';
+      case 'asociado':
+        return 'Asociados';
+      case 'visitante':
+        return 'Visitantes';
+      default:
+        return 'Todos los usuarios';
+    }
+  };
+
   return (
     <section className="min-h-screen overflow-x-clip bg-[#f5f7f1] px-4 py-8 font-sans sm:px-6 lg:px-10">
       <div className="mx-auto max-w-7xl">
 
         {/* ENCABEZADO */}
-        <div className="relative mb-8 overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#095540] via-[#095540] to-[#009444] px-5 py-8 text-white shadow-[0_24px_70px_rgba(9,85,64,0.20)] sm:px-10">
-
+        <div className="relative z-10 mb-8 overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#095540] via-[#095540] to-[#009444] px-5 py-8 text-white shadow-[0_24px_70px_rgba(9,85,64,0.20)] sm:px-10">
           <div
             className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-[#d9d823]/15 blur-3xl"
             aria-hidden="true"
@@ -344,7 +367,6 @@ export default function GestionRoles() {
           />
 
           <div className="relative">
-
             <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-emerald-50 backdrop-blur-md">
               <span className="h-2 w-2 rounded-full bg-[#d9d823]" />
               Gestión de usuarios
@@ -357,18 +379,15 @@ export default function GestionRoles() {
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-emerald-100/90 sm:text-base">
               Consulta los usuarios y el rol asignado a cada uno.
             </p>
-
           </div>
         </div>
 
         {/* BUSCADOR Y FILTROS */}
-        <div className="mb-8 space-y-4 rounded-3xl border border-[#095540]/10 bg-white p-4 shadow-[0_12px_35px_rgba(9,85,64,0.07)] sm:p-5">
-
+        <div className="relative z-40 mb-8 rounded-3xl border border-[#095540]/10 bg-white p-4 shadow-[0_12px_35px_rgba(9,85,64,0.07)] sm:p-5">
           <div className="flex flex-col gap-4 md:flex-row md:items-end">
 
             {/* BUSCADOR */}
             <div className="flex-1">
-
               <label
                 className="mb-2 block text-xs font-bold uppercase tracking-[0.12em] text-[#095540]"
                 htmlFor="busqueda"
@@ -377,13 +396,13 @@ export default function GestionRoles() {
               </label>
 
               <div className="relative">
-
                 <svg
                   className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
                   fill="none"
                   viewBox="0 0 24 24"
                   strokeWidth="2"
                   stroke="currentColor"
+                  aria-hidden="true"
                 >
                   <path
                     strokeLinecap="round"
@@ -398,201 +417,253 @@ export default function GestionRoles() {
                   placeholder="Nombre, usuario o correo"
                   value={busqueda}
                   onChange={(e) => setBusqueda(e.target.value)}
-                  className="w-full rounded-2xl border border-[#095540]/15 bg-[#f7faf5] py-3 pl-10 pr-4 text-sm font-medium text-slate-800 outline-none placeholder:text-slate-400 transition-[border-color,background-color,box-shadow] duration-200 focus-visible:border-[#009444] focus-visible:bg-white focus-visible:ring-4 focus-visible:ring-[#009444]/15"
+                  className="w-full rounded-2xl border border-[#095540]/15 bg-[#f7faf5] py-3 pl-10 pr-4 text-sm font-medium text-slate-800 outline-none transition-[border-color,background-color,box-shadow] duration-200 placeholder:text-slate-400 focus-visible:border-[#009444] focus-visible:bg-white focus-visible:ring-4 focus-visible:ring-[#009444]/15"
                 />
-
               </div>
             </div>
 
-            {/* SELECT */}
-            <div className="w-full md:max-w-[230px]">
+            {/* FILTRO POR ROL */}
+            <div className="relative z-50 w-full md:w-auto md:min-w-[250px]">
+              <span className="mb-2 block text-xs font-bold uppercase tracking-[0.12em] text-[#095540]">
+                Filtrar por
+              </span>
 
-              <label
-                className="mb-2 block text-xs font-bold uppercase tracking-[0.12em] text-[#095540]"
-                htmlFor="filtroRol"
-              >
-                Filtrar por rol
-              </label>
-
-              <select
-                id="filtroRol"
-                value={filtroRol}
-                onChange={(e) =>
-                  setFiltroRol(e.target.value as FiltroRol)
+              <button
+                type="button"
+                onClick={() =>
+                  setMostrarFiltroRol((actual) => !actual)
                 }
-                className="w-full rounded-2xl border border-[#095540]/15 bg-[#f7faf5] px-4 py-3 text-sm font-medium text-slate-800 outline-none transition-[border-color,background-color,box-shadow] duration-200 focus-visible:border-[#009444] focus-visible:bg-white focus-visible:ring-4 focus-visible:ring-[#009444]/15"
+                aria-expanded={mostrarFiltroRol}
+                aria-haspopup="listbox"
+                className="group flex min-h-[50px] w-full items-center justify-between gap-4 rounded-2xl border border-[#095540]/15 bg-[#f7faf5] px-4 text-left shadow-sm transition-all duration-200 hover:border-[#009444]/40 hover:bg-white hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#009444]/15"
               >
-                <option value="todos">
-                  Todos
-                </option>
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#009444]/10 text-[#08743f] transition-colors group-hover:bg-[#009444]/15">
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth="1.8"
+                      stroke="currentColor"
+                      aria-hidden="true"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M3 5.25h18M6.75 12h10.5M10.5 18h3"
+                      />
+                    </svg>
+                  </div>
 
-                <option value="superadmin">
-                  Super Admin
-                </option>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                      Rol
+                    </p>
 
-                <option value="administrador">
-                  Administrador
-                </option>
+                    <p className="truncate text-sm font-bold text-[#095540]">
+                      {nombreFiltroActual()}
+                    </p>
+                  </div>
+                </div>
 
-                <option value="asociado">
-                  Asociado
-                </option>
+                <svg
+                  className={`h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 ${
+                    mostrarFiltroRol
+                      ? 'rotate-180 text-[#009444]'
+                      : ''
+                  }`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth="2"
+                  stroke="currentColor"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="m6 9 6 6 6-6"
+                  />
+                </svg>
+              </button>
 
-                <option value="visitante">
-                  Visitante
-                </option>
-              </select>
+              {mostrarFiltroRol && (
+                <div
+                  className="absolute left-0 top-full z-[9999] mt-2 w-full overflow-hidden rounded-2xl border border-[#095540]/10 bg-white p-1.5 shadow-[0_20px_50px_rgba(9,85,64,0.20)]"
+                  role="listbox"
+                  aria-label="Filtrar usuarios por rol"
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFiltroRol('todos');
+                      setMostrarFiltroRol(false);
+                    }}
+                    className={`flex w-full items-center justify-between rounded-xl px-3.5 py-3 text-left transition-all duration-150 ${
+                      filtroRol === 'todos'
+                        ? 'bg-[#00AEEF]/10 text-[#0087BA]'
+                        : 'text-slate-600 hover:bg-[#f5f8f3] hover:text-[#095540]'
+                    }`}
+                    role="option"
+                    aria-selected={filtroRol === 'todos'}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#00AEEF]/10">
+                        <span className="h-2.5 w-2.5 rounded-full bg-[#00AEEF]" />
+                      </span>
 
+                      <span className="text-sm font-semibold">
+                        Todos los usuarios
+                      </span>
+                    </div>
+
+                    <span className="rounded-full bg-[#00AEEF]/10 px-2 py-1 text-[10px] font-bold text-[#0087BA]">
+                      {usuarios.length}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFiltroRol('superadmin');
+                      setMostrarFiltroRol(false);
+                    }}
+                    className={`flex w-full items-center justify-between rounded-xl px-3.5 py-3 text-left transition-all duration-150 ${
+                      filtroRol === 'superadmin'
+                        ? 'bg-[#095540]/10 text-[#095540]'
+                        : 'text-slate-600 hover:bg-[#f5f8f3] hover:text-[#095540]'
+                    }`}
+                    role="option"
+                    aria-selected={filtroRol === 'superadmin'}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#095540]/10">
+                        <span className="h-2.5 w-2.5 rounded-full bg-[#095540]" />
+                      </span>
+
+                      <span className="text-sm font-semibold">
+                        Super Admin
+                      </span>
+                    </div>
+
+                    <span className="rounded-full bg-[#095540]/10 px-2 py-1 text-[10px] font-bold text-[#095540]">
+                      {cantidadSuperAdministradores}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFiltroRol('administrador');
+                      setMostrarFiltroRol(false);
+                    }}
+                    className={`flex w-full items-center justify-between rounded-xl px-3.5 py-3 text-left transition-all duration-150 ${
+                      filtroRol === 'administrador'
+                        ? 'bg-[#009444]/10 text-[#08743f]'
+                        : 'text-slate-600 hover:bg-[#f5f8f3] hover:text-[#095540]'
+                    }`}
+                    role="option"
+                    aria-selected={filtroRol === 'administrador'}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#009444]/10">
+                        <span className="h-2.5 w-2.5 rounded-full bg-[#009444]" />
+                      </span>
+
+                      <span className="text-sm font-semibold">
+                        Administradores
+                      </span>
+                    </div>
+
+                    <span className="rounded-full bg-[#009444]/10 px-2 py-1 text-[10px] font-bold text-[#08743f]">
+                      {cantidadAdministradores}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFiltroRol('asociado');
+                      setMostrarFiltroRol(false);
+                    }}
+                    className={`flex w-full items-center justify-between rounded-xl px-3.5 py-3 text-left transition-all duration-150 ${
+                      filtroRol === 'asociado'
+                        ? 'bg-[#8dc63f]/15 text-[#567d16]'
+                        : 'text-slate-600 hover:bg-[#f5f8f3] hover:text-[#095540]'
+                    }`}
+                    role="option"
+                    aria-selected={filtroRol === 'asociado'}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#8dc63f]/15">
+                        <span className="h-2.5 w-2.5 rounded-full bg-[#8dc63f]" />
+                      </span>
+
+                      <span className="text-sm font-semibold">
+                        Asociados
+                      </span>
+                    </div>
+
+                    <span className="rounded-full bg-[#8dc63f]/15 px-2 py-1 text-[10px] font-bold text-[#567d16]">
+                      {cantidadAsociados}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFiltroRol('visitante');
+                      setMostrarFiltroRol(false);
+                    }}
+                    className={`flex w-full items-center justify-between rounded-xl px-3.5 py-3 text-left transition-all duration-150 ${
+                      filtroRol === 'visitante'
+                        ? 'bg-[#d9d823]/15 text-[#6e6c00]'
+                        : 'text-slate-600 hover:bg-[#f5f8f3] hover:text-[#095540]'
+                    }`}
+                    role="option"
+                    aria-selected={filtroRol === 'visitante'}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#d9d823]/15">
+                        <span className="h-2.5 w-2.5 rounded-full bg-[#d9d823]" />
+                      </span>
+
+                      <span className="text-sm font-semibold">
+                        Visitantes
+                      </span>
+                    </div>
+
+                    <span className="rounded-full bg-[#d9d823]/20 px-2 py-1 text-[10px] font-bold text-[#6e6c00]">
+                      {cantidadVisitantes}
+                    </span>
+                  </button>
+                </div>
+              )}
             </div>
-          </div>
-
-          {/* FILTROS */}
-          <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
-
-            {/* TODOS - CELESTE */}
-            <button
-              type="button"
-              onClick={() => setFiltroRol('todos')}
-              className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition-colors ${
-                filtroRol === 'todos'
-                  ? 'bg-[#00AEEF] text-white shadow-sm'
-                  : 'bg-[#00AEEF]/10 text-[#0087BA] hover:bg-[#00AEEF]/20'
-              }`}
-            >
-              Todos
-
-              <span
-                className={`rounded-full px-1.5 py-0.5 text-[10px] ${
-                  filtroRol === 'todos'
-                    ? 'bg-[#0087BA] text-white'
-                    : 'bg-[#00AEEF]/20 text-[#0087BA]'
-                }`}
-              >
-                {usuarios.length}
-              </span>
-            </button>
-
-            {/* SUPER ADMIN - VERDE OSCURO */}
-            <button
-              type="button"
-              onClick={() => setFiltroRol('superadmin')}
-              className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition-colors ${
-                filtroRol === 'superadmin'
-                  ? 'bg-[#095540] text-white shadow-sm'
-                  : 'bg-[#095540]/10 text-[#095540] hover:bg-[#095540]/20'
-              }`}
-            >
-              Super Admin
-
-              <span
-                className={`rounded-full px-1.5 py-0.5 text-[10px] ${
-                  filtroRol === 'superadmin'
-                    ? 'bg-white/15 text-white'
-                    : 'bg-[#095540]/10 text-[#095540]'
-                }`}
-              >
-                {cantidadSuperAdministradores}
-              </span>
-            </button>
-
-            {/* ADMINISTRADORES */}
-            <button
-              type="button"
-              onClick={() => setFiltroRol('administrador')}
-              className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition-colors ${
-                filtroRol === 'administrador'
-                  ? 'bg-[#009444] text-white shadow-sm'
-                  : 'bg-[#009444]/10 text-[#095540] hover:bg-[#009444]/15'
-              }`}
-            >
-              Administradores
-
-              <span
-                className={`rounded-full px-1.5 py-0.5 text-[10px] ${
-                  filtroRol === 'administrador'
-                    ? 'bg-white/15 text-white'
-                    : 'bg-[#009444]/15 text-[#095540]'
-                }`}
-              >
-                {cantidadAdministradores}
-              </span>
-            </button>
-
-            {/* ASOCIADOS */}
-            <button
-              type="button"
-              onClick={() => setFiltroRol('asociado')}
-              className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition-colors ${
-                filtroRol === 'asociado'
-                  ? 'bg-[#6f8e22] text-white shadow-sm'
-                  : 'bg-[#8dc63f]/12 text-[#567d16] hover:bg-[#8dc63f]/20'
-              }`}
-            >
-              Asociados
-
-              <span
-                className={`rounded-full px-1.5 py-0.5 text-[10px] ${
-                  filtroRol === 'asociado'
-                    ? 'bg-white/15 text-white'
-                    : 'bg-[#8dc63f]/20 text-[#567d16]'
-                }`}
-              >
-                {cantidadAsociados}
-              </span>
-            </button>
-
-            {/* VISITANTES */}
-            <button
-              type="button"
-              onClick={() => setFiltroRol('visitante')}
-              className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition-colors ${
-                filtroRol === 'visitante'
-                  ? 'bg-[#b7b30d] text-white shadow-sm'
-                  : 'bg-[#d9d823]/15 text-[#6e6c00] hover:bg-[#d9d823]/25'
-              }`}
-            >
-              Visitantes
-
-              <span
-                className={`rounded-full px-1.5 py-0.5 text-[10px] ${
-                  filtroRol === 'visitante'
-                    ? 'bg-white/20 text-white'
-                    : 'bg-[#d9d823]/25 text-[#6e6c00]'
-                }`}
-              >
-                {cantidadVisitantes}
-              </span>
-            </button>
-
           </div>
         </div>
 
         {/* CARGANDO */}
         {cargando && (
-          <div className="mb-6 rounded-3xl border border-emerald-100 bg-white p-8 text-center shadow-sm">
-
+          <div className="relative z-0 mb-6 rounded-3xl border border-emerald-100 bg-white p-8 text-center shadow-sm">
             <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-emerald-100 border-t-emerald-800" />
 
             <p className="text-sm font-semibold text-emerald-900">
               Cargando usuarios...
             </p>
-
           </div>
         )}
 
         {/* MENSAJE */}
         {mensaje && (
           <div
-            className={`mb-6 rounded-3xl border p-4 shadow-sm ${
+            className={`relative z-0 mb-6 rounded-3xl border p-4 shadow-sm ${
               tipoMensaje === 'exito'
                 ? 'border-emerald-200 bg-emerald-50'
                 : 'border-rose-200 bg-rose-50'
             }`}
             role={tipoMensaje === 'error' ? 'alert' : 'status'}
           >
-
             <div className="flex items-start gap-3">
-
               <div
                 className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
                   tipoMensaje === 'exito'
@@ -612,20 +683,15 @@ export default function GestionRoles() {
               >
                 {mensaje}
               </p>
-
             </div>
           </div>
         )}
 
         {/* TABLA */}
         {!cargando && (
-          <div className="overflow-hidden rounded-[2rem] border border-[#095540]/10 bg-white shadow-[0_18px_50px_rgba(9,85,64,0.09)]">
-
-            {/* ENCABEZADO TABLA */}
+          <div className="relative z-0 overflow-hidden rounded-[2rem] border border-[#095540]/10 bg-white shadow-[0_18px_50px_rgba(9,85,64,0.09)]">
             <div className="flex flex-col gap-2 border-b border-slate-100 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-7">
-
               <div>
-
                 <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#8dc63f]">
                   Usuarios registrados
                 </p>
@@ -633,27 +699,21 @@ export default function GestionRoles() {
                 <h2 className="mt-1 text-xl font-extrabold tracking-tight text-[#073f31]">
                   Usuarios y roles
                 </h2>
-
               </div>
 
               <span className="inline-flex w-fit rounded-full border border-[#00AEEF]/20 bg-[#00AEEF]/10 px-3 py-1.5 text-xs font-bold text-[#0087BA]">
                 Mostrando {usuariosFiltrados.length} de {usuarios.length}
               </span>
-
             </div>
 
             <div className="overflow-x-auto">
-
               <table className="w-full min-w-[760px] border-collapse">
-
                 <caption className="sr-only">
                   Usuarios y roles asignados
                 </caption>
 
                 <thead className="bg-gradient-to-r from-[#073f31] via-[#095540] to-[#08743f]">
-
                   <tr className="text-left text-xs font-bold uppercase tracking-[0.1em] text-white">
-
                     <th className="px-5 py-4 sm:px-6">
                       Usuario
                     </th>
@@ -673,29 +733,24 @@ export default function GestionRoles() {
                     <th className="px-5 py-4 sm:px-6">
                       Acción
                     </th>
-
                   </tr>
-
                 </thead>
 
                 <tbody className="divide-y divide-slate-100">
-
                   {usuariosFiltrados.length === 0 ? (
                     <tr>
-
                       <td
                         className="px-6 py-14 text-center"
                         colSpan={5}
                       >
-
                         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#00AEEF]/10 text-[#0087BA]">
-
                           <svg
                             className="h-7 w-7"
                             fill="none"
                             viewBox="0 0 24 24"
                             strokeWidth="1.6"
                             stroke="currentColor"
+                            aria-hidden="true"
                           >
                             <path
                               strokeLinecap="round"
@@ -703,7 +758,6 @@ export default function GestionRoles() {
                               d="M15 19.125a6.75 6.75 0 00-13.5 0m6.75-6.75a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5z"
                             />
                           </svg>
-
                         </div>
 
                         <h3 className="mt-4 text-base font-bold text-slate-800">
@@ -713,15 +767,10 @@ export default function GestionRoles() {
                         <p className="mt-1 text-sm text-slate-500">
                           Prueba con otro nombre, correo o rol.
                         </p>
-
                       </td>
-
                     </tr>
-
                   ) : (
-
                     usuariosFiltrados.map((usuario) => {
-
                       const estiloRol =
                         obtenerEstiloRol(usuario.rol);
 
@@ -733,92 +782,59 @@ export default function GestionRoles() {
                           key={usuario.id}
                           className="group transition-colors duration-200 hover:bg-[#f7faf5]"
                         >
-
-                          {/* USUARIO */}
                           <td className="px-5 py-5 sm:px-6">
-
                             <div className="flex items-center gap-3">
-
                               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#009444]/10 to-[#8dc63f]/20 text-sm font-extrabold text-[#095540] ring-1 ring-emerald-100">
-                                {usuario.nombre?.charAt(0)?.toUpperCase() ?? '?'}
+                                {usuario.nombre
+                                  ?.charAt(0)
+                                  ?.toUpperCase() ?? '?'}
                               </div>
 
                               <div>
-
                                 <p className="font-bold text-[#095540]">
                                   {usuario.nombreUsuario}
                                 </p>
-
-                                <p className="mt-0.5 text-xs text-slate-400">
-                                  ID #{usuario.id}
-                                </p>
-
                               </div>
-
                             </div>
-
                           </td>
 
-                          {/* NOMBRE COMPLETO */}
                           <td className="px-5 py-5 sm:px-6">
-
                             <p className="text-sm font-semibold text-slate-700">
-                              {usuario.nombre} {usuario.apellidos}
+                              {usuario.nombre}{' '}
+                              {usuario.apellidos}
                             </p>
-
                           </td>
 
-                          {/* CORREO */}
                           <td className="px-5 py-5 sm:px-6">
-
                             <p className="max-w-[250px] truncate text-sm text-slate-600">
                               {usuario.correo}
                             </p>
-
                           </td>
 
-                          {/* ROL */}
                           <td className="px-5 py-5 sm:px-6">
-
                             {esSuperAdmin ? (
-
                               <span className="inline-flex items-center gap-2 rounded-full border border-[#095540]/20 bg-[#095540]/10 px-3 py-1.5 text-xs font-bold text-[#095540]">
-
                                 <span className="h-2 w-2 rounded-full bg-[#095540]" />
-
                                 Super Admin
-
                               </span>
-
                             ) : (
-
                               <span
                                 className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold capitalize ${estiloRol.clase}`}
                               >
-
                                 <span
                                   className={`h-2 w-2 rounded-full ${estiloRol.punto}`}
                                 />
-
                                 {estiloRol.texto}
-
                               </span>
-
                             )}
-
                           </td>
 
-                          {/* ACCIÓN */}
                           <td className="px-5 py-5 sm:px-6">
-
                             {esSuperAdmin ? (
-
                               <span className="inline-flex min-h-10 items-center justify-center rounded-2xl border border-slate-200 bg-slate-100 px-4 text-xs font-bold text-slate-400">
                                 No disponible
                               </span>
-
                             ) : (
-
                               <button
                                 type="button"
                                 onClick={() =>
@@ -828,42 +844,33 @@ export default function GestionRoles() {
                               >
                                 Cambiar rol
                               </button>
-
                             )}
-
                           </td>
-
                         </tr>
                       );
                     })
                   )}
-
                 </tbody>
-
               </table>
             </div>
           </div>
         )}
-
       </div>
 
       {/* MODAL CAMBIAR ROL */}
       {usuarioSeleccionado && !mostrarConfirmacion && (
         <div
-          className="fixed inset-0 z-[1000] flex items-center justify-center bg-[#062e25]/65 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-[1000] flex items-center justify-center overflow-y-auto bg-[#062e25]/65 p-4 py-8 backdrop-blur-sm sm:py-10"
           role="dialog"
           aria-modal="true"
           aria-labelledby="titulo-cambio-rol"
         >
+          <div className="my-auto w-full max-w-md overflow-visible rounded-[2rem] border border-white/70 bg-white shadow-[0_30px_80px_rgba(9,85,64,0.25)]">
 
-          <div className="w-full max-w-md overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-[0_30px_80px_rgba(9,85,64,0.25)]">
-
-            <div className="bg-gradient-to-br from-[#095540] to-[#009444] px-6 py-6 text-white sm:px-8">
-
+            {/* HEADER MODAL */}
+            <div className="rounded-t-[2rem] bg-gradient-to-br from-[#095540] to-[#009444] px-6 py-6 text-white sm:px-8">
               <div className="flex items-start justify-between gap-4">
-
                 <div>
-
                   <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-100">
                     Gestión de usuarios
                   </p>
@@ -874,7 +881,6 @@ export default function GestionRoles() {
                   >
                     Cambiar rol
                   </h2>
-
                 </div>
 
                 <button
@@ -884,7 +890,6 @@ export default function GestionRoles() {
                   className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20 disabled:opacity-50"
                   aria-label="Cerrar"
                 >
-
                   <svg
                     className="h-4 w-4"
                     viewBox="0 0 24 24"
@@ -898,17 +903,13 @@ export default function GestionRoles() {
                       d="M6 6l12 12M18 6L6 18"
                     />
                   </svg>
-
                 </button>
-
               </div>
-
             </div>
 
+            {/* CONTENIDO */}
             <div className="p-6 sm:p-8">
-
               <div className="rounded-2xl border border-[#8dc63f]/25 bg-[#8dc63f]/10 p-4">
-
                 <p className="text-xs font-bold uppercase tracking-wider text-[#567d16]">
                   Usuario seleccionado
                 </p>
@@ -921,7 +922,6 @@ export default function GestionRoles() {
                   {usuarioSeleccionado.nombre}{' '}
                   {usuarioSeleccionado.apellidos}
                 </p>
-
               </div>
 
               <label
@@ -931,37 +931,311 @@ export default function GestionRoles() {
                 Nuevo rol
               </label>
 
-              <select
-                id="nuevoRol"
-                autoFocus
-                value={nuevoRol}
-                onChange={(e) =>
-                  setNuevoRol(e.target.value as NombreRol)
-                }
-                disabled={guardando}
-                className="mt-2 min-h-12 w-full rounded-2xl border border-[#095540]/15 bg-[#f7faf5] px-4 text-sm font-medium text-slate-800 outline-none transition duration-200 focus-visible:border-[#009444] focus-visible:bg-white focus-visible:ring-4 focus-visible:ring-[#009444]/15 disabled:cursor-not-allowed disabled:opacity-60"
-              >
+              {/* SELECTOR VISUAL DE ROL */}
+              <div className="relative mt-2">
+                <button
+                  id="nuevoRol"
+                  type="button"
+                  onClick={() =>
+                    !guardando &&
+                    setMostrarSelectorRol(
+                      (actual) => !actual
+                    )
+                  }
+                  disabled={guardando}
+                  className="group flex min-h-14 w-full items-center justify-between gap-3 rounded-2xl border border-[#095540]/15 bg-[#f7faf5] px-4 text-left shadow-sm transition-all duration-200 hover:border-[#009444]/40 hover:bg-white hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#009444]/15 disabled:cursor-not-allowed disabled:opacity-60"
+                  aria-haspopup="listbox"
+                  aria-expanded={mostrarSelectorRol}
+                >
+                  <div className="flex min-w-0 items-center gap-3">
+                    {nuevoRol ? (
+                      <>
+                        <div
+                          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                            nuevoRol === 'administrador'
+                              ? 'bg-[#009444]/10 text-[#08743f]'
+                              : nuevoRol === 'asociado'
+                                ? 'bg-[#8dc63f]/15 text-[#567d16]'
+                                : 'bg-[#d9d823]/20 text-[#6e6c00]'
+                          }`}
+                        >
+                          {nuevoRol === 'administrador' && (
+                            <svg
+                              className="h-5 w-5"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              strokeWidth="1.8"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M12 3l7 4v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V7l7-4z"
+                              />
+                            </svg>
+                          )}
 
-                <option value="">
-                  Selecciona un rol
-                </option>
+                          {nuevoRol === 'asociado' && (
+                            <svg
+                              className="h-5 w-5"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              strokeWidth="1.8"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2m6-10a4 4 0 100-8 4 4 0 000 8zm8-3v6m3-3h-6"
+                              />
+                            </svg>
+                          )}
 
-                <option value="administrador">
-                  Administrador
-                </option>
+                          {nuevoRol === 'visitante' && (
+                            <svg
+                              className="h-5 w-5"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              strokeWidth="1.8"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M15 19.125a6.75 6.75 0 00-13.5 0M8.25 12.375a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5zm7.5-3.75h5.25m-2.625-2.625v5.25"
+                              />
+                            </svg>
+                          )}
+                        </div>
 
-                <option value="asociado">
-                  Asociado
-                </option>
+                        <div className="min-w-0">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                            Rol seleccionado
+                          </p>
 
-                <option value="visitante">
-                  Visitante
-                </option>
+                          <p
+                            className={`truncate text-sm font-extrabold ${
+                              nuevoRol === 'administrador'
+                                ? 'text-[#08743f]'
+                                : nuevoRol === 'asociado'
+                                  ? 'text-[#567d16]'
+                                  : 'text-[#6e6c00]'
+                            }`}
+                          >
+                            {obtenerNombreRol(nuevoRol)}
+                          </p>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-400">
+                          <svg
+                            className="h-5 w-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth="1.8"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M12 6v12m6-6H6"
+                            />
+                          </svg>
+                        </div>
 
-              </select>
+                        <div>
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                            Selección
+                          </p>
+
+                          <p className="text-sm font-bold text-slate-500">
+                            Selecciona un rol
+                          </p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  <svg
+                    className={`h-5 w-5 shrink-0 text-slate-400 transition-transform duration-200 ${
+                      mostrarSelectorRol
+                        ? 'rotate-180 text-[#009444]'
+                        : ''
+                    }`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth="2"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="m6 9 6 6 6-6"
+                    />
+                  </svg>
+                </button>
+
+                {/* OPCIONES DEL ROL */}
+                {mostrarSelectorRol && (
+                  <div
+                    className="absolute left-0 top-full z-[1200] mt-2 w-full overflow-hidden rounded-2xl border border-[#095540]/10 bg-white p-2 shadow-[0_20px_50px_rgba(9,85,64,0.20)]"
+                    role="listbox"
+                  >
+                    {/* ADMINISTRADOR */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNuevoRol('administrador');
+                        setMostrarSelectorRol(false);
+                      }}
+                      className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-all duration-150 ${
+                        nuevoRol === 'administrador'
+                          ? 'bg-[#009444]/10'
+                          : 'hover:bg-[#f5faf7]'
+                      }`}
+                      role="option"
+                      aria-selected={
+                        nuevoRol === 'administrador'
+                      }
+                    >
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#009444]/10 text-[#08743f]">
+                        <svg
+                          className="h-5 w-5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          strokeWidth="1.8"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M12 3l7 4v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V7l7-4z"
+                          />
+                        </svg>
+                      </div>
+
+                      <div className="flex-1">
+                        <p className="text-sm font-extrabold text-[#08743f]">
+                          Administrador
+                        </p>
+
+                        <p className="text-xs text-slate-400">
+                          Gestiona usuarios y el sistema
+                        </p>
+                      </div>
+
+                      {nuevoRol === 'administrador' && (
+                        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#009444]/10 text-[#08743f]">
+                          ✓
+                        </span>
+                      )}
+                    </button>
+
+                    {/* ASOCIADO */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNuevoRol('asociado');
+                        setMostrarSelectorRol(false);
+                      }}
+                      className={`mt-1 flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-all duration-150 ${
+                        nuevoRol === 'asociado'
+                          ? 'bg-[#8dc63f]/15'
+                          : 'hover:bg-[#f7faf2]'
+                      }`}
+                      role="option"
+                      aria-selected={
+                        nuevoRol === 'asociado'
+                      }
+                    >
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#8dc63f]/15 text-[#567d16]">
+                        <svg
+                          className="h-5 w-5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          strokeWidth="1.8"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2m6-10a4 4 0 100-8 4 4 0 000 8zm8-3v6m3-3h-6"
+                          />
+                        </svg>
+                      </div>
+
+                      <div className="flex-1">
+                        <p className="text-sm font-extrabold text-[#567d16]">
+                          Asociado
+                        </p>
+
+                        <p className="text-xs text-slate-400">
+                          Administra emprendimientos y actividades
+                        </p>
+                      </div>
+
+                      {nuevoRol === 'asociado' && (
+                        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#8dc63f]/20 text-[#567d16]">
+                          ✓
+                        </span>
+                      )}
+                    </button>
+
+                    {/* VISITANTE */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNuevoRol('visitante');
+                        setMostrarSelectorRol(false);
+                      }}
+                      className={`mt-1 flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-all duration-150 ${
+                        nuevoRol === 'visitante'
+                          ? 'bg-[#d9d823]/15'
+                          : 'hover:bg-[#fffef0]'
+                      }`}
+                      role="option"
+                      aria-selected={
+                        nuevoRol === 'visitante'
+                      }
+                    >
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#d9d823]/20 text-[#6e6c00]">
+                        <svg
+                          className="h-5 w-5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          strokeWidth="1.8"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M15 19.125a6.75 6.75 0 00-13.5 0M8.25 12.375a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5zm7.5-3.75h5.25m-2.625-2.625v5.25"
+                          />
+                        </svg>
+                      </div>
+
+                      <div className="flex-1">
+                        <p className="text-sm font-extrabold text-[#6e6c00]">
+                          Visitante
+                        </p>
+
+                        <p className="text-xs text-slate-400">
+                          Consulta información del parque
+                        </p>
+                      </div>
+
+                      {nuevoRol === 'visitante' && (
+                        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#d9d823]/25 text-[#6e6c00]">
+                          ✓
+                        </span>
+                      )}
+                    </button>
+                  </div>
+                )}
+              </div>
 
               <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-
                 <button
                   type="button"
                   onClick={cerrarCambioRol}
@@ -979,94 +1253,90 @@ export default function GestionRoles() {
                 >
                   Continuar
                 </button>
-
               </div>
-
             </div>
           </div>
         </div>
       )}
 
       {/* MODAL DE CONFIRMACIÓN */}
-      {mostrarConfirmacion && usuarioSeleccionado && nuevoRol && (
-        <div
-          className="fixed inset-0 z-[1100] flex items-center justify-center bg-[#062e25]/70 p-4 backdrop-blur-sm"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="titulo-confirmacion-rol"
-        >
+      {mostrarConfirmacion &&
+        usuarioSeleccionado &&
+        nuevoRol && (
+          <div
+            className="fixed inset-0 z-[1100] flex items-center justify-center bg-[#062e25]/70 p-4 backdrop-blur-sm"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="titulo-confirmacion-rol"
+          >
+            <div className="w-full max-w-md overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-[0_30px_80px_rgba(9,85,64,0.28)]">
+              <div className="bg-gradient-to-br from-[#095540] to-[#009444] px-6 py-6 text-white sm:px-8">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-100">
+                  Confirmación
+                </p>
 
-          <div className="w-full max-w-md overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-[0_30px_80px_rgba(9,85,64,0.28)]">
+                <h2
+                  id="titulo-confirmacion-rol"
+                  className="mt-1 text-2xl font-extrabold tracking-tight"
+                >
+                  Confirmar cambio de rol
+                </h2>
+              </div>
 
-            <div className="bg-gradient-to-br from-[#095540] to-[#009444] px-6 py-6 text-white sm:px-8">
+              <div className="p-6 sm:p-8">
+                <div className="rounded-2xl border border-[#d9d823]/40 bg-[#d9d823]/10 p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#d9d823]/25 font-bold text-[#6e6c00]">
+                      !
+                    </div>
 
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-100">
-                Confirmación
-              </p>
-
-              <h2
-                id="titulo-confirmacion-rol"
-                className="mt-1 text-2xl font-extrabold tracking-tight"
-              >
-                Confirmar cambio de rol
-              </h2>
-
-            </div>
-
-            <div className="p-6 sm:p-8">
-
-              <div className="rounded-2xl border border-[#d9d823]/40 bg-[#d9d823]/10 p-4">
-
-                <div className="flex items-start gap-3">
-
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#d9d823]/25 font-bold text-[#6e6c00]">
-                    !
+                    <p className="text-sm leading-6 text-[#5f5b00]">
+                      ¿Deseas cambiar a{' '}
+                      <strong>
+                        {usuarioSeleccionado.nombreUsuario}
+                      </strong>{' '}
+                      del rol{' '}
+                      <strong>
+                        {obtenerNombreRol(
+                          usuarioSeleccionado.rol ?? ''
+                        )}
+                      </strong>{' '}
+                      al rol{' '}
+                      <strong>
+                        {obtenerNombreRol(nuevoRol)}
+                      </strong>
+                      ?
+                    </p>
                   </div>
-
-                  <p className="text-sm leading-6 text-[#5f5b00]">
-                    ¿Deseas cambiar a{' '}
-                    <strong>
-                      {usuarioSeleccionado.nombreUsuario}
-                    </strong>{' '}
-                    del rol{' '}
-                    <strong>{usuarioSeleccionado.rol}</strong>{' '}
-                    al rol{' '}
-                    <strong>{nuevoRol}</strong>?
-                  </p>
-
                 </div>
 
+                <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setMostrarConfirmacion(false)
+                    }
+                    disabled={guardando}
+                    className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    Cancelar
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => void actualizarRol()}
+                    disabled={guardando}
+                    className="inline-flex min-h-11 items-center justify-center rounded-2xl bg-[#095540] px-5 text-sm font-extrabold text-white shadow-sm transition hover:bg-[#073f31] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {guardando
+                      ? 'Guardando...'
+                      : 'Confirmar cambio'}
+                  </button>
+                </div>
               </div>
-
-              <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-
-                <button
-                  type="button"
-                  onClick={() => setMostrarConfirmacion(false)}
-                  disabled={guardando}
-                  className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  Cancelar
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => void actualizarRol()}
-                  disabled={guardando}
-                  className="inline-flex min-h-11 items-center justify-center rounded-2xl bg-[#095540] px-5 text-sm font-extrabold text-white shadow-sm transition hover:bg-[#073f31] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {guardando
-                    ? 'Guardando...'
-                    : 'Confirmar cambio'}
-                </button>
-
-              </div>
-
             </div>
           </div>
-        </div>
-      )}
-
+        )}
     </section>
   );
 }

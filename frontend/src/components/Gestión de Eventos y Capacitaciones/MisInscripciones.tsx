@@ -1,0 +1,856 @@
+import { useEffect, useMemo, useState } from 'react';
+
+import {
+  obtenerMisInscripciones,
+  type MiInscripcion,
+} from '../../services/MisInscripcionesService';
+
+type FiltroTipo = 'todas' | 'evento' | 'capacitacion';
+type FiltroTiempo = 'proximas' | 'pasadas' | 'todas';
+
+const formatearFecha = (
+  valor: string | Date | null | undefined,
+): string => {
+  if (!valor) {
+    return 'Sin fecha';
+  }
+
+  const fecha = new Date(valor);
+
+  if (Number.isNaN(fecha.getTime())) {
+    return 'Sin fecha';
+  }
+
+  return new Intl.DateTimeFormat('es-CR', {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(fecha);
+};
+
+const formatearTipoActividad = (tipo: string): string => {
+  if (tipo === 'evento') {
+    return 'Evento';
+  }
+
+  if (tipo === 'capacitacion') {
+    return 'Capacitación';
+  }
+
+  return tipo;
+};
+
+const acentoPorTipo: Record<
+  string,
+  {
+    punto: string;
+    texto: string;
+    fondo: string;
+    borde: string;
+    icono: string;
+  }
+> = {
+  evento: {
+    punto: 'bg-[#00AEEF]',
+    texto: 'text-[#0087BA] dark:text-[#67d5ff]',
+    fondo: 'bg-[#00AEEF]/8 dark:bg-[#00AEEF]/15',
+    borde: 'border-[#00AEEF]/20 dark:border-[#00AEEF]/30',
+    icono:
+      'bg-[#00AEEF]/10 text-[#0087BA] dark:bg-[#00AEEF]/15 dark:text-[#67d5ff]',
+  },
+
+  capacitacion: {
+    punto: 'bg-[#8dc63f]',
+    texto: 'text-[#567d16] dark:text-[#b7e86c]',
+    fondo: 'bg-[#8dc63f]/10 dark:bg-[#8dc63f]/15',
+    borde: 'border-[#8dc63f]/25 dark:border-[#8dc63f]/30',
+    icono:
+      'bg-[#8dc63f]/12 text-[#567d16] dark:bg-[#8dc63f]/15 dark:text-[#b7e86c]',
+  },
+};
+
+const obtenerAcentoTipo = (tipo: string) =>
+  acentoPorTipo[tipo] ?? {
+    punto: 'bg-slate-400',
+    texto: 'text-slate-600 dark:text-slate-300',
+    fondo: 'bg-slate-100 dark:bg-white/5',
+    borde: 'border-slate-200 dark:border-white/10',
+    icono:
+      'bg-slate-100 text-slate-600 dark:bg-white/5 dark:text-slate-300',
+  };
+
+const esFechaFutura = (
+  valor: string | null | undefined,
+): boolean => {
+  if (!valor) {
+    return false;
+  }
+
+  const fecha = new Date(valor);
+
+  if (Number.isNaN(fecha.getTime())) {
+    return false;
+  }
+
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+
+  return fecha.getTime() >= hoy.getTime();
+};
+
+export default function MisInscripciones() {
+  const [inscripciones, setInscripciones] = useState<
+    MiInscripcion[]
+  >([]);
+
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState('');
+
+  const [filtroTipo, setFiltroTipo] =
+    useState<FiltroTipo>('todas');
+
+  const [filtroTiempo, setFiltroTiempo] =
+    useState<FiltroTiempo>('proximas');
+
+  const [expandidoId, setExpandidoId] = useState<number | null>(
+    null,
+  );
+
+  const cargarInscripciones = async () => {
+    setCargando(true);
+    setError('');
+
+    try {
+      const datos = await obtenerMisInscripciones();
+
+      if (!Array.isArray(datos)) {
+        throw new Error(
+          'La respuesta de inscripciones no es válida.',
+        );
+      }
+
+      setInscripciones(datos);
+    } catch (errorSolicitud: unknown) {
+      console.error(
+        'Error al cargar mis inscripciones:',
+        errorSolicitud,
+      );
+
+      const status =
+        typeof errorSolicitud === 'object' &&
+        errorSolicitud !== null &&
+        'status' in errorSolicitud
+          ? Number(
+              (errorSolicitud as { status?: number }).status,
+            )
+          : null;
+
+      setError(
+        status === 401
+          ? 'Debes iniciar sesión para consultar tus inscripciones.'
+          : 'No se pudieron cargar tus inscripciones.',
+      );
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  useEffect(() => {
+    void cargarInscripciones();
+  }, []);
+
+  const totalProximas = useMemo(
+    () =>
+      inscripciones.filter((inscripcion) =>
+        esFechaFutura(inscripcion.fechaActividad),
+      ).length,
+    [inscripciones],
+  );
+
+  const totalPasadas =
+    inscripciones.length - totalProximas;
+
+  const registrosVisibles = useMemo(() => {
+    let lista = [...inscripciones];
+
+    if (filtroTiempo === 'proximas') {
+      lista = lista.filter((inscripcion) =>
+        esFechaFutura(inscripcion.fechaActividad),
+      );
+    }
+
+    if (filtroTiempo === 'pasadas') {
+      lista = lista.filter(
+        (inscripcion) =>
+          !esFechaFutura(inscripcion.fechaActividad),
+      );
+    }
+
+    if (filtroTipo !== 'todas') {
+      lista = lista.filter(
+        (inscripcion) =>
+          inscripcion.tipoActividad === filtroTipo,
+      );
+    }
+
+    lista.sort((a, b) => {
+      const fechaA = a.fechaActividad
+        ? new Date(a.fechaActividad).getTime()
+        : null;
+
+      const fechaB = b.fechaActividad
+        ? new Date(b.fechaActividad).getTime()
+        : null;
+
+      if (fechaA === null && fechaB === null) {
+        return 0;
+      }
+
+      if (fechaA === null) {
+        return 1;
+      }
+
+      if (fechaB === null) {
+        return -1;
+      }
+
+      return filtroTiempo === 'pasadas'
+        ? fechaB - fechaA
+        : fechaA - fechaB;
+    });
+
+    return lista;
+  }, [
+    inscripciones,
+    filtroTipo,
+    filtroTiempo,
+  ]);
+
+  const claseFiltro = (activo: boolean) =>
+    `rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-200 ${
+      activo
+        ? 'bg-[#095540] text-white shadow-md shadow-[#095540]/15 dark:bg-[#8dc63f] dark:text-[#071c16] dark:shadow-[#8dc63f]/10'
+        : 'bg-slate-50 text-slate-600 hover:bg-[#eef7e7] hover:text-[#095540] dark:bg-white/5 dark:text-slate-300 dark:hover:bg-[#8dc63f]/10 dark:hover:text-[#b7e86c]'
+    }`;
+
+  return (
+    <section className="min-h-screen overflow-x-clip bg-[#f5f7f1] px-4 py-8 font-sans transition-colors duration-300 dark:bg-[#071a15] sm:px-6 lg:px-10">
+      <div className="mx-auto max-w-5xl">
+
+       {/* ENCABEZADO */}
+<div className="relative mb-6 overflow-hidden rounded-[24px] bg-gradient-to-br from-[#073f31] via-[#095540] to-[#08743f] px-6 py-6 text-white shadow-[0_12px_35px_rgba(9,85,64,0.14)] sm:px-8 sm:py-7">
+
+  {/* Detalles decorativos sutiles */}
+  <div
+    className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-[#d9d823]/[0.06] blur-3xl"
+    aria-hidden="true"
+  />
+
+  <div
+    className="pointer-events-none absolute -bottom-24 -left-16 h-48 w-48 rounded-full bg-[#00AEEF]/[0.06] blur-3xl"
+    aria-hidden="true"
+  />
+
+  <div className="relative">
+
+    {/* TÍTULO */}
+    <div className="flex items-center gap-3">
+
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/[0.08]">
+        <svg
+          className="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth="1.6"
+          stroke="currentColor"
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M9 6.75V5.25A2.25 2.25 0 0 1 11.25 3h1.5A2.25 2.25 0 0 1 15 5.25v1.5m-9 0h12A2.25 2.25 0 0 1 20.25 9v9.75A2.25 2.25 0 0 1 18 21H6a2.25 2.25 0 0 1-2.25-2.25V9A2.25 2.25 0 0 1 6 6.75Zm0 4.5h12m-8.25 3h.008v.008H9.75v-.008Zm3 0h.008v.008h-.008v-.008Z"
+          />
+        </svg>
+      </div>
+
+      <div>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-200/65">
+          Área personal
+        </p>
+
+        <h1 className="mt-0.5 text-xl font-semibold tracking-tight sm:text-2xl">
+          Mis inscripciones
+        </h1>
+      </div>
+
+    </div>
+
+    {/* DESCRIPCIÓN */}
+    <p className="mt-3 max-w-2xl text-[13px] leading-relaxed text-emerald-100/70 sm:text-sm">
+      Consulta los eventos y capacitaciones en los que te has
+      inscrito y revisa sus fechas, horarios y detalles.
+    </p>
+
+    {/* RESUMEN COMPACTO */}
+    <div className="mt-5 flex items-center gap-5">
+
+      {/* PRÓXIMAS */}
+      <div className="flex items-center gap-2.5">
+
+        <span className="flex h-7 min-w-7 items-center justify-center rounded-lg bg-[#8dc63f]/15 px-2 text-sm font-bold text-[#c8ee8d]">
+          {totalProximas}
+        </span>
+
+        <div>
+          <p className="text-[11px] font-medium text-emerald-100/55">
+            Próximas
+          </p>
+        </div>
+
+      </div>
+
+      {/* SEPARADOR */}
+      <div className="h-6 w-px bg-white/10" />
+
+      {/* PASADAS */}
+      <div className="flex items-center gap-2.5">
+
+        <span className="flex h-7 min-w-7 items-center justify-center rounded-lg bg-white/[0.08] px-2 text-sm font-bold text-white/85">
+          {totalPasadas}
+        </span>
+
+        <div>
+          <p className="text-[11px] font-medium text-emerald-100/55">
+            Pasadas
+          </p>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+
+
+
+        {/* CARGANDO */}
+        {cargando && (
+          <div className="rounded-3xl border border-emerald-100 bg-white p-12 text-center shadow-sm transition-colors dark:border-white/10 dark:bg-[#0d241d]">
+
+            <div className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-4 border-emerald-100 border-t-[#095540] dark:border-white/10 dark:border-t-[#8dc63f]" />
+
+            <p className="text-sm font-semibold text-[#095540] dark:text-emerald-200">
+              Cargando tus inscripciones…
+            </p>
+
+            <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+              Estamos preparando tu información.
+            </p>
+          </div>
+        )}
+
+        {/* ERROR */}
+        {!cargando && error && (
+          <div
+            className="rounded-3xl border border-rose-200 bg-white p-6 shadow-sm dark:border-rose-400/20 dark:bg-[#241317]"
+            role="alert"
+          >
+            <div className="flex items-start gap-4">
+
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-500 dark:bg-rose-500/10 dark:text-rose-300">
+                <svg
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth="1.8"
+                  stroke="currentColor"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 9v3.75m0 3.75h.008v.008H12v-.008ZM21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                  />
+                </svg>
+              </div>
+
+              <div>
+                <p className="text-sm font-bold text-rose-900 dark:text-rose-200">
+                  No se pudo cargar la información
+                </p>
+
+                <p className="mt-1 text-sm text-rose-700 dark:text-rose-300">
+                  {error}
+                </p>
+              </div>
+
+            </div>
+          </div>
+        )}
+
+        {/* CONTENIDO */}
+        {!cargando && !error && (
+          <div className="overflow-hidden rounded-[28px] border border-[#095540]/10 bg-white shadow-[0_16px_44px_rgba(9,85,64,0.07)] transition-colors dark:border-white/10 dark:bg-[#0d241d] dark:shadow-[0_16px_44px_rgba(0,0,0,0.25)]">
+
+            {/* CABECERA DE FILTROS */}
+            <div className="border-b border-slate-100 px-5 py-5 dark:border-white/10 sm:px-7">
+
+              <div className="flex flex-col gap-4">
+
+                <div>
+                  <h2 className="text-lg font-bold text-[#073f31] dark:text-white">
+                    Tus actividades
+                  </h2>
+
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                    Filtra tus inscripciones para encontrar
+                    rápidamente una actividad.
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+
+                  {/* FILTRO TIEMPO */}
+                  <div className="flex flex-wrap gap-2">
+
+                    <button
+                      type="button"
+                      className={claseFiltro(
+                        filtroTiempo === 'proximas',
+                      )}
+                      onClick={() =>
+                        setFiltroTiempo('proximas')
+                      }
+                    >
+                      Próximas
+                    </button>
+
+                    <button
+                      type="button"
+                      className={claseFiltro(
+                        filtroTiempo === 'pasadas',
+                      )}
+                      onClick={() =>
+                        setFiltroTiempo('pasadas')
+                      }
+                    >
+                      Pasadas
+                    </button>
+
+                    <button
+                      type="button"
+                      className={claseFiltro(
+                        filtroTiempo === 'todas',
+                      )}
+                      onClick={() =>
+                        setFiltroTiempo('todas')
+                      }
+                    >
+                      Todas
+                    </button>
+
+                  </div>
+
+                  {/* FILTRO TIPO */}
+                  <div className="flex flex-wrap gap-2">
+
+                    <button
+                      type="button"
+                      className={claseFiltro(
+                        filtroTipo === 'todas',
+                      )}
+                      onClick={() =>
+                        setFiltroTipo('todas')
+                      }
+                    >
+                      Todo tipo
+                    </button>
+
+                    <button
+                      type="button"
+                      className={claseFiltro(
+                        filtroTipo === 'evento',
+                      )}
+                      onClick={() =>
+                        setFiltroTipo('evento')
+                      }
+                    >
+                      Eventos
+                    </button>
+
+                    <button
+                      type="button"
+                      className={claseFiltro(
+                        filtroTipo === 'capacitacion',
+                      )}
+                      onClick={() =>
+                        setFiltroTipo('capacitacion')
+                      }
+                    >
+                      Capacitaciones
+                    </button>
+
+                  </div>
+
+                </div>
+              </div>
+            </div>
+
+            {/* SIN REGISTROS */}
+            {registrosVisibles.length === 0 ? (
+              <div className="px-6 py-16 text-center">
+
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#00AEEF]/10 text-[#0087BA] dark:bg-[#00AEEF]/15 dark:text-[#67d5ff]">
+                  <svg
+                    className="h-7 w-7"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth="1.6"
+                    stroke="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0ZM3.75 12h.007v.008H3.75V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm-.375 5.25h.007v.008H3.75v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"
+                    />
+                  </svg>
+                </div>
+
+                <h3 className="mt-4 text-base font-bold text-slate-800 dark:text-white">
+                  {filtroTiempo === 'proximas'
+                    ? 'No tienes próximas inscripciones'
+                    : 'No hay inscripciones para mostrar'}
+                </h3>
+
+                <p className="mx-auto mt-1 max-w-md text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+                  {filtroTiempo === 'proximas'
+                    ? 'Cuando te inscribas a un evento o capacitación, aparecerá aquí.'
+                    : 'Prueba cambiando los filtros para consultar otras actividades.'}
+                </p>
+
+              </div>
+            ) : (
+
+              /* LISTA */
+              <ul className="divide-y divide-slate-100 dark:divide-white/10">
+
+                {registrosVisibles.map((inscripcion) => {
+
+                  const acentoTipo =
+                    obtenerAcentoTipo(
+                      inscripcion.tipoActividad,
+                    );
+
+                  const expandido =
+                    expandidoId === inscripcion.id;
+
+                  const tieneDetalle = Boolean(
+                    inscripcion.descripcion ||
+                      inscripcion.ubicacion ||
+                      inscripcion.horaInicio,
+                  );
+
+                  return (
+                    <li
+                      key={inscripcion.id}
+                      className="group px-5 py-5 transition-colors duration-200 hover:bg-[#f9fbf7] dark:hover:bg-white/[0.035] sm:px-7"
+                    >
+
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+
+                        {/* INFORMACIÓN PRINCIPAL */}
+                        <div className="flex min-w-0 gap-4">
+
+                          {/* ICONO */}
+                          <div
+                            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${acentoTipo.icono}`}
+                          >
+                            {inscripcion.tipoActividad ===
+                            'capacitacion' ? (
+                              <svg
+                                className="h-5 w-5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                strokeWidth="1.7"
+                                stroke="currentColor"
+                                aria-hidden="true"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M4.5 19.5h15M6.75 17.25V6.75A2.25 2.25 0 0 1 9 4.5h6a2.25 2.25 0 0 1 2.25 2.25v10.5M9 8.25h6M9 11.25h6M9 14.25h3"
+                                />
+                              </svg>
+                            ) : (
+                              <svg
+                                className="h-5 w-5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                strokeWidth="1.7"
+                                stroke="currentColor"
+                                aria-hidden="true"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M6.75 3.75h10.5A2.25 2.25 0 0 1 19.5 6v12a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 18V6a2.25 2.25 0 0 1 2.25-2.25ZM8.25 8.25h7.5M8.25 12h7.5m-7.5 3.75h4.5"
+                                />
+                              </svg>
+                            )}
+                          </div>
+
+                          {/* DATOS */}
+                          <div className="min-w-0">
+
+                            <div className="flex flex-wrap items-center gap-2">
+
+                              <h3 className="truncate text-base font-bold text-[#095540] dark:text-emerald-200">
+                                {inscripcion.nombreActividad}
+                              </h3>
+
+                              <span
+                                className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${acentoTipo.fondo} ${acentoTipo.borde} ${acentoTipo.texto}`}
+                              >
+                                <span
+                                  className={`h-1.5 w-1.5 rounded-full ${acentoTipo.punto}`}
+                                />
+
+                                {formatearTipoActividad(
+                                  inscripcion.tipoActividad,
+                                )}
+                              </span>
+
+                            </div>
+
+                            {/* INFORMACIÓN DE ACTIVIDAD */}
+                            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-slate-500 dark:text-slate-400">
+
+                              {/* FECHA */}
+                              <span className="inline-flex items-center gap-1.5">
+                                <svg
+                                  className="h-4 w-4 text-slate-400 dark:text-slate-500"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  strokeWidth="1.7"
+                                  stroke="currentColor"
+                                  aria-hidden="true"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M6.75 3.75v2.25m10.5-2.25v2.25M3.75 9h16.5M5.25 5.25h13.5A1.5 1.5 0 0 1 20.25 6.75v11.5a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5V6.75a1.5 1.5 0 0 1 1.5-1.5Z"
+                                  />
+                                </svg>
+
+                                {formatearFecha(
+                                  inscripcion.fechaActividad,
+                                )}
+                              </span>
+
+                              {/* HORA */}
+                              {inscripcion.horaInicio && (
+                                <span className="inline-flex items-center gap-1.5">
+                                  <svg
+                                    className="h-4 w-4 text-slate-400 dark:text-slate-500"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    strokeWidth="1.7"
+                                    stroke="currentColor"
+                                    aria-hidden="true"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      d="M12 6v6l4 2.25M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                                    />
+                                  </svg>
+
+                                  {inscripcion.horaInicio}
+
+                                  {inscripcion.horaFin
+                                    ? ` – ${inscripcion.horaFin}`
+                                    : ''}
+                                </span>
+                              )}
+
+                              {/* UBICACIÓN */}
+                              {inscripcion.ubicacion && (
+                                <span className="inline-flex items-center gap-1.5">
+                                  <svg
+                                    className="h-4 w-4 text-slate-400 dark:text-slate-500"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    strokeWidth="1.7"
+                                    stroke="currentColor"
+                                    aria-hidden="true"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
+                                    />
+
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      d="M19.5 10.5c0 5.25-7.5 10.5-7.5 10.5S4.5 15.75 4.5 10.5a7.5 7.5 0 1 1 15 0Z"
+                                    />
+                                  </svg>
+
+                                  {inscripcion.ubicacion}
+                                </span>
+                              )}
+
+                            </div>
+
+                            <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
+                              Inscrito el{' '}
+                              {formatearFecha(
+                                inscripcion.fechaInscripcion,
+                              )}
+                            </p>
+
+                          </div>
+                        </div>
+
+                        {/* BOTÓN DETALLE */}
+                        {tieneDetalle && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setExpandidoId(
+                                expandido
+                                  ? null
+                                  : inscripcion.id,
+                              )
+                            }
+                            className="flex shrink-0 items-center justify-center gap-2 rounded-xl border border-[#095540]/15 px-3.5 py-2 text-xs font-bold text-[#095540] transition-all duration-200 hover:border-[#095540]/30 hover:bg-[#eef7e7] dark:border-white/15 dark:text-[#b7e86c] dark:hover:border-[#8dc63f]/30 dark:hover:bg-[#8dc63f]/10"
+                          >
+                            {expandido
+                              ? 'Ocultar'
+                              : 'Ver detalle'}
+
+                            <svg
+                              className={`h-4 w-4 transition-transform duration-200 ${
+                                expandido
+                                  ? 'rotate-180'
+                                  : ''
+                              }`}
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              strokeWidth="2"
+                              stroke="currentColor"
+                              aria-hidden="true"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="m19.5 8.25-7.5 7.5-7.5-7.5"
+                              />
+                            </svg>
+                          </button>
+                        )}
+
+                      </div>
+
+                      {/* DETALLE */}
+                      {expandido && tieneDetalle && (
+                        <div className="mt-4 rounded-2xl border border-[#095540]/8 bg-[#f7faf5] p-5 dark:border-white/10 dark:bg-[#091d17]">
+
+                          {/* DESCRIPCIÓN */}
+                          {inscripcion.descripcion && (
+                            <div>
+                              <p className="text-xs font-bold uppercase tracking-wider text-[#095540]/60 dark:text-emerald-200/70">
+                                Descripción
+                              </p>
+
+                              <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                                {inscripcion.descripcion}
+                              </p>
+                            </div>
+                          )}
+
+                          <dl className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
+
+                            {/* UBICACIÓN */}
+                            {inscripcion.ubicacion && (
+                              <div className="rounded-xl bg-white p-3.5 text-center shadow-sm dark:bg-white/[0.04] dark:shadow-none">
+
+                                <dt className="text-xs font-medium text-slate-400 dark:text-slate-500">
+                                  Ubicación
+                                </dt>
+
+                                <dd className="mt-1 text-sm font-semibold text-slate-700 dark:text-slate-200">
+                                  {inscripcion.ubicacion}
+                                </dd>
+
+                              </div>
+                            )}
+
+                            {/* HORARIO */}
+                            {inscripcion.horaInicio && (
+                              <div className="rounded-xl bg-white p-3.5 text-center shadow-sm dark:bg-white/[0.04] dark:shadow-none">
+
+                                <dt className="text-xs font-medium text-slate-400 dark:text-slate-500">
+                                  Horario
+                                </dt>
+
+                                <dd className="mt-1 text-sm font-semibold text-slate-700 dark:text-slate-200">
+                                  {inscripcion.horaInicio}
+
+                                  {inscripcion.horaFin
+                                    ? ` – ${inscripcion.horaFin}`
+                                    : ''}
+                                </dd>
+
+                              </div>
+                            )}
+
+                          </dl>
+                        </div>
+                      )}
+
+                    </li>
+                  );
+                })}
+
+              </ul>
+            )}
+
+            {/* PIE */}
+            {registrosVisibles.length > 0 && (
+              <div className="border-t border-slate-100 bg-slate-50/60 px-5 py-3.5 dark:border-white/10 dark:bg-black/10 sm:px-7">
+
+                <p className="text-xs font-medium text-slate-400 dark:text-slate-500">
+                  Mostrando{' '}
+
+                  <span className="font-bold text-slate-600 dark:text-slate-300">
+                    {registrosVisibles.length}
+                  </span>
+
+                  {' '}de{' '}
+
+                  <span className="font-bold text-slate-600 dark:text-slate-300">
+                    {inscripciones.length}
+                  </span>
+
+                  {' '}inscripción
+                  {inscripciones.length === 1
+                    ? ''
+                    : 'es'}
+                </p>
+
+              </div>
+            )}
+
+          </div>
+        )}
+
+      </div>
+    </section>
+  );
+}

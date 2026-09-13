@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
+
 import { useNavigate } from 'react-router-dom';
 
 import logo from '../../assets/logo.png';
+
 import logoBlanco from '../../../logo-blanco.png';
+
 import TemaInterfaz from '../ui/TemaInterfaz';
 
 interface NavbarProps {
@@ -13,6 +16,7 @@ interface NavbarProps {
   onCerrarSesion: () => void;
   onGestionRoles: () => void;
   onInscripciones?: () => void;
+  onMisInscripciones?: () => void;
   onCuentasBloqueadas?: () => void;
   onBitacora?: () => void;
   onIrInicio: () => void;
@@ -30,6 +34,7 @@ function Navbar({
   onCerrarSesion,
   onGestionRoles,
   onInscripciones,
+  onMisInscripciones,
   onCuentasBloqueadas,
   onBitacora,
   onIrInicio,
@@ -39,32 +44,25 @@ function Navbar({
   modoAdministracion = false,
 }: NavbarProps) {
   const navigate = useNavigate();
+
   const [scrolled, setScrolled] = useState(false);
   const [menuAbierto, setMenuAbierto] = useState(false);
-
-  // Controla si el navbar está visible dependiendo de la dirección del scroll
   const [navbarVisible, setNavbarVisible] = useState(true);
+
   const ultimoScrollY = useRef(0);
-  
 
   useEffect(() => {
     const manejarScroll = () => {
       const scrollActual = window.scrollY;
 
-      // Mantener visible el navbar cuando estamos arriba
       if (scrollActual < 50) {
         setNavbarVisible(true);
-      }
-      // Bajando → ocultar
-      else if (scrollActual > ultimoScrollY.current) {
+      } else if (scrollActual > ultimoScrollY.current) {
         setNavbarVisible(false);
-      }
-      // Subiendo → mostrar
-      else if (scrollActual < ultimoScrollY.current) {
+      } else if (scrollActual < ultimoScrollY.current) {
         setNavbarVisible(true);
       }
 
-      // Mantener la lógica original de la sombra
       setScrolled(scrollActual > 50);
 
       ultimoScrollY.current = scrollActual;
@@ -111,6 +109,20 @@ function Navbar({
     onInscripciones?.();
   };
 
+  const irMisInscripciones = () => {
+    setMenuAbierto(false);
+    navigate('/mis-inscripciones');
+    onMisInscripciones?.();
+  };
+
+  /*
+   * Mis reservas solamente está disponible
+   * para visitantes y asociados.
+   */
+  const puedeVerMisReservas =
+    rolAutenticado === 'visitante' ||
+    rolAutenticado === 'asociado';
+
   const claseNavegacion =
     'rounded-full border border-transparent px-3 py-2 text-sm font-semibold text-[#17372c] motion-safe:transition-all motion-safe:duration-200 motion-safe:ease-out hover:bg-[#eef7e7]/70 hover:text-[#095540] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2';
 
@@ -123,6 +135,9 @@ function Navbar({
   const claseNavegacionMovilActiva =
     'border-white/60 bg-white/65 text-[#095540] shadow-sm backdrop-blur-lg';
 
+  const claseBotonSecundario =
+    'min-h-10 rounded-full border border-[#095540]/25 bg-white px-4 py-2 text-sm font-bold text-[#095540] motion-safe:transition motion-safe:duration-200 hover:bg-[#eef7e7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2';
+
   return (
     <nav
       className={`fixed inset-x-0 top-3 z-50 px-3 sm:top-4 sm:px-5
@@ -131,13 +146,14 @@ function Navbar({
           navbarVisible || menuAbierto
             ? 'translate-y-0'
             : '-translate-y-[150%]'
-        }
-      `}
+        }`}
       aria-label="Navegación principal"
     >
       <div
         className={`mx-auto max-w-7xl overflow-visible border border-white/70 bg-white/90 backdrop-blur-xl motion-safe:transition-all motion-safe:duration-300 motion-reduce:transition-none ${
-          menuAbierto ? 'rounded-[1.75rem] xl:rounded-full' : 'rounded-full'
+          menuAbierto
+            ? 'rounded-[1.75rem] xl:rounded-full'
+            : 'rounded-full'
         } ${
           modoAdministracion || scrolled
             ? 'shadow-[0_16px_45px_rgba(7,63,49,0.16)]'
@@ -145,6 +161,8 @@ function Navbar({
         }`}
       >
         <div className="flex min-h-[82px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-7">
+          
+          {/* LOGO */}
           <button
             type="button"
             onClick={irInicio}
@@ -157,6 +175,7 @@ function Navbar({
                 alt=""
                 className="sigtad-logo-claro h-full w-full object-contain motion-safe:transition motion-safe:duration-300 motion-safe:group-hover:scale-105 motion-reduce:transform-none"
               />
+
               <img
                 src={logoBlanco}
                 alt=""
@@ -165,15 +184,20 @@ function Navbar({
             </span>
           </button>
 
+          {/* NAVEGACIÓN PRINCIPAL */}
           <div className="hidden items-center gap-0.5 xl:flex xl:gap-1">
             <button
               type="button"
               onClick={irInicio}
               className={`${claseNavegacion} ${
-                seccionActiva === 'inicio' ? claseNavegacionActiva : ''
+                seccionActiva === 'inicio'
+                  ? claseNavegacionActiva
+                  : ''
               }`}
               aria-current={
-                seccionActiva === 'inicio' ? 'page' : undefined
+                seccionActiva === 'inicio'
+                  ? 'page'
+                  : undefined
               }
             >
               Inicio
@@ -197,7 +221,9 @@ function Navbar({
                   : ''
               }`}
               aria-current={
-                seccionActiva === 'emprendimientos' ? 'page' : undefined
+                seccionActiva === 'emprendimientos'
+                  ? 'page'
+                  : undefined
               }
             >
               Emprendimientos
@@ -207,17 +233,24 @@ function Navbar({
               type="button"
               onClick={onIrEventos}
               className={`${claseNavegacion} ${
-                seccionActiva === 'eventos' ? claseNavegacionActiva : ''
+                seccionActiva === 'eventos'
+                  ? claseNavegacionActiva
+                  : ''
               }`}
               aria-current={
-                seccionActiva === 'eventos' ? 'page' : undefined
+                seccionActiva === 'eventos'
+                  ? 'page'
+                  : undefined
               }
             >
               Eventos y Capacitaciones
             </button>
           </div>
 
+          {/* ACCIONES DE ESCRITORIO */}
           <div className="hidden shrink-0 items-center gap-1.5 xl:flex">
+
+            {/* USUARIO NO AUTENTICADO */}
             {!rolAutenticado && (
               <>
                 <button
@@ -228,30 +261,36 @@ function Navbar({
                   Registrarse
                 </button>
 
-           <button
-  type="button"
-  onClick={onLogin}
-  className="flex h-10 w-10 items-center justify-center rounded-full bg-[#095540] text-white shadow-md shadow-[#095540]/20 motion-safe:transition motion-safe:duration-200 hover:bg-[#009444] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8DC63F] focus-visible:ring-offset-2 motion-safe:hover:-translate-y-0.5 motion-reduce:transform-none"
-  aria-label="Ingresar"
-  title="Ingresar"
->
-  <svg
-    viewBox="0 0 24 24"
-    className="h-6 w-6"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    aria-hidden="true"
-  >
-    <circle cx="12" cy="8" r="3.5" />
-    <path d="M5.5 20c.8-3.5 3.2-5.5 6.5-5.5s5.7 2 6.5 5.5" />
-  </svg>
-</button>
+                <button
+                  type="button"
+                  onClick={onLogin}
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-[#095540] text-white shadow-md shadow-[#095540]/20 motion-safe:transition motion-safe:duration-200 hover:bg-[#009444] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8DC63F] focus-visible:ring-offset-2 motion-safe:hover:-translate-y-0.5 motion-reduce:transform-none"
+                  aria-label="Ingresar"
+                  title="Ingresar"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-6 w-6"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <circle
+                      cx="12"
+                      cy="8"
+                      r="3.5"
+                    />
+
+                    <path d="M5.5 20c.8-3.5 3.2-5.5 6.5-5.5s5.7 2 6.5 5.5" />
+                  </svg>
+                </button>
               </>
             )}
 
+            {/* ADMINISTRADOR */}
             {rolAutenticado === 'administrador' && (
               <>
                 <button
@@ -272,26 +311,42 @@ function Navbar({
               </>
             )}
 
-            {rolAutenticado === 'super_admin' && onCuentasBloqueadas && (
+            {/* SUPER ADMIN */}
+            {rolAutenticado === 'super_admin' &&
+              onCuentasBloqueadas && (
+                <button
+                  type="button"
+                  onClick={onCuentasBloqueadas}
+                  className="min-h-10 rounded-full bg-[#d9d823] px-4 py-2 text-sm font-bold text-[#073f31] motion-safe:transition motion-safe:duration-200 hover:bg-[#c7cc22] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2"
+                >
+                  Cuentas bloqueadas
+                </button>
+              )}
+
+            {rolAutenticado === 'super_admin' &&
+              onBitacora && (
+                <button
+                  type="button"
+                  onClick={onBitacora}
+                  className="min-h-10 rounded-full bg-[#d9d823] px-4 py-2 text-sm font-bold text-[#073f31] motion-safe:transition motion-safe:duration-200 hover:bg-[#c7cc22] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2"
+                >
+                  Bitácora
+                </button>
+              )}
+
+            {/* MIS RESERVAS
+                SOLO VISITANTE Y ASOCIADO */}
+            {puedeVerMisReservas && (
               <button
                 type="button"
-                onClick={onCuentasBloqueadas}
-                className="min-h-10 rounded-full bg-[#d9d823] px-4 py-2 text-sm font-bold text-[#073f31] motion-safe:transition motion-safe:duration-200 hover:bg-[#c7cc22] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2"
+                onClick={irMisInscripciones}
+                className={claseBotonSecundario}
               >
-                Cuentas bloqueadas
+                Mis reservas
               </button>
             )}
 
-            {rolAutenticado === 'super_admin' && onBitacora && (
-              <button
-                type="button"
-                onClick={onBitacora}
-                className="min-h-10 rounded-full bg-[#d9d823] px-4 py-2 text-sm font-bold text-[#073f31] motion-safe:transition motion-safe:duration-200 hover:bg-[#c7cc22] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2"
-              >
-                Bitácora
-              </button>
-            )}
-
+            {/* USUARIO AUTENTICADO */}
             {rolAutenticado && (
               <>
                 {nombreUsuario && (
@@ -314,14 +369,21 @@ function Navbar({
             )}
           </div>
 
+          {/* TEMA + MENÚ MÓVIL */}
           <div className="flex shrink-0 items-center gap-1">
             <TemaInterfaz enNavbar />
 
             <button
               type="button"
-              onClick={() => setMenuAbierto(!menuAbierto)}
+              onClick={() =>
+                setMenuAbierto(!menuAbierto)
+              }
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#095540] text-white shadow-sm motion-safe:transition motion-safe:duration-200 hover:bg-[#009444] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8DC63F] focus-visible:ring-offset-2 xl:hidden"
-              aria-label={menuAbierto ? 'Cerrar menú' : 'Abrir menú'}
+              aria-label={
+                menuAbierto
+                  ? 'Cerrar menú'
+                  : 'Abrir menú'
+              }
               aria-expanded={menuAbierto}
               aria-controls="menu-principal-movil"
             >
@@ -352,12 +414,16 @@ function Navbar({
           </div>
         </div>
 
+        {/* =========================
+            MENÚ MÓVIL
+           ========================= */}
         {menuAbierto && (
           <div
             id="menu-principal-movil"
             className="border-t border-[#e2ebe5] px-3 pb-4 pt-3 xl:hidden"
           >
             <div className="flex flex-col gap-1">
+
               <button
                 type="button"
                 onClick={irInicio}
@@ -367,7 +433,9 @@ function Navbar({
                     : ''
                 }`}
                 aria-current={
-                  seccionActiva === 'inicio' ? 'page' : undefined
+                  seccionActiva === 'inicio'
+                    ? 'page'
+                    : undefined
                 }
               >
                 Inicio
@@ -375,7 +443,9 @@ function Navbar({
 
               <button
                 type="button"
-                onClick={() => irSeccion('sobre-parque')}
+                onClick={() =>
+                  irSeccion('sobre-parque')
+                }
                 data-sigtad-about
                 className={claseNavegacionMovil}
               >
@@ -411,13 +481,28 @@ function Navbar({
                     : ''
                 }`}
                 aria-current={
-                  seccionActiva === 'eventos' ? 'page' : undefined
+                  seccionActiva === 'eventos'
+                    ? 'page'
+                    : undefined
                 }
               >
                 Eventos y Capacitaciones
               </button>
+
+              {/* MIS RESERVAS
+                  SOLO VISITANTE Y ASOCIADO */}
+              {puedeVerMisReservas && (
+                <button
+                  type="button"
+                  onClick={irMisInscripciones}
+                  className={claseNavegacionMovil}
+                >
+                  Mis reservas
+                </button>
+              )}
             </div>
 
+            {/* USUARIO NO AUTENTICADO */}
             {!rolAutenticado && (
               <div className="mt-3 grid gap-2 border-t border-[#e2ebe5] pt-3 sm:grid-cols-2">
                 <button
@@ -444,6 +529,7 @@ function Navbar({
               </div>
             )}
 
+            {/* USUARIO AUTENTICADO */}
             {rolAutenticado && (
               <div className="mt-3 grid min-w-0 gap-2 border-t border-[#e2ebe5] pt-3 sm:grid-cols-2">
                 {nombreUsuario && (
@@ -468,41 +554,62 @@ function Navbar({
               </div>
             )}
 
+            {/* ADMINISTRADOR - OPCIONES ADMINISTRATIVAS */}
             {rolAutenticado === 'administrador' && (
-              <button
-                type="button"
-                onClick={() => {
-                  setMenuAbierto(false);
-                  irGestionRoles();
-                }}
-                className="mt-3 min-h-12 w-full rounded-full bg-[#d9d823] px-4 py-3 text-sm font-bold text-[#073f31] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f]"
-              >
-                Gestionar roles
-              </button>
+              <div className="mt-3 grid gap-2 border-t border-[#e2ebe5] pt-3 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuAbierto(false);
+                    irGestionRoles();
+                  }}
+                  className="min-h-12 w-full rounded-full bg-[#d9d823] px-4 py-3 text-sm font-bold text-[#073f31] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f]"
+                >
+                  Gestionar roles
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuAbierto(false);
+                    irInscripciones();
+                  }}
+                  className="min-h-12 w-full rounded-full bg-[#d9d823] px-4 py-3 text-sm font-bold text-[#073f31] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f]"
+                >
+                  Inscripciones
+                </button>
+              </div>
             )}
 
-            {rolAutenticado === 'super_admin' && onCuentasBloqueadas && (
-              <button
-                type="button"
-                onClick={onCuentasBloqueadas}
-                className="mt-3 min-h-[42px] w-full cursor-pointer rounded-[9px] border border-[#095540] bg-white px-4 py-0 text-[13px] font-bold text-[#095540] shadow-[0_5px_14px_rgba(23,48,31,0.14)] [font-family:inherit] [transition:0.2s_ease] hover:bg-[#095540] hover:text-white hover:[transform:translateY(-1px)]"
-              >
-                Cuentas bloqueadas
-              </button>
-            )}
+            {/* SUPER ADMIN - CUENTAS BLOQUEADAS */}
+            {rolAutenticado === 'super_admin' &&
+              onCuentasBloqueadas && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuAbierto(false);
+                    onCuentasBloqueadas();
+                  }}
+                  className="mt-3 min-h-[42px] w-full cursor-pointer rounded-[9px] border border-[#095540] bg-white px-4 py-0 text-[13px] font-bold text-[#095540] shadow-[0_5px_14px_rgba(23,48,31,0.14)] [font-family:inherit] [transition:0.2s_ease] hover:bg-[#095540] hover:text-white hover:[transform:translateY(-1px)]"
+                >
+                  Cuentas bloqueadas
+                </button>
+              )}
 
-            {rolAutenticado === 'super_admin' && onBitacora && (
-              <button
-                type="button"
-                onClick={() => {
-                  setMenuAbierto(false);
-                  onBitacora();
-                }}
-                className="mt-3 min-h-[42px] w-full cursor-pointer rounded-[9px] border border-[#095540] bg-white px-4 py-0 text-[13px] font-bold text-[#095540] shadow-[0_5px_14px_rgba(23,48,31,0.14)] [font-family:inherit] [transition:0.2s_ease] hover:bg-[#095540] hover:text-white hover:[transform:translateY(-1px)]"
-              >
-                Bitácora
-              </button>
-            )}
+            {/* SUPER ADMIN - BITÁCORA */}
+            {rolAutenticado === 'super_admin' &&
+              onBitacora && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuAbierto(false);
+                    onBitacora();
+                  }}
+                  className="mt-3 min-h-[42px] w-full cursor-pointer rounded-[9px] border border-[#095540] bg-white px-4 py-0 text-[13px] font-bold text-[#095540] shadow-[0_5px_14px_rgba(23,48,31,0.14)] [font-family:inherit] [transition:0.2s_ease] hover:bg-[#095540] hover:text-white hover:[transform:translateY(-1px)]"
+                >
+                  Bitácora
+                </button>
+              )}
           </div>
         )}
       </div>
