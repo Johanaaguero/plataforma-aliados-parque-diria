@@ -13,7 +13,10 @@ interface CampoErrores {
   fecha?: string;
   hora?: string;
   lugar?: string;
+  cupoMinimo?: string;
   cupoMaximo?: string;
+  edadMinima?: string;
+  edadMaxima?: string;
   temporada?: string;
 }
 
@@ -146,7 +149,10 @@ export default function RegistroEventoCapacitacion({
   const [fecha, setFecha] = useState('');
   const [hora, setHora] = useState('');
   const [lugar, setLugar] = useState('');
+  const [cupoMinimo, setCupoMinimo] = useState('');
   const [cupoMaximo, setCupoMaximo] = useState('');
+  const [edadMinima, setEdadMinima] = useState('');
+  const [edadMaxima, setEdadMaxima] = useState('');
   const [imagenes, setImagenes] = useState<File[]>([]);
 
   const [mensaje, setMensaje] = useState('');
@@ -245,12 +251,75 @@ export default function RegistroEventoCapacitacion({
       nuevosErrores.lugar = 'Máximo 255 caracteres';
     }
 
-    if (cupoMaximo.trim()) {
+    if (!cupoMinimo.trim()) {
+      nuevosErrores.cupoMinimo = 'Completa este campo';
+    } else {
+      const valor = Number(cupoMinimo);
+
+      if (!Number.isInteger(valor) || valor <= 0) {
+        nuevosErrores.cupoMinimo =
+          'Debe ser un número entero positivo';
+      }
+    }
+
+    if (!cupoMaximo.trim()) {
+      nuevosErrores.cupoMaximo = 'Completa este campo';
+    } else {
       const valor = Number(cupoMaximo);
 
       if (!Number.isInteger(valor) || valor <= 0) {
         nuevosErrores.cupoMaximo =
           'Debe ser un número entero positivo';
+      }
+    }
+
+    if (cupoMinimo.trim() && cupoMaximo.trim()) {
+      const valorMinimo = Number(cupoMinimo);
+      const valorMaximo = Number(cupoMaximo);
+
+      if (
+        Number.isInteger(valorMinimo) &&
+        Number.isInteger(valorMaximo) &&
+        valorMinimo > valorMaximo
+      ) {
+        nuevosErrores.cupoMinimo =
+          'El cupo mínimo no puede ser mayor que el cupo máximo';
+      }
+    }
+
+    if (!edadMinima.trim()) {
+      nuevosErrores.edadMinima = 'Completa este campo';
+    } else {
+      const valor = Number(edadMinima);
+
+      if (!Number.isInteger(valor) || valor < 0) {
+        nuevosErrores.edadMinima =
+          'Debe ser un número entero mayor o igual a 0';
+      }
+    }
+
+    if (!edadMaxima.trim()) {
+      nuevosErrores.edadMaxima = 'Completa este campo';
+    } else {
+      const valor = Number(edadMaxima);
+
+      if (!Number.isInteger(valor) || valor < 0) {
+        nuevosErrores.edadMaxima =
+          'Debe ser un número entero mayor o igual a 0';
+      }
+    }
+
+    if (edadMinima.trim() && edadMaxima.trim()) {
+      const valorMinimo = Number(edadMinima);
+      const valorMaximo = Number(edadMaxima);
+
+      if (
+        Number.isInteger(valorMinimo) &&
+        Number.isInteger(valorMaximo) &&
+        valorMinimo > valorMaximo
+      ) {
+        nuevosErrores.edadMinima =
+          'La edad mínima no puede ser mayor que la edad máxima';
       }
     }
 
@@ -281,7 +350,10 @@ export default function RegistroEventoCapacitacion({
     setFecha('');
     setHora('');
     setLugar('');
+    setCupoMinimo('');
     setCupoMaximo('');
+    setEdadMinima('');
+    setEdadMaxima('');
     setImagenes([]);
 
     setErrores({});
@@ -370,8 +442,17 @@ export default function RegistroEventoCapacitacion({
             hora: hora || null,
             lugar: lugar.trim() || null,
             tipoActividad,
+            cupoMinimo: cupoMinimo.trim()
+              ? Number(cupoMinimo)
+              : null,
             cupoMaximo: cupoMaximo.trim()
               ? Number(cupoMaximo)
+              : null,
+            edadMinima: edadMinima.trim()
+              ? Number(edadMinima)
+              : null,
+            edadMaxima: edadMaxima.trim()
+              ? Number(edadMaxima)
               : null,
             estado: estadoRegistro,
             temporada: temporada || null,
@@ -1058,58 +1139,229 @@ export default function RegistroEventoCapacitacion({
                 </span>
               )}
             </div>
+          </div>
 
-            <div>
-              <label
-                className={LABEL_CLASS}
-                htmlFor="cupoMaximo"
-              >
-                Cupo máximo
-              </label>
+          <div className="mt-4 sm:mt-5">
+            <span className={LABEL_CLASS}>Cupos</span>
 
-              <input
-                id="cupoMaximo"
-                type="number"
-                min={1}
-                step={1}
-                className={
-                  errores.cupoMaximo
-                    ? `${INPUT_BASE_CLASS} ${INPUT_ERROR_CLASS} sm:w-36`
-                    : `${INPUT_BASE_CLASS} ${INPUT_DEFAULT_CLASS} sm:w-36`
-                }
-                value={cupoMaximo}
-                aria-invalid={Boolean(
-                  errores.cupoMaximo
-                )}
-                aria-describedby={
-                  errores.cupoMaximo
-                    ? 'cupoMaximo-error'
-                    : undefined
-                }
-                onChange={(e) => {
-                  setCupoMaximo(e.target.value);
-                  limpiarError('cupoMaximo');
-                }}
-                placeholder="Opcional"
-                disabled={
-                  estado === 'cargando' ||
-                  segundosRestantes !== null
-                }
-              />
-
-              {errores.cupoMaximo && (
-                <span
-                  id="cupoMaximo-error"
-                  className={ERROR_CLASS}
-                  role="alert"
+            <div className="mt-2 grid gap-4 sm:grid-cols-2 sm:gap-5">
+              <div>
+                <label
+                  className={LABEL_CLASS}
+                  htmlFor="cupoMinimo"
                 >
+                  Cupo mínimo
+                </label>
+
+                <input
+                  id="cupoMinimo"
+                  type="number"
+                  min={1}
+                  step={1}
+                  className={
+                    errores.cupoMinimo
+                      ? `${INPUT_BASE_CLASS} ${INPUT_ERROR_CLASS}`
+                      : `${INPUT_BASE_CLASS} ${INPUT_DEFAULT_CLASS}`
+                  }
+                  value={cupoMinimo}
+                  aria-invalid={Boolean(
+                    errores.cupoMinimo
+                  )}
+                  aria-describedby={
+                    errores.cupoMinimo
+                      ? 'cupoMinimo-error'
+                      : undefined
+                  }
+                  onChange={(e) => {
+                    setCupoMinimo(e.target.value);
+                    limpiarError('cupoMinimo');
+                  }}
+                  placeholder="Opcional"
+                  disabled={
+                    estado === 'cargando' ||
+                    segundosRestantes !== null
+                  }
+                />
+
+                {errores.cupoMinimo && (
                   <span
-                    className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#D9D823]"
-                    aria-hidden="true"
-                  />
-                  {errores.cupoMaximo}
-                </span>
-              )}
+                    id="cupoMinimo-error"
+                    className={ERROR_CLASS}
+                    role="alert"
+                  >
+                    <span
+                      className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#D9D823]"
+                      aria-hidden="true"
+                    />
+                    {errores.cupoMinimo}
+                  </span>
+                )}
+              </div>
+
+              <div>
+                <label
+                  className={LABEL_CLASS}
+                  htmlFor="cupoMaximo"
+                >
+                  Cupo máximo
+                </label>
+
+                <input
+                  id="cupoMaximo"
+                  type="number"
+                  min={1}
+                  step={1}
+                  className={
+                    errores.cupoMaximo
+                      ? `${INPUT_BASE_CLASS} ${INPUT_ERROR_CLASS}`
+                      : `${INPUT_BASE_CLASS} ${INPUT_DEFAULT_CLASS}`
+                  }
+                  value={cupoMaximo}
+                  aria-invalid={Boolean(
+                    errores.cupoMaximo
+                  )}
+                  aria-describedby={
+                    errores.cupoMaximo
+                      ? 'cupoMaximo-error'
+                      : undefined
+                  }
+                  onChange={(e) => {
+                    setCupoMaximo(e.target.value);
+                    limpiarError('cupoMaximo');
+                  }}
+                  placeholder="Opcional"
+                  disabled={
+                    estado === 'cargando' ||
+                    segundosRestantes !== null
+                  }
+                />
+
+                {errores.cupoMaximo && (
+                  <span
+                    id="cupoMaximo-error"
+                    className={ERROR_CLASS}
+                    role="alert"
+                  >
+                    <span
+                      className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#D9D823]"
+                      aria-hidden="true"
+                    />
+                    {errores.cupoMaximo}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 sm:mt-5">
+            <span className={LABEL_CLASS}>Rango de edad</span>
+
+            <div className="mt-2 grid gap-4 sm:grid-cols-2 sm:gap-5">
+              <div>
+                <label
+                  className={LABEL_CLASS}
+                  htmlFor="edadMinima"
+                >
+                  Edad mínima
+                </label>
+
+                <input
+                  id="edadMinima"
+                  type="number"
+                  min={0}
+                  step={1}
+                  className={
+                    errores.edadMinima
+                      ? `${INPUT_BASE_CLASS} ${INPUT_ERROR_CLASS}`
+                      : `${INPUT_BASE_CLASS} ${INPUT_DEFAULT_CLASS}`
+                  }
+                  value={edadMinima}
+                  aria-invalid={Boolean(
+                    errores.edadMinima
+                  )}
+                  aria-describedby={
+                    errores.edadMinima
+                      ? 'edadMinima-error'
+                      : undefined
+                  }
+                  onChange={(e) => {
+                    setEdadMinima(e.target.value);
+                    limpiarError('edadMinima');
+                  }}
+                  placeholder="Opcional"
+                  disabled={
+                    estado === 'cargando' ||
+                    segundosRestantes !== null
+                  }
+                />
+
+                {errores.edadMinima && (
+                  <span
+                    id="edadMinima-error"
+                    className={ERROR_CLASS}
+                    role="alert"
+                  >
+                    <span
+                      className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#D9D823]"
+                      aria-hidden="true"
+                    />
+                    {errores.edadMinima}
+                  </span>
+                )}
+              </div>
+
+              <div>
+                <label
+                  className={LABEL_CLASS}
+                  htmlFor="edadMaxima"
+                >
+                  Edad máxima
+                </label>
+
+                <input
+                  id="edadMaxima"
+                  type="number"
+                  min={0}
+                  step={1}
+                  className={
+                    errores.edadMaxima
+                      ? `${INPUT_BASE_CLASS} ${INPUT_ERROR_CLASS}`
+                      : `${INPUT_BASE_CLASS} ${INPUT_DEFAULT_CLASS}`
+                  }
+                  value={edadMaxima}
+                  aria-invalid={Boolean(
+                    errores.edadMaxima
+                  )}
+                  aria-describedby={
+                    errores.edadMaxima
+                      ? 'edadMaxima-error'
+                      : undefined
+                  }
+                  onChange={(e) => {
+                    setEdadMaxima(e.target.value);
+                    limpiarError('edadMaxima');
+                  }}
+                  placeholder="Opcional"
+                  disabled={
+                    estado === 'cargando' ||
+                    segundosRestantes !== null
+                  }
+                />
+
+                {errores.edadMaxima && (
+                  <span
+                    id="edadMaxima-error"
+                    className={ERROR_CLASS}
+                    role="alert"
+                  >
+                    <span
+                      className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#D9D823]"
+                      aria-hidden="true"
+                    />
+                    {errores.edadMaxima}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
