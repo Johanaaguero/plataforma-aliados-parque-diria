@@ -62,7 +62,6 @@ export class EventosService {
     const buscar = filtros.buscar?.trim();
 
     if (buscar) {
-      // LOCATE busca texto literal: % y _ no se interpretan como comodines.
       consulta.andWhere('LOCATE(:buscar, LOWER(evento.nombre)) > 0', {
         buscar: buscar.toLowerCase(),
       });
@@ -74,8 +73,6 @@ export class EventosService {
       });
     }
 
-    // Los totales de las pestañas conservan los filtros de nombre/temporada,
-    // pero no el tipo seleccionado ni la página actual.
     const consultaConteos = consulta
       .clone()
       .select('evento.tipoActividad', 'tipoActividad')

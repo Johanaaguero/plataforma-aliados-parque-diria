@@ -7,8 +7,7 @@ const service = new EventosService();
 export class EventosController {
   async listar(req: Request, res: Response, next: NextFunction) {
     try {
-      // Express 5 usa el parser simple: buscar[] y pagina[valor] llegan
-      // como claves literales en lugar de arreglos u objetos anidados.
+      
       if (Object.keys(req.query).some((clave) =>
         /^(buscar|temporada|tipoActividad|pagina)\[/.test(clave),
       )) {

@@ -14,6 +14,8 @@ import eliminarEmprendimientoRoutes from './modulos/Administración de emprendim
 import eventosCapacitacionesRoutes from './modulos/Gestión de Eventos y Capacitaciones/Crear Eventos y Capacitaciones/eventosCapacitaciones.routes';
 import eventosRoutes from './modulos/Gestión de Eventos y Capacitaciones/Visualización de Eventos y Capacitaciones/eventos.routes';
 import inscripcionesAdminRoutes from './modulos/Gestión de Eventos y Capacitaciones/Inscripción a Eventos y Capacitaciones/inscripcionesAdmin.route';
+
+import inscripcionesRoutes from './modulos/Gestión de Eventos y Capacitaciones/Inscripción a Eventos y Capacitaciones/Ver mis Inscripciones/inscripciones.routes';
 import bitacoraRoutes from './modulos/Autenticación y gestión de usuario/Super_admin/Bitacora/bitacora.route';
 
 import { iniciarLimpiezaTokensExpirados } from './modulos/Autenticación y gestión de usuario/Recuperación de contraseña/limpieza.service';
@@ -39,6 +41,7 @@ app.use('/api/emprendimientos', eliminarEmprendimientoRoutes);
 app.use('/api/eventos-capacitaciones', eventosCapacitacionesRoutes); 
 app.use('/api/eventos', eventosRoutes);
 app.use('/api/admin', inscripcionesAdminRoutes);
+app.use('/api/inscripciones', inscripcionesRoutes);
 app.use('/api/admin', bitacoraRoutes);
 app.use(errorMiddleware);
 
