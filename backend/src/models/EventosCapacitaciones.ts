@@ -83,6 +83,27 @@ export class EventosCapacitaciones {
   })
   cupoMaximo!: number | null;
 
+  @Column({
+    type: 'int',
+    nullable: true,
+    name: 'cupo_minimo',
+  })
+  cupoMinimo!: number | null;
+
+  @Column({
+    type: 'int',
+    nullable: true,
+    name: 'edad_minima',
+  })
+  edadMinima!: number | null;
+
+  @Column({
+    type: 'int',
+    nullable: true,
+    name: 'edad_maxima',
+  })
+  edadMaxima!: number | null;
+
   // Toda actividad nueva comienza como borrador
   @Column({
     type: 'enum',
@@ -124,6 +145,9 @@ export class EventosCapacitaciones {
     lugar?: string | null;
     tipoActividad?: TipoActividad;
     cupoMaximo?: number | null;
+    cupoMinimo?: number | null;
+    edadMinima?: number | null;
+    edadMaxima?: number | null;
     estado?: EstadoEventoCapacitacion;
     temporada?: Temporada | null;
   }) {
@@ -161,6 +185,18 @@ export class EventosCapacitaciones {
       this.cupoMaximo = params.cupoMaximo;
     }
 
+    if (params.cupoMinimo !== undefined) {
+      this.cupoMinimo = params.cupoMinimo;
+    }
+
+    if (params.edadMinima !== undefined) {
+      this.edadMinima = params.edadMinima;
+    }
+
+    if (params.edadMaxima !== undefined) {
+      this.edadMaxima = params.edadMaxima;
+    }
+
     if (params.estado !== undefined) {
       this.estado = params.estado;
     }
@@ -180,6 +216,9 @@ export class EventosCapacitaciones {
       lugar: this.lugar,
       tipoActividad: this.tipoActividad,
       cupoMaximo: this.cupoMaximo,
+      cupoMinimo: this.cupoMinimo,
+      edadMinima: this.edadMinima,
+      edadMaxima: this.edadMaxima,
       estado: this.estado,
       temporada: this.temporada,
       createdAt: this.createdAt,

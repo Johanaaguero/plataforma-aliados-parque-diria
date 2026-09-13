@@ -130,6 +130,16 @@ export default function DetalleEventoCapacitacion({
     }
   }
 
+  const textoEdadPermitida = evento
+    ? evento.edadMinima != null && evento.edadMaxima != null
+      ? `${evento.edadMinima} a ${evento.edadMaxima} años`
+      : evento.edadMinima != null
+        ? `Desde ${evento.edadMinima} años`
+        : evento.edadMaxima != null
+          ? `Hasta ${evento.edadMaxima} años`
+          : 'Edad no especificada'
+    : 'Edad no especificada';
+
   return (
     <div
       className="fixed inset-0 z-[90] flex items-center justify-center bg-[#052f25]/70 p-4 backdrop-blur-sm"
@@ -228,6 +238,10 @@ export default function DetalleEventoCapacitacion({
               <div>
                 <dt className="text-xs font-bold uppercase tracking-wider text-slate-400">Temporada</dt>
                 <dd className="mt-1 text-sm text-slate-700">{evento.temporada === 'seca' ? 'Seca' : evento.temporada === 'lluviosa' ? 'Lluviosa' : 'Por confirmar'}</dd>
+              </div>
+              <div className="min-w-0">
+                <dt className="text-xs font-bold uppercase tracking-wider text-slate-400">Edad permitida</dt>
+                <dd className="mt-1 break-words text-sm text-slate-700">{textoEdadPermitida}</dd>
               </div>
             </dl>
           </>

@@ -17,7 +17,10 @@ export interface CreateEventoCapacitacionDTO {
   hora?: string | null;
   lugar?: string | null;
   tipoActividad: TipoActividad;
+  cupoMinimo?: number | null;
   cupoMaximo?: number | null;
+  edadMinima?: number | null;
+  edadMaxima?: number | null;
   estado?: EstadoEventoCapacitacion;
   temporada?: Temporada | null;
 }
@@ -144,6 +147,24 @@ export class EventosCapacitacionesService {
     }
 
     // ---------------------------------------------------------
+    // CUPO MÍNIMO
+    // ---------------------------------------------------------
+
+    if (
+      data.cupoMinimo !== undefined &&
+      data.cupoMinimo !== null
+    ) {
+      if (
+        !Number.isInteger(data.cupoMinimo) ||
+        data.cupoMinimo <= 0
+      ) {
+        errores.push(
+          'El cupo mínimo debe ser un número entero positivo.',
+        );
+      }
+    }
+
+    // ---------------------------------------------------------
     // CUPO MÁXIMO
     // ---------------------------------------------------------
 
@@ -159,6 +180,74 @@ export class EventosCapacitacionesService {
           'El cupo máximo debe ser un número entero positivo.',
         );
       }
+    }
+
+    // ---------------------------------------------------------
+    // RELACIÓN ENTRE CUPOS
+    // ---------------------------------------------------------
+
+    if (
+      data.cupoMinimo !== undefined &&
+      data.cupoMinimo !== null &&
+      data.cupoMaximo !== undefined &&
+      data.cupoMaximo !== null &&
+      data.cupoMinimo > data.cupoMaximo
+    ) {
+      errores.push(
+        'El cupo mínimo no puede ser mayor que el cupo máximo.',
+      );
+    }
+
+    // ---------------------------------------------------------
+    // EDAD MÍNIMA
+    // ---------------------------------------------------------
+
+    if (
+      data.edadMinima !== undefined &&
+      data.edadMinima !== null
+    ) {
+      if (
+        !Number.isInteger(data.edadMinima) ||
+        data.edadMinima < 0
+      ) {
+        errores.push(
+          'La edad mínima debe ser un número entero mayor o igual a 0.',
+        );
+      }
+    }
+
+    // ---------------------------------------------------------
+    // EDAD MÁXIMA
+    // ---------------------------------------------------------
+
+    if (
+      data.edadMaxima !== undefined &&
+      data.edadMaxima !== null
+    ) {
+      if (
+        !Number.isInteger(data.edadMaxima) ||
+        data.edadMaxima < 0
+      ) {
+        errores.push(
+          'La edad máxima debe ser un número entero mayor o igual a 0.',
+        );
+      }
+    }
+
+    // ---------------------------------------------------------
+    // RELACIÓN ENTRE EDADES
+    // ---------------------------------------------------------
+
+    if (
+      data.edadMinima !== undefined &&
+      data.edadMinima !== null &&
+      data.edadMaxima !== undefined &&
+      data.edadMaxima !== null &&
+      data.edadMinima > data.edadMaxima
+    ) {
+      errores.push(
+        'La edad mínima no puede ser mayor que la edad máxima.',
+      );
     }
 
     // ---------------------------------------------------------
@@ -332,6 +421,10 @@ export class EventosCapacitacionesService {
       | 'hora'
       | 'lugar'
       | 'tipoActividad'
+      | 'cupoMinimo'
+      | 'cupoMaximo'
+      | 'edadMinima'
+      | 'edadMaxima'
       | 'temporada'
     >,
   ) {
@@ -418,6 +511,94 @@ export class EventosCapacitacionesService {
     if (!registro.temporada) {
       errores.push(
         'La temporada es obligatoria.',
+      );
+    }
+
+    // ---------------------------------------------------------
+    // CUPO MÍNIMO
+    // ---------------------------------------------------------
+
+    if (registro.cupoMinimo === null) {
+      errores.push(
+        'El cupo mínimo es obligatorio.',
+      );
+    } else if (
+      !Number.isInteger(registro.cupoMinimo) ||
+      registro.cupoMinimo <= 0
+    ) {
+      errores.push(
+        'El cupo mínimo debe ser un número entero positivo.',
+      );
+    }
+
+    // ---------------------------------------------------------
+    // CUPO MÁXIMO
+    // ---------------------------------------------------------
+
+    if (registro.cupoMaximo === null) {
+      errores.push(
+        'El cupo máximo es obligatorio.',
+      );
+    } else if (
+      !Number.isInteger(registro.cupoMaximo) ||
+      registro.cupoMaximo <= 0
+    ) {
+      errores.push(
+        'El cupo máximo debe ser un número entero positivo.',
+      );
+    }
+
+    if (
+      registro.cupoMinimo !== null &&
+      registro.cupoMaximo !== null &&
+      registro.cupoMinimo > registro.cupoMaximo
+    ) {
+      errores.push(
+        'El cupo mínimo no puede ser mayor que el cupo máximo.',
+      );
+    }
+
+    // ---------------------------------------------------------
+    // EDAD MÍNIMA
+    // ---------------------------------------------------------
+
+    if (registro.edadMinima === null) {
+      errores.push(
+        'La edad mínima es obligatoria.',
+      );
+    } else if (
+      !Number.isInteger(registro.edadMinima) ||
+      registro.edadMinima < 0
+    ) {
+      errores.push(
+        'La edad mínima debe ser un número entero mayor o igual a 0.',
+      );
+    }
+
+    // ---------------------------------------------------------
+    // EDAD MÁXIMA
+    // ---------------------------------------------------------
+
+    if (registro.edadMaxima === null) {
+      errores.push(
+        'La edad máxima es obligatoria.',
+      );
+    } else if (
+      !Number.isInteger(registro.edadMaxima) ||
+      registro.edadMaxima < 0
+    ) {
+      errores.push(
+        'La edad máxima debe ser un número entero mayor o igual a 0.',
+      );
+    }
+
+    if (
+      registro.edadMinima !== null &&
+      registro.edadMaxima !== null &&
+      registro.edadMinima > registro.edadMaxima
+    ) {
+      errores.push(
+        'La edad mínima no puede ser mayor que la edad máxima.',
       );
     }
 
@@ -635,6 +816,44 @@ export class EventosCapacitacionesService {
       false,
     );
 
+    const registroFinal: Pick<
+      EventosCapacitaciones,
+      | 'nombre'
+      | 'descripcion'
+      | 'fecha'
+      | 'hora'
+      | 'lugar'
+      | 'tipoActividad'
+      | 'cupoMinimo'
+      | 'cupoMaximo'
+      | 'edadMinima'
+      | 'edadMaxima'
+      | 'temporada'
+    > = {
+      nombre: data.nombre ?? null,
+      descripcion: data.descripcion ?? null,
+      fecha: data.fecha ?? null,
+      hora: data.hora ?? null,
+      lugar: data.lugar ?? null,
+      tipoActividad: data.tipoActividad,
+      cupoMinimo: data.cupoMinimo ?? null,
+      cupoMaximo: data.cupoMaximo ?? null,
+      edadMinima: data.edadMinima ?? null,
+      edadMaxima: data.edadMaxima ?? null,
+      temporada: data.temporada ?? null,
+    };
+
+    if (
+      estado ===
+        EstadoEventoCapacitacion.NO_PUBLICADO ||
+      estado ===
+        EstadoEventoCapacitacion.PUBLICADO
+    ) {
+      this.validarDatosCompletosParaCambioEstado(
+        registroFinal,
+      );
+    }
+
     const nuevo =
       this.repo.create({
         nombre: data.nombre ?? null,
@@ -654,8 +873,17 @@ export class EventosCapacitacionesService {
         tipoActividad:
           data.tipoActividad,
 
+        cupoMinimo:
+          data.cupoMinimo ?? null,
+
         cupoMaximo:
           data.cupoMaximo ?? null,
+
+        edadMinima:
+          data.edadMinima ?? null,
+
+        edadMaxima:
+          data.edadMaxima ?? null,
 
         estado,
 
@@ -744,6 +972,10 @@ export class EventosCapacitacionesService {
       | 'hora'
       | 'lugar'
       | 'tipoActividad'
+      | 'cupoMinimo'
+      | 'cupoMaximo'
+      | 'edadMinima'
+      | 'edadMaxima'
       | 'temporada'
     > = {
       nombre:
@@ -776,11 +1008,48 @@ export class EventosCapacitacionesService {
           ? data.tipoActividad
           : registro.tipoActividad,
 
+      cupoMinimo:
+        data.cupoMinimo !== undefined
+          ? data.cupoMinimo
+          : registro.cupoMinimo,
+
+      cupoMaximo:
+        data.cupoMaximo !== undefined
+          ? data.cupoMaximo
+          : registro.cupoMaximo,
+
+      edadMinima:
+        data.edadMinima !== undefined
+          ? data.edadMinima
+          : registro.edadMinima,
+
+      edadMaxima:
+        data.edadMaxima !== undefined
+          ? data.edadMaxima
+          : registro.edadMaxima,
+
       temporada:
         data.temporada !== undefined
           ? data.temporada
           : registro.temporada,
     };
+
+    if (
+      data.cupoMinimo !== undefined ||
+      data.cupoMaximo !== undefined ||
+      data.edadMinima !== undefined ||
+      data.edadMaxima !== undefined
+    ) {
+      this.validar(
+        {
+          cupoMinimo: datosFinales.cupoMinimo,
+          cupoMaximo: datosFinales.cupoMaximo,
+          edadMinima: datosFinales.edadMinima,
+          edadMaxima: datosFinales.edadMaxima,
+        },
+        true,
+      );
+    }
 
     // =========================================================
     // BORRADOR → NO_PUBLICADO
@@ -851,10 +1120,25 @@ export class EventosCapacitacionesService {
           ? data.tipoActividad
           : registro.tipoActividad,
 
+      cupoMinimo:
+        data.cupoMinimo !== undefined
+          ? data.cupoMinimo
+          : registro.cupoMinimo,
+
       cupoMaximo:
         data.cupoMaximo !== undefined
           ? data.cupoMaximo
           : registro.cupoMaximo,
+
+      edadMinima:
+        data.edadMinima !== undefined
+          ? data.edadMinima
+          : registro.edadMinima,
+
+      edadMaxima:
+        data.edadMaxima !== undefined
+          ? data.edadMaxima
+          : registro.edadMaxima,
 
       estado:
         data.estado !== undefined

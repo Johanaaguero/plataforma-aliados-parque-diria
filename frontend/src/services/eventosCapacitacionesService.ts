@@ -8,7 +8,10 @@ export interface EventoCapacitacion {
   hora: string | null;
   lugar: string | null;
   tipoActividad: 'evento' | 'capacitacion';
+  cupoMinimo: number | null;
   cupoMaximo: number | null;
+  edadMinima: number | null;
+  edadMaxima: number | null;
   cuposDisponibles?: number | null;
   estado: 'borrador' | 'publicado' | 'no_publicado' | 'desactivado';
   temporada: TemporadaEvento | null;
