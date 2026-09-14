@@ -355,19 +355,19 @@ export default function GestionRoles() {
       <div className="mx-auto max-w-7xl">
 
         {/* ENCABEZADO */}
-        <div className="relative z-10 mb-8 overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#095540] via-[#095540] to-[#009444] px-5 py-8 text-white shadow-[0_24px_70px_rgba(9,85,64,0.20)] sm:px-10">
+        <div className="relative z-10 mb-8 overflow-hidden rounded-[2rem] border border-white/70 bg-white/55 px-5 py-8 text-[#073f31] shadow-[0_16px_44px_rgba(9,85,64,0.08)] backdrop-blur-xl sm:px-10 dark:border-white/10 dark:bg-white/[0.04] dark:text-white">
           <div
-            className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-[#d9d823]/15 blur-3xl"
+            className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-[#8dc63f]/15 blur-3xl"
             aria-hidden="true"
           />
 
           <div
-            className="pointer-events-none absolute -bottom-16 left-1/3 h-48 w-48 rounded-full bg-[#00AEEF]/10 blur-3xl"
+            className="pointer-events-none absolute -bottom-16 left-1/3 h-48 w-48 rounded-full bg-[#00AEEF]/[0.08] blur-3xl"
             aria-hidden="true"
           />
 
           <div className="relative">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-emerald-50 backdrop-blur-md">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#8dc63f]/35 bg-[#8dc63f]/10 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-[#095540] backdrop-blur-md dark:text-[#c8ee8d]">
               <span className="h-2 w-2 rounded-full bg-[#d9d823]" />
               Gestión de usuarios
             </div>
@@ -376,7 +376,7 @@ export default function GestionRoles() {
               Gestión de Roles
             </h1>
 
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-emerald-100/90 sm:text-base">
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600 dark:text-slate-300 sm:text-base">
               Consulta los usuarios y el rol asignado a cada uno.
             </p>
           </div>

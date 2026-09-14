@@ -53,7 +53,7 @@ function RegistroCategoria({
     'flex flex-col gap-2 text-sm font-semibold text-stone-700';
 
   return (
-    <div className="relative mx-auto w-full max-w-xl overflow-hidden rounded-[2rem] border border-emerald-950/10 bg-[#fffef9] shadow-[0_24px_70px_rgba(20,83,45,0.12)]">
+    <div className="relative mx-auto w-full max-w-xl overflow-hidden rounded-[2rem] border border-white/20 bg-white/70 shadow-xl shadow-black/5 backdrop-blur-lg dark:border-white/10 dark:bg-slate-900/70 dark:shadow-black/20">
 
       {/* =====================================================
           BOTÓN CERRAR

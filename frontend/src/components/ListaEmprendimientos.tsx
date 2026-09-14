@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import MapaUbicacion from './MapaUbicacion'; 
+import ScrollReveal from './ui/ScrollReveal';
 import {
   cambiarEstadoPublicacion,
   obtenerCatalogoPublicado,
@@ -580,11 +581,11 @@ useEffect(() => {
       <div className="mx-auto max-w-7xl">
         {/* ENCABEZADO */}
         {!esCatalogoPublico && (
-        <div className="relative mb-8 overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#095540] via-[#095540] to-[#009444] px-5 py-8 text-white shadow-[0_24px_70px_rgba(9,85,64,0.2)] sm:px-10">
-          <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-[#d9d823]/15 blur-3xl" aria-hidden="true" />
+        <div className="relative mb-8 overflow-hidden rounded-[2rem] border border-white/70 bg-white/50 px-5 py-8 text-[#073f31] shadow-[0_16px_44px_rgba(9,85,64,0.08)] backdrop-blur-xl sm:px-10 dark:border-white/10 dark:bg-white/[0.04] dark:text-white">
+          <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-[#8dc63f]/15 blur-3xl" aria-hidden="true" />
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="relative max-w-3xl">
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-emerald-50 backdrop-blur-md">
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#8dc63f]/35 bg-[#8dc63f]/10 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-[#095540] backdrop-blur-md dark:text-[#c8ee8d]">
                 <span className="h-2 w-2 rounded-full bg-[#d9d823] motion-safe:animate-pulse motion-reduce:animate-none" />
                 {esAdministrador
                   ? 'Panel de administración'
@@ -595,7 +596,7 @@ useEffect(() => {
               <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
                 Emprendimientos locales
               </h1>
-              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-emerald-100/90 sm:text-base">
+              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600 dark:text-slate-300 sm:text-base">
                 {esAdministrador
                   ? 'Administre los emprendimientos registrados y gestione su estado de publicación.'
                   : esAsociado
@@ -609,7 +610,7 @@ useEffect(() => {
                 <button
                   type="button"
                   onClick={onRegistrarCategoria}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/25 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white shadow-sm backdrop-blur-sm motion-safe:transition-all motion-safe:duration-200 hover:bg-white/20 motion-safe:active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 focus-visible:ring-offset-emerald-900 motion-reduce:transform-none"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[#095540]/20 bg-white/50 px-4 py-2.5 text-sm font-semibold text-[#095540] shadow-sm backdrop-blur-sm motion-safe:transition-all motion-safe:duration-200 hover:bg-white/80 motion-safe:active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] motion-reduce:transform-none dark:border-white/15 dark:bg-white/10 dark:text-white"
                 >
                   <svg
                     className="h-4 w-4"
@@ -628,7 +629,7 @@ useEffect(() => {
                 <button
                   type="button"
                   onClick={onRegistrar}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#d9d823] px-5 py-2.5 text-sm font-bold text-emerald-950 shadow-md motion-safe:transition-all motion-safe:duration-200 hover:bg-[#e5e55d] motion-safe:active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-emerald-900 motion-reduce:transform-none"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#095540] px-5 py-2.5 text-sm font-bold text-white shadow-md motion-safe:transition-all motion-safe:duration-200 hover:bg-[#08743f] motion-safe:active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] motion-reduce:transform-none"
                 >
                   <svg
                     className="h-4 w-4 text-emerald-800"
@@ -720,35 +721,6 @@ useEffect(() => {
 )}
 
 
-
-        {/* INFORMACIÓN ROLE BANNER */}
-        {esAsociado && (
-          <div className="mb-6 rounded-3xl border border-emerald-100 bg-[#fffef9] p-5 shadow-sm">
-            <div className="flex items-start gap-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth="2"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0zm-9-3.75h.008v.008H12V8.25z"
-                  />
-                </svg>
-              </div>
-              <div>
-                <h2 className="font-bold text-slate-900">Gestión de emprendimientos</h2>
-                <p className="mt-0.5 text-sm text-slate-600">
-                  Podés registrar nuevos emprendimientos y consultar los que tenés disponibles. El cambio de estado corresponde exclusivamente al administrador.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* BUSCADOR Y FILTROS INTERACTIVOS TIPO TAB */}
         <div className="mb-8 space-y-4 rounded-3xl border border-[#095540]/10 bg-white p-4 shadow-[0_12px_35px_rgba(9,85,64,0.07)] sm:p-5">
@@ -958,7 +930,7 @@ useEffect(() => {
        
 {/* TARJETAS DE EMPRENDIMIENTO */}
 {emprendimientosFiltrados.length > 0 && (
-  <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3 xl:gap-7">
+  <ScrollReveal stagger className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3 xl:gap-7">
     {emprendimientosFiltrados.map((emprendimiento) => {
       const estiloEstado = obtenerEstiloEstado(
         emprendimiento.estadoPublicacion,
@@ -999,7 +971,7 @@ useEffect(() => {
           role={esCatalogoPublico ? 'button' : undefined}
           tabIndex={esCatalogoPublico ? 0 : undefined}
           className="
-            group flex h-full flex-col overflow-hidden
+            sigtad-image-reveal group flex h-full flex-col overflow-hidden
             rounded-[1.75rem]
             border border-[#095540]/10
             bg-white
@@ -1528,7 +1500,7 @@ useEffect(() => {
         </article>
       );
     })}
-  </div>
+  </ScrollReveal>
 )}
 
 

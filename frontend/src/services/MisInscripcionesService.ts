@@ -41,6 +41,7 @@ export interface MiInscripcion {
   horaFin?: string | null;
   cuposDisponibles?: number | null;
   estado?: EstadoInscripcion;
+  fechaCancelacion?: string | null;
   fechaActividad: string | null;
   fechaInscripcion: string | null;
 }
@@ -60,10 +61,17 @@ export const obtenerMisInscripciones = async (): Promise<MiInscripcion[]> => {
   );
 };
 
-export async function cancelarInscripcion(inscripcionId: number): Promise<void> {
-  await api.solicitar<void>(
-    `/inscripciones/${inscripcionId}`,
-    { method: 'DELETE' },
+export interface CancelacionInscripcionResponse {
+  id: number;
+  estado: EstadoInscripcion;
+  fechaCancelacion: string;
+  cuposDisponibles: number | null;
+}
+
+export async function cancelarInscripcion(inscripcionId: number): Promise<CancelacionInscripcionResponse> {
+  return api.solicitar<CancelacionInscripcionResponse>(
+    `/inscripciones/${inscripcionId}/cancelar`,
+    { method: 'PATCH' },
     {
       incluirAuth: true,
       mensajeError: 'No se pudo cancelar la inscripción.',

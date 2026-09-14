@@ -136,33 +136,33 @@ export default function InscripcionesAdmin() {
       <div className="mx-auto max-w-7xl">
 
         {/* Encabezado elegante con gradiente suave */}
-        <header className="relative mb-8 overflow-hidden rounded-2xl border border-slate-200/80 dark:border-emerald-900/40 bg-gradient-to-r from-[#073f31] to-[#0d5c48] dark:from-[#0a3a2c] dark:to-[#12633f] p-6 text-white shadow-sm sm:p-8">
+        <header className="relative mb-8 overflow-hidden rounded-[2rem] border border-white/70 bg-white/55 p-6 text-[#073f31] shadow-[0_16px_44px_rgba(9,85,64,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04] dark:text-white sm:p-8">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-xl">
-              <span className="inline-block rounded-md bg-white/10 px-2.5 py-1 text-xs font-medium text-emerald-100 backdrop-blur-md">
+              <span className="inline-block rounded-full border border-[#8dc63f]/35 bg-[#8dc63f]/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#095540] backdrop-blur-md dark:text-[#c8ee8d]">
                 Panel de Administración
               </span>
               <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
                 Gestión de Inscritos
               </h1>
-              <p className="mt-1 text-sm text-emerald-100/80">
+              <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
                 Supervisa y filtra las inscripciones registradas en capacitaciones y eventos.
               </p>
             </div>
 
             {/* Módulo de Resumen Breve */}
             <div className="grid grid-cols-3 gap-3">
-              <div className="rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-center backdrop-blur-md">
-                <span className="block text-xs text-emerald-100/70 font-medium">Total</span>
-                <span className="text-xl font-bold tracking-tight text-white">{totalInscripciones}</span>
+              <div className="rounded-xl border border-[#095540]/10 bg-white/50 px-4 py-3 text-center backdrop-blur-md dark:border-white/10 dark:bg-white/[0.06]">
+                <span className="block text-xs font-medium text-slate-500 dark:text-emerald-100/70">Total</span>
+                <span className="text-xl font-bold tracking-tight text-[#095540] dark:text-white">{totalInscripciones}</span>
               </div>
-              <div className="rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-center backdrop-blur-md">
-                <span className="block text-xs text-emerald-100/70 font-medium">Eventos</span>
-                <span className="text-xl font-bold tracking-tight text-white">{totalEventos}</span>
+              <div className="rounded-xl border border-[#095540]/10 bg-white/50 px-4 py-3 text-center backdrop-blur-md dark:border-white/10 dark:bg-white/[0.06]">
+                <span className="block text-xs font-medium text-slate-500 dark:text-emerald-100/70">Eventos</span>
+                <span className="text-xl font-bold tracking-tight text-[#095540] dark:text-white">{totalEventos}</span>
               </div>
-              <div className="rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-center backdrop-blur-md">
-                <span className="block text-xs text-emerald-100/70 font-medium">Capacitaciones</span>
-                <span className="text-xl font-bold tracking-tight text-white">{totalCapacitaciones}</span>
+              <div className="rounded-xl border border-[#095540]/10 bg-white/50 px-4 py-3 text-center backdrop-blur-md dark:border-white/10 dark:bg-white/[0.06]">
+                <span className="block text-xs font-medium text-slate-500 dark:text-emerald-100/70">Capacitaciones</span>
+                <span className="text-xl font-bold tracking-tight text-[#095540] dark:text-white">{totalCapacitaciones}</span>
               </div>
             </div>
           </div>

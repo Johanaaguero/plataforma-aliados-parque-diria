@@ -1,6 +1,7 @@
 import { AppDataSource } from '../../../../data-source';
-import { Participantes } from '../../../../models/Participantes';
+import { Participantes, EstadoReserva } from '../../../../models/Participantes';
 import { EventosCapacitaciones } from '../../../../models/EventosCapacitaciones';
+import { In } from 'typeorm';
 
 export interface MiInscripcionDTO {
   id: number;
@@ -13,6 +14,7 @@ export interface MiInscripcionDTO {
   horaFin: string | null;
   cuposDisponibles: number | null;
   estado: string;
+  fechaCancelacion: Date | string | null;
   fechaActividad: string | null;
   fechaInscripcion: Date | string | null;
 }
@@ -44,14 +46,13 @@ export const listarMisInscripciones = async (
     let cuposDisponibles: number | null = null;
 
     if (evento.cupoMaximo !== null) {
-      const inscritos = await participantesRepo.count({
-        where: {
-          eventoCapacitacionId: evento.id,
-        },
-      });
-
-      cuposDisponibles = Math.max(
-        evento.cupoMaximo - inscritos,
+      cuposDisponibles = evento.cuposDisponibles ?? Math.max(
+        evento.cupoMaximo - await participantesRepo.count({
+          where: {
+            eventoCapacitacionId: evento.id,
+            estado: In([EstadoReserva.PENDIENTE, EstadoReserva.CONFIRMADA]),
+          },
+        }),
         0,
       );
     }
@@ -66,7 +67,8 @@ export const listarMisInscripciones = async (
       horaInicio: evento.hora ?? null,
       horaFin: null,
       cuposDisponibles,
-      estado: 'confirmada',
+      estado: participante.estado,
+      fechaCancelacion: participante.fechaCancelacion,
       fechaActividad: evento.fecha ?? null,
       fechaInscripcion: participante.createdAt ?? null,
     });
@@ -78,26 +80,47 @@ export const listarMisInscripciones = async (
 export const cancelarInscripcion = async (
   usuarioId: number,
   inscripcionId: number,
-): Promise<void> => {
-  const participantesRepo =
-    AppDataSource.getRepository(Participantes);
+): Promise<{ id: number; estado: EstadoReserva; fechaCancelacion: Date; cuposDisponibles: number | null }> => {
+  return AppDataSource.transaction(async (manager) => {
+    const participantesRepo = manager.getRepository(Participantes);
+    const eventosRepo = manager.getRepository(EventosCapacitaciones);
+    const participante = await participantesRepo.findOne({ where: { id: inscripcionId } });
 
-  const participante = await participantesRepo.findOne({
-    where: {
-      id: inscripcionId,
-      usuarioId,
-    },
+    if (!participante) {
+      const error = new Error('La reserva no existe.');
+      error.name = 'NotFoundError';
+      throw error;
+    }
+    if (participante.usuarioId !== usuarioId) {
+      const error = new Error('No tienes permiso para cancelar esta reserva.');
+      error.name = 'ForbiddenError';
+      throw error;
+    }
+    if (![EstadoReserva.PENDIENTE, EstadoReserva.CONFIRMADA].includes(participante.estado)) {
+      const error = new Error('La reserva ya fue cancelada o no puede cancelarse.');
+      error.name = 'InvalidReservationStateError';
+      throw error;
+    }
+
+    const evento = await eventosRepo.createQueryBuilder('evento')
+      .setLock('pessimistic_write')
+      .where('evento.id = :id', { id: participante.eventoCapacitacionId })
+      .getOne();
+    if (!evento) {
+      const error = new Error('La actividad asociada a la reserva no existe.');
+      error.name = 'NotFoundError';
+      throw error;
+    }
+
+    const fechaCancelacion = new Date();
+    participante.estado = EstadoReserva.CANCELADA;
+    participante.fechaCancelacion = fechaCancelacion;
+    await participantesRepo.save(participante);
+    if (evento.cuposDisponibles !== null) {
+      evento.cuposDisponibles += 1;
+      await eventosRepo.save(evento);
+    }
+
+    return { id: participante.id, estado: participante.estado, fechaCancelacion, cuposDisponibles: evento.cuposDisponibles };
   });
-
-  if (!participante) {
-    const error = new Error(
-      'La inscripción no existe o no pertenece al usuario.',
-    );
-
-    error.name = 'NotFoundError';
-
-    throw error;
-  }
-
-  await participantesRepo.remove(participante);
 };

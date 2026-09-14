@@ -1285,7 +1285,7 @@ function EditarEmprendimiento({
   }
 
   return (
-    <div className="mx-auto w-full max-w-3xl overflow-hidden rounded-[2rem] border border-emerald-950/10 bg-[#fffef9] p-5 shadow-[0_24px_70px_rgba(20,83,45,0.12)] sm:p-8">
+    <div className="mx-auto w-full max-w-3xl overflow-hidden rounded-[2rem] border border-white/20 bg-white/70 p-5 shadow-xl shadow-black/5 backdrop-blur-lg dark:border-white/10 dark:bg-slate-900/70 dark:shadow-black/20 sm:p-8">
       <div className="relative mb-8 overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-950 via-emerald-900 to-green-800 p-6 text-white shadow-lg sm:p-8">
         <div
           className="pointer-events-none absolute -right-12 -top-16 h-44 w-44 rounded-full bg-[#d9d823]/15 blur-3xl"

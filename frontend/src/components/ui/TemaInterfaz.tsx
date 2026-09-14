@@ -202,7 +202,7 @@ export default function TemaInterfaz({
       {/* =========================
           MENÚ DE TEMAS
           ========================= */}
-      <div className="sigtad-glass absolute right-0 top-full mt-2 w-64 max-w-[calc(100vw-2rem)] origin-top-right rounded-2xl border p-3 shadow-xl">
+      <div className="sigtad-glass sigtad-menu-reveal absolute right-0 top-full mt-2 w-64 max-w-[calc(100vw-2rem)] origin-top-right rounded-2xl border p-3 shadow-xl">
         <p className="sigtad-heading px-2 pb-2 pt-1 text-xs font-bold uppercase tracking-wider">
           Apariencia
         </p>

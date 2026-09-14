@@ -1,6 +1,7 @@
 import { AppDataSource } from '../../../data-source';
-import { Participantes } from '../../../models/Participantes';
+import { Participantes, EstadoReserva } from '../../../models/Participantes';
 import { EventosCapacitaciones } from '../../../models/EventosCapacitaciones';
+import { In } from 'typeorm';
 
 
 
@@ -77,7 +78,10 @@ export class InscripcionService {
             },
           });
 
-        if (inscripcionExistente) {
+        if (
+          inscripcionExistente &&
+          inscripcionExistente.estado !== EstadoReserva.CANCELADA
+        ) {
           const error = new Error(
             'El usuario ya está inscrito en este evento o capacitación.',
           );
@@ -85,14 +89,19 @@ export class InscripcionService {
           throw error;
         }
 
+        let cuposAntesDeInscripcion: number | null = null;
+
         if (evento.cupoMaximo !== null) {
           const inscritos = await participantesRepo.count({
             where: {
               eventoCapacitacionId,
+              estado: In([EstadoReserva.PENDIENTE, EstadoReserva.CONFIRMADA]),
             },
           });
+          const cuposDisponibles = evento.cuposDisponibles ?? Math.max(evento.cupoMaximo - inscritos, 0);
+          cuposAntesDeInscripcion = cuposDisponibles;
 
-          if (inscritos >= evento.cupoMaximo) {
+          if (cuposDisponibles <= 0) {
             const error = new Error(
               'No hay cupos disponibles para este evento o capacitación.',
             );
@@ -101,23 +110,27 @@ export class InscripcionService {
           }
         }
 
-        const participante = participantesRepo.create({
-          usuarioId,
-          eventoCapacitacionId,
-        });
+        const participante = inscripcionExistente
+          ? Object.assign(inscripcionExistente, {
+              estado: EstadoReserva.CONFIRMADA,
+              fechaCancelacion: null,
+            })
+          : participantesRepo.create({
+              usuarioId,
+              eventoCapacitacionId,
+              estado: EstadoReserva.CONFIRMADA,
+            });
 
         const participanteGuardado = await participantesRepo.save(participante);
 
-        const inscritosActualizados = await participantesRepo.count({
-          where: {
-            eventoCapacitacionId,
-          },
-        });
+        const cuposDisponibles = evento.cupoMaximo === null
+          ? null
+          : Math.max((cuposAntesDeInscripcion ?? 0) - 1, 0);
 
-        const cuposDisponibles =
-          evento.cupoMaximo === null
-            ? null
-            : Math.max(evento.cupoMaximo - inscritosActualizados, 0);
+        if (evento.cupoMaximo !== null) {
+          evento.cuposDisponibles = cuposDisponibles;
+          await eventosRepo.save(evento);
+        }
 
         return {
           participante: participanteGuardado,

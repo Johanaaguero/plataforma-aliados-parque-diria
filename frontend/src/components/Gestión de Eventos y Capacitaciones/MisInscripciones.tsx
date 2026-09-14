@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import {
+  cancelarInscripcion,
   obtenerMisInscripciones,
   type MiInscripcion,
 } from '../../services/MisInscripcionesService';
+import { mostrarFeedback } from '../ui/FeedbackToast';
 
 type FiltroTipo = 'todas' | 'evento' | 'capacitacion';
-type FiltroTiempo = 'proximas' | 'pasadas' | 'todas';
+type FiltroTiempo = 'proximas' | 'pasadas' | 'canceladas' | 'todas';
 
 const formatearFecha = (
   valor: string | Date | null | undefined,
@@ -116,6 +118,23 @@ export default function MisInscripciones() {
   const [expandidoId, setExpandidoId] = useState<number | null>(
     null,
   );
+  const [reservaACancelar, setReservaACancelar] = useState<MiInscripcion | null>(null);
+  const [cancelando, setCancelando] = useState(false);
+
+  const confirmarCancelacion = async () => {
+    if (!reservaACancelar || cancelando) return;
+    setCancelando(true);
+    try {
+      const resultado = await cancelarInscripcion(reservaACancelar.id);
+      setInscripciones((actuales) => actuales.map((inscripcion) => inscripcion.id === resultado.id ? { ...inscripcion, estado: resultado.estado, fechaCancelacion: resultado.fechaCancelacion } : inscripcion));
+      setReservaACancelar(null);
+      mostrarFeedback('registro', 'Reserva cancelada correctamente.');
+    } catch (errorSolicitud: unknown) {
+      mostrarFeedback('error', errorSolicitud instanceof Error ? errorSolicitud.message : 'No se pudo cancelar la reserva.');
+    } finally {
+      setCancelando(false);
+    }
+  };
 
   const cargarInscripciones = async () => {
     setCargando(true);
@@ -163,19 +182,30 @@ export default function MisInscripciones() {
   const totalProximas = useMemo(
     () =>
       inscripciones.filter((inscripcion) =>
+        inscripcion.estado !== 'cancelada' &&
         esFechaFutura(inscripcion.fechaActividad),
       ).length,
     [inscripciones],
   );
 
-  const totalPasadas =
-    inscripciones.length - totalProximas;
+  const totalCanceladas = useMemo(
+    () => inscripciones.filter((inscripcion) => inscripcion.estado === 'cancelada').length,
+    [inscripciones],
+  );
+
+  const totalPasadas = inscripciones.filter(
+    (inscripcion) => inscripcion.estado !== 'cancelada' && !esFechaFutura(inscripcion.fechaActividad),
+  ).length;
 
   const registrosVisibles = useMemo(() => {
     let lista = [...inscripciones];
 
+    if (filtroTiempo === 'todas') {
+      lista = lista.filter((inscripcion) => inscripcion.estado !== 'cancelada');
+    }
+
     if (filtroTiempo === 'proximas') {
-      lista = lista.filter((inscripcion) =>
+      lista = lista.filter((inscripcion) => inscripcion.estado !== 'cancelada' &&
         esFechaFutura(inscripcion.fechaActividad),
       );
     }
@@ -183,8 +213,13 @@ export default function MisInscripciones() {
     if (filtroTiempo === 'pasadas') {
       lista = lista.filter(
         (inscripcion) =>
+          inscripcion.estado !== 'cancelada' &&
           !esFechaFutura(inscripcion.fechaActividad),
       );
+    }
+
+    if (filtroTiempo === 'canceladas') {
+      lista = lista.filter((inscripcion) => inscripcion.estado === 'cancelada');
     }
 
     if (filtroTipo !== 'todas') {
@@ -215,7 +250,7 @@ export default function MisInscripciones() {
         return -1;
       }
 
-      return filtroTiempo === 'pasadas'
+      return filtroTiempo === 'pasadas' || filtroTiempo === 'canceladas'
         ? fechaB - fechaA
         : fechaA - fechaB;
     });
@@ -239,11 +274,11 @@ export default function MisInscripciones() {
       <div className="mx-auto max-w-5xl">
 
        {/* ENCABEZADO */}
-<div className="relative mb-6 overflow-hidden rounded-[24px] bg-gradient-to-br from-[#073f31] via-[#095540] to-[#08743f] px-6 py-6 text-white shadow-[0_12px_35px_rgba(9,85,64,0.14)] sm:px-8 sm:py-7">
+<div className="relative mb-6 overflow-hidden rounded-[24px] border border-white/70 bg-white/55 px-6 py-6 text-[#073f31] shadow-[0_12px_35px_rgba(9,85,64,0.08)] backdrop-blur-xl sm:px-8 sm:py-7 dark:border-white/10 dark:bg-white/[0.04] dark:text-white">
 
   {/* Detalles decorativos sutiles */}
   <div
-    className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-[#d9d823]/[0.06] blur-3xl"
+    className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-[#8dc63f]/[0.12] blur-3xl"
     aria-hidden="true"
   />
 
@@ -275,7 +310,7 @@ export default function MisInscripciones() {
       </div>
 
       <div>
-        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-200/65">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#095540]/65 dark:text-emerald-200/65">
           Área personal
         </p>
 
@@ -287,7 +322,7 @@ export default function MisInscripciones() {
     </div>
 
     {/* DESCRIPCIÓN */}
-    <p className="mt-3 max-w-2xl text-[13px] leading-relaxed text-emerald-100/70 sm:text-sm">
+    <p className="mt-3 max-w-2xl text-[13px] leading-relaxed text-slate-600 dark:text-emerald-100/70 sm:text-sm">
       Consulta los eventos y capacitaciones en los que te has
       inscrito y revisa sus fechas, horarios y detalles.
     </p>
@@ -326,6 +361,19 @@ export default function MisInscripciones() {
           </p>
         </div>
 
+      </div>
+
+      <div className="h-6 w-px bg-white/10" />
+
+      <div className="flex items-center gap-2.5">
+        <span className="flex h-7 min-w-7 items-center justify-center rounded-lg bg-rose-400/15 px-2 text-sm font-bold text-rose-100">
+          {totalCanceladas}
+        </span>
+        <div>
+          <p className="text-[11px] font-medium text-emerald-100/55">
+            Canceladas
+          </p>
+        </div>
       </div>
 
     </div>
@@ -443,6 +491,18 @@ export default function MisInscripciones() {
                     <button
                       type="button"
                       className={claseFiltro(
+                        filtroTiempo === 'canceladas',
+                      )}
+                      onClick={() =>
+                        setFiltroTiempo('canceladas')
+                      }
+                    >
+                      Canceladas
+                    </button>
+
+                    <button
+                      type="button"
+                      className={claseFiltro(
                         filtroTiempo === 'todas',
                       )}
                       onClick={() =>
@@ -523,12 +583,16 @@ export default function MisInscripciones() {
                 <h3 className="mt-4 text-base font-bold text-slate-800 dark:text-white">
                   {filtroTiempo === 'proximas'
                     ? 'No tienes próximas inscripciones'
+                    : filtroTiempo === 'canceladas'
+                      ? 'No tienes reservas canceladas'
                     : 'No hay inscripciones para mostrar'}
                 </h3>
 
                 <p className="mx-auto mt-1 max-w-md text-sm leading-relaxed text-slate-500 dark:text-slate-400">
                   {filtroTiempo === 'proximas'
                     ? 'Cuando te inscribas a un evento o capacitación, aparecerá aquí.'
+                    : filtroTiempo === 'canceladas'
+                      ? 'Las reservas que canceles se conservarán en este historial.'
                     : 'Prueba cambiando los filtros para consultar otras actividades.'}
                 </p>
 
@@ -553,6 +617,7 @@ export default function MisInscripciones() {
                       inscripcion.ubicacion ||
                       inscripcion.horaInicio,
                   );
+                  const puedeCancelar = inscripcion.estado === 'pendiente' || inscripcion.estado === 'confirmada';
 
                   return (
                     <li
@@ -623,6 +688,12 @@ export default function MisInscripciones() {
                                   inscripcion.tipoActividad,
                                 )}
                               </span>
+
+                              {inscripcion.estado && (
+                                <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${inscripcion.estado === 'cancelada' ? 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-300/20 dark:bg-rose-500/10 dark:text-rose-200' : 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-300/20 dark:bg-emerald-500/10 dark:text-emerald-200'}`}>
+                                  {inscripcion.estado === 'cancelada' ? 'Cancelada' : inscripcion.estado === 'pendiente' ? 'Pendiente' : 'Confirmada'}
+                                </span>
+                              )}
 
                             </div>
 
@@ -714,8 +785,24 @@ export default function MisInscripciones() {
                               )}
                             </p>
 
+                            {inscripcion.estado === 'cancelada' && (
+                              <p className="mt-1 text-xs font-medium text-rose-600 dark:text-rose-300">
+                                Cancelada el {formatearFecha(inscripcion.fechaCancelacion)}
+                              </p>
+                            )}
+
                           </div>
                         </div>
+
+                        {puedeCancelar && (
+                          <button
+                            type="button"
+                            onClick={() => setReservaACancelar(inscripcion)}
+                            className="shrink-0 rounded-xl border border-rose-300/80 bg-rose-50/70 px-3.5 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-100 dark:border-rose-300/20 dark:bg-rose-500/10 dark:text-rose-200 dark:hover:bg-rose-500/20"
+                          >
+                            Cancelar reserva
+                          </button>
+                        )}
 
                         {/* BOTÓN DETALLE */}
                         {tieneDetalle && (
@@ -850,6 +937,21 @@ export default function MisInscripciones() {
           </div>
         )}
 
+        {reservaACancelar && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#071a15]/45 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="titulo-cancelacion">
+            <div className="w-full max-w-md rounded-[28px] border border-white/60 bg-white/75 p-6 shadow-[0_22px_65px_rgba(7,63,49,0.3)] backdrop-blur-2xl dark:border-white/15 dark:bg-[#0d241d]/85">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-500/10 text-rose-600 dark:text-rose-300">
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M12 8v4m0 4h.01M10.3 3.9 2.8 17a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" strokeLinecap="round" /></svg>
+              </div>
+              <h2 id="titulo-cancelacion" className="mt-4 text-lg font-bold text-[#073f31] dark:text-white">¿Está seguro de que desea cancelar esta reserva?</h2>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">Se liberará un cupo de “{reservaACancelar.nombreActividad}”. La reserva permanecerá en su historial como cancelada.</p>
+              <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                <button type="button" onClick={() => setReservaACancelar(null)} disabled={cancelando} className="rounded-xl px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-100 disabled:opacity-50 dark:text-slate-300 dark:hover:bg-white/10">Volver</button>
+                <button type="button" onClick={() => void confirmarCancelacion()} disabled={cancelando} className="rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-rose-600/20 transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60">{cancelando ? 'Cancelando…' : 'Confirmar cancelación'}</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );
