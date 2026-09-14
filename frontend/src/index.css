@@ -201,12 +201,82 @@ button:not(:disabled):active {
   animation: sigtad-fade-up 500ms ease-out both;
 }
 
+.sigtad-reveal {
+  will-change: transform, opacity, filter;
+  animation: sigtad-reveal-up 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.sigtad-observe {
+  opacity: 0;
+  transform: translate3d(0, 30px, 0);
+  will-change: transform, opacity;
+  transition: opacity 700ms cubic-bezier(0.16, 1, 0.3, 1), transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sigtad-observe.is-visible {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+.sigtad-observe-stagger > * {
+  opacity: 0;
+  transform: translate3d(0, 40px, 0) scale(0.98);
+  will-change: transform, opacity;
+  transition: opacity 700ms cubic-bezier(0.16, 1, 0.3, 1), transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sigtad-observe-stagger.is-visible > * { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+.sigtad-observe-stagger > *:nth-child(2) { transition-delay: 120ms; }
+.sigtad-observe-stagger > *:nth-child(3) { transition-delay: 240ms; }
+.sigtad-observe-stagger > *:nth-child(4) { transition-delay: 360ms; }
+
+.sigtad-reveal-stagger > * {
+  will-change: transform, opacity, filter;
+  animation: sigtad-reveal-up 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.sigtad-reveal-stagger > *:nth-child(2) { animation-delay: 80ms; }
+.sigtad-reveal-stagger > *:nth-child(3) { animation-delay: 160ms; }
+.sigtad-reveal-stagger > *:nth-child(4) { animation-delay: 240ms; }
+
+.sigtad-image-reveal {
+  will-change: transform, opacity, filter;
+  animation: sigtad-image-reveal 850ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@supports (animation-timeline: view()) {
+  .sigtad-reveal,
+  .sigtad-reveal-stagger > * {
+    animation-timeline: view();
+    animation-range: entry 8% cover 28%;
+  }
+
+  .sigtad-image-reveal {
+    animation-timeline: view();
+    animation-range: entry 5% cover 36%;
+  }
+}
+
+.sigtad-menu-reveal {
+  transform-origin: top right;
+  will-change: transform, opacity;
+  animation: sigtad-menu-in 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 .sigtad-feedback-toast {
   animation: sigtad-toast-in 450ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .sigtad-feedback-toast-out {
   animation: sigtad-toast-out 350ms ease-in both;
+}
+
+.sigtad-feedback-toast-welcome {
+  box-shadow: 0 18px 50px rgb(7 63 49 / 24%), 0 0 0 1px rgb(185 232 145 / 34%), 0 0 30px rgb(141 198 63 / 18%);
+}
+
+.sigtad-feedback-toast-farewell {
+  box-shadow: 0 18px 50px rgb(7 63 49 / 24%), 0 0 26px rgb(0 174 239 / 14%);
 }
 
 .sigtad-splash {
@@ -246,6 +316,21 @@ button:not(:disabled):active {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+@keyframes sigtad-reveal-up {
+  from { opacity: 0; filter: blur(4px); transform: translate3d(0, 40px, 0) scale(0.98); }
+  to { opacity: 1; filter: blur(0); transform: translate3d(0, 0, 0); }
+}
+
+@keyframes sigtad-image-reveal {
+  from { opacity: 0; filter: blur(4px); transform: translate3d(0, 24px, 0) scale(1.05); }
+  to { opacity: 1; filter: blur(0); transform: translate3d(0, 0, 0) scale(1); }
+}
+
+@keyframes sigtad-menu-in {
+  from { opacity: 0; transform: translate3d(0, -4px, 0) scale(0.95); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
 }
 
 .sigtad-footer {

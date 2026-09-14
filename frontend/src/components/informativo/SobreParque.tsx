@@ -84,7 +84,7 @@ export default function SobreParque() {
               Parque Nacional Diriá
             </p>
             <h2 id="titulo-sobre-parque" className="sigtad-heading mt-2 font-brand text-3xl font-bold text-[#095540] sm:text-4xl">
-              Sobre el parque
+              Aliados del Parque Diriá
             </h2>
           </div>
           <button

@@ -5,6 +5,7 @@ import parque2 from '../../assets/diria-paisaje-2.jpg';
 import parque3 from '../../assets/diria-paisaje-3.jpg';
 import parque4 from '../../assets/diria-paisaje-4.jpg';
 import { CONTENIDO_PARQUE } from './contenidoParque';
+import ScrollReveal from '../ui/ScrollReveal';
 
 const IMAGENES_PARQUE = [
   {
@@ -86,8 +87,8 @@ function Informativo() {
       />
 
       <div className="relative mx-auto max-w-7xl">
-        <div className="grid items-center gap-10 lg:grid-cols-[1.08fr_0.92fr] lg:gap-16">
-            <div className="relative min-h-[360px] overflow-hidden rounded-[2rem] bg-[#095540] shadow-[0_24px_70px_rgba(9,85,64,0.18)] sm:min-h-[460px] lg:min-h-[540px]">
+        <ScrollReveal className="grid items-center gap-10 lg:grid-cols-[1.08fr_0.92fr] lg:gap-16">
+            <div className="sigtad-image-reveal relative min-h-[360px] overflow-hidden rounded-[2rem] bg-[#095540] shadow-[0_24px_70px_rgba(9,85,64,0.18)] sm:min-h-[460px] lg:min-h-[540px]">
             {IMAGENES_PARQUE.map((imagen, index) => (
               <img
                 key={imagen.src}
@@ -180,7 +181,7 @@ function Informativo() {
               </p>
             </div>
           </div>
-        </div>
+        </ScrollReveal>
 
         <div className="pt-24 sm:pt-28">
           <div className="mx-auto max-w-3xl text-center">
@@ -196,12 +197,12 @@ function Informativo() {
             </p>
           </div>
 
-          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:mt-12 lg:grid-cols-4">
+          <ScrollReveal stagger className="mt-10 grid gap-5 sm:grid-cols-2 lg:mt-12 lg:grid-cols-4">
             {MODULOS.map((modulo) => (
               <article
                 id={modulo.id}
                 key={modulo.id}
-                className="group relative isolate min-h-[390px] scroll-mt-28 overflow-hidden rounded-[1.75rem] bg-[#095540] shadow-[0_14px_35px_rgba(9,85,64,0.12)] motion-safe:transition motion-safe:duration-500 motion-safe:ease-out hover:shadow-[0_22px_50px_rgba(9,85,64,0.2)] motion-safe:hover:-translate-y-1 motion-reduce:transform-none"
+                className="sigtad-image-reveal group relative isolate min-h-[390px] scroll-mt-28 overflow-hidden rounded-[1.75rem] bg-[#095540] shadow-[0_14px_35px_rgba(9,85,64,0.12)] motion-safe:transition motion-safe:duration-500 motion-safe:ease-out hover:shadow-[0_22px_50px_rgba(9,85,64,0.2)] motion-safe:hover:-translate-y-1 motion-reduce:transform-none"
               >
                 <img
                   src={modulo.imagen}
@@ -231,7 +232,7 @@ function Informativo() {
                 </div>
               </article>
             ))}
-          </div>
+          </ScrollReveal>
         </div>
       </div>
     </section>

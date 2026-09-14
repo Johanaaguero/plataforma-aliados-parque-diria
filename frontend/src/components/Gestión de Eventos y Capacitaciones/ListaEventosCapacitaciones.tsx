@@ -5,7 +5,7 @@ import RegistroEventoCapacitacion from './RegistroEventoCapacitacion';
 import PortadaEventoCapacitacion from './Portadaeventocapacitacion';
 import EdicionEventoCapacitacion from './EdicionEventoCapacitacion';
 import DetalleEventoCapacitacion from './DetalleEventoCapacitacion';
-import {
+import { 
   formatearCupos,
   obtenerEventos,
   type EventoCapacitacion,
@@ -1185,7 +1185,7 @@ export default function ListaEventosCapacitaciones({
         {!cargando &&
           !error &&
           eventosPagina.length > 0 && (
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+            <div className="sigtad-reveal-stagger grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
               {eventosPagina.map((item) => {
                 
                 const colores =

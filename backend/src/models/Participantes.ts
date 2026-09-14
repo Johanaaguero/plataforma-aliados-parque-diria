@@ -12,6 +12,12 @@ import {
 import { Usuario } from './Usuario';
 import { EventosCapacitaciones } from './EventosCapacitaciones';
 
+export enum EstadoReserva {
+  PENDIENTE = 'pendiente',
+  CONFIRMADA = 'confirmada',
+  CANCELADA = 'cancelada',
+}
+
 @Entity('participantes')
 @Unique('UQ_participantes_usuario_evento', [
   'usuarioId',
@@ -50,6 +56,12 @@ export class Participantes {
     name: 'evento_capacitacion_id',
   })
   eventoCapacitacion!: EventosCapacitaciones;
+
+  @Column({ type: 'enum', enum: EstadoReserva, default: EstadoReserva.CONFIRMADA })
+  estado!: EstadoReserva;
+
+  @Column({ type: 'datetime', name: 'fecha_cancelacion', nullable: true })
+  fechaCancelacion!: Date | null;
 
   @CreateDateColumn({
     name: 'created_at',

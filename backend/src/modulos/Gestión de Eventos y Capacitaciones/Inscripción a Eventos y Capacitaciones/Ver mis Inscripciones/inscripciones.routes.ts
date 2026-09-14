@@ -14,6 +14,13 @@ router.get(
   (req, res) => controller.listarMias(req, res),
 );
 
+router.patch(
+  '/:id/cancelar',
+  verificarToken,
+  (req, res) => controller.cancelar(req, res),
+);
+
+// Compatibilidad con clientes que usaban la ruta original de cancelación.
 router.delete(
   '/:id',
   verificarToken,

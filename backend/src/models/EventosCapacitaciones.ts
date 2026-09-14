@@ -83,6 +83,9 @@ export class EventosCapacitaciones {
   })
   cupoMaximo!: number | null;
 
+  @Column({ type: 'int', nullable: true, name: 'cupos_disponibles' })
+  cuposDisponibles!: number | null;
+
   @Column({
     type: 'int',
     nullable: true,

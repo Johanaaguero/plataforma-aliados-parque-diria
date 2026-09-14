@@ -10,9 +10,10 @@ export class InscripcionesController {
     try {
       if (!req.usuario?.id) {
         return res.status(401).json({
-          ok: false,
+          status: 'error',
           code: 'UNAUTHORIZED',
           message: 'Usuario no autenticado.',
+          data: null,
         });
       }
 
@@ -43,9 +44,10 @@ export class InscripcionesController {
     try {
       if (!req.usuario?.id) {
         return res.status(401).json({
-          ok: false,
+          status: 'error',
           code: 'UNAUTHORIZED',
           message: 'Usuario no autenticado.',
+          data: null,
         });
       }
 
@@ -56,10 +58,11 @@ export class InscripcionesController {
         !/^[1-9]\d*$/.test(idParam)
       ) {
         return res.status(400).json({
-          ok: false,
+          status: 'error',
           code: 'INVALID_ID',
           message:
             'El id de la inscripción debe ser un número entero positivo.',
+          data: null,
         });
       }
 
@@ -67,21 +70,23 @@ export class InscripcionesController {
 
       if (!Number.isSafeInteger(inscripcionId)) {
         return res.status(400).json({
-          ok: false,
+          status: 'error',
           code: 'INVALID_ID',
           message:
             'El id de la inscripción no es válido.',
+          data: null,
         });
       }
 
-      await cancelarInscripcion(
+      const reserva = await cancelarInscripcion(
         req.usuario.id,
         inscripcionId,
       );
 
       return res.status(200).json({
-        ok: true,
-        message: 'Inscripción cancelada correctamente.',
+        status: 'success',
+        message: 'Reserva cancelada correctamente.',
+        data: reserva,
       });
     } catch (error) {
       if (
@@ -89,10 +94,19 @@ export class InscripcionesController {
         error.name === 'NotFoundError'
       ) {
         return res.status(404).json({
-          ok: false,
+          status: 'error',
           code: 'REGISTRATION_NOT_FOUND',
           message: error.message,
+          data: null,
         });
+      }
+
+      if (error instanceof Error && error.name === 'ForbiddenError') {
+        return res.status(403).json({ status: 'error', message: error.message, data: null });
+      }
+
+      if (error instanceof Error && error.name === 'InvalidReservationStateError') {
+        return res.status(400).json({ status: 'error', message: error.message, data: null });
       }
 
       console.error(
@@ -101,9 +115,10 @@ export class InscripcionesController {
       );
 
       return res.status(500).json({
-        ok: false,
+        status: 'error',
         code: 'INTERNAL_SERVER_ERROR',
         message: 'Error interno del servidor.',
+        data: null,
       });
     }
   }

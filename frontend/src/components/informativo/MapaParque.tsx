@@ -30,7 +30,7 @@ function MapaParque() {
       aria-labelledby="titulo-mapa-parque"
       className="relative scroll-mt-28 px-4 py-16 sm:px-6 sm:py-20 lg:px-8"
     >
-      <div className="sigtad-glass mx-auto grid max-w-7xl overflow-hidden rounded-[2rem] lg:grid-cols-[0.8fr_1.2fr]">
+      <div className="sigtad-glass mx-auto grid max-w-7xl overflow-hidden rounded-3xl lg:grid-cols-[0.8fr_1.2fr]">
         <div className="flex flex-col justify-center p-6 sm:p-8 lg:p-10">
           <span className="sigtad-heading mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#8dc63f]/15">
             <svg
@@ -103,8 +103,8 @@ function MapaParque() {
             className="relative z-0 h-80 w-full sm:h-[420px] lg:h-full lg:min-h-[480px]"
           >
             <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution='Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community'
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
             />
             <Marker
               position={UBICACION_PARQUE}

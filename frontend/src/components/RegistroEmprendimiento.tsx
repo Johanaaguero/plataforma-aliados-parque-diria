@@ -1168,7 +1168,7 @@ function RegistroEmprendimiento({ onExito }: Props) {
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 sm:px-6">
-      <div className="overflow-hidden rounded-[2rem] border border-emerald-950/10 bg-[#fffef9] p-5 shadow-[0_24px_70px_rgba(20,83,45,0.12)] sm:p-8">
+      <div className="overflow-hidden rounded-[2rem] border border-white/20 bg-white/70 p-5 shadow-xl shadow-black/5 backdrop-blur-lg dark:border-white/10 dark:bg-slate-900/70 dark:shadow-black/20 sm:p-8">
 
         {/* ================================================
             ENCABEZADO

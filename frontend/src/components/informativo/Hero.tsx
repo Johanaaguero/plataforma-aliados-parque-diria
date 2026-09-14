@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import paisajePrincipal from '../../assets/parque-hero.jpg';
 import accesoParque from '../../assets/diria-paisaje-1.jpg';
@@ -41,6 +41,7 @@ function Hero() {
   const [pausado, setPausado] = useState(false);
   const [punteroSobreCarrusel, setPunteroSobreCarrusel] = useState(false);
   const [focoDentroCarrusel, setFocoDentroCarrusel] = useState(false);
+  const inicioArrastreX = useRef<number | null>(null);
   const interactuando = punteroSobreCarrusel || focoDentroCarrusel;
 
   useEffect(() => {
@@ -70,6 +71,18 @@ function Hero() {
     setIndiceActual((actual) => (actual + 1) % DIAPOSITIVAS.length);
   };
 
+  const registrarInicioArrastre = (posicionX: number) => {
+    inicioArrastreX.current = posicionX;
+  };
+
+  const completarArrastre = (posicionX: number) => {
+    const inicio = inicioArrastreX.current;
+    inicioArrastreX.current = null;
+    if (inicio === null || Math.abs(posicionX - inicio) < 42) return;
+    if (posicionX < inicio) mostrarSiguiente();
+    else mostrarAnterior();
+  };
+
   return (
     <section
       id="inicio"
@@ -78,6 +91,9 @@ function Hero() {
       aria-label="Paisajes y experiencias del Parque Nacional Diriá"
       onMouseEnter={() => setPunteroSobreCarrusel(true)}
       onMouseLeave={() => setPunteroSobreCarrusel(false)}
+      onPointerDown={(evento) => registrarInicioArrastre(evento.clientX)}
+      onPointerUp={(evento) => completarArrastre(evento.clientX)}
+      onPointerCancel={() => { inicioArrastreX.current = null; }}
       onFocusCapture={() => setFocoDentroCarrusel(true)}
       onBlurCapture={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
@@ -95,10 +111,10 @@ function Hero() {
             loading={index === 0 ? 'eager' : 'lazy'}
             fetchPriority={index === 0 ? 'high' : 'low'}
             decoding="async"
-            className={`absolute inset-0 h-full w-full object-cover motion-safe:transition-[opacity,transform] motion-safe:duration-700 motion-safe:ease-out motion-reduce:transform-none motion-reduce:transition-none ${
+            className={`absolute inset-0 h-full w-full object-cover motion-safe:transition-[opacity,transform,filter] motion-safe:duration-[800ms] motion-safe:ease-out motion-reduce:transform-none motion-reduce:transition-none ${
               indiceActual === index
-                ? 'scale-100 opacity-100'
-                : 'scale-[1.025] opacity-0'
+                ? 'scale-100 opacity-100 blur-0'
+                : 'scale-105 opacity-0 blur-[4px]'
             }`}
           />
         ))}
@@ -129,7 +145,7 @@ function Hero() {
             <span className="block text-[#8dc63f]">y el Desarrollo Sostenible en el Parque Nacional Diriá.</span>
           </h1>
 
-          <p className="mt-6 max-w-2xl text-base leading-7 text-white/85 sm:text-lg sm:leading-8 lg:text-xl">
+          <p className="sigtad-animate-in mt-6 max-w-2xl text-base leading-7 text-white/85 sm:text-lg sm:leading-8 lg:text-xl">
             Descubre el Parque Nacional Diriá y las experiencias, actividades y
             emprendimientos que nacen alrededor de este paisaje único.
           </p>
@@ -149,11 +165,11 @@ function Hero() {
         {DIAPOSITIVAS[indiceActual].nombre}
       </p>
 
-      <div className="hidden" aria-hidden="true">
+      <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-between px-3 sm:px-6">
         <button
           type="button"
           onClick={mostrarAnterior}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white motion-safe:transition motion-safe:duration-200 hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d9d823]"
+          className="pointer-events-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/20 text-white backdrop-blur-md transition-all duration-200 hover:bg-white/40 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d9d823]"
           aria-label="Mostrar imagen anterior"
         >
           <svg
@@ -168,12 +184,13 @@ function Hero() {
           </svg>
         </button>
 
-        <div
-          className="flex items-center gap-0.5 px-1"
-          role="group"
-          aria-label="Seleccionar imagen"
-        >
-          {DIAPOSITIVAS.map((diapositiva, index) => (
+        <div className="pointer-events-auto absolute bottom-7 left-1/2 inline-flex -translate-x-1/2 items-center gap-4 rounded-full border border-white/15 bg-emerald-950/60 px-4 py-2 shadow-lg backdrop-blur-md dark:bg-slate-900/70 sm:bottom-9">
+          <div
+            className="flex items-center justify-center gap-1"
+            role="group"
+            aria-label="Seleccionar imagen"
+          >
+            {DIAPOSITIVAS.map((diapositiva, index) => (
             <button
               key={diapositiva.nombre}
               type="button"
@@ -185,23 +202,25 @@ function Hero() {
               <span
                 className={`h-2.5 rounded-full motion-safe:transition-all motion-safe:duration-300 motion-reduce:transition-none ${
                   indiceActual === index
-                    ? 'w-5 bg-[#d9d823]'
-                    : 'w-2.5 bg-white/55 group-hover:bg-white'
+                    ? 'w-6 bg-yellow-400'
+                    : 'w-2.5 bg-white/40 group-hover:bg-white'
                 }`}
                 aria-hidden="true"
               />
             </button>
-          ))}
-        </div>
+            ))}
+          </div>
 
-        <button
-          type="button"
-          onClick={() => setPausado((valor) => !valor)}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white motion-safe:transition motion-safe:duration-200 hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d9d823]"
-          aria-label={pausado ? 'Reanudar carrusel' : 'Pausar carrusel'}
-          aria-pressed={pausado}
-        >
-          {pausado ? (
+          <span className="h-4 w-px bg-white/20" aria-hidden="true" />
+
+          <button
+            type="button"
+            onClick={() => setPausado((valor) => !valor)}
+            className="flex h-8 w-8 items-center justify-center rounded-full text-white transition-colors duration-200 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d9d823]"
+            aria-label={pausado ? 'Reanudar carrusel' : 'Pausar carrusel'}
+            aria-pressed={pausado}
+          >
+            {pausado ? (
             <svg
               viewBox="0 0 24 24"
               className="h-4 w-4"
@@ -219,13 +238,14 @@ function Hero() {
             >
               <path d="M6 5h4v14H6zM14 5h4v14h-4z" />
             </svg>
-          )}
-        </button>
+            )}
+          </button>
+        </div>
 
         <button
           type="button"
           onClick={mostrarSiguiente}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white motion-safe:transition motion-safe:duration-200 hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d9d823]"
+          className="pointer-events-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/20 text-white backdrop-blur-md transition-all duration-200 hover:bg-white/40 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d9d823]"
           aria-label="Mostrar imagen siguiente"
         >
           <svg
