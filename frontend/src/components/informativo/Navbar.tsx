@@ -14,8 +14,6 @@ interface NavbarProps {
   rolAutenticado: string | null;
   nombreUsuario: string | null;
   onCerrarSesion: () => void;
-  onGestionRoles: () => void;
-  onInscripciones?: () => void;
   onMisInscripciones?: () => void;
   onCuentasBloqueadas?: () => void;
   onBitacora?: () => void;
@@ -32,8 +30,6 @@ function Navbar({
   rolAutenticado,
   nombreUsuario,
   onCerrarSesion,
-  onGestionRoles,
-  onInscripciones,
   onMisInscripciones,
   onCuentasBloqueadas,
   onBitacora,
@@ -109,18 +105,10 @@ function Navbar({
     onIrEmprendimientos();
   };
 
-  const irGestionRoles = () => {
+  const irDashboard = () => {
     setMenuAbierto(false);
     setMenuUsuarioAbierto(false);
-    navigate('/admin/roles');
-    onGestionRoles();
-  };
-
-  const irInscripciones = () => {
-    setMenuAbierto(false);
-    setMenuUsuarioAbierto(false);
-    navigate('/admin/inscripciones');
-    onInscripciones?.();
+    navigate('/admin/dashboard');
   };
 
   const irMisInscripciones = () => {
@@ -341,10 +329,9 @@ function Navbar({
                       <button type="button" onClick={irMisEventos} className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10">Mis eventos y capacitaciones</button>
                       <button type="button" onClick={irMisEmprendimientos} className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10">Mis emprendimientos</button>
                     </>}
-                    {(rolAutenticado === 'administrador' || rolAutenticado === 'super_admin') && <>
-                      <button type="button" onClick={irGestionRoles} className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10">Gestión de roles</button>
-                      <button type="button" onClick={irInscripciones} className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10">Gestión de inscripciones</button>
-                    </>}
+                    {rolAutenticado === 'administrador' && (
+                      <button type="button" onClick={irDashboard} className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10">Dashboard</button>
+                    )}
                     {rolAutenticado === 'super_admin' && onCuentasBloqueadas && <button type="button" onClick={() => { setMenuUsuarioAbierto(false); onCuentasBloqueadas(); }} className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10">Cuentas bloqueadas</button>}
                     {rolAutenticado === 'super_admin' && onBitacora && <button type="button" onClick={() => { setMenuUsuarioAbierto(false); onBitacora(); }} className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10">Bitácora</button>}
                     <div className="my-2 border-t border-white/15" />
@@ -542,27 +529,13 @@ function Navbar({
 
             {/* ADMINISTRADOR - OPCIONES ADMINISTRATIVAS */}
             {rolAutenticado === 'administrador' && (
-              <div className="mt-3 grid gap-2 border-t border-[#e2ebe5] pt-3 sm:grid-cols-2">
+              <div className="mt-3 border-t border-[#e2ebe5] pt-3">
                 <button
                   type="button"
-                  onClick={() => {
-                    setMenuAbierto(false);
-                    irGestionRoles();
-                  }}
-                  className="min-h-12 w-full rounded-full bg-[#d9d823] px-4 py-3 text-sm font-bold text-[#073f31] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f]"
+                  onClick={irDashboard}
+                  className="min-h-12 w-full rounded-full bg-[#095540] px-4 py-3 text-sm font-bold text-white shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f]"
                 >
-                  Gestionar roles
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMenuAbierto(false);
-                    irInscripciones();
-                  }}
-                  className="min-h-12 w-full rounded-full bg-[#d9d823] px-4 py-3 text-sm font-bold text-[#073f31] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f]"
-                >
-                  Inscripciones
+                  Dashboard
                 </button>
               </div>
             )}
