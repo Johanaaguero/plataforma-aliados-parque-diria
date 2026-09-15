@@ -6,6 +6,7 @@ import {
   obtenerCatalogoPublicado,
   obtenerEmprendimientosAdministrativos,
   eliminarEmprendimiento,
+  obtenerEmprendimientoPorId,
   obtenerDetalleCatalogoPublicado,
   type Emprendimiento,
   type EstadoPublicacion,
@@ -187,6 +188,7 @@ function ListaEmprendimientos({
   const operacionEnCurso = useRef(false);
   const botonQueAbrioModal = useRef<HTMLButtonElement | null>(null);
   const dialogoConfirmacion = useRef<HTMLDivElement | null>(null);
+  const carruselEmprendimientos = useRef<HTMLDivElement | null>(null);
   const [emprendimientoAEliminar, setEmprendimientoAEliminar] =
     useState<Emprendimiento | null>(null);
 
@@ -205,12 +207,12 @@ function ListaEmprendimientos({
   const puedeRegistrar = esAdministrador || esAsociado;
 
   const abrirDetalle = async (emprendimiento: Emprendimiento) => {
-    if (!esCatalogoPublico) return;
-
     setCargandoDetalle(true);
     setImagenDetalle(0);
     try {
-      const detalle = await obtenerDetalleCatalogoPublicado(emprendimiento.id);
+      const detalle = esCatalogoPublico
+        ? await obtenerDetalleCatalogoPublicado(emprendimiento.id)
+        : await obtenerEmprendimientoPorId(emprendimiento.id);
       setDetalleSeleccionado(detalle);
     } catch (err: unknown) {
       setMensajeAccion({
@@ -937,7 +939,36 @@ useEffect(() => {
        
 {/* TARJETAS DE EMPRENDIMIENTO */}
 {emprendimientosFiltrados.length > 0 && (
-  <ScrollReveal stagger className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3 xl:gap-7">
+  <ScrollReveal className="relative">
+    <div className="mb-3 flex items-center justify-end gap-2 sm:mb-4">
+      <button
+        type="button"
+        onClick={() => carruselEmprendimientos.current?.scrollBy({ left: -360, behavior: 'smooth' })}
+        className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-emerald-950/60 text-white shadow-lg backdrop-blur-md transition-all duration-200 hover:bg-emerald-600/30 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] dark:bg-slate-900/80"
+        aria-label="Ver emprendimientos anteriores"
+        title="Anterior"
+      >
+        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" aria-hidden="true">
+          <path d="m15 18-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+      <button
+        type="button"
+        onClick={() => carruselEmprendimientos.current?.scrollBy({ left: 360, behavior: 'smooth' })}
+        className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-emerald-950/60 text-white shadow-lg backdrop-blur-md transition-all duration-200 hover:bg-emerald-600/30 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] dark:bg-slate-900/80"
+        aria-label="Ver más emprendimientos"
+        title="Siguiente"
+      >
+        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" aria-hidden="true">
+          <path d="m9 18 6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+    </div>
+
+    <div
+      ref={carruselEmprendimientos}
+      className="flex items-stretch gap-6 overflow-x-auto scroll-smooth px-2 py-4 snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+    >
     {emprendimientosFiltrados.map((emprendimiento) => {
       const estiloEstado = obtenerEstiloEstado(
         emprendimiento.estadoPublicacion,
@@ -978,10 +1009,10 @@ useEffect(() => {
           role={esCatalogoPublico ? 'button' : undefined}
           tabIndex={esCatalogoPublico ? 0 : undefined}
           className="
-            sigtad-image-reveal group flex h-full flex-col overflow-hidden
+            sigtad-image-reveal group flex min-h-[580px] max-h-[640px] w-[420px] shrink-0 cursor-pointer snap-center flex-col overflow-hidden sm:w-[480px] md:w-[520px]
             rounded-[1.75rem]
             border border-[#095540]/10
-            bg-white
+            bg-white/85 backdrop-blur-md dark:bg-emerald-950/80
             shadow-[0_8px_28px_rgba(9,85,64,0.07)]
             motion-safe:transition-all motion-safe:duration-300
             motion-safe:hover:-translate-y-1
@@ -993,7 +1024,7 @@ useEffect(() => {
           {/* =========================
               IMAGEN / PORTADA
           ========================== */}
-          <div className="relative h-56 overflow-hidden bg-stone-100 sm:h-60">
+          <div className="relative h-40 w-full shrink-0 overflow-hidden bg-stone-100 sm:h-44">
             {emprendimiento.imagen ? (
               <img
                 src={emprendimiento.imagen}
@@ -1035,23 +1066,51 @@ useEffect(() => {
 
             {/* Estado */}
             <div className="absolute left-4 top-4">
-              <span
-                className={`
-                  inline-flex items-center gap-2
-                  rounded-full border
-                  px-3 py-1.5
-                  text-[11px] font-bold
-                  shadow-lg backdrop-blur-md
-                  ${estiloEstado.fondo}
-                  ${estiloEstado.texto}
-                  ${estiloEstado.borde}
-                `}
-              >
+              {esAdministrador && transicionesDisponibles.length > 0 ? (
+                <details className="relative" onClick={(event) => event.stopPropagation()}>
+                  <summary
+                    className={`
+                      inline-flex cursor-pointer list-none items-center gap-2
+                      rounded-full border px-3 py-1.5 text-[11px] font-bold
+                      shadow-lg backdrop-blur-md transition hover:brightness-110
+                      ${estiloEstado.fondo} ${estiloEstado.texto} ${estiloEstado.borde}
+                    `}
+                  >
+                    <span className={`h-2 w-2 rounded-full ${estiloEstado.punto}`} />
+                    {estiloEstado.etiqueta}
+                    <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                      <path d="m6 9 6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </summary>
+                  <div className="sigtad-menu-reveal absolute left-0 top-full z-40 mt-2 min-w-44 rounded-xl border border-white/25 bg-emerald-950/95 p-1.5 text-white shadow-xl backdrop-blur-md">
+                    {transicionesDisponibles.map((transicion) => (
+                      <button
+                        key={transicion.estado}
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          abrirConfirmacion(emprendimiento, transicion, event.currentTarget);
+                        }}
+                        disabled={idProcesando !== null || eliminando}
+                        className="flex w-full items-center rounded-lg px-3 py-2 text-left text-xs font-semibold transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {transicion.texto}
+                      </button>
+                    ))}
+                  </div>
+                </details>
+              ) : (
                 <span
-                  className={`h-2 w-2 rounded-full ${estiloEstado.punto}`}
-                />
-                {estiloEstado.etiqueta}
-              </span>
+                  className={`
+                    inline-flex items-center gap-2 rounded-full border px-3 py-1.5
+                    text-[11px] font-bold shadow-lg backdrop-blur-md
+                    ${estiloEstado.fondo} ${estiloEstado.texto} ${estiloEstado.borde}
+                  `}
+                >
+                  <span className={`h-2 w-2 rounded-full ${estiloEstado.punto}`} />
+                  {estiloEstado.etiqueta}
+                </span>
+              )}
             </div>
 
             {/* Categoría */}
@@ -1093,22 +1152,22 @@ useEffect(() => {
           {/* =========================
               CONTENIDO
           ========================== */}
-          <div className="flex flex-1 flex-col p-5 sm:p-6">
+          <div className="flex flex-1 flex-col p-4">
             {/* Título */}
-            <div className="min-h-[4.5rem]">
-              <h2 className="line-clamp-2 text-xl font-extrabold tracking-tight text-stone-900 motion-safe:transition-colors group-hover:text-emerald-900">
+            <div className="min-h-0">
+              <h2 className="line-clamp-2 text-lg font-extrabold tracking-tight text-stone-900 motion-safe:transition-colors group-hover:text-emerald-900">
                 {emprendimiento.nombre}
               </h2>
 
               {emprendimiento.descripcion && (
-                <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-500">
+                <p className="mt-1.5 line-clamp-2 text-xs leading-5 text-slate-500">
                   {emprendimiento.descripcion}
                 </p>
               )}
             </div>
 
             {/* Información */}
-            <div className="mt-5 space-y-3 border-t border-slate-100 pt-5">
+            <div className="mt-3 grid grid-cols-2 gap-2 border-t border-slate-100 pt-3">
               {ubicacion && (
                 <div className="flex items-start gap-3">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-500">
@@ -1219,8 +1278,8 @@ useEffect(() => {
           {/* =========================
     MAPA DE UBICACIÓN
 ========================== */}
-<div className="mt-5 border-t border-slate-100 pt-5">
-  <div className="mb-3 flex items-center gap-2">
+<div className="mt-3 border-t border-slate-100 px-4 pt-3" onClick={(event) => event.stopPropagation()}>
+  <div className="mb-2 flex items-center gap-2">
     <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
       <svg
         className="h-4 w-4"
@@ -1253,11 +1312,13 @@ useEffect(() => {
     </div>
   </div>
 
-  <MapaUbicacion
-    latitud={emprendimiento.latitud}
-    longitud={emprendimiento.longitud}
-    nombre={emprendimiento.nombre}
-  />
+  <div className="h-48 overflow-hidden rounded-2xl border border-white/10 shadow-inner [&_.leaflet-container]:!h-48">
+    <MapaUbicacion
+      latitud={emprendimiento.latitud}
+      longitud={emprendimiento.longitud}
+      nombre={emprendimiento.nombre}
+    />
+  </div>
 </div>
 
 
@@ -1289,13 +1350,14 @@ useEffect(() => {
                       <button
                         key={transicion.estado}
                         type="button"
-                        onClick={(e) =>
+                        onClick={(event) => {
+                          event.stopPropagation();
                           abrirConfirmacion(
                             emprendimiento,
                             transicion,
-                            e.currentTarget,
-                          )
-                        }
+                            event.currentTarget,
+                          );
+                        }}
                         disabled={
                           idProcesando !== null || eliminando
                         }
@@ -1354,7 +1416,8 @@ useEffect(() => {
                     {puedeEditar && onEditar && (
                       <button
                         type="button"
-                        onClick={() => {
+                        onClick={(event) => {
+                          event.stopPropagation();
                           if (
                             idProcesando !== null ||
                             eliminando
@@ -1404,7 +1467,8 @@ useEffect(() => {
 
                     <button
                       type="button"
-                      onClick={() => {
+                      onClick={(event) => {
+                        event.stopPropagation();
                         setErrorEliminacion(null);
                         setMensajeEliminacion(null);
                         setEmprendimientoAEliminar(
@@ -1454,7 +1518,8 @@ useEffect(() => {
               {!esAdministrador && puedeEditar && onEditar && (
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={(event) => {
+                    event.stopPropagation();
                     if (
                       idProcesando !== null ||
                       eliminando
@@ -1507,6 +1572,7 @@ useEffect(() => {
         </article>
       );
     })}
+    </div>
   </ScrollReveal>
 )}
 
@@ -1527,28 +1593,41 @@ useEffect(() => {
               : [];
           const indice = Math.min(imagenDetalle, Math.max(imagenes.length - 1, 0));
           const imagenActual = imagenes[indice];
+          const ubicacionDetalle = obtenerUbicacion(detalleSeleccionado);
           return (
             <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#052f25]/70 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="titulo-detalle-emprendimiento" onClick={() => setDetalleSeleccionado(null)}>
-              <div className="max-h-[calc(100dvh-2rem)] w-full max-w-4xl overflow-y-auto rounded-3xl border border-white/60 bg-[#fffef9]/95 p-5 shadow-[0_24px_70px_rgba(5,47,37,0.3)] backdrop-blur-xl sm:p-7" onClick={(event) => event.stopPropagation()}>
+              <div className="max-h-[90dvh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-white/60 bg-[#fffef9]/95 p-6 shadow-[0_24px_70px_rgba(5,47,37,0.3)] backdrop-blur-xl sm:p-8" onClick={(event) => event.stopPropagation()}>
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#009444]">Detalle del emprendimiento</p>
-                    <h2 id="titulo-detalle-emprendimiento" className="mt-1 font-brand text-2xl font-bold text-[#095540] sm:text-3xl">{detalleSeleccionado.nombre}</h2>
+                    <h2 id="titulo-detalle-emprendimiento" className="mt-1 font-brand text-xl font-bold text-[#095540] sm:text-2xl">{detalleSeleccionado.nombre}</h2>
                   </div>
                   <button type="button" onClick={() => setDetalleSeleccionado(null)} className="rounded-full p-2 text-[#095540] hover:bg-[#8DC63F]/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444]" aria-label="Cerrar detalles">×</button>
                 </div>
+                <div className="mt-5 space-y-5">
                 {imagenActual && (
-                  <div className="mt-5">
-                    <img src={imagenActual.imagen} alt={detalleSeleccionado.nombre} className="max-h-[50vh] w-full rounded-2xl object-contain" />
+                  <div>
+                    <img src={imagenActual.imagen} alt={detalleSeleccionado.nombre} className="aspect-square w-full rounded-2xl object-cover shadow-lg" />
                     {imagenes.length > 1 && <div className="mt-3 flex flex-wrap gap-2">
                       <button type="button" onClick={() => setImagenDetalle((actual) => (actual - 1 + imagenes.length) % imagenes.length)} className="rounded-xl border border-[#095540]/15 bg-white px-3 py-2 text-xs font-bold text-[#095540] hover:bg-[#8DC63F]/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444]" aria-label="Ver imagen anterior">Anterior</button>
                       {imagenes.map((imagen, indiceMiniatura) => <button key={imagen.id || imagen.imagen} type="button" onClick={() => setImagenDetalle(indiceMiniatura)} className={`h-16 w-16 overflow-hidden rounded-xl border-2 ${indiceMiniatura === indice ? 'border-[#009444]' : 'border-transparent'}`} aria-label={`Ver imagen ${indiceMiniatura + 1}`}><img src={imagen.imagen} alt="" className="h-full w-full object-cover" /></button>)}
                       <button type="button" onClick={() => setImagenDetalle((actual) => (actual + 1) % imagenes.length)} className="rounded-xl border border-[#095540]/15 bg-white px-3 py-2 text-xs font-bold text-[#095540] hover:bg-[#8DC63F]/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444]" aria-label="Ver imagen siguiente">Siguiente</button>
                     </div>}
+                    <div className="mt-5">
+                      <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#009444]">Ubicación en el mapa</p>
+                      <MapaUbicacion latitud={detalleSeleccionado.latitud} longitud={detalleSeleccionado.longitud} nombre={detalleSeleccionado.nombre} />
+                    </div>
                   </div>
                 )}
-                <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                {!imagenActual && (
+                  <div>
+                    <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#009444]">Ubicación en el mapa</p>
+                    <MapaUbicacion latitud={detalleSeleccionado.latitud} longitud={detalleSeleccionado.longitud} nombre={detalleSeleccionado.nombre} />
+                  </div>
+                )}
+                <div className="grid gap-4 text-sm sm:grid-cols-2">
                   {detalleSeleccionado.descripcion && <p className="sm:col-span-2 text-sm leading-6 text-slate-600">{detalleSeleccionado.descripcion}</p>}
+                  {ubicacionDetalle && <p className="text-sm text-slate-700 dark:text-slate-200"><strong className="block text-xs uppercase tracking-wider text-slate-400">Ubicación</strong>{ubicacionDetalle}</p>}
                   {detalleSeleccionado.direccion && <p className="text-sm text-slate-700"><strong className="block text-xs uppercase tracking-wider text-slate-400">Ubicación</strong>{detalleSeleccionado.direccion}</p>}
 {detalleSeleccionado.telefono && (
   <button
@@ -1566,6 +1645,7 @@ useEffect(() => {
     </span>
   </button>
 )}                  {detalleSeleccionado.correoElectronico && <p className="text-sm text-slate-700"><strong className="block text-xs uppercase tracking-wider text-slate-400">Correo</strong>{detalleSeleccionado.correoElectronico}</p>}
+                  </div>
                 </div>
               </div>
             </div>

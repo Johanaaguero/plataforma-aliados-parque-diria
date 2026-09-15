@@ -12,8 +12,6 @@ import {
   type TemporadaEvento,
 } from '../../services/eventosCapacitacionesService';
 
-const EVENTOS_POR_PAGINA = 9;
-
 type NombreRol =
   | 'administrador'
   | 'asociado'
@@ -90,11 +88,6 @@ export default function ListaEventosCapacitaciones({
   const [busqueda, setBusqueda] = useState('');
   const [busquedaAplicada, setBusquedaAplicada] = useState('');
   const [temporada, setTemporada] = useState<TemporadaEvento | ''>('');
-  const [pagina, setPagina] = useState(1);
-  const [paginacionPublica, setPaginacionPublica] = useState({
-    total: 0,
-    totalPaginas: 0,
-  });
   const [conteosPublicos, setConteosPublicos] = useState({
     todos: 0,
     eventos: 0,
@@ -102,6 +95,7 @@ export default function ListaEventosCapacitaciones({
   });
   const [eventoDetalle, setEventoDetalle] = useState<EventoCapacitacion | null>(null);
   const cargaActivaRef = useRef<AbortController | null>(null);
+  const carruselEventosRef = useRef<HTMLDivElement | null>(null);
 
   const [estadoAbierto, setEstadoAbierto] =
     useState<number | null>(null);
@@ -140,9 +134,8 @@ export default function ListaEventosCapacitaciones({
       buscar: busquedaAplicada || undefined,
       temporada: temporada || undefined,
       tipoActividad: filtro === 'todos' ? undefined : filtro,
-      pagina,
     },
-    [esAdministrador, busquedaAplicada, temporada, filtro, pagina],
+    [esAdministrador, busquedaAplicada, temporada, filtro],
   );
   const esperandoBusqueda = !esAdministrador && busqueda.trim() !== busquedaAplicada;
 
@@ -222,7 +215,6 @@ export default function ListaEventosCapacitaciones({
 
         if (!controlador.signal.aborted) {
           setEventos(resultado.data);
-          setPaginacionPublica(resultado.paginacion);
           setConteosPublicos(resultado.conteos);
         }
         return;
@@ -297,7 +289,6 @@ export default function ListaEventosCapacitaciones({
 
   function cambiarFiltro(nuevoFiltro: FiltroActividad) {
     setFiltro(nuevoFiltro);
-    setPagina(1);
     setEstadoAbierto(null);
   }
 
@@ -660,20 +651,8 @@ export default function ListaEventosCapacitaciones({
     ).length : conteosPublicos.capacitaciones;
 
   const cantidadTodos = esAdministrador ? eventosVisibles.length : conteosPublicos.todos;
-  const totalResultados = esAdministrador ? eventosFiltrados.length : paginacionPublica.total;
-  const totalPaginas = Math.max(1, esAdministrador
-    ? Math.ceil(totalResultados / EVENTOS_POR_PAGINA)
-    : paginacionPublica.totalPaginas);
-  const eventosPagina = esAdministrador
-    ? eventosFiltrados.slice((pagina - 1) * EVENTOS_POR_PAGINA, pagina * EVENTOS_POR_PAGINA)
-    : eventosFiltrados;
+  const totalResultados = eventosFiltrados.length;
   const hayFiltros = Boolean(busqueda.trim() || temporada || filtro !== 'todos');
-
-  useEffect(() => {
-    if (!cargando && !error && pagina > totalPaginas) {
-      setPagina(totalPaginas);
-    }
-  }, [cargando, error, pagina, totalPaginas]);
 
   if (mostrarRegistro) {
     return (
@@ -893,7 +872,6 @@ export default function ListaEventosCapacitaciones({
                   maxLength={150}
                   onChange={(evento) => {
                     setBusqueda(evento.target.value);
-                    setPagina(1);
                     setEstadoAbierto(null);
                   }}
                   className="w-full rounded-2xl border border-[#095540]/15 bg-[#f7faf5] py-3 pl-10 pr-4 text-sm font-medium text-slate-800 placeholder:text-slate-400 outline-none motion-safe:transition-[border-color,background-color,box-shadow] motion-safe:duration-200 focus-visible:border-[#009444] focus-visible:bg-white focus-visible:ring-4 focus-visible:ring-[#009444]/15"
@@ -909,7 +887,6 @@ export default function ListaEventosCapacitaciones({
                 value={temporada}
                 onChange={(evento) => {
                   setTemporada(evento.target.value as TemporadaEvento | '');
-                  setPagina(1);
                   setEstadoAbierto(null);
                 }}
                 className="w-full rounded-2xl border border-[#095540]/15 bg-[#f7faf5] px-4 py-3 text-sm font-medium text-slate-800 outline-none motion-safe:transition-[border-color,background-color,box-shadow] motion-safe:duration-200 focus-visible:border-[#009444] focus-visible:bg-white focus-visible:ring-4 focus-visible:ring-[#009444]/15"
@@ -1028,7 +1005,7 @@ export default function ListaEventosCapacitaciones({
                 key={item}
                 className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
               >
-                <div className="h-56 animate-pulse bg-slate-200" />
+                <div className="aspect-square w-full animate-pulse bg-slate-200" />
 
                 <div className="space-y-4 p-5">
                   <div className="h-5 w-24 animate-pulse rounded-md bg-slate-200" />
@@ -1190,9 +1167,28 @@ export default function ListaEventosCapacitaciones({
 
         {!cargando &&
           !error &&
-          eventosPagina.length > 0 && (
-            <div className="sigtad-reveal-stagger grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-              {eventosPagina.map((item) => {
+          eventosFiltrados.length > 0 && (
+            <div className="sigtad-reveal-stagger relative">
+              <div className="mb-3 flex items-center justify-end gap-2 sm:mb-4">
+                <button
+                  type="button"
+                  onClick={() => carruselEventosRef.current?.scrollBy({ left: -520, behavior: 'smooth' })}
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-emerald-950/60 text-white shadow-lg backdrop-blur-md transition-all duration-200 hover:bg-emerald-600/30 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] dark:bg-slate-900/80"
+                  aria-label="Ver actividades anteriores"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" aria-hidden="true"><path d="m15 18-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => carruselEventosRef.current?.scrollBy({ left: 520, behavior: 'smooth' })}
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-emerald-950/60 text-white shadow-lg backdrop-blur-md transition-all duration-200 hover:bg-emerald-600/30 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] dark:bg-slate-900/80"
+                  aria-label="Ver más actividades"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" aria-hidden="true"><path d="m9 18 6-6-6-6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                </button>
+              </div>
+              <div ref={carruselEventosRef} className="flex items-stretch gap-6 overflow-x-auto scroll-smooth px-2 py-4 snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+              {eventosFiltrados.map((item) => {
                 
                 const colores =
                   obtenerColorTipo(
@@ -1213,7 +1209,7 @@ export default function ListaEventosCapacitaciones({
                 return (
                   <article
                     key={item.id}
-                    className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-xl"
+                    className="group flex min-h-[580px] max-h-[640px] w-[420px] shrink-0 snap-center flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/85 shadow-2xl backdrop-blur-md transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl sm:w-[480px] md:w-[520px] dark:bg-emerald-950/80"
                   >
                     <div className="relative">
                       <PortadaEventoCapacitacion
@@ -1342,7 +1338,7 @@ export default function ListaEventosCapacitaciones({
                       )}
                     </div>
 
-                    <div className="p-5">
+                    <div className="flex flex-1 flex-col p-5">
                       <div className="mb-3 flex flex-wrap items-center gap-2">
                         <span
                           className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em] ${obtenerClaseEstado(
@@ -1391,8 +1387,8 @@ export default function ListaEventosCapacitaciones({
                           'Sin descripción'}
                       </p>
 
-                      <div className="mt-5 border-t border-slate-100 pt-5">
-                        <div className="grid grid-cols-2 gap-4">
+                      <div className="mt-4 grid grid-cols-2 gap-3 border-t border-slate-100 pt-4">
+                        <div className="contents">
                           <div className="flex min-w-0 items-start gap-2.5">
                             <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#8DC63F]/10 text-[#095540]">
                               <svg
@@ -1473,7 +1469,7 @@ export default function ListaEventosCapacitaciones({
                           </div>
                         </div>
 
-                        <div className="mt-4 flex items-start gap-2.5">
+                        <div className="flex items-start gap-2.5">
                           <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#095540]/10 text-[#095540]">
                             <svg
                               className="h-4 w-4"
@@ -1515,7 +1511,7 @@ export default function ListaEventosCapacitaciones({
                           </div>
                         </div>
 
-                        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-slate-50 px-3 py-2.5">
+                        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-slate-50 px-3 py-2.5">
                           <div className="flex items-center gap-2.5">
                             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white text-[#095540] shadow-sm">
                               <svg
@@ -1561,14 +1557,14 @@ export default function ListaEventosCapacitaciones({
                         <button
                           type="button"
                           onClick={() => setEventoDetalle(item)}
-                          className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#095540] px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#009444] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444] focus-visible:ring-offset-2"
+                          className="col-span-2 mt-1 flex w-full items-center justify-center gap-2 rounded-xl bg-[#095540] px-4 py-3 text-sm font-bold text-white shadow-sm transition-all hover:scale-[1.02] hover:bg-[#009444] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444] focus-visible:ring-offset-2"
                           aria-label={`Ver detalles de ${item.nombre ?? 'la actividad'}`}
                         >
                           Ver detalles
                         </button>
 
                         {esAdministrador && (
-                          <div className="mt-5 flex justify-between">
+                          <div className="col-span-2 mt-1 flex justify-between">
                             <button
                               type="button"
                               onClick={() => setEventoEditando(item)}
@@ -1627,46 +1623,10 @@ export default function ListaEventosCapacitaciones({
                   </article>
                 );
               })}
+              </div>
             </div>
           )}
 
-        {!cargando && !error && totalResultados > 0 && (
-          <nav
-            className="mt-8 flex flex-col items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row"
-            aria-label="Paginación de actividades"
-          >
-            <p className="text-sm text-slate-600" aria-live="polite">
-              Mostrando {(pagina - 1) * EVENTOS_POR_PAGINA + 1}–{Math.min(pagina * EVENTOS_POR_PAGINA, totalResultados)} de {totalResultados} actividades
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setPagina((actual) => Math.max(1, actual - 1));
-                  setEstadoAbierto(null);
-                }}
-                disabled={pagina <= 1}
-                className="rounded-xl border border-[#095540]/15 bg-white px-3 py-2 text-xs font-bold text-[#095540] transition hover:bg-[#8DC63F]/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Anterior
-              </button>
-              <span className="text-xs font-semibold text-slate-600">
-                Página {pagina} de {totalPaginas}
-              </span>
-              <button
-                type="button"
-                onClick={() => {
-                  setPagina((actual) => Math.min(totalPaginas, actual + 1));
-                  setEstadoAbierto(null);
-                }}
-                disabled={pagina >= totalPaginas}
-                className="rounded-xl border border-[#095540]/15 bg-white px-3 py-2 text-xs font-bold text-[#095540] transition hover:bg-[#8DC63F]/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Siguiente
-              </button>
-            </div>
-          </nav>
-        )}
       </div>
 
       {eventoDetalle && (

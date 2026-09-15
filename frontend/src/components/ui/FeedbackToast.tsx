@@ -52,10 +52,16 @@ export default function FeedbackToast() {
   if (!notificacion) return null;
 
   const icono = ICONOS[notificacion.tipo];
+  const encabezados: Record<TipoNotificacion, string> = {
+    bienvenida: '¡Bienvenido de nuevo a Aliados Diriá!',
+    registro: '¡Cuenta creada con éxito!',
+    despedida: 'Sesión cerrada correctamente',
+    error: 'No fue posible completar la acción',
+  };
 
   return (
     <div
-      className={`sigtad-feedback-toast relative fixed inset-x-4 top-24 z-[100] mx-auto flex max-w-md items-center gap-3 overflow-hidden rounded-full border border-white/60 bg-white/55 px-5 py-4 text-[#095540] shadow-[0_18px_50px_rgba(7,63,49,0.24)] backdrop-blur-2xl sm:right-6 sm:left-auto sm:mx-0 ${notificacion.tipo === 'bienvenida' ? 'sigtad-feedback-toast-welcome' : ''} ${notificacion.tipo === 'despedida' ? 'sigtad-feedback-toast-farewell' : ''} ${saliendo ? 'sigtad-feedback-toast-out' : ''}`}
+      className={`sigtad-feedback-toast relative fixed left-1/2 top-24 z-[100] flex w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 items-center gap-3 overflow-hidden rounded-2xl border border-white/60 bg-white/80 px-5 py-4 text-[#095540] shadow-[0_18px_50px_rgba(7,63,49,0.24)] backdrop-blur-2xl ${notificacion.tipo === 'bienvenida' ? 'sigtad-feedback-toast-welcome' : ''} ${notificacion.tipo === 'despedida' ? 'sigtad-feedback-toast-farewell' : ''} ${saliendo ? 'sigtad-feedback-toast-out' : ''}`}
       role="status"
       aria-live="polite"
     >
@@ -66,7 +72,10 @@ export default function FeedbackToast() {
         {icono === 'star' && <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden="true"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-2.9-5.6 2.9 1.1-6.2L3 9.6l6.2-.9L12 3Z" /></svg>}
         {icono === 'error' && <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true"><path d="M12 8v4m0 4h.01M10.3 3.9 2.8 17a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" strokeLinecap="round" /></svg>}
       </span>
-      <p className="relative text-sm font-bold leading-5">{notificacion.mensaje}</p>
+      <div className="relative min-w-0">
+        <p className="text-sm font-bold leading-5">{encabezados[notificacion.tipo]}</p>
+        <p className="mt-0.5 text-xs leading-5 text-[#095540]/70">{notificacion.mensaje}</p>
+      </div>
     </div>
   );
 }

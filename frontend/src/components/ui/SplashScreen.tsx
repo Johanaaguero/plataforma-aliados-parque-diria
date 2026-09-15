@@ -23,7 +23,7 @@ export default function SplashScreen() {
         // La presentación continúa aunque el navegador bloquee el almacenamiento.
       }
       setVisible(false);
-    }, 1800);
+    }, 4200);
 
     return () => window.clearTimeout(temporizador);
   }, [visible]);

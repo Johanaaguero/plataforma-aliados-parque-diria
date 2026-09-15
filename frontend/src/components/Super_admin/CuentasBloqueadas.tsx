@@ -271,7 +271,7 @@ export default function CuentasBloqueadas() {
     <main className="min-h-[calc(100vh-84px)] bg-[#f5f7f1] px-4 pb-16 pt-8 text-[#17372c] sm:px-6 lg:px-10">
       <div className="mx-auto max-w-7xl">
         {/* ENCABEZADO */}
-        <header className="relative mb-8 overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#095540] via-[#095540] to-[#009444] px-5 py-8 text-white shadow-[0_24px_70px_rgba(9,85,64,0.20)] sm:px-10">
+        <header className="relative mb-8 overflow-hidden rounded-3xl border border-white/20 bg-white/70 px-5 py-8 text-[#073f31] shadow-lg shadow-black/5 backdrop-blur-md sm:px-10 dark:border-white/10 dark:bg-emerald-950/40 dark:text-white">
 
           <div
             className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-[#d9d823]/15 blur-3xl"
@@ -284,7 +284,7 @@ export default function CuentasBloqueadas() {
           />
 
           <div className="relative">
-            <span className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3.5 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-emerald-50 backdrop-blur-md">
+            <span className="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-700/15 bg-emerald-500/10 px-3.5 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-[#095540] backdrop-blur-md dark:border-white/15 dark:bg-white/10 dark:text-emerald-50">
               <span className="h-2 w-2 rounded-full bg-[#d9d823]" />
               Super Admin
             </span>
@@ -293,7 +293,7 @@ export default function CuentasBloqueadas() {
               Cuentas bloqueadas
             </h1>
 
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-emerald-100/90 sm:text-base">
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600 dark:text-emerald-100/90 sm:text-base">
               Consulta los bloqueos vigentes y restablece el acceso cuando corresponda.
             </p>
           </div>

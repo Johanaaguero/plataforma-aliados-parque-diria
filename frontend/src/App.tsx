@@ -12,6 +12,7 @@ import InscripcionesAdmin from './components/Gestión de Eventos y Capacitacione
 import MisInscripciones from './components/Gestión de Eventos y Capacitaciones/MisInscripciones';
 import Bitacora from './components/Super_admin/Bitacora';
 import { mostrarFeedback } from './components/ui/FeedbackToast';
+import { mostrarBienvenidaLogin } from './components/ui/LoginWelcomeOverlay';
 
 import { api } from './services/api';
 import { useInactividad } from './services/useInactividad';
@@ -656,12 +657,12 @@ if (
           onLogin={(rol) => {
             mostrarFeedback('bienvenida', '¡Bienvenido de nuevo a Aliados del Parque Diriá!');
             setRolAutenticado(rol);
-            setNombreUsuario(
-              obtenerNombreUsuarioDesdeToken()
-            );
+            const nombre = obtenerNombreUsuarioDesdeToken();
+            setNombreUsuario(nombre);
             setUsuarioId(
               obtenerUsuarioIdDesdeToken()
             );
+            mostrarBienvenidaLogin(nombre);
 
             if (rol === 'administrador') {
               navigate('/admin/dashboard');
@@ -691,7 +692,7 @@ if (
       <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef] px-4 pb-12 pt-24 sm:px-6 sm:pt-28">
         <button
           type="button"
-          className="fixed right-3 top-3 z-[60] flex h-11 w-11 items-center justify-center rounded-full border border-gray-200 bg-gray-100/80 text-2xl font-light leading-none text-gray-800 shadow-[0_10px_30px_rgba(7,63,49,0.12)] backdrop-blur-md transition-all duration-200 hover:bg-gray-200/80 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/20 sm:right-5 sm:top-5"
+          className="fixed left-3 top-3 z-[60] flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-gray-100/80 text-gray-800 shadow-[0_10px_30px_rgba(7,63,49,0.12)] backdrop-blur-md transition-all duration-200 hover:bg-gray-200/80 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/20 sm:left-5 sm:top-5"
           onClick={() => {
             setSeccionActual(
               'emprendimientos'
@@ -708,7 +709,9 @@ if (
           aria-label="Volver"
           title="Volver"
         >
-          ×
+          <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+            <path d="m15 18-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
         </button>
 
         <RegistroCategoria
@@ -739,7 +742,7 @@ if (
       <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef] px-4 pb-12 pt-24 sm:px-6 sm:pt-28">
         <button
           type="button"
-          className="fixed right-3 top-3 z-[60] flex h-11 w-11 items-center justify-center rounded-full border border-gray-200 bg-gray-100/80 text-2xl font-light leading-none text-gray-800 shadow-[0_10px_30px_rgba(7,63,49,0.12)] backdrop-blur-md transition-all duration-200 hover:bg-gray-200/80 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/20 sm:right-5 sm:top-5"
+          className="fixed left-3 top-3 z-[60] flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-gray-100/80 text-gray-800 shadow-[0_10px_30px_rgba(7,63,49,0.12)] backdrop-blur-md transition-all duration-200 hover:bg-gray-200/80 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/20 sm:left-5 sm:top-5"
           onClick={() => {
             setSeccionActual(
               'emprendimientos'
@@ -756,7 +759,9 @@ if (
           aria-label="Volver"
           title="Volver"
         >
-          ×
+          <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+            <path d="m15 18-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
         </button>
 
         <RegistroEmprendimiento
@@ -798,7 +803,7 @@ if (
       <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef] px-4 pb-12 pt-24 sm:px-6 sm:pt-28">
         <button
           type="button"
-          className="fixed right-3 top-3 z-[60] flex h-11 w-11 items-center justify-center rounded-full border border-gray-200 bg-gray-100/80 text-2xl font-light leading-none text-gray-800 shadow-[0_10px_30px_rgba(7,63,49,0.12)] backdrop-blur-md transition-all duration-200 hover:bg-gray-200/80 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/20 sm:right-5 sm:top-5"
+          className="fixed left-3 top-3 z-[60] flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-gray-100/80 text-gray-800 shadow-[0_10px_30px_rgba(7,63,49,0.12)] backdrop-blur-md transition-all duration-200 hover:bg-gray-200/80 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/20 sm:left-5 sm:top-5"
           onClick={() => {
             setEmprendimientoEditar(null);
             setSeccionActual(
@@ -808,7 +813,9 @@ if (
           aria-label="Volver"
           title="Volver"
         >
-          ×
+          <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+            <path d="m15 18-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
         </button>
 
         <EditarEmprendimiento
@@ -1052,12 +1059,12 @@ if (
             onLogin={(rol) => {
               mostrarFeedback('bienvenida', '¡Bienvenido de nuevo a Aliados del Parque Diriá!');
               setRolAutenticado(rol);
-              setNombreUsuario(
-                obtenerNombreUsuarioDesdeToken()
-              );
+              const nombre = obtenerNombreUsuarioDesdeToken();
+              setNombreUsuario(nombre);
               setUsuarioId(
                 obtenerUsuarioIdDesdeToken()
               );
+              mostrarBienvenidaLogin(nombre);
               setMostrarLogin(false);
 
               if (rol === 'administrador') {
@@ -1072,7 +1079,7 @@ if (
         <section>
           <button
             type="button"
-            className="fixed left-3 top-3 z-[60] inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-[#b9d6af] bg-white/95 px-4 py-2 text-sm font-bold text-[#095540] shadow-[0_10px_30px_rgba(7,63,49,0.15)] backdrop-blur-md motion-safe:transition motion-safe:duration-200 hover:border-[#8dc63f] hover:bg-[#eef7e7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 motion-safe:hover:-translate-y-0.5 motion-reduce:transform-none sm:left-5 sm:top-5"
+            className="fixed left-3 top-3 z-[60] flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-gray-100/80 text-gray-800 shadow-[0_10px_30px_rgba(7,63,49,0.12)] backdrop-blur-md transition-all duration-200 hover:bg-gray-200/80 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/20 sm:left-5 sm:top-5"
             onClick={() => {
               setMostrarCuentasBloqueadas(
                 false
@@ -1090,17 +1097,12 @@ if (
                 obtenerUsuarioIdDesdeToken()
               );
             }}
+            aria-label="Volver"
+            title="Volver"
           >
-            <span
-              className="text-lg leading-none"
-              aria-hidden="true"
-            >
-              ←
-            </span>
-
-            <span>
-              Volver
-            </span>
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <path d="m15 18-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </button>
 
           <CuentasBloqueadas />
@@ -1111,7 +1113,7 @@ if (
         <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef] pt-20 sm:pt-24">
           <button
             type="button"
-            className="fixed left-3 top-3 z-[60] inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-[#b9d6af] bg-white/95 px-4 py-2 text-sm font-bold text-[#095540] shadow-[0_10px_30px_rgba(7,63,49,0.15)] backdrop-blur-md motion-safe:transition motion-safe:duration-200 hover:border-[#8dc63f] hover:bg-[#eef7e7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 motion-safe:hover:-translate-y-0.5 motion-reduce:transform-none sm:left-5 sm:top-5"
+            className="fixed left-3 top-3 z-[60] flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-gray-100/80 text-gray-800 shadow-[0_10px_30px_rgba(7,63,49,0.12)] backdrop-blur-md transition-all duration-200 hover:bg-gray-200/80 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/20 sm:left-5 sm:top-5"
             onClick={() => {
               setMostrarGestionRoles(
                 false
@@ -1129,17 +1131,12 @@ if (
                 obtenerUsuarioIdDesdeToken()
               );
             }}
+            aria-label="Volver"
+            title="Volver"
           >
-            <span
-              className="text-lg leading-none"
-              aria-hidden="true"
-            >
-              ←
-            </span>
-
-            <span>
-              Volver
-            </span>
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <path d="m15 18-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </button>
 
           <GestionRoles />

@@ -274,7 +274,7 @@ export default function MisInscripciones() {
       <div className="mx-auto max-w-5xl">
 
        {/* ENCABEZADO */}
-<div className="relative mb-6 overflow-hidden rounded-[24px] border border-white/70 bg-white/55 px-6 py-6 text-[#073f31] shadow-[0_12px_35px_rgba(9,85,64,0.08)] backdrop-blur-xl sm:px-8 sm:py-7 dark:border-white/10 dark:bg-white/[0.04] dark:text-white">
+<div className="relative mb-6 overflow-hidden rounded-3xl border border-white/20 bg-white/70 px-6 py-6 text-[#073f31] shadow-lg shadow-black/5 backdrop-blur-md sm:px-8 sm:py-7 dark:border-white/10 dark:bg-emerald-950/40 dark:text-white">
 
   {/* Detalles decorativos sutiles */}
   <div
