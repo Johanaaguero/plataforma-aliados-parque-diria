@@ -20,6 +20,7 @@ import bitacoraRoutes from './modulos/Autenticación y gestión de usuario/Super
 
 import { iniciarLimpiezaTokensExpirados } from './modulos/Autenticación y gestión de usuario/Recuperación de contraseña/limpieza.service';
 import { iniciarLimpiezaTokensBlacklist } from './modulos/Autenticación y gestión de usuario/inicio de sesion/limpieza-blacklist.service';
+import dashboardRoutes from './modulos/Dashboard/dashboard.routes';
 import { AppDataSource } from './data-source';
 import { errorMiddleware } from './middlewares/registro.middleware';
 
@@ -43,6 +44,7 @@ app.use('/api/eventos', eventosRoutes);
 app.use('/api/admin', inscripcionesAdminRoutes);
 app.use('/api/inscripciones', inscripcionesRoutes);
 app.use('/api/admin', bitacoraRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 app.use(errorMiddleware);
 
 const PORT = process.env.PORT || 3000;

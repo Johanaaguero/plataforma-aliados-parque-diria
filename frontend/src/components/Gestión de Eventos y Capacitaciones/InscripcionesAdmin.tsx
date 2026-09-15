@@ -266,7 +266,6 @@ export default function InscripcionesAdmin() {
                               </div>
                               <div className="min-w-0">
                                 <p className="font-medium text-slate-900 dark:text-emerald-50 truncate">{inscripcion.nombreCompleto || 'Sin nombre'}</p>
-                                <p className="text-[11px] text-slate-400 dark:text-emerald-800">ID #{inscripcion.usuarioId}</p>
                               </div>
                             </div>
                           </td>

@@ -21,6 +21,7 @@ interface Props {
   onRegistrar?: () => void;
   onRegistrarCategoria?: () => void;
   onEditar?: (emprendimiento: Emprendimiento) => void;
+  contexto?: 'publico' | 'administrativo';
 }
 
 interface MensajeAccion {
@@ -163,6 +164,7 @@ function ListaEmprendimientos({
   onRegistrar,
   onRegistrarCategoria,
   onEditar,
+  contexto = 'publico',
 }: Props) {
   const [emprendimientos, setEmprendimientos] = useState<Emprendimiento[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -194,9 +196,14 @@ function ListaEmprendimientos({
   const [mensajeEliminacion, setMensajeEliminacion] = useState<string | null>(null);
   const [errorEliminacion, setErrorEliminacion] = useState<string | null>(null);
 
-  const esAdministrador = rolAutenticado === 'administrador';
-  const esAsociado = rolAutenticado === 'asociado';
-  const esCatalogoPublico = !esAdministrador && !esAsociado;
+  const esContextoAdministrativo = contexto === 'administrativo';
+  const esAdministrador =
+    esContextoAdministrativo &&
+    rolAutenticado === 'administrador';
+  const esAsociado =
+    esContextoAdministrativo &&
+    rolAutenticado === 'asociado';
+  const esCatalogoPublico = contexto === 'publico';
   const puedeRegistrar = esAdministrador || esAsociado;
 
   const abrirDetalle = async (emprendimiento: Emprendimiento) => {
@@ -248,7 +255,7 @@ function ListaEmprendimientos({
 
         let data: Emprendimiento[];
 
-        if (rolAutenticado === 'administrador' || rolAutenticado === 'asociado') {
+        if (contexto === 'administrativo' && (rolAutenticado === 'administrador' || rolAutenticado === 'asociado')) {
           data = await obtenerEmprendimientosAdministrativos();
         } else {
           data = await obtenerCatalogoPublicado();

@@ -20,6 +20,7 @@ type NombreRol =
 
 interface ListaEventosCapacitacionesProps {
   rolAutenticado: NombreRol | null;
+  contexto?: 'publico' | 'administrativo';
 }
 
 type FiltroActividad =
@@ -67,6 +68,7 @@ function obtenerToken(): string | null {
 
 export default function ListaEventosCapacitaciones({
   rolAutenticado,
+  contexto = 'publico',
 }: ListaEventosCapacitacionesProps) {
   const [eventos, setEventos] = useState<EventoCapacitacion[]>([]);
 
@@ -113,7 +115,11 @@ export default function ListaEventosCapacitaciones({
   const botonQueAbrioEliminacionRef =
     useRef<HTMLButtonElement | null>(null);
 
+  const esContextoAdministrativo =
+    contexto === 'administrativo';
+
   const esAdministrador =
+    esContextoAdministrativo &&
     rolAutenticado === 'administrador';
 
   const urlBaseApi = useMemo(
