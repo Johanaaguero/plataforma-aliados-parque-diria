@@ -72,6 +72,9 @@
 }
 
 html {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
   background-color: var(--sigtad-background);
   scroll-behavior: smooth;
   scroll-padding-top: 7rem;
@@ -79,6 +82,9 @@ html {
 
 body {
   min-width: 320px;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
   color: var(--sigtad-text);
   background-color: var(--sigtad-background);
   transition: color 300ms ease-in-out, background-color 300ms ease-in-out;
@@ -87,7 +93,33 @@ body {
 /* A single stacking context contains the decorative background and every modal. */
 #root {
   min-height: 100svh;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
   isolation: isolate;
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(16 185 129 / 40%) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgb(6 78 59 / 15%);
+  border-radius: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgb(16 185 129 / 40%);
+  border-radius: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgb(16 185 129 / 70%);
 }
 
 ::selection {
@@ -370,11 +402,19 @@ main {
 }
 
 .sigtad-footer {
-  background-color: #064e3b;
+  background: #004d3d !important;
 }
 
 [data-theme="dark"] .sigtad-footer {
-  background-color: #020617;
+  background: linear-gradient(90deg, #050807 0%, #080d0b 55%, #0f1a15 100%) !important;
+}
+
+.sigtad-footer-wave {
+  fill: #004d3d !important;
+}
+
+[data-theme="dark"] .sigtad-footer-wave {
+  fill: #080d0b !important;
 }
 
 /* Only the decorative pseudo-element is blurred, never the catalog or its children. */

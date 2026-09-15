@@ -189,6 +189,7 @@ function ListaEmprendimientos({
   const botonQueAbrioModal = useRef<HTMLButtonElement | null>(null);
   const dialogoConfirmacion = useRef<HTMLDivElement | null>(null);
   const carruselEmprendimientos = useRef<HTMLDivElement | null>(null);
+  const cargaActivaRef = useRef<AbortController | null>(null);
   const [emprendimientoAEliminar, setEmprendimientoAEliminar] =
     useState<Emprendimiento | null>(null);
 
@@ -197,14 +198,17 @@ function ListaEmprendimientos({
   const [errorEliminacion, setErrorEliminacion] = useState<string | null>(null);
 
   const esContextoAdministrativo = contexto === 'administrativo';
-  const esAdministrador =
-    esContextoAdministrativo &&
-    rolAutenticado === 'administrador';
-  const esAsociado =
-    esContextoAdministrativo &&
-    rolAutenticado === 'asociado';
-  const esCatalogoPublico = contexto === 'publico';
+  const esAdministrador = rolAutenticado === 'administrador';
+  const esAsociado = rolAutenticado === 'asociado';
+  const esGestionAdministrativa = esContextoAdministrativo || esAdministrador || esAsociado;
+  const esCatalogoPublico = !esGestionAdministrativa;
   const puedeRegistrar = esAdministrador || esAsociado;
+
+  const esPropietario = (emprendimiento: Emprendimiento) =>
+    esAsociado && usuarioId !== null && emprendimiento.asociadoId === usuarioId;
+
+  const puedeEditarEmprendimiento = (emprendimiento: Emprendimiento) =>
+    esAdministrador || esPropietario(emprendimiento);
 
   const abrirDetalle = async (emprendimiento: Emprendimiento) => {
     setCargandoDetalle(true);
@@ -245,8 +249,13 @@ function ListaEmprendimientos({
 
   useEffect(() => {
     let componenteActivo = true;
+    let controlador: AbortController | null = null;
 
     const cargarEmprendimientos = async () => {
+      cargaActivaRef.current?.abort();
+      controlador = new AbortController();
+      cargaActivaRef.current = controlador;
+
       try {
         setCargando(true);
         setError(null);
@@ -255,23 +264,28 @@ function ListaEmprendimientos({
 
         let data: Emprendimiento[];
 
-        if (contexto === 'administrativo' && (rolAutenticado === 'administrador' || rolAutenticado === 'asociado')) {
-          data = await obtenerEmprendimientosAdministrativos();
+        if (esGestionAdministrativa) {
+          data = await obtenerEmprendimientosAdministrativos(
+            undefined,
+            controlador.signal,
+          );
         } else {
-          data = await obtenerCatalogoPublicado();
+          data = await obtenerCatalogoPublicado(controlador.signal);
         }
 
-        if (componenteActivo) {
+        if (componenteActivo && !controlador.signal.aborted) {
           setEmprendimientos(data);
         }
       } catch (err: unknown) {
+        if (controlador.signal.aborted) return;
+
         if (componenteActivo) {
           setError(
             obtenerMensajeError(err, 'No se pudieron cargar los emprendimientos'),
           );
         }
       } finally {
-        if (componenteActivo) {
+        if (componenteActivo && !controlador.signal.aborted) {
           setCargando(false);
         }
       }
@@ -281,8 +295,9 @@ function ListaEmprendimientos({
 
     return () => {
       componenteActivo = false;
+      controlador?.abort();
     };
-  }, [rolAutenticado]);
+  }, [esGestionAdministrativa, rolAutenticado]);
 
   const abrirConfirmacion = (
     emprendimiento: Emprendimiento,
@@ -438,7 +453,10 @@ useEffect(() => {
   }, [emprendimientoSeleccionado, idProcesando]);
 
   const confirmarEliminacion = async () => {
-    if (!esAdministrador || !emprendimientoAEliminar) return;
+    if (
+      !emprendimientoAEliminar ||
+      !esAdministrador
+    ) return;
 
     try {
       setEliminando(true);
@@ -990,11 +1008,7 @@ useEffect(() => {
       );
 
       const puedeEditar =
-        esAdministrador ||
-        (esAsociado &&
-          usuarioId !== null &&
-          usuarioId !== undefined &&
-          emprendimiento.asociadoId === usuarioId);
+        puedeEditarEmprendimiento(emprendimiento);
 
       return (
         <article
@@ -1112,6 +1126,23 @@ useEffect(() => {
                 </span>
               )}
             </div>
+
+            {puedeEditar && onEditar && (
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onEditar(emprendimiento);
+                }}
+                className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-xl border border-white/25 bg-emerald-600/85 px-2.5 py-2 text-xs font-bold text-white shadow-md backdrop-blur-md transition-all duration-200 hover:bg-emerald-500 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-emerald-950"
+                aria-label={`Editar ${emprendimiento.nombre}`}
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
+                </svg>
+                Editar
+              </button>
+            )}
 
             {/* Categoría */}
             {nombreCategoria && (
@@ -1278,7 +1309,7 @@ useEffect(() => {
           {/* =========================
     MAPA DE UBICACIÓN
 ========================== */}
-<div className="mt-3 border-t border-slate-100 px-4 pt-3" onClick={(event) => event.stopPropagation()}>
+<div className="mt-3 border-t border-slate-100 px-4 pt-3">
   <div className="mb-2 flex items-center gap-2">
     <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
       <svg
@@ -1312,12 +1343,15 @@ useEffect(() => {
     </div>
   </div>
 
-  <div className="h-48 overflow-hidden rounded-2xl border border-white/10 shadow-inner [&_.leaflet-container]:!h-48">
-    <MapaUbicacion
-      latitud={emprendimiento.latitud}
-      longitud={emprendimiento.longitud}
-      nombre={emprendimiento.nombre}
-    />
+  <div className="relative flex h-20 items-center justify-center overflow-hidden rounded-2xl border border-emerald-900/10 bg-[linear-gradient(135deg,rgba(236,253,245,0.95),rgba(209,250,229,0.72))] shadow-inner">
+    <div className="absolute inset-0 opacity-40 [background-image:linear-gradient(rgba(5,150,105,.18)_1px,transparent_1px),linear-gradient(90deg,rgba(5,150,105,.18)_1px,transparent_1px)] [background-size:18px_18px]" aria-hidden="true" />
+    <span className="relative inline-flex items-center gap-2 rounded-full border border-emerald-700/15 bg-white/75 px-3 py-1.5 text-xs font-bold text-emerald-900 backdrop-blur-sm">
+      <svg className="h-4 w-4 text-emerald-700" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" aria-hidden="true">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 21s7.5-5.646 7.5-12a7.5 7.5 0 1 0-15 0c0 6.354 7.5 12 7.5 12Z" />
+        <circle cx="12" cy="9" r="2.25" />
+      </svg>
+      Ver mapa en el detalle
+    </span>
   </div>
 </div>
 
@@ -1328,7 +1362,7 @@ useEffect(() => {
           {/* =========================
               ACCIONES
           ========================== */}
-          {(esAdministrador || (!esAdministrador && puedeEditar && onEditar)) && (
+          {(esAdministrador || (puedeEditar && onEditar)) && (
             <div className="border-t border-slate-100 bg-slate-50/70 p-4">
               {esAdministrador && (
                 <div className="space-y-2.5">
@@ -1516,7 +1550,8 @@ useEffect(() => {
               )}
 
               {!esAdministrador && puedeEditar && onEditar && (
-                <button
+                <div>
+                  <button
                   type="button"
                   onClick={(event) => {
                     event.stopPropagation();
@@ -1549,7 +1584,7 @@ useEffect(() => {
                     disabled:cursor-not-allowed
                     disabled:opacity-50
                   "
-                >
+                  >
                   <svg
                     className="h-4 w-4"
                     fill="none"
@@ -1565,7 +1600,8 @@ useEffect(() => {
                   </svg>
 
                   Editar emprendimiento
-                </button>
+                  </button>
+                </div>
               )}
             </div>
           )}
@@ -1595,19 +1631,33 @@ useEffect(() => {
           const imagenActual = imagenes[indice];
           const ubicacionDetalle = obtenerUbicacion(detalleSeleccionado);
           return (
-            <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#052f25]/70 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="titulo-detalle-emprendimiento" onClick={() => setDetalleSeleccionado(null)}>
-              <div className="max-h-[90dvh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-white/60 bg-[#fffef9]/95 p-6 shadow-[0_24px_70px_rgba(5,47,37,0.3)] backdrop-blur-xl sm:p-8" onClick={(event) => event.stopPropagation()}>
+            <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#052f25]/70 p-4 backdrop-blur-sm sm:p-6" role="dialog" aria-modal="true" aria-labelledby="titulo-detalle-emprendimiento" onClick={() => setDetalleSeleccionado(null)}>
+              <div className="custom-scrollbar my-auto max-h-[85vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-white/60 bg-[#fffef9]/95 p-6 pr-4 shadow-[0_24px_70px_rgba(5,47,37,0.3)] backdrop-blur-xl sm:p-8" onClick={(event) => event.stopPropagation()}>
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#009444]">Detalle del emprendimiento</p>
                     <h2 id="titulo-detalle-emprendimiento" className="mt-1 font-brand text-xl font-bold text-[#095540] sm:text-2xl">{detalleSeleccionado.nombre}</h2>
                   </div>
-                  <button type="button" onClick={() => setDetalleSeleccionado(null)} className="rounded-full p-2 text-[#095540] hover:bg-[#8DC63F]/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444]" aria-label="Cerrar detalles">×</button>
+                  <div className="flex shrink-0 items-center gap-2">
+                    {puedeEditarEmprendimiento(detalleSeleccionado) && onEditar && (
+                      <button
+                        type="button"
+                        onClick={() => onEditar(detalleSeleccionado)}
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-bold text-white shadow-sm transition-all duration-200 hover:bg-emerald-500 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
+                      >
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" aria-hidden="true">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
+                        </svg>
+                        Editar
+                      </button>
+                    )}
+                    <button type="button" onClick={() => setDetalleSeleccionado(null)} className="rounded-full p-2 text-[#095540] hover:bg-[#8DC63F]/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444]" aria-label="Cerrar detalles">×</button>
+                  </div>
                 </div>
                 <div className="mt-5 space-y-5">
                 {imagenActual && (
                   <div>
-                    <img src={imagenActual.imagen} alt={detalleSeleccionado.nombre} className="aspect-square w-full rounded-2xl object-cover shadow-lg" />
+                    <img src={imagenActual.imagen} alt={detalleSeleccionado.nombre} className="my-3 h-56 w-full rounded-2xl object-cover shadow-md sm:h-64" />
                     {imagenes.length > 1 && <div className="mt-3 flex flex-wrap gap-2">
                       <button type="button" onClick={() => setImagenDetalle((actual) => (actual - 1 + imagenes.length) % imagenes.length)} className="rounded-xl border border-[#095540]/15 bg-white px-3 py-2 text-xs font-bold text-[#095540] hover:bg-[#8DC63F]/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444]" aria-label="Ver imagen anterior">Anterior</button>
                       {imagenes.map((imagen, indiceMiniatura) => <button key={imagen.id || imagen.imagen} type="button" onClick={() => setImagenDetalle(indiceMiniatura)} className={`h-16 w-16 overflow-hidden rounded-xl border-2 ${indiceMiniatura === indice ? 'border-[#009444]' : 'border-transparent'}`} aria-label={`Ver imagen ${indiceMiniatura + 1}`}><img src={imagen.imagen} alt="" className="h-full w-full object-cover" /></button>)}

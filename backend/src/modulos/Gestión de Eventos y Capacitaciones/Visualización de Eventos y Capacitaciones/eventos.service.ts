@@ -1,5 +1,6 @@
 import { AppDataSource } from '../../../data-source';
-import { Participantes } from '../../../models/Participantes';
+import { EstadoReserva, Participantes } from '../../../models/Participantes';
+import { In } from 'typeorm';
 import { calcularCuposDisponibles } from '../cuposDisponibles';
 import {
   EventosCapacitaciones,
@@ -36,6 +37,7 @@ const serializarEvento = async (
   ).count({
     where: {
       eventoCapacitacionId: evento.id,
+      estado: In([EstadoReserva.PENDIENTE, EstadoReserva.CONFIRMADA]),
     },
   });
 

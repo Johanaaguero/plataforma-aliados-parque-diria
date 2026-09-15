@@ -142,22 +142,22 @@ export default function DetalleEventoCapacitacion({
 
   return (
     <div
-      className="fixed inset-0 z-[90] flex items-center justify-center bg-[#052f25]/70 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[90] flex items-center justify-center bg-[#052f25]/70 p-4 backdrop-blur-sm sm:p-6"
       onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}
       onKeyDown={manejarTeclado}
     >
       <div
         ref={dialogoRef}
-        className="max-h-[90dvh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-[#095540]/10 bg-white p-5 shadow-2xl sm:p-8"
+        className="custom-scrollbar max-h-[80vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-[#095540]/10 bg-white/95 p-4 pr-2 shadow-2xl backdrop-blur-xl sm:p-6 sm:pr-3"
         role="dialog"
         aria-modal="true"
         aria-labelledby="titulo-detalle-evento"
         aria-busy={cargando}
       >
-        <div className="mb-5 flex items-start justify-between gap-4">
+        <div className="mb-4 flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#009444]">Detalle de la actividad</p>
-            <h2 id="titulo-detalle-evento" className="mt-1 break-words font-brand text-2xl font-bold text-[#095540] sm:text-3xl">
+            <h2 id="titulo-detalle-evento" className="mt-1 break-words font-brand text-xl font-bold text-[#095540] sm:text-2xl">
               {evento?.nombre ?? 'Evento o capacitación'}
             </h2>
           </div>
@@ -165,7 +165,7 @@ export default function DetalleEventoCapacitacion({
             ref={cerrarRef}
             type="button"
             onClick={onClose}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full p-2 text-2xl text-[#095540] hover:bg-[#8DC63F]/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444]"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full p-2 text-xl text-[#095540] hover:bg-[#8DC63F]/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444]"
             aria-label="Cerrar detalles"
           >×</button>
         </div>
@@ -183,18 +183,18 @@ export default function DetalleEventoCapacitacion({
 
         {!cargando && evento && (
           <>
-            <div className="mb-5 flex flex-wrap gap-2">
-              <span className={`rounded-full px-3 py-1.5 text-xs font-bold ${evento.tipoActividad === 'evento' ? 'bg-[#8DC63F]/20 text-[#095540]' : 'bg-[#00AEEF]/10 text-[#087AA8]'}`}>
+            <div className="mb-4 flex flex-wrap gap-2">
+              <span className={`rounded-full px-3 py-1 text-xs font-bold ${evento.tipoActividad === 'evento' ? 'bg-[#8DC63F]/20 text-[#095540]' : 'bg-[#00AEEF]/10 text-[#087AA8]'}`}>
                 {evento.tipoActividad === 'evento' ? 'Evento' : 'Capacitación'}
               </span>
-              <span className="rounded-full border border-[#8DC63F]/30 bg-[#8DC63F]/15 px-3 py-1.5 text-xs font-bold text-[#095540]">
+              <span className="rounded-full border border-[#8DC63F]/30 bg-[#8DC63F]/15 px-3 py-1 text-xs font-bold text-[#095540]">
                 {formatearCupos(evento)}
               </span>
               <button
                 type="button"
                 onClick={manejarInscripcion}
                 disabled={inscribiendo || evento.cuposDisponibles === 0}
-                className="rounded-full bg-[#095540] px-4 py-1.5 text-xs font-bold text-white transition hover:bg-[#009444] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444] focus-visible:ring-offset-2"
+                className="rounded-full bg-[#095540] px-4 py-1.5 text-sm font-bold text-white transition hover:bg-[#009444] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444] focus-visible:ring-offset-2"
               >
                 {inscribiendo ? 'Inscribiendo...' : 'Inscribirme'}
               </button>
@@ -219,29 +219,29 @@ export default function DetalleEventoCapacitacion({
             )}
 
             <PortadaEventoCapacitacion eventoId={evento.id} urlBaseApi={urlBaseApi} />
-            <p className="mt-6 whitespace-pre-wrap break-words text-sm leading-6 text-slate-600">
+            <p className="mt-4 whitespace-pre-wrap break-words text-sm leading-5 text-slate-600">
               {evento.descripcion || 'Sin descripción disponible.'}
             </p>
-            <dl className="mt-6 grid gap-4 sm:grid-cols-2">
+            <dl className="mt-4 grid grid-cols-2 gap-3 sm:gap-4">
               <div>
                 <dt className="text-xs font-bold uppercase tracking-wider text-slate-400">Fecha</dt>
-                <dd className="mt-1 text-sm text-slate-700">{evento.fecha ? new Date(`${evento.fecha}T00:00:00`).toLocaleDateString('es-CR', { day: '2-digit', month: 'long', year: 'numeric' }) : 'Fecha pendiente'}</dd>
+                <dd className="mt-1 text-sm font-semibold text-slate-700">{evento.fecha ? new Date(`${evento.fecha}T00:00:00`).toLocaleDateString('es-CR', { day: '2-digit', month: 'long', year: 'numeric' }) : 'Fecha pendiente'}</dd>
               </div>
               <div>
                 <dt className="text-xs font-bold uppercase tracking-wider text-slate-400">Hora</dt>
-                <dd className="mt-1 text-sm text-slate-700">{evento.hora ? new Date(`2000-01-01T${evento.hora}`).toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit', hour12: true }) : 'Hora pendiente'}</dd>
+                <dd className="mt-1 text-sm font-semibold text-slate-700">{evento.hora ? new Date(`2000-01-01T${evento.hora}`).toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit', hour12: true }) : 'Hora pendiente'}</dd>
               </div>
               <div className="min-w-0">
                 <dt className="text-xs font-bold uppercase tracking-wider text-slate-400">Lugar</dt>
-                <dd className="mt-1 break-words text-sm text-slate-700">{evento.lugar || 'Lugar pendiente'}</dd>
+                <dd className="mt-1 break-words text-sm font-semibold text-slate-700">{evento.lugar || 'Lugar pendiente'}</dd>
               </div>
               <div>
                 <dt className="text-xs font-bold uppercase tracking-wider text-slate-400">Temporada</dt>
-                <dd className="mt-1 text-sm text-slate-700">{evento.temporada === 'seca' ? 'Seca' : evento.temporada === 'lluviosa' ? 'Lluviosa' : 'Por confirmar'}</dd>
+                <dd className="mt-1 text-sm font-semibold text-slate-700">{evento.temporada === 'seca' ? 'Seca' : evento.temporada === 'lluviosa' ? 'Lluviosa' : 'Por confirmar'}</dd>
               </div>
               <div className="min-w-0">
                 <dt className="text-xs font-bold uppercase tracking-wider text-slate-400">Edad permitida</dt>
-                <dd className="mt-1 break-words text-sm text-slate-700">{textoEdadPermitida}</dd>
+                <dd className="mt-1 break-words text-sm font-semibold text-slate-700">{textoEdadPermitida}</dd>
               </div>
             </dl>
           </>

@@ -17,7 +17,7 @@ const inscripcionController = new InscripcionController();
 router.post(
   '/',
   verificarToken,
-  autorizarRoles('administrador'),
+  autorizarRoles('administrador', 'asociado'),
   (req, res) => controller.create(req, res),
 );
 
@@ -29,11 +29,16 @@ router.post(
  */
 router.get(
   '/',
+  verificarToken,
+  autorizarRoles('administrador', 'asociado'),
   (req, res) => controller.findAll(req, res),
 );
 
-router.patch('/:id/estado', (req, res) =>
-  controller.cambiarEstado(req, res),
+router.patch(
+  '/:id/estado',
+  verificarToken,
+  autorizarRoles('administrador'),
+  (req, res) => controller.cambiarEstado(req, res),
 );
 
 /**
@@ -57,7 +62,7 @@ router.post(
 router.put(
   '/:id',
   verificarToken,
-  autorizarRoles('administrador'),
+  autorizarRoles('administrador', 'asociado'),
   (req, res) => controller.update(req, res),
 );
 

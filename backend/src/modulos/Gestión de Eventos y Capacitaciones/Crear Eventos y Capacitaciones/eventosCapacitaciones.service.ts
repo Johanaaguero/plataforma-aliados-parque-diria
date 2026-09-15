@@ -6,8 +6,8 @@ import {
   Temporada,
 } from '../../../models/EventosCapacitaciones';
 import { EventoCapacitacionImagen } from '../../../models/EventoCapacitacionImagen';
-import { Participantes } from '../../../models/Participantes';
-import { Repository } from 'typeorm';
+import { EstadoReserva, Participantes } from '../../../models/Participantes';
+import { In, Repository } from 'typeorm';
 import { calcularCuposDisponibles } from '../cuposDisponibles';
 
 export interface CreateEventoCapacitacionDTO {
@@ -1207,6 +1207,9 @@ export class EventosCapacitacionesService {
         'participante.eventoCapacitacionId IN (:...idsEventos)',
         { idsEventos },
       )
+      .andWhere('participante.estado IN (:...estadosActivos)', {
+        estadosActivos: [EstadoReserva.PENDIENTE, EstadoReserva.CONFIRMADA],
+      })
       .groupBy('participante.eventoCapacitacionId')
       .getRawMany<{
         eventoCapacitacionId: string | number;

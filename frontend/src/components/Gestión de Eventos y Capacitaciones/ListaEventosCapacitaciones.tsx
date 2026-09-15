@@ -119,8 +119,11 @@ export default function ListaEventosCapacitaciones({
     contexto === 'administrativo';
 
   const esAdministrador =
-    esContextoAdministrativo &&
     rolAutenticado === 'administrador';
+  const esAsociado = rolAutenticado === 'asociado';
+  const puedeCrearOEditar = esAdministrador || esAsociado;
+  const puedeEliminar = esAdministrador;
+  const esGestionAdministrativa = esContextoAdministrativo || puedeCrearOEditar;
 
   const urlBaseApi = useMemo(
     () => obtenerUrlBaseApi(),
@@ -160,7 +163,7 @@ export default function ListaEventosCapacitaciones({
   }, [notificacion]);
 
   useEffect(() => {
-    if (!eventoAEliminar || !esAdministrador) return;
+    if (!eventoAEliminar || !puedeEliminar) return;
 
     botonCancelarEliminacionRef.current?.focus();
 
@@ -171,10 +174,10 @@ export default function ListaEventosCapacitaciones({
         botonQueAbrio.focus();
       }
     };
-  }, [eventoAEliminar, esAdministrador]);
+  }, [eventoAEliminar, puedeEliminar]);
 
   useEffect(() => {
-    if (!eventoAEliminar || !esAdministrador) return;
+    if (!eventoAEliminar || !puedeEliminar) return;
 
     function cerrarConEscape(evento: KeyboardEvent) {
       if (evento.key === 'Escape' && !eliminando) {
@@ -187,7 +190,7 @@ export default function ListaEventosCapacitaciones({
     return () => {
       document.removeEventListener('keydown', cerrarConEscape);
     };
-  }, [eventoAEliminar, eliminando, esAdministrador]);
+  }, [eventoAEliminar, eliminando, puedeEliminar]);
 
   function mostrarNotificacion(
     tipo: TipoNotificacion,
@@ -210,7 +213,7 @@ export default function ListaEventosCapacitaciones({
       setCargando(true);
       setError(null);
 
-      if (!esAdministrador) {
+      if (!esGestionAdministrativa) {
         const resultado = await obtenerEventos(parametrosPublicos ?? {}, controlador.signal);
 
         if (!controlador.signal.aborted) {
@@ -274,7 +277,7 @@ export default function ListaEventosCapacitaciones({
         setCargando(false);
       }
     }
-  }, [esAdministrador, parametrosPublicos, urlBaseApi]);
+  }, [esGestionAdministrativa, esAdministrador, parametrosPublicos, urlBaseApi]);
 
   useEffect(() => {
     if (esperandoBusqueda) {
@@ -426,7 +429,7 @@ export default function ListaEventosCapacitaciones({
   }
 
   function abrirRegistro() {
-    if (!esAdministrador) return;
+    if (!puedeCrearOEditar) return;
 
     setMostrarRegistro(true);
   }
@@ -540,7 +543,7 @@ export default function ListaEventosCapacitaciones({
   }
 
   async function eliminarEvento() {
-    if (!esAdministrador || !eventoAEliminar || eliminando) {
+    if (!puedeEliminar || !eventoAEliminar || eliminando) {
       return;
     }
 
@@ -614,7 +617,7 @@ export default function ListaEventosCapacitaciones({
   }
 
   const eventosVisibles = useMemo(() => {
-    if (esAdministrador) {
+    if (esGestionAdministrativa) {
       const nombreBuscado = busqueda.trim().toLocaleLowerCase('es-CR');
       return eventos.filter((evento) =>
         (!temporada || evento.temporada === temporada) &&
@@ -625,10 +628,10 @@ export default function ListaEventosCapacitaciones({
     return eventos.filter(
       (evento) => evento.estado === 'publicado',
     );
-  }, [eventos, esAdministrador, busqueda, temporada]);
+  }, [eventos, esGestionAdministrativa, busqueda, temporada]);
 
   const eventosFiltrados = useMemo(() => {
-    if (!esAdministrador || filtro === 'todos') {
+    if (!esGestionAdministrativa || filtro === 'todos') {
       return eventosVisibles;
     }
 
@@ -636,21 +639,21 @@ export default function ListaEventosCapacitaciones({
       (evento) =>
         evento.tipoActividad === filtro,
     );
-  }, [eventosVisibles, esAdministrador, filtro]);
+  }, [eventosVisibles, esGestionAdministrativa, filtro]);
 
-  const cantidadEventos = esAdministrador ?
+  const cantidadEventos = esGestionAdministrativa ?
     eventosVisibles.filter(
       (evento) =>
         evento.tipoActividad === 'evento',
     ).length : conteosPublicos.eventos;
 
-  const cantidadCapacitaciones = esAdministrador ?
+  const cantidadCapacitaciones = esGestionAdministrativa ?
     eventosVisibles.filter(
       (evento) =>
         evento.tipoActividad === 'capacitacion',
     ).length : conteosPublicos.capacitaciones;
 
-  const cantidadTodos = esAdministrador ? eventosVisibles.length : conteosPublicos.todos;
+  const cantidadTodos = esGestionAdministrativa ? eventosVisibles.length : conteosPublicos.todos;
   const totalResultados = eventosFiltrados.length;
   const hayFiltros = Boolean(busqueda.trim() || temporada || filtro !== 'todos');
 
@@ -822,7 +825,7 @@ export default function ListaEventosCapacitaciones({
             </p>
           </div>
 
-          {esAdministrador && (
+          {puedeCrearOEditar && (
             <button
               type="button"
               onClick={abrirRegistro}
@@ -1563,7 +1566,7 @@ export default function ListaEventosCapacitaciones({
                           Ver detalles
                         </button>
 
-                        {esAdministrador && (
+                        {puedeCrearOEditar && (
                           <div className="col-span-2 mt-1 flex justify-between">
                             <button
                               type="button"
@@ -1589,7 +1592,7 @@ export default function ListaEventosCapacitaciones({
                               Editar
                             </button>
 
-                            <button
+                            {puedeEliminar && <button
                               type="button"
                               onClick={(evento) => {
                                 botonQueAbrioEliminacionRef.current =
@@ -1615,7 +1618,7 @@ export default function ListaEventosCapacitaciones({
                               </svg>
 
                               Eliminar
-                            </button>
+                            </button>}
                           </div>
                         )}
                       </div>
@@ -1680,7 +1683,7 @@ export default function ListaEventosCapacitaciones({
         />
       )}
 
-      {eventoAEliminar && esAdministrador && (
+      {eventoAEliminar && puedeEliminar && (
         <div
           className="fixed inset-0 z-[9998] flex items-center justify-center bg-slate-950/65 p-4 backdrop-blur-sm"
           role="dialog"
