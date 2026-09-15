@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import RegistroEventoCapacitacion from './RegistroEventoCapacitacion';
-
 import PortadaEventoCapacitacion from './Portadaeventocapacitacion';
 import EdicionEventoCapacitacion from './EdicionEventoCapacitacion';
 import DetalleEventoCapacitacion from './DetalleEventoCapacitacion';
-import { 
+
+import {
   formatearCupos,
   obtenerEventos,
   type EventoCapacitacion,
@@ -71,9 +71,7 @@ export default function ListaEventosCapacitaciones({
   contexto = 'publico',
 }: ListaEventosCapacitacionesProps) {
   const [eventos, setEventos] = useState<EventoCapacitacion[]>([]);
-
   const [cargando, setCargando] = useState(true);
-
   const [error, setError] = useState<string | null>(null);
 
   const [notificacion, setNotificacion] =
@@ -86,16 +84,29 @@ export default function ListaEventosCapacitaciones({
     useState<FiltroActividad>('todos');
 
   const [busqueda, setBusqueda] = useState('');
-  const [busquedaAplicada, setBusquedaAplicada] = useState('');
-  const [temporada, setTemporada] = useState<TemporadaEvento | ''>('');
+  const [busquedaAplicada, setBusquedaAplicada] =
+    useState('');
+
+  const [temporada, setTemporada] =
+    useState<TemporadaEvento | ''>('');
+
   const [conteosPublicos, setConteosPublicos] = useState({
     todos: 0,
     eventos: 0,
     capacitaciones: 0,
   });
-  const [eventoDetalle, setEventoDetalle] = useState<EventoCapacitacion | null>(null);
-  const cargaActivaRef = useRef<AbortController | null>(null);
-  const carruselEventosRef = useRef<HTMLDivElement | null>(null);
+
+  const [eventoDetalle, setEventoDetalle] =
+    useState<EventoCapacitacion | null>(null);
+
+  const [eventoEditando, setEventoEditando] =
+    useState<EventoCapacitacion | null>(null);
+
+  const cargaActivaRef =
+    useRef<AbortController | null>(null);
+
+  const carruselEventosRef =
+    useRef<HTMLDivElement | null>(null);
 
   const [estadoAbierto, setEstadoAbierto] =
     useState<number | null>(null);
@@ -120,34 +131,58 @@ export default function ListaEventosCapacitaciones({
 
   const esAdministrador =
     rolAutenticado === 'administrador';
-  const esAsociado = rolAutenticado === 'asociado';
-  const puedeCrearOEditar = esAdministrador || esAsociado;
+
+  /*
+   * SOLAMENTE EL ADMINISTRADOR PUEDE:
+   * - Registrar
+   * - Editar
+   * - Eliminar
+   * - Cambiar estado
+   */
+  const puedeCrearOEditar = esAdministrador;
   const puedeEliminar = esAdministrador;
-  const esGestionAdministrativa = esContextoAdministrativo || puedeCrearOEditar;
+
+  const esGestionAdministrativa =
+    esContextoAdministrativo || esAdministrador;
 
   const urlBaseApi = useMemo(
     () => obtenerUrlBaseApi(),
     [],
   );
-  const [eventoEditando, setEventoEditando] =
-    useState<EventoCapacitacion | null>(null);
 
   const parametrosPublicos = useMemo(
-    () => esAdministrador ? null : {
-      buscar: busquedaAplicada || undefined,
-      temporada: temporada || undefined,
-      tipoActividad: filtro === 'todos' ? undefined : filtro,
-    },
-    [esAdministrador, busquedaAplicada, temporada, filtro],
+    () =>
+      esAdministrador
+        ? null
+        : {
+            buscar:
+              busquedaAplicada || undefined,
+            temporada:
+              temporada || undefined,
+            tipoActividad:
+              filtro === 'todos'
+                ? undefined
+                : filtro,
+          },
+    [
+      esAdministrador,
+      busquedaAplicada,
+      temporada,
+      filtro,
+    ],
   );
-  const esperandoBusqueda = !esAdministrador && busqueda.trim() !== busquedaAplicada;
+
+  const esperandoBusqueda =
+    !esAdministrador &&
+    busqueda.trim() !== busquedaAplicada;
 
   useEffect(() => {
     const temporizador = window.setTimeout(() => {
       setBusquedaAplicada(busqueda.trim());
     }, 300);
 
-    return () => window.clearTimeout(temporizador);
+    return () =>
+      window.clearTimeout(temporizador);
   }, [busqueda]);
 
   useEffect(() => {
@@ -157,18 +192,20 @@ export default function ListaEventosCapacitaciones({
       setNotificacion(null);
     }, 5000);
 
-    return () => {
+    return () =>
       window.clearTimeout(temporizador);
-    };
   }, [notificacion]);
 
   useEffect(() => {
-    if (!eventoAEliminar || !puedeEliminar) return;
+    if (!eventoAEliminar || !puedeEliminar) {
+      return;
+    }
 
     botonCancelarEliminacionRef.current?.focus();
 
     return () => {
-      const botonQueAbrio = botonQueAbrioEliminacionRef.current;
+      const botonQueAbrio =
+        botonQueAbrioEliminacionRef.current;
 
       if (botonQueAbrio?.isConnected) {
         botonQueAbrio.focus();
@@ -177,20 +214,37 @@ export default function ListaEventosCapacitaciones({
   }, [eventoAEliminar, puedeEliminar]);
 
   useEffect(() => {
-    if (!eventoAEliminar || !puedeEliminar) return;
+    if (!eventoAEliminar || !puedeEliminar) {
+      return;
+    }
 
-    function cerrarConEscape(evento: KeyboardEvent) {
-      if (evento.key === 'Escape' && !eliminando) {
+    function cerrarConEscape(
+      evento: KeyboardEvent,
+    ) {
+      if (
+        evento.key === 'Escape' &&
+        !eliminando
+      ) {
         setEventoAEliminar(null);
       }
     }
 
-    document.addEventListener('keydown', cerrarConEscape);
+    document.addEventListener(
+      'keydown',
+      cerrarConEscape,
+    );
 
     return () => {
-      document.removeEventListener('keydown', cerrarConEscape);
+      document.removeEventListener(
+        'keydown',
+        cerrarConEscape,
+      );
     };
-  }, [eventoAEliminar, eliminando, puedeEliminar]);
+  }, [
+    eventoAEliminar,
+    eliminando,
+    puedeEliminar,
+  ]);
 
   function mostrarNotificacion(
     tipo: TipoNotificacion,
@@ -206,7 +260,9 @@ export default function ListaEventosCapacitaciones({
 
   const cargarDatos = useCallback(async () => {
     cargaActivaRef.current?.abort();
+
     const controlador = new AbortController();
+
     cargaActivaRef.current = controlador;
 
     try {
@@ -214,12 +270,19 @@ export default function ListaEventosCapacitaciones({
       setError(null);
 
       if (!esGestionAdministrativa) {
-        const resultado = await obtenerEventos(parametrosPublicos ?? {}, controlador.signal);
+        const resultado =
+          await obtenerEventos(
+            parametrosPublicos ?? {},
+            controlador.signal,
+          );
 
         if (!controlador.signal.aborted) {
           setEventos(resultado.data);
-          setConteosPublicos(resultado.conteos);
+          setConteosPublicos(
+            resultado.conteos,
+          );
         }
+
         return;
       }
 
@@ -230,7 +293,8 @@ export default function ListaEventosCapacitaciones({
       };
 
       if (token) {
-        headers.Authorization = `Bearer ${token}`;
+        headers.Authorization =
+          `Bearer ${token}`;
       }
 
       const respuesta = await fetch(
@@ -266,7 +330,10 @@ export default function ListaEventosCapacitaciones({
         setEventos(datos);
       }
     } catch (error) {
-      if (controlador.signal.aborted) return;
+      if (controlador.signal.aborted) {
+        return;
+      }
+
       setError(
         error instanceof Error
           ? error.message
@@ -277,7 +344,11 @@ export default function ListaEventosCapacitaciones({
         setCargando(false);
       }
     }
-  }, [esGestionAdministrativa, esAdministrador, parametrosPublicos, urlBaseApi]);
+  }, [
+    esGestionAdministrativa,
+    parametrosPublicos,
+    urlBaseApi,
+  ]);
 
   useEffect(() => {
     if (esperandoBusqueda) {
@@ -287,10 +358,16 @@ export default function ListaEventosCapacitaciones({
       void cargarDatos();
     }
 
-    return () => cargaActivaRef.current?.abort();
-  }, [cargarDatos, esperandoBusqueda]);
+    return () =>
+      cargaActivaRef.current?.abort();
+  }, [
+    cargarDatos,
+    esperandoBusqueda,
+  ]);
 
-  function cambiarFiltro(nuevoFiltro: FiltroActividad) {
+  function cambiarFiltro(
+    nuevoFiltro: FiltroActividad,
+  ) {
     setFiltro(nuevoFiltro);
     setEstadoAbierto(null);
   }
@@ -302,22 +379,31 @@ export default function ListaEventosCapacitaciones({
     setTemporada('');
   }
 
-  function formatearFecha(fecha: string | null) {
+  function formatearFecha(
+    fecha: string | null,
+  ) {
     if (!fecha) return 'Fecha pendiente';
 
-    const fechaLocal = new Date(`${fecha}T00:00:00`);
+    const fechaLocal =
+      new Date(`${fecha}T00:00:00`);
 
-    return fechaLocal.toLocaleDateString('es-CR', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric',
-    });
+    return fechaLocal.toLocaleDateString(
+      'es-CR',
+      {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+      },
+    );
   }
 
-  function formatearHora(hora: string | null) {
+  function formatearHora(
+    hora: string | null,
+  ) {
     if (!hora) return 'Hora pendiente';
 
-    const [horas, minutos] = hora.split(':');
+    const [horas, minutos] =
+      hora.split(':');
 
     const fecha = new Date();
 
@@ -328,11 +414,14 @@ export default function ListaEventosCapacitaciones({
       0,
     );
 
-    return fecha.toLocaleTimeString('es-CR', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true,
-    });
+    return fecha.toLocaleTimeString(
+      'es-CR',
+      {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+      },
+    );
   }
 
   function obtenerNombreTipo(
@@ -429,7 +518,7 @@ export default function ListaEventosCapacitaciones({
   }
 
   function abrirRegistro() {
-    if (!puedeCrearOEditar) return;
+    if (!esAdministrador) return;
 
     setMostrarRegistro(true);
   }
@@ -446,9 +535,15 @@ export default function ListaEventosCapacitaciones({
     }
 
     const estadosPermitidos =
-      obtenerEstadosPermitidos(evento.estado);
+      obtenerEstadosPermitidos(
+        evento.estado,
+      );
 
-    if (!estadosPermitidos.includes(nuevoEstado)) {
+    if (
+      !estadosPermitidos.includes(
+        nuevoEstado,
+      )
+    ) {
       mostrarNotificacion(
         'error',
         'Cambio de estado no permitido',
@@ -487,8 +582,10 @@ export default function ListaEventosCapacitaciones({
           method: 'PATCH',
           headers: {
             Accept: 'application/json',
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
+            'Content-Type':
+              'application/json',
+            Authorization:
+              `Bearer ${token}`,
           },
           body: JSON.stringify({
             estado: nuevoEstado,
@@ -543,7 +640,11 @@ export default function ListaEventosCapacitaciones({
   }
 
   async function eliminarEvento() {
-    if (!puedeEliminar || !eventoAEliminar || eliminando) {
+    if (
+      !esAdministrador ||
+      !eventoAEliminar ||
+      eliminando
+    ) {
       return;
     }
 
@@ -555,12 +656,16 @@ export default function ListaEventosCapacitaciones({
         'Sesión no disponible',
         'No se encontró el token de autenticación. Inicia sesión nuevamente.',
       );
+
       return;
     }
 
-    const eventoEliminado = eventoAEliminar;
+    const eventoEliminado =
+      eventoAEliminar;
+
     const nombreEliminado =
-      eventoEliminado.nombre ?? 'La actividad';
+      eventoEliminado.nombre ??
+      'La actividad';
 
     try {
       setEliminando(true);
@@ -571,7 +676,8 @@ export default function ListaEventosCapacitaciones({
           method: 'DELETE',
           headers: {
             Accept: 'application/json',
-            Authorization: `Bearer ${token}`,
+            Authorization:
+              `Bearer ${token}`,
           },
         },
       );
@@ -593,9 +699,12 @@ export default function ListaEventosCapacitaciones({
 
       setEventos((prev) =>
         prev.filter(
-          (evento) => evento.id !== eventoEliminado.id,
+          (evento) =>
+            evento.id !==
+            eventoEliminado.id,
         ),
       );
+
       setEventoAEliminar(null);
 
       mostrarNotificacion(
@@ -618,44 +727,88 @@ export default function ListaEventosCapacitaciones({
 
   const eventosVisibles = useMemo(() => {
     if (esGestionAdministrativa) {
-      const nombreBuscado = busqueda.trim().toLocaleLowerCase('es-CR');
-      return eventos.filter((evento) =>
-        (!temporada || evento.temporada === temporada) &&
-        (!nombreBuscado || evento.nombre?.toLocaleLowerCase('es-CR').includes(nombreBuscado)),
+      const nombreBuscado =
+        busqueda
+          .trim()
+          .toLocaleLowerCase('es-CR');
+
+      return eventos.filter(
+        (evento) =>
+          (!temporada ||
+            evento.temporada ===
+              temporada) &&
+          (!nombreBuscado ||
+            evento.nombre
+              ?.toLocaleLowerCase(
+                'es-CR',
+              )
+              .includes(
+                nombreBuscado,
+              )),
       );
     }
 
     return eventos.filter(
-      (evento) => evento.estado === 'publicado',
+      (evento) =>
+        evento.estado === 'publicado',
     );
-  }, [eventos, esGestionAdministrativa, busqueda, temporada]);
+  }, [
+    eventos,
+    esGestionAdministrativa,
+    busqueda,
+    temporada,
+  ]);
 
   const eventosFiltrados = useMemo(() => {
-    if (!esGestionAdministrativa || filtro === 'todos') {
+    if (
+      !esGestionAdministrativa ||
+      filtro === 'todos'
+    ) {
       return eventosVisibles;
     }
 
     return eventosVisibles.filter(
       (evento) =>
-        evento.tipoActividad === filtro,
+        evento.tipoActividad ===
+        filtro,
     );
-  }, [eventosVisibles, esGestionAdministrativa, filtro]);
+  }, [
+    eventosVisibles,
+    esGestionAdministrativa,
+    filtro,
+  ]);
 
-  const cantidadEventos = esGestionAdministrativa ?
-    eventosVisibles.filter(
-      (evento) =>
-        evento.tipoActividad === 'evento',
-    ).length : conteosPublicos.eventos;
+  const cantidadEventos =
+    esGestionAdministrativa
+      ? eventosVisibles.filter(
+          (evento) =>
+            evento.tipoActividad ===
+            'evento',
+        ).length
+      : conteosPublicos.eventos;
 
-  const cantidadCapacitaciones = esGestionAdministrativa ?
-    eventosVisibles.filter(
-      (evento) =>
-        evento.tipoActividad === 'capacitacion',
-    ).length : conteosPublicos.capacitaciones;
+  const cantidadCapacitaciones =
+    esGestionAdministrativa
+      ? eventosVisibles.filter(
+          (evento) =>
+            evento.tipoActividad ===
+            'capacitacion',
+        ).length
+      : conteosPublicos.capacitaciones;
 
-  const cantidadTodos = esGestionAdministrativa ? eventosVisibles.length : conteosPublicos.todos;
-  const totalResultados = eventosFiltrados.length;
-  const hayFiltros = Boolean(busqueda.trim() || temporada || filtro !== 'todos');
+  const cantidadTodos =
+    esGestionAdministrativa
+      ? eventosVisibles.length
+      : conteosPublicos.todos;
+
+  const totalResultados =
+    eventosFiltrados.length;
+
+  const hayFiltros = Boolean(
+    busqueda.trim() ||
+      temporada ||
+      filtro !== 'todos',
+  );
 
   if (mostrarRegistro) {
     return (
@@ -755,7 +908,8 @@ export default function ListaEventosCapacitaciones({
               <div className="min-w-0 flex-1">
                 <p
                   className={`text-sm font-bold ${
-                    notificacion.tipo === 'error'
+                    notificacion.tipo ===
+                    'error'
                       ? 'text-red-800'
                       : 'text-[#095540]'
                   }`}
@@ -794,7 +948,8 @@ export default function ListaEventosCapacitaciones({
 
             <div
               className={`h-1 ${
-                notificacion.tipo === 'error'
+                notificacion.tipo ===
+                'error'
                   ? 'bg-red-500'
                   : 'bg-[#8DC63F]'
               }`}
@@ -819,13 +974,14 @@ export default function ListaEventosCapacitaciones({
             </h1>
 
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
-              Consulte las actividades, eventos y
-              capacitaciones disponibles en el
-              Parque Nacional Diriá.
+              Consulte las actividades,
+              eventos y capacitaciones
+              disponibles en el Parque
+              Nacional Diriá.
             </p>
           </div>
 
-          {puedeCrearOEditar && (
+          {esAdministrador && (
             <button
               type="button"
               onClick={abrirRegistro}
@@ -853,9 +1009,13 @@ export default function ListaEventosCapacitaciones({
         <div className="mb-8 space-y-4 rounded-3xl border border-[#095540]/10 bg-white p-4 shadow-[0_12px_35px_rgba(9,85,64,0.07)] sm:p-5">
           <div className="flex flex-col gap-4 md:flex-row md:items-end">
             <div className="min-w-0 flex-1">
-              <label htmlFor="buscar-eventos" className="mb-2 block text-xs font-bold text-[#095540]">
+              <label
+                htmlFor="buscar-eventos"
+                className="mb-2 block text-xs font-bold text-[#095540]"
+              >
                 Buscar por nombre
               </label>
+
               <div className="relative">
                 <svg
                   className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
@@ -865,8 +1025,13 @@ export default function ListaEventosCapacitaciones({
                   stroke="currentColor"
                   aria-hidden="true"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607z" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607z"
+                  />
                 </svg>
+
                 <input
                   id="buscar-eventos"
                   type="search"
@@ -874,122 +1039,158 @@ export default function ListaEventosCapacitaciones({
                   value={busqueda}
                   maxLength={150}
                   onChange={(evento) => {
-                    setBusqueda(evento.target.value);
+                    setBusqueda(
+                      evento.target.value,
+                    );
                     setEstadoAbierto(null);
                   }}
-                  className="w-full rounded-2xl border border-[#095540]/15 bg-[#f7faf5] py-3 pl-10 pr-4 text-sm font-medium text-slate-800 placeholder:text-slate-400 outline-none motion-safe:transition-[border-color,background-color,box-shadow] motion-safe:duration-200 focus-visible:border-[#009444] focus-visible:bg-white focus-visible:ring-4 focus-visible:ring-[#009444]/15"
+                  className="w-full rounded-2xl border border-[#095540]/15 bg-[#f7faf5] py-3 pl-10 pr-4 text-sm font-medium text-slate-800 placeholder:text-slate-400 outline-none transition-[border-color,background-color,box-shadow] duration-200 focus-visible:border-[#009444] focus-visible:bg-white focus-visible:ring-4 focus-visible:ring-[#009444]/15"
                 />
               </div>
             </div>
+
             <div className="w-full md:w-64">
-              <label htmlFor="temporada-eventos" className="mb-2 block text-xs font-bold text-[#095540]">
+              <label
+                htmlFor="temporada-eventos"
+                className="mb-2 block text-xs font-bold text-[#095540]"
+              >
                 Temporada
               </label>
+
               <select
                 id="temporada-eventos"
                 value={temporada}
                 onChange={(evento) => {
-                  setTemporada(evento.target.value as TemporadaEvento | '');
+                  setTemporada(
+                    evento.target
+                      .value as
+                      | TemporadaEvento
+                      | '',
+                  );
+
                   setEstadoAbierto(null);
                 }}
-                className="w-full rounded-2xl border border-[#095540]/15 bg-[#f7faf5] px-4 py-3 text-sm font-medium text-slate-800 outline-none motion-safe:transition-[border-color,background-color,box-shadow] motion-safe:duration-200 focus-visible:border-[#009444] focus-visible:bg-white focus-visible:ring-4 focus-visible:ring-[#009444]/15"
+                className="w-full rounded-2xl border border-[#095540]/15 bg-[#f7faf5] px-4 py-3 text-sm font-medium text-slate-800 outline-none transition-[border-color,background-color,box-shadow] duration-200 focus-visible:border-[#009444] focus-visible:bg-white focus-visible:ring-4 focus-visible:ring-[#009444]/15"
               >
-                <option value="">Todas las temporadas</option>
-                <option value="seca">Temporada seca</option>
-                <option value="lluviosa">Temporada lluviosa</option>
+                <option value="">
+                  Todas las temporadas
+                </option>
+
+                <option value="seca">
+                  Temporada seca
+                </option>
+
+                <option value="lluviosa">
+                  Temporada lluviosa
+                </option>
               </select>
             </div>
           </div>
+
           <div className="flex flex-col gap-4 border-t border-slate-100 pt-4 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <p className="text-sm font-semibold text-slate-800">
-                  {esAdministrador
-                    ? 'Todas las actividades'
-                    : 'Actividades disponibles'}
-                </p>
+            <div>
+              <p className="text-sm font-semibold text-slate-800">
+                {esAdministrador
+                  ? 'Todas las actividades'
+                  : 'Actividades disponibles'}
+              </p>
 
-                <p className="mt-0.5 text-xs text-slate-500">
-                  Filtre el contenido según el tipo de actividad.
-                </p>
-              </div>
+              <p className="mt-0.5 text-xs text-slate-500">
+                Filtre el contenido según
+                el tipo de actividad.
+              </p>
+            </div>
 
-              <div className="flex w-full flex-wrap gap-1.5 rounded-2xl border border-slate-200 bg-slate-50 p-1.5 lg:w-auto" role="group" aria-label="Tipo de actividad">
-                <button
-                  type="button"
-                  onClick={() =>
-                    cambiarFiltro('todos')
-                  }
-                  aria-pressed={filtro === 'todos'}
-                  className={`flex shrink-0 items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-300 ease-in-out hover:scale-105 active:scale-95 ${
+            <div
+              className="flex w-full flex-wrap gap-1.5 rounded-2xl border border-slate-200 bg-slate-50 p-1.5 lg:w-auto"
+              role="group"
+              aria-label="Tipo de actividad"
+            >
+              <button
+                type="button"
+                onClick={() =>
+                  cambiarFiltro('todos')
+                }
+                aria-pressed={
+                  filtro === 'todos'
+                }
+                className={`flex shrink-0 items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-300 ease-in-out hover:scale-105 active:scale-95 ${
+                  filtro === 'todos'
+                    ? 'bg-white text-[#095540] shadow-sm'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                Todos
+
+                <span
+                  className={`rounded-md px-1.5 py-0.5 text-[10px] ${
                     filtro === 'todos'
-                      ? 'bg-white text-[#095540] shadow-sm'
-                      : 'text-slate-500 hover:text-slate-800'
+                      ? 'bg-[#095540]/10 text-[#095540]'
+                      : 'bg-slate-200 text-slate-500'
                   }`}
                 >
-                  Todos
+                  {cantidadTodos}
+                </span>
+              </button>
 
-                  <span
-                    className={`rounded-md px-1.5 py-0.5 text-[10px] ${
-                      filtro === 'todos'
-                        ? 'bg-[#095540]/10 text-[#095540]'
-                        : 'bg-slate-200 text-slate-500'
-                    }`}
-                  >
-                    {cantidadTodos}
-                  </span>
-                </button>
+              <button
+                type="button"
+                onClick={() =>
+                  cambiarFiltro('evento')
+                }
+                aria-pressed={
+                  filtro === 'evento'
+                }
+                className={`flex shrink-0 items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-300 ease-in-out hover:scale-105 active:scale-95 ${
+                  filtro === 'evento'
+                    ? 'bg-white text-[#095540] shadow-sm'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                Eventos
 
-                <button
-                  type="button"
-                  onClick={() =>
-                    cambiarFiltro('evento')
-                  }
-                  aria-pressed={filtro === 'evento'}
-                  className={`flex shrink-0 items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-300 ease-in-out hover:scale-105 active:scale-95 ${
+                <span
+                  className={`rounded-md px-1.5 py-0.5 text-[10px] ${
                     filtro === 'evento'
-                      ? 'bg-white text-[#095540] shadow-sm'
-                      : 'text-slate-500 hover:text-slate-800'
+                      ? 'bg-[#8DC63F]/20 text-[#095540]'
+                      : 'bg-slate-200 text-slate-500'
                   }`}
                 >
-                  Eventos
+                  {cantidadEventos}
+                </span>
+              </button>
 
-                  <span
-                    className={`rounded-md px-1.5 py-0.5 text-[10px] ${
-                      filtro === 'evento'
-                        ? 'bg-[#8DC63F]/20 text-[#095540]'
-                        : 'bg-slate-200 text-slate-500'
-                    }`}
-                  >
-                    {cantidadEventos}
-                  </span>
-                </button>
+              <button
+                type="button"
+                onClick={() =>
+                  cambiarFiltro(
+                    'capacitacion',
+                  )
+                }
+                aria-pressed={
+                  filtro === 'capacitacion'
+                }
+                className={`flex shrink-0 items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-300 ease-in-out hover:scale-105 active:scale-95 ${
+                  filtro === 'capacitacion'
+                    ? 'bg-white text-[#087AA8] shadow-sm'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                Capacitaciones
 
-                <button
-                  type="button"
-                  onClick={() =>
-                    cambiarFiltro('capacitacion')
-                  }
-                  aria-pressed={filtro === 'capacitacion'}
-                  className={`flex shrink-0 items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-300 ease-in-out hover:scale-105 active:scale-95 ${
+                <span
+                  className={`rounded-md px-1.5 py-0.5 text-[10px] ${
                     filtro === 'capacitacion'
-                      ? 'bg-white text-[#087AA8] shadow-sm'
-                      : 'text-slate-500 hover:text-slate-800'
+                      ? 'bg-[#00AEEF]/10 text-[#087AA8]'
+                      : 'bg-slate-200 text-slate-500'
                   }`}
                 >
-                  Capacitaciones
-
-                  <span
-                    className={`rounded-md px-1.5 py-0.5 text-[10px] ${
-                      filtro === 'capacitacion'
-                        ? 'bg-[#00AEEF]/10 text-[#087AA8]'
-                        : 'bg-slate-200 text-slate-500'
-                    }`}
-                  >
-                    {cantidadCapacitaciones}
-                  </span>
-                </button>
-              </div>
+                  {cantidadCapacitaciones}
+                </span>
+              </button>
+            </div>
           </div>
+
           {hayFiltros && (
             <button
               type="button"
@@ -1002,40 +1203,50 @@ export default function ListaEventosCapacitaciones({
         </div>
 
         {cargando && (
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3" role="status" aria-label="Cargando actividades" aria-live="polite">
-            {[1, 2, 3].map((item) => (
-              <div
-                key={item}
-                className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
-              >
-                <div className="aspect-square w-full animate-pulse bg-slate-200" />
+          <div
+            className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3"
+            role="status"
+            aria-label="Cargando actividades"
+            aria-live="polite"
+          >
+            {[1, 2, 3].map(
+              (item) => (
+                <div
+                  key={item}
+                  className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+                >
+                  <div className="aspect-square w-full animate-pulse bg-slate-200" />
 
-                <div className="space-y-4 p-5">
-                  <div className="h-5 w-24 animate-pulse rounded-md bg-slate-200" />
+                  <div className="space-y-4 p-5">
+                    <div className="h-5 w-24 animate-pulse rounded-md bg-slate-200" />
 
-                  <div className="h-6 w-4/5 animate-pulse rounded-md bg-slate-200" />
+                    <div className="h-6 w-4/5 animate-pulse rounded-md bg-slate-200" />
 
-                  <div className="space-y-2">
-                    <div className="h-3 w-full animate-pulse rounded bg-slate-100" />
-                    <div className="h-3 w-4/5 animate-pulse rounded bg-slate-100" />
-                  </div>
-
-                  <div className="border-t border-slate-100 pt-5">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="h-8 animate-pulse rounded-lg bg-slate-100" />
-                      <div className="h-8 animate-pulse rounded-lg bg-slate-100" />
+                    <div className="space-y-2">
+                      <div className="h-3 w-full animate-pulse rounded bg-slate-100" />
+                      <div className="h-3 w-4/5 animate-pulse rounded bg-slate-100" />
                     </div>
 
-                    <div className="mt-4 h-8 animate-pulse rounded-lg bg-slate-100" />
+                    <div className="border-t border-slate-100 pt-5">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="h-8 animate-pulse rounded-lg bg-slate-100" />
+                        <div className="h-8 animate-pulse rounded-lg bg-slate-100" />
+                      </div>
+
+                      <div className="mt-4 h-8 animate-pulse rounded-lg bg-slate-100" />
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ),
+            )}
           </div>
         )}
 
         {!cargando && error && (
-          <div className="rounded-2xl border border-red-200 bg-white p-8 text-center shadow-sm" role="alert">
+          <div
+            className="rounded-2xl border border-red-200 bg-white p-8 text-center shadow-sm"
+            role="alert"
+          >
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-red-50 text-red-600">
               <svg
                 className="h-6 w-6"
@@ -1069,7 +1280,9 @@ export default function ListaEventosCapacitaciones({
 
             <button
               type="button"
-              onClick={() => void cargarDatos()}
+              onClick={() =>
+                void cargarDatos()
+              }
               className="mt-5 rounded-xl bg-[#095540] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#009444]"
             >
               Intentar nuevamente
@@ -1079,7 +1292,8 @@ export default function ListaEventosCapacitaciones({
 
         {!cargando &&
           !error &&
-          totalResultados === 0 && !hayFiltros && (
+          totalResultados === 0 &&
+          !hayFiltros && (
             <div className="rounded-2xl border border-slate-200 bg-white px-6 py-16 text-center shadow-sm">
               <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-xl bg-[#8DC63F]/10 text-[#095540]">
                 <svg
@@ -1123,7 +1337,8 @@ export default function ListaEventosCapacitaciones({
 
         {!cargando &&
           !error &&
-          totalResultados === 0 && hayFiltros && (
+          totalResultados === 0 &&
+          hayFiltros && (
             <div className="rounded-2xl border border-slate-200 bg-white px-6 py-14 text-center shadow-sm">
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
                 <svg
@@ -1154,8 +1369,9 @@ export default function ListaEventosCapacitaciones({
               </h2>
 
               <p className="mt-2 text-sm text-slate-500">
-                No existen actividades correspondientes
-                al filtro seleccionado.
+                No existen actividades
+                correspondientes al
+                filtro seleccionado.
               </p>
 
               <button
@@ -1175,461 +1391,548 @@ export default function ListaEventosCapacitaciones({
               <div className="mb-3 flex items-center justify-end gap-2 sm:mb-4">
                 <button
                   type="button"
-                  onClick={() => carruselEventosRef.current?.scrollBy({ left: -520, behavior: 'smooth' })}
+                  onClick={() =>
+                    carruselEventosRef.current?.scrollBy(
+                      {
+                        left: -520,
+                        behavior:
+                          'smooth',
+                      },
+                    )
+                  }
                   className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-emerald-950/60 text-white shadow-lg backdrop-blur-md transition-all duration-200 hover:bg-emerald-600/30 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] dark:bg-slate-900/80"
                   aria-label="Ver actividades anteriores"
                 >
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" aria-hidden="true"><path d="m15 18-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  <svg
+                    className="h-5 w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth="2"
+                    stroke="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="m15 18-6-6 6-6"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
                 </button>
+
                 <button
                   type="button"
-                  onClick={() => carruselEventosRef.current?.scrollBy({ left: 520, behavior: 'smooth' })}
+                  onClick={() =>
+                    carruselEventosRef.current?.scrollBy(
+                      {
+                        left: 520,
+                        behavior:
+                          'smooth',
+                      },
+                    )
+                  }
                   className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-emerald-950/60 text-white shadow-lg backdrop-blur-md transition-all duration-200 hover:bg-emerald-600/30 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] dark:bg-slate-900/80"
                   aria-label="Ver más actividades"
                 >
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" aria-hidden="true"><path d="m9 18 6-6-6-6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  <svg
+                    className="h-5 w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth="2"
+                    stroke="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="m9 18 6-6-6-6"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
                 </button>
               </div>
-              <div ref={carruselEventosRef} className="flex items-stretch gap-6 overflow-x-auto scroll-smooth px-2 py-4 snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-              {eventosFiltrados.map((item) => {
-                
-                const colores =
-                  obtenerColorTipo(
-                    item.tipoActividad,
-                  );
 
-                const menuEstadoAbierto =
-                  estadoAbierto === item.id;
+              <div
+                ref={carruselEventosRef}
+                className="flex items-stretch gap-6 overflow-x-auto scroll-smooth px-2 py-4 snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+              >
+                {eventosFiltrados.map(
+                  (item) => {
+                    const colores =
+                      obtenerColorTipo(
+                        item.tipoActividad,
+                      );
 
-                const estaCambiando =
-                  cambiandoEstado === item.id;
+                    const menuEstadoAbierto =
+                      estadoAbierto ===
+                      item.id;
 
-                const estadosPermitidos =
-                  obtenerEstadosPermitidos(
-                    item.estado,
-                  );
+                    const estaCambiando =
+                      cambiandoEstado ===
+                      item.id;
 
-                return (
-                  <article
-                    key={item.id}
-                    className="group flex min-h-[580px] max-h-[640px] w-[420px] shrink-0 snap-center flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/85 shadow-2xl backdrop-blur-md transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl sm:w-[480px] md:w-[520px] dark:bg-emerald-950/80"
-                  >
-                    <div className="relative">
-                      <PortadaEventoCapacitacion
-                        eventoId={item.id}
-                        urlBaseApi={urlBaseApi}
-                        colorAcento={colores.fondo}
-                      />
+                    const estadosPermitidos =
+                      obtenerEstadosPermitidos(
+                        item.estado,
+                      );
 
-                      <div className="absolute left-4 top-4">
-                        <span
-                          className="inline-flex items-center rounded-lg px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] shadow-md backdrop-blur-sm"
-                          style={{
-                            backgroundColor:
-                              colores.fondo,
-                            color:
-                              colores.texto,
-                          }}
-                        >
-                          {obtenerNombreTipo(
-                            item.tipoActividad,
-                          )}
-                        </span>
-                      </div>
-
-                      {esAdministrador && (
-                        <div className="absolute right-4 top-4">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setEstadoAbierto(
-                                menuEstadoAbierto
-                                  ? null
-                                  : item.id,
-                              )
+                    return (
+                      <article
+                        key={item.id}
+                        className="group flex min-h-[580px] w-[420px] shrink-0 snap-center flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/85 shadow-2xl backdrop-blur-md transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl sm:w-[480px] md:w-[520px] dark:bg-emerald-950/80"
+                      >
+                        <div className="relative shrink-0">
+                          <PortadaEventoCapacitacion
+                            eventoId={item.id}
+                            urlBaseApi={
+                              urlBaseApi
                             }
-                            disabled={estaCambiando}
-                            className="inline-flex items-center gap-2 rounded-lg border border-white/60 bg-white/95 px-3 py-2 text-[10px] font-bold text-[#095540] shadow-md backdrop-blur-sm transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
-                          >
-                            {estaCambiando ? (
-                              <>
-                                <span className="h-3 w-3 animate-spin rounded-full border-2 border-[#095540]/30 border-t-[#095540]" />
-                                Actualizando
-                              </>
-                            ) : (
-                              <>
-                                Cambiar estado
+                            colorAcento={
+                              colores.fondo
+                            }
+                          />
 
-                                <svg
-                                  className={`h-3 w-3 transition-transform ${
+                          <div className="absolute left-4 top-4">
+                            <span
+                              className="inline-flex items-center rounded-lg px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] shadow-md backdrop-blur-sm"
+                              style={{
+                                backgroundColor:
+                                  colores.fondo,
+                                color:
+                                  colores.texto,
+                              }}
+                            >
+                              {obtenerNombreTipo(
+                                item.tipoActividad,
+                              )}
+                            </span>
+                          </div>
+
+                          {esAdministrador && (
+                            <div className="absolute right-4 top-4">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setEstadoAbierto(
                                     menuEstadoAbierto
-                                      ? 'rotate-180'
-                                      : ''
-                                  }`}
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  aria-hidden="true"
-                                >
-                                  <path
-                                    d="M6 9l6 6 6-6"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                  />
-                                </svg>
-                              </>
-                            )}
-                          </button>
+                                      ? null
+                                      : item.id,
+                                  )
+                                }
+                                disabled={
+                                  estaCambiando
+                                }
+                                className="inline-flex items-center gap-2 rounded-lg border border-white/60 bg-white/95 px-3 py-2 text-[10px] font-bold text-[#095540] shadow-md backdrop-blur-sm transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                {estaCambiando ? (
+                                  <>
+                                    <span className="h-3 w-3 animate-spin rounded-full border-2 border-[#095540]/30 border-t-[#095540]" />
+                                    Actualizando
+                                  </>
+                                ) : (
+                                  <>
+                                    Cambiar estado
 
-                          {menuEstadoAbierto && (
-                            <div className="absolute right-0 top-full z-30 mt-2 w-52 overflow-hidden rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl">
-                              <div className="border-b border-slate-100 px-3 py-2">
-                                <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-slate-400">
-                                  Cambiar a
-                                </p>
-                              </div>
-
-                              {estadosPermitidos.length > 0 ? (
-                                estadosPermitidos.map(
-                                  (estado) => (
-                                    <button
-                                      key={estado}
-                                      type="button"
-                                      onClick={() =>
-                                        void cambiarEstado(
-                                          item,
-                                          estado,
-                                        )
-                                      }
-                                      disabled={
-                                        estaCambiando
-                                      }
-                                      className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-xs font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-[#095540] disabled:cursor-not-allowed disabled:opacity-50"
+                                    <svg
+                                      className={`h-3 w-3 transition-transform ${
+                                        menuEstadoAbierto
+                                          ? 'rotate-180'
+                                          : ''
+                                      }`}
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      aria-hidden="true"
                                     >
-                                      <span>
-                                        {obtenerNombreEstado(
-                                          estado,
-                                        )}
-                                      </span>
+                                      <path
+                                        d="M6 9l6 6 6-6"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                      />
+                                    </svg>
+                                  </>
+                                )}
+                              </button>
 
-                                      <svg
-                                        className="h-4 w-4 text-[#009444]"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        aria-hidden="true"
-                                      >
-                                        <path
-                                          d="M5 13l4 4L19 7"
-                                          stroke="currentColor"
-                                          strokeWidth="2.5"
-                                          strokeLinecap="round"
-                                          strokeLinejoin="round"
-                                        />
-                                      </svg>
-                                    </button>
-                                  ),
-                                )
-                              ) : (
-                                <div className="px-3 py-2.5 text-xs text-slate-500">
-                                  No hay cambios de estado disponibles.
+                              {menuEstadoAbierto && (
+                                <div className="absolute right-0 top-full z-30 mt-2 w-52 overflow-hidden rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl">
+                                  <div className="border-b border-slate-100 px-3 py-2">
+                                    <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-slate-400">
+                                      Cambiar a
+                                    </p>
+                                  </div>
+
+                                  {estadosPermitidos.length >
+                                  0 ? (
+                                    estadosPermitidos.map(
+                                      (
+                                        estado,
+                                      ) => (
+                                        <button
+                                          key={
+                                            estado
+                                          }
+                                          type="button"
+                                          onClick={() =>
+                                            void cambiarEstado(
+                                              item,
+                                              estado,
+                                            )
+                                          }
+                                          disabled={
+                                            estaCambiando
+                                          }
+                                          className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-xs font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-[#095540] disabled:cursor-not-allowed disabled:opacity-50"
+                                        >
+                                          <span>
+                                            {obtenerNombreEstado(
+                                              estado,
+                                            )}
+                                          </span>
+
+                                          <svg
+                                            className="h-4 w-4 text-[#009444]"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            aria-hidden="true"
+                                          >
+                                            <path
+                                              d="M5 13l4 4L19 7"
+                                              stroke="currentColor"
+                                              strokeWidth="2.5"
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                            />
+                                          </svg>
+                                        </button>
+                                      ),
+                                    )
+                                  ) : (
+                                    <div className="px-3 py-2.5 text-xs text-slate-500">
+                                      No hay cambios de estado disponibles.
+                                    </div>
+                                  )}
                                 </div>
                               )}
                             </div>
                           )}
                         </div>
-                      )}
-                    </div>
 
-                    <div className="flex flex-1 flex-col p-5">
-                      <div className="mb-3 flex flex-wrap items-center gap-2">
-                        <span
-                          className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em] ${obtenerClaseEstado(
-                            item.estado,
-                          )}`}
-                        >
-                          {obtenerNombreEstado(
-                            item.estado,
-                          )}
-                        </span>
-
-                        {item.temporada ? (
-                          <span
-                            className={`inline-flex items-center gap-2 rounded-lg border px-2.5 py-1 text-[10px] font-semibold ${
-                              item.temporada === 'seca'
-                                ? 'border-[#D9D823]/40 bg-[#D9D823]/10 text-[#6B6900]'
-                                : 'border-[#00AEEF]/30 bg-[#00AEEF]/10 text-[#087AA8]'
-                            }`}
-                          >
+                        <div className="flex min-h-0 flex-1 flex-col p-5">
+                          <div className="mb-3 flex shrink-0 flex-wrap items-center gap-2">
                             <span
-                              className={`h-1.5 w-1.5 rounded-full ${
-                                item.temporada === 'seca'
-                                  ? 'bg-[#D9D823]'
-                                  : 'bg-[#00AEEF]'
-                              }`}
-                            />
-
-                            {item.temporada === 'seca'
-                              ? 'Época seca'
-                              : 'Época lluviosa'}
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-semibold text-slate-500">
-                            Temporada por confirmar
-                          </span>
-                        )}
-                      </div>
-
-                      <h2 className="line-clamp-2 min-h-[3.5rem] text-lg font-bold leading-7 text-[#095540] transition-colors duration-200 group-hover:text-[#009444]">
-                        {item.nombre ??
-                          'Sin nombre'}
-                      </h2>
-
-                      <p className="mt-2.5 line-clamp-2 min-h-[3rem] text-sm leading-6 text-slate-500">
-                        {item.descripcion ??
-                          'Sin descripción'}
-                      </p>
-
-                      <div className="mt-4 grid grid-cols-2 gap-3 border-t border-slate-100 pt-4">
-                        <div className="contents">
-                          <div className="flex min-w-0 items-start gap-2.5">
-                            <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#8DC63F]/10 text-[#095540]">
-                              <svg
-                                className="h-4 w-4"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                aria-hidden="true"
-                              >
-                                <rect
-                                  x="3"
-                                  y="4"
-                                  width="18"
-                                  height="17"
-                                  rx="2"
-                                  stroke="currentColor"
-                                  strokeWidth="1.7"
-                                />
-
-                                <path
-                                  d="M7 2v4M17 2v4M3 9h18"
-                                  stroke="currentColor"
-                                  strokeWidth="1.7"
-                                  strokeLinecap="round"
-                                />
-                              </svg>
-                            </div>
-
-                            <div className="min-w-0">
-                              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                                Fecha
-                              </p>
-
-                              <p className="mt-0.5 text-xs font-semibold leading-5 text-slate-700">
-                                {formatearFecha(
-                                  item.fecha,
-                                )}
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="flex min-w-0 items-start gap-2.5">
-                            <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#00AEEF]/10 text-[#087AA8]">
-                              <svg
-                                className="h-4 w-4"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                aria-hidden="true"
-                              >
-                                <circle
-                                  cx="12"
-                                  cy="12"
-                                  r="8.5"
-                                  stroke="currentColor"
-                                  strokeWidth="1.7"
-                                />
-
-                                <path
-                                  d="M12 7v5l3 2"
-                                  stroke="currentColor"
-                                  strokeWidth="1.7"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                />
-                              </svg>
-                            </div>
-
-                            <div className="min-w-0">
-                              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                                Hora
-                              </p>
-
-                              <p className="mt-0.5 text-xs font-semibold leading-5 text-slate-700">
-                                {formatearHora(
-                                  item.hora,
-                                )}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex items-start gap-2.5">
-                          <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#095540]/10 text-[#095540]">
-                            <svg
-                              className="h-4 w-4"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              aria-hidden="true"
+                              className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em] ${obtenerClaseEstado(
+                                item.estado,
+                              )}`}
                             >
-                              <path
-                                d="M20 10.5c0 5.2-8 10-8 10s-8-4.8-8-10a8 8 0 1116 0z"
-                                stroke="currentColor"
-                                strokeWidth="1.7"
-                              />
-
-                              <circle
-                                cx="12"
-                                cy="10.5"
-                                r="2.5"
-                                stroke="currentColor"
-                                strokeWidth="1.7"
-                              />
-                            </svg>
-                          </div>
-
-                          <div className="min-w-0">
-                            <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                              Lugar
-                            </p>
-
-                            <p
-                              className="mt-0.5 truncate text-xs font-semibold leading-5 text-slate-700"
-                              title={
-                                item.lugar ??
-                                undefined
-                              }
-                            >
-                              {item.lugar ??
-                                'Lugar pendiente'}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-slate-50 px-3 py-2.5">
-                          <div className="flex items-center gap-2.5">
-                            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white text-[#095540] shadow-sm">
-                              <svg
-                                className="h-3.5 w-3.5"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                aria-hidden="true"
-                              >
-                                <circle
-                                  cx="9"
-                                  cy="8"
-                                  r="3"
-                                  stroke="currentColor"
-                                  strokeWidth="1.7"
-                                />
-
-                                <path
-                                  d="M3.5 19a5.5 5.5 0 0111 0"
-                                  stroke="currentColor"
-                                  strokeWidth="1.7"
-                                  strokeLinecap="round"
-                                />
-
-                                <path
-                                  d="M16 6.5a3 3 0 010 5.8M17 15a5.2 5.2 0 013.5 4"
-                                  stroke="currentColor"
-                                  strokeWidth="1.7"
-                                  strokeLinecap="round"
-                                />
-                              </svg>
-                            </div>
-
-                            <span className="text-xs font-medium text-slate-500">
-                              Disponibilidad
+                              {obtenerNombreEstado(
+                                item.estado,
+                              )}
                             </span>
+
+                            {item.temporada ? (
+                              <span
+                                className={`inline-flex items-center gap-2 rounded-lg border px-2.5 py-1 text-[10px] font-semibold ${
+                                  item.temporada ===
+                                  'seca'
+                                    ? 'border-[#D9D823]/40 bg-[#D9D823]/10 text-[#6B6900]'
+                                    : 'border-[#00AEEF]/30 bg-[#00AEEF]/10 text-[#087AA8]'
+                                }`}
+                              >
+                                <span
+                                  className={`h-1.5 w-1.5 ${
+                                    item.temporada ===
+                                    'seca'
+                                      ? 'bg-[#D9D823]'
+                                      : 'bg-[#00AEEF]'
+                                  } rounded-full`}
+                                />
+
+                                {item.temporada ===
+                                'seca'
+                                  ? 'Época seca'
+                                  : 'Época lluviosa'}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-semibold text-slate-500">
+                                Temporada por confirmar
+                              </span>
+                            )}
                           </div>
 
-                          <span className="rounded-lg border border-[#8DC63F]/30 bg-[#8DC63F]/10 px-2.5 py-1 text-xs font-bold text-[#095540]">
-                            {formatearCupos(item)}
-                          </span>
-                        </div>
+                          <h2 className="line-clamp-2 min-h-[3.5rem] shrink-0 text-lg font-bold leading-7 text-[#095540] transition-colors duration-200 group-hover:text-[#009444]">
+                            {item.nombre ??
+                              'Sin nombre'}
+                          </h2>
 
-                        <button
-                          type="button"
-                          onClick={() => setEventoDetalle(item)}
-                          className="col-span-2 mt-1 flex w-full items-center justify-center gap-2 rounded-xl bg-[#095540] px-4 py-3 text-sm font-bold text-white shadow-sm transition-all hover:scale-[1.02] hover:bg-[#009444] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444] focus-visible:ring-offset-2"
-                          aria-label={`Ver detalles de ${item.nombre ?? 'la actividad'}`}
-                        >
-                          Ver detalles
-                        </button>
+                          <p className="mt-2.5 line-clamp-2 min-h-[3rem] shrink-0 text-sm leading-6 text-slate-500">
+                            {item.descripcion ??
+                              'Sin descripción'}
+                          </p>
 
-                        {puedeCrearOEditar && (
-                          <div className="col-span-2 mt-1 flex justify-between">
+                          <div className="mt-4 shrink-0 border-t border-slate-100 pt-4">
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="flex min-w-0 items-start gap-2.5">
+                                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#8DC63F]/10 text-[#095540]">
+                                  <svg
+                                    className="h-4 w-4"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    aria-hidden="true"
+                                  >
+                                    <rect
+                                      x="3"
+                                      y="4"
+                                      width="18"
+                                      height="17"
+                                      rx="2"
+                                      stroke="currentColor"
+                                      strokeWidth="1.7"
+                                    />
+
+                                    <path
+                                      d="M7 2v4M17 2v4M3 9h18"
+                                      stroke="currentColor"
+                                      strokeWidth="1.7"
+                                      strokeLinecap="round"
+                                    />
+                                  </svg>
+                                </div>
+
+                                <div className="min-w-0">
+                                  <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                                    Fecha
+                                  </p>
+
+                                  <p className="mt-0.5 truncate text-xs font-semibold leading-5 text-slate-700">
+                                    {formatearFecha(
+                                      item.fecha,
+                                    )}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="flex min-w-0 items-start gap-2.5">
+                                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#00AEEF]/10 text-[#087AA8]">
+                                  <svg
+                                    className="h-4 w-4"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    aria-hidden="true"
+                                  >
+                                    <circle
+                                      cx="12"
+                                      cy="12"
+                                      r="8.5"
+                                      stroke="currentColor"
+                                      strokeWidth="1.7"
+                                    />
+
+                                    <path
+                                      d="M12 7v5l3 2"
+                                      stroke="currentColor"
+                                      strokeWidth="1.7"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    />
+                                  </svg>
+                                </div>
+
+                                <div className="min-w-0">
+                                  <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                                    Hora
+                                  </p>
+
+                                  <p className="mt-0.5 truncate text-xs font-semibold leading-5 text-slate-700">
+                                    {formatearHora(
+                                      item.hora,
+                                    )}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="flex min-w-0 items-start gap-2.5">
+                                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#095540]/10 text-[#095540]">
+                                  <svg
+                                    className="h-4 w-4"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    aria-hidden="true"
+                                  >
+                                    <path
+                                      d="M20 10.5c0 5.2-8 10-8 10s-8-4.8-8-10a8 8 0 1116 0z"
+                                      stroke="currentColor"
+                                      strokeWidth="1.7"
+                                    />
+
+                                    <circle
+                                      cx="12"
+                                      cy="10.5"
+                                      r="2.5"
+                                      stroke="currentColor"
+                                      strokeWidth="1.7"
+                                    />
+                                  </svg>
+                                </div>
+
+                                <div className="min-w-0">
+                                  <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                                    Lugar
+                                  </p>
+
+                                  <p
+                                    className="mt-0.5 truncate text-xs font-semibold leading-5 text-slate-700"
+                                    title={
+                                      item.lugar ??
+                                      undefined
+                                    }
+                                  >
+                                    {item.lugar ??
+                                      'Lugar pendiente'}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="flex min-w-0 items-center justify-between gap-2 rounded-xl bg-slate-50 px-3 py-2.5">
+                                <div className="flex min-w-0 items-center gap-2">
+                                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white text-[#095540] shadow-sm">
+                                    <svg
+                                      className="h-3.5 w-3.5"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      aria-hidden="true"
+                                    >
+                                      <circle
+                                        cx="9"
+                                        cy="8"
+                                        r="3"
+                                        stroke="currentColor"
+                                        strokeWidth="1.7"
+                                      />
+
+                                      <path
+                                        d="M3.5 19a5.5 5.5 0 0111 0"
+                                        stroke="currentColor"
+                                        strokeWidth="1.7"
+                                        strokeLinecap="round"
+                                      />
+
+                                      <path
+                                        d="M16 6.5a3 3 0 010 5.8M17 15a5.2 5.2 0 013.5 4"
+                                        stroke="currentColor"
+                                        strokeWidth="1.7"
+                                        strokeLinecap="round"
+                                      />
+                                    </svg>
+                                  </div>
+
+                                  <span className="truncate text-xs font-medium text-slate-500">
+                                    Disponibilidad
+                                  </span>
+                                </div>
+
+                                <span className="shrink-0 rounded-lg border border-[#8DC63F]/30 bg-[#8DC63F]/10 px-2.5 py-1 text-xs font-bold text-[#095540]">
+                                  {formatearCupos(
+                                    item,
+                                  )}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="mt-auto shrink-0 pt-4">
                             <button
                               type="button"
-                              onClick={() => setEventoEditando(item)}
-                              disabled={estaCambiando || eliminando}
-                              className="inline-flex items-center gap-2 rounded-lg border border-[#095540]/20 bg-white px-3 py-2 text-[10px] font-bold text-[#095540] shadow-md transition hover:bg-[#8DC63F]/10 disabled:cursor-not-allowed disabled:opacity-60"
+                              onClick={() =>
+                                setEventoDetalle(
+                                  item,
+                                )
+                              }
+                              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#095540] px-4 py-3 text-sm font-bold text-white shadow-sm transition-all hover:scale-[1.02] hover:bg-[#009444] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444] focus-visible:ring-offset-2"
+                              aria-label={`Ver detalles de ${
+                                item.nombre ??
+                                'la actividad'
+                              }`}
                             >
-                              <svg
-                                className="h-3.5 w-3.5"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                aria-hidden="true"
-                              >
-                                <path
-                                  d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"
-                                  stroke="currentColor"
-                                  strokeWidth="1.8"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                />
-                              </svg>
-
-                              Editar
+                              Ver detalles
                             </button>
 
-                            {puedeEliminar && <button
-                              type="button"
-                              onClick={(evento) => {
-                                botonQueAbrioEliminacionRef.current =
-                                  evento.currentTarget;
-                                setEventoAEliminar(item);
-                              }}
-                              disabled={estaCambiando || eliminando}
-                              className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-3 py-2 text-[10px] font-bold text-red-600 shadow-md transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
-                            >
-                              <svg
-                                className="h-3.5 w-3.5"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                aria-hidden="true"
-                              >
-                                <path
-                                  d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"
-                                  stroke="currentColor"
-                                  strokeWidth="1.8"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                />
-                              </svg>
+                            {esAdministrador && (
+                              <div className="mt-3 grid grid-cols-2 gap-3">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setEventoEditando(
+                                      item,
+                                    )
+                                  }
+                                  disabled={
+                                    estaCambiando ||
+                                    eliminando
+                                  }
+                                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#095540]/20 bg-white px-3 py-2.5 text-xs font-bold text-[#095540] shadow-sm transition hover:bg-[#8DC63F]/10 disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                  <svg
+                                    className="h-3.5 w-3.5"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    aria-hidden="true"
+                                  >
+                                    <path
+                                      d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"
+                                      stroke="currentColor"
+                                      strokeWidth="1.8"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    />
+                                  </svg>
 
-                              Eliminar
-                            </button>}
+                                  Editar
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={(evento) => {
+                                    botonQueAbrioEliminacionRef.current =
+                                      evento.currentTarget;
+
+                                    setEventoAEliminar(
+                                      item,
+                                    );
+                                  }}
+                                  disabled={
+                                    estaCambiando ||
+                                    eliminando
+                                  }
+                                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-3 py-2.5 text-xs font-bold text-red-600 shadow-sm transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                  <svg
+                                    className="h-3.5 w-3.5"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    aria-hidden="true"
+                                  >
+                                    <path
+                                      d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"
+                                      stroke="currentColor"
+                                      strokeWidth="1.8"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    />
+                                  </svg>
+
+                                  Eliminar
+                                </button>
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                    </div>
-                  </article>
-                );
-              })}
+                        </div>
+                      </article>
+                    );
+                  },
+                )}
               </div>
             </div>
           )}
-
       </div>
 
       {eventoDetalle && (
@@ -1637,43 +1940,62 @@ export default function ListaEventosCapacitaciones({
           eventoId={eventoDetalle.id}
           urlBaseApi={urlBaseApi}
           eventoAdministrativo={
-            esAdministrador && eventoDetalle.estado !== 'publicado'
+            esAdministrador &&
+            eventoDetalle.estado !==
+              'publicado'
               ? eventoDetalle
               : undefined
           }
-          onInscripcionActualizada={(eventoId, cuposDisponibles) => {
-            setEventos((eventosActuales) =>
-              eventosActuales.map((evento) =>
-                evento.id === eventoId
-                  ? {
-                      ...evento,
-                      cuposDisponibles,
-                    }
-                  : evento,
-              ),
+          onInscripcionActualizada={(
+            eventoId,
+            cuposDisponibles,
+          ) => {
+            setEventos(
+              (eventosActuales) =>
+                eventosActuales.map(
+                  (evento) =>
+                    evento.id ===
+                    eventoId
+                      ? {
+                          ...evento,
+                          cuposDisponibles,
+                        }
+                      : evento,
+                ),
             );
 
-            setEventoDetalle((eventoActual) =>
-              eventoActual && eventoActual.id === eventoId
-                ? {
-                    ...eventoActual,
-                    cuposDisponibles,
-                  }
-                : eventoActual,
+            setEventoDetalle(
+              (eventoActual) =>
+                eventoActual &&
+                eventoActual.id ===
+                  eventoId
+                  ? {
+                      ...eventoActual,
+                      cuposDisponibles,
+                    }
+                  : eventoActual,
             );
           }}
-          onClose={() => setEventoDetalle(null)}
+          onClose={() =>
+            setEventoDetalle(null)
+          }
         />
       )}
 
-      {eventoEditando && (
+      {eventoEditando && esAdministrador && (
         <EdicionEventoCapacitacion
-          isOpen={Boolean(eventoEditando)}
+          isOpen={Boolean(
+            eventoEditando,
+          )}
           evento={eventoEditando}
-          onClose={() => setEventoEditando(null)}
+          onClose={() =>
+            setEventoEditando(null)
+          }
           onActualizado={async () => {
             setEventoEditando(null);
+
             await cargarDatos();
+
             mostrarNotificacion(
               'exito',
               'Actividad actualizada',
@@ -1683,87 +2005,105 @@ export default function ListaEventosCapacitaciones({
         />
       )}
 
-      {eventoAEliminar && puedeEliminar && (
-        <div
-          className="fixed inset-0 z-[9998] flex items-center justify-center bg-slate-950/65 p-4 backdrop-blur-sm"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="titulo-confirmar-eliminacion"
-          aria-describedby="descripcion-confirmar-eliminacion"
-          aria-busy={eliminando}
-        >
-          <div className="w-full max-w-lg rounded-3xl border border-slate-100 bg-white p-6 shadow-2xl sm:p-8">
-            <div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-red-600">
-                <svg
-                  className="h-5 w-5"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </div>
-              <h2
-                id="titulo-confirmar-eliminacion"
-                className="mt-6 text-2xl font-bold tracking-tight text-slate-900"
-              >
-                Eliminar actividad
-              </h2>
-
-              <p className="mt-3 text-base leading-7 text-slate-600">
-                ¿Desea eliminar{' '}
-                <span className="font-semibold text-slate-900">
-                  "{eventoAEliminar.nombre ?? 'Sin nombre'}"
-                </span>
-                ?
-              </p>
-
-              <p
-                id="descripcion-confirmar-eliminacion"
-                className="mt-3 text-sm font-semibold leading-6 text-red-600"
-              >
-                Esta acción es permanente e irreversible.
-              </p>
-            </div>
-
-            <div className="mt-8 flex flex-row justify-end gap-3">
-              <button
-                ref={botonCancelarEliminacionRef}
-                type="button"
-                onClick={() => setEventoAEliminar(null)}
-                disabled={eliminando}
-                className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Cancelar
-              </button>
-
-              <button
-                type="button"
-                onClick={() => void eliminarEvento()}
-                disabled={eliminando}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {eliminando && (
-                  <span
-                    className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
+      {eventoAEliminar &&
+        esAdministrador && (
+          <div
+            className="fixed inset-0 z-[9998] flex items-center justify-center bg-slate-950/65 p-4 backdrop-blur-sm"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="titulo-confirmar-eliminacion"
+            aria-describedby="descripcion-confirmar-eliminacion"
+            aria-busy={eliminando}
+          >
+            <div className="w-full max-w-lg rounded-3xl border border-slate-100 bg-white p-6 shadow-2xl sm:p-8">
+              <div>
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-red-600">
+                  <svg
+                    className="h-5 w-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
                     aria-hidden="true"
-                  />
-                )}
-                <span aria-live="polite">
-                  {eliminando ? 'Eliminando...' : 'Eliminar'}
-                </span>
-              </button>
+                  >
+                    <path
+                      d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
+
+                <h2
+                  id="titulo-confirmar-eliminacion"
+                  className="mt-6 text-2xl font-bold tracking-tight text-slate-900"
+                >
+                  Eliminar actividad
+                </h2>
+
+                <p className="mt-3 text-base leading-7 text-slate-600">
+                  ¿Desea eliminar{' '}
+                  <span className="font-semibold text-slate-900">
+                    "
+                    {eventoAEliminar.nombre ??
+                      'Sin nombre'}
+                    "
+                  </span>
+                  ?
+                </p>
+
+                <p
+                  id="descripcion-confirmar-eliminacion"
+                  className="mt-3 text-sm font-semibold leading-6 text-red-600"
+                >
+                  Esta acción es permanente
+                  e irreversible.
+                </p>
+              </div>
+
+              <div className="mt-8 flex flex-row justify-end gap-3">
+                <button
+                  ref={
+                    botonCancelarEliminacionRef
+                  }
+                  type="button"
+                  onClick={() =>
+                    setEventoAEliminar(
+                      null,
+                    )
+                  }
+                  disabled={eliminando}
+                  className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    void eliminarEvento()
+                  }
+                  disabled={eliminando}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {eliminando && (
+                    <span
+                      className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
+                      aria-hidden="true"
+                    />
+                  )}
+
+                  <span aria-live="polite">
+                    {eliminando
+                      ? 'Eliminando...'
+                      : 'Eliminar'}
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
     </section>
   );
 }
+

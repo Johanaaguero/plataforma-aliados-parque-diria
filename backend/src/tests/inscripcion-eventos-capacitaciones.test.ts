@@ -384,7 +384,7 @@ describe('POST /api/eventos-capacitaciones/:id/inscripcion', () => {
     assert.deepEqual(respuesta.body, {
       ok: false,
       code: 'TOKEN_NOT_PROVIDED',
-      message: 'Token no proporcionado',
+      message: 'Se requiere inicio se sesión',
     });
   });
 
