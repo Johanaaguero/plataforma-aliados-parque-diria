@@ -5,6 +5,7 @@ import './index.css'
 import App from './App.tsx'
 import SobreParque from './components/informativo/SobreParque.tsx'
 import FeedbackToast from './components/ui/FeedbackToast.tsx'
+import LoginWelcomeOverlay from './components/ui/LoginWelcomeOverlay.tsx'
 import SplashScreen from './components/ui/SplashScreen.tsx'
 import { aplicarTema, leerPreferenciaTema } from './components/ui/tema.ts'
 
@@ -16,6 +17,7 @@ createRoot(document.getElementById('root')!).render(
       <App />
       <SobreParque />
       <FeedbackToast />
+      <LoginWelcomeOverlay />
       <SplashScreen />
     </BrowserRouter>
   </StrictMode>,

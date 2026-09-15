@@ -263,6 +263,21 @@ button:not(:disabled):active {
   animation: sigtad-menu-in 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+:is([role="dialog"], dialog[open]) {
+  animation: sigtad-modal-zoom 350ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform: translateZ(0);
+  will-change: transform, opacity;
+}
+
+details[open] > .sigtad-menu-reveal {
+  animation: sigtad-menu-in 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+main {
+  animation: sigtad-page-in 550ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
+}
+
 .sigtad-feedback-toast {
   animation: sigtad-toast-in 450ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
@@ -279,8 +294,14 @@ button:not(:disabled):active {
   box-shadow: 0 18px 50px rgb(7 63 49 / 24%), 0 0 26px rgb(0 174 239 / 14%);
 }
 
+.sigtad-login-welcome {
+  animation: sigtad-login-welcome-in 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform: translateZ(0);
+  will-change: opacity, transform;
+}
+
 .sigtad-splash {
-  animation: sigtad-splash-out 500ms ease-in 1300ms both;
+  animation: sigtad-splash-out 900ms ease-in-out 3300ms both;
 }
 
 .sigtad-splash-logo {
@@ -310,12 +331,17 @@ button:not(:disabled):active {
 @keyframes sigtad-fade-up {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(20px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+@keyframes sigtad-page-in {
+  from { opacity: 0; transform: translate3d(0, 16px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
 }
 
 @keyframes sigtad-reveal-up {
@@ -333,13 +359,22 @@ button:not(:disabled):active {
   to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
 }
 
+@keyframes sigtad-modal-zoom {
+  from { opacity: 0; transform: translate3d(0, 8px, 0) scale(.95); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+
+@keyframes sigtad-login-welcome-in {
+  from { opacity: 0; transform: translate3d(0, 12px, 0) scale(.97); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+
 .sigtad-footer {
-  background-color: #095540;
+  background-color: #064e3b;
 }
 
 [data-theme="dark"] .sigtad-footer {
-  background-color: rgb(9 12 14 / 94%);
-  border-top: 1px solid rgb(186 223 199 / 14%);
+  background-color: #020617;
 }
 
 /* Only the decorative pseudo-element is blurred, never the catalog or its children. */

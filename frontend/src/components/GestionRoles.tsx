@@ -355,7 +355,7 @@ export default function GestionRoles() {
       <div className="mx-auto max-w-7xl">
 
         {/* ENCABEZADO */}
-        <div className="relative z-10 mb-8 overflow-hidden rounded-[2rem] border border-white/70 bg-white/55 px-5 py-8 text-[#073f31] shadow-[0_16px_44px_rgba(9,85,64,0.08)] backdrop-blur-xl sm:px-10 dark:border-white/10 dark:bg-white/[0.04] dark:text-white">
+        <div className="relative z-10 mb-8 overflow-hidden rounded-3xl border border-white/20 bg-white/70 px-5 py-8 text-[#073f31] shadow-lg shadow-black/5 backdrop-blur-md sm:px-10 dark:border-white/10 dark:bg-emerald-950/40 dark:text-white">
           <div
             className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-[#8dc63f]/15 blur-3xl"
             aria-hidden="true"

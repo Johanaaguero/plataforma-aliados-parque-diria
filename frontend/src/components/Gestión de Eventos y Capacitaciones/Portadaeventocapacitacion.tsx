@@ -92,7 +92,7 @@ export default function PortadaEventoCapacitacion({
 
   if (cargando) {
     return (
-      <div className="relative h-56 w-full overflow-hidden rounded-2xl bg-slate-200/60">
+      <div className="relative h-44 w-full overflow-hidden rounded-2xl bg-slate-200/60">
         <div className="absolute inset-0 animate-pulse bg-white/30" />
       </div>
     );
@@ -100,7 +100,7 @@ export default function PortadaEventoCapacitacion({
 
   if (imagenes.length === 0) {
     return (
-      <div className="flex h-56 w-full items-center justify-center rounded-2xl border border-slate-200/60 bg-slate-50/60 p-6 text-center">
+      <div className="flex h-44 w-full items-center justify-center rounded-2xl border border-slate-200/60 bg-slate-50/60 p-6 text-center">
         <p className="text-xs font-medium text-slate-400">
           Sin fotografías disponibles
         </p>
@@ -116,7 +116,7 @@ export default function PortadaEventoCapacitacion({
       {/* =====================================================
           FOTO PRINCIPAL
           ===================================================== */}
-      <div className="group relative h-56 w-full overflow-hidden bg-slate-100">
+      <div className="group relative h-44 w-full overflow-hidden bg-slate-100">
 
         <img
           src={obtenerUrlImagen(imagenSeleccionada.id)}
@@ -124,7 +124,9 @@ export default function PortadaEventoCapacitacion({
             imagenSeleccionada.nombreArchivo ??
             `Fotografía ${imagenActual + 1}`
           }
-          className="h-full w-full object-cover"
+          loading="lazy"
+          decoding="async"
+          className="h-full w-full rounded-2xl object-cover"
         />
 
         {/* Degradado sutil */}

@@ -136,7 +136,7 @@ export default function InscripcionesAdmin() {
       <div className="mx-auto max-w-7xl">
 
         {/* Encabezado elegante con gradiente suave */}
-        <header className="relative mb-8 overflow-hidden rounded-[2rem] border border-white/70 bg-white/55 p-6 text-[#073f31] shadow-[0_16px_44px_rgba(9,85,64,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04] dark:text-white sm:p-8">
+        <header className="relative mb-8 overflow-hidden rounded-3xl border border-white/20 bg-white/70 p-6 text-[#073f31] shadow-lg shadow-black/5 backdrop-blur-md dark:border-white/10 dark:bg-emerald-950/40 dark:text-white sm:p-8">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-xl">
               <span className="inline-block rounded-full border border-[#8dc63f]/35 bg-[#8dc63f]/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#095540] backdrop-blur-md dark:text-[#c8ee8d]">

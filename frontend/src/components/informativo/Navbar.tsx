@@ -212,7 +212,7 @@ function Navbar({
           </button>
 
           {/* NAVEGACIÓN PRINCIPAL */}
-          <div className="hidden items-center gap-1.5 xl:flex xl:gap-3">
+          <div className="hidden items-center gap-2 xl:flex xl:gap-4">
             <button
               type="button"
               onClick={irInicio}
@@ -274,8 +274,10 @@ function Navbar({
             </button>
           </div>
 
+          {/* PERFIL, TEMA Y MENÚ: un único grupo visual en el extremo derecho. */}
+          <div className="flex shrink-0 items-center gap-1.5">
           {/* ACCIONES DE ESCRITORIO */}
-          <div className="hidden shrink-0 items-center gap-1 xl:flex">
+          <div className="hidden items-center gap-1 xl:flex">
 
             {/* USUARIO NO AUTENTICADO */}
             {!rolAutenticado && (
@@ -397,6 +399,7 @@ function Navbar({
                 </svg>
               )}
             </button>
+          </div>
           </div>
         </div>
 
