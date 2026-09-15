@@ -127,20 +127,15 @@ export async function restablecerPassword(
     await AppDataSource.getRepository(RecuperacionContrasena).findOne({
       where: { tokenHash },
     });
-console.log('=== DEBUG TOKEN ===');
-console.log('Encontrado:', !!recuperacionPreliminar);
-
-if (recuperacionPreliminar) {
-  console.log('usedAt:', recuperacionPreliminar.usedAt);
-  console.log('expiresAt:', recuperacionPreliminar.expiresAt);
-  console.log('ahora:', new Date());
-  console.log(
-    'expirado:',
-    recuperacionPreliminar.expiresAt.getTime() <= new Date().getTime(),
-  );
-}
-
-console.log('===================');
+  if (process.env.NODE_ENV !== 'production') {
+    console.debug('Recuperación de contraseña: token localizado', {
+      encontrado: Boolean(recuperacionPreliminar),
+      usado: recuperacionPreliminar?.usedAt !== null,
+      expirado: recuperacionPreliminar
+        ? recuperacionPreliminar.expiresAt.getTime() <= ahoraPreliminar.getTime()
+        : null,
+    });
+  }
 
   if (
     !recuperacionPreliminar ||

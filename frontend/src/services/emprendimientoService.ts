@@ -298,7 +298,9 @@ export async function crearEmprendimiento(
 // CATÁLOGO PÚBLICO
 // ============================================================
 
-export async function obtenerCatalogoPublicado(): Promise<
+export async function obtenerCatalogoPublicado(
+  signal?: AbortSignal,
+): Promise<
   Emprendimiento[]
 > {
   const datos =
@@ -306,6 +308,7 @@ export async function obtenerCatalogoPublicado(): Promise<
       '/emprendimientos/catalogo',
       {
         method: 'GET',
+        signal,
       },
       {
         incluirAuth: false,
@@ -332,6 +335,7 @@ export async function obtenerCatalogoPublicado(): Promise<
 
 export async function obtenerEmprendimientosAdministrativos(
   estado?: EstadoPublicacion,
+  signal?: AbortSignal,
 ): Promise<Emprendimiento[]> {
   const ruta = estado
     ? `/emprendimientos?estado=${encodeURIComponent(
@@ -344,6 +348,7 @@ export async function obtenerEmprendimientosAdministrativos(
       ruta,
       {
         method: 'GET',
+        signal,
       },
       {
         incluirAuth: true,
@@ -370,13 +375,15 @@ export async function obtenerEmprendimientosAdministrativos(
 
 export async function obtenerEmprendimientos(
   estado?: EstadoPublicacion,
+  signal?: AbortSignal,
 ): Promise<Emprendimiento[]> {
   if (estado === 'publicado') {
-    return obtenerCatalogoPublicado();
+    return obtenerCatalogoPublicado(signal);
   }
 
   return obtenerEmprendimientosAdministrativos(
     estado,
+    signal,
   );
 }
 

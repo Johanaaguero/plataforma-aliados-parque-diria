@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { FormEvent } from 'react';
 import ImageDropzone from './Imagedropzone';
 
@@ -136,6 +136,7 @@ export default function EdicionEventoCapacitacion({
   evento,
   onActualizado,
 }: EdicionEventoCapacitacionProps) {
+  const contenidoFormularioRef = useRef<HTMLDivElement | null>(null);
   const [tipoActividad, setTipoActividad] = useState<TipoActividad>('evento');
   const [temporada, setTemporada] = useState<Temporada | ''>('');
   const [nombre, setNombre] = useState('');
@@ -183,6 +184,16 @@ export default function EdicionEventoCapacitacion({
     setEstado('idle');
     setSegundosRestantes(null);
   }, [isOpen, evento]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const cuadro = window.requestAnimationFrame(() => {
+      contenidoFormularioRef.current?.scrollTo({ top: 0, behavior: 'auto' });
+    });
+
+    return () => window.cancelAnimationFrame(cuadro);
+  }, [isOpen, evento.id]);
 
   // Cargar las imágenes que ya tiene el evento
   useEffect(() => {
@@ -467,7 +478,7 @@ export default function EdicionEventoCapacitacion({
 
   return (
     <div
-      className="fixed inset-0 z-50 overflow-y-auto bg-[#095540]/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-black/60 p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-labelledby="edicion-actividad-titulo"
@@ -475,9 +486,9 @@ export default function EdicionEventoCapacitacion({
         if (e.target === e.currentTarget) handleCancelar();
       }}
     >
-      <div className="flex min-h-full items-start justify-center px-3 py-4 sm:px-6 sm:py-6 lg:items-center lg:py-8">
+      <div className="flex min-h-0 w-full items-center justify-center">
         <form
-          className="relative my-auto w-full max-w-2xl overflow-hidden rounded-[2rem] border border-white/65 bg-white/95 shadow-[0_30px_90px_rgba(0,0,0,0.35)] backdrop-blur-2xl"
+          className="relative flex max-h-[85dvh] min-h-0 w-full max-w-xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/95 p-6 shadow-2xl backdrop-blur-2xl"
           noValidate
           onSubmit={handleSubmit}
           aria-busy={estado === 'cargando'}
@@ -488,7 +499,7 @@ export default function EdicionEventoCapacitacion({
             aria-hidden="true"
           />
 
-          <div className="max-h-[calc(100vh-2rem)] overflow-y-auto overscroll-contain px-4 pb-5 pt-8 sm:max-h-[calc(100vh-3rem)] sm:px-8 sm:pb-7 sm:pt-10">
+          <div ref={contenidoFormularioRef} className="custom-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain pr-2 pt-2">
             <button
               type="button"
               onClick={handleCancelar}
@@ -834,7 +845,10 @@ export default function EdicionEventoCapacitacion({
               </div>
             </div>
 
-            <div className="mt-6 grid gap-3 sm:mt-8 sm:grid-cols-2">
+          </div>
+
+          <div className="sticky bottom-0 z-10 -mx-6 shrink-0 border-t border-white/10 bg-white/95 p-4">
+            <div className="grid gap-3 sm:grid-cols-2">
               <button
                 type="button"
                 className="inline-flex items-center justify-center rounded-2xl border border-[#095540]/20 bg-white/90 px-5 py-3 text-sm font-bold text-[#095540] disabled:cursor-not-allowed"
