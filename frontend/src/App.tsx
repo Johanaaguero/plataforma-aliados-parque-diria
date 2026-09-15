@@ -19,6 +19,7 @@ import RegistroEmprendimiento from './components/RegistroEmprendimiento';
 import ListaEmprendimientos from './components/ListaEmprendimientos';
 import RegistroCategoria from './components/RegistroCategoria';
 import EditarEmprendimiento from './components/EditarEmprendimiento';
+import DashboardPage from './components/dashboard/DashboardPage';
 import Navbar from './components/informativo/Navbar';
 import Hero from './components/informativo/Hero';
 import Footer from './components/informativo/Footer';
@@ -155,8 +156,10 @@ const obtenerUsuarioIdDesdeToken = (): number | null => {
 
 function BotonVolverInicio({
   onClick,
+  texto = 'Volver al inicio',
 }: {
   onClick?: () => void;
+  texto?: string;
 }) {
   return (
     <button
@@ -169,12 +172,13 @@ function BotonVolverInicio({
           window.location.href = '/';
         }
       }}
-      aria-label="Volver al inicio"
-      title="Volver al inicio"
+      aria-label={texto}
+      title={texto}
     >
       <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
         <path d="m15 18-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
+      <span className="sr-only">{texto}</span>
     </button>
   );
 }
@@ -455,6 +459,45 @@ function App() {
       ''
     ) || '/';
 
+  const estadoNavegacion = location.state as {
+    fromDashboard?: boolean;
+    seccionPublica?: 'emprendimientos' | 'eventos';
+  } | null;
+
+  const seccionPublicaSolicitada =
+    estadoNavegacion?.seccionPublica;
+
+  useEffect(() => {
+    if (rutaActual === '/') {
+      setSeccionActual(
+        seccionPublicaSolicitada ?? 'inicio'
+      );
+      window.scrollTo({
+        top: 0,
+        left: 0,
+        behavior: 'auto',
+      });
+    }
+  }, [rutaActual, seccionPublicaSolicitada]);
+
+  const vieneDelDashboard =
+    estadoNavegacion?.fromDashboard === true;
+
+  const esModuloAdministrativoDesdeDashboard =
+    rolAutenticado === 'administrador' &&
+    vieneDelDashboard &&
+    (seccionActual === 'emprendimientos' ||
+      seccionActual === 'eventos');
+
+  const volverDesdeModuloAdministrativo = () => {
+    setSeccionActual('inicio');
+    navigate(
+      vieneDelDashboard
+        ? '/admin/dashboard'
+        : '/',
+    );
+  };
+
   if (
     rutaActual ===
     '/recuperar-contrasena'
@@ -479,6 +522,47 @@ function App() {
     );
   }
 
+  if (rutaActual === '/admin/dashboard') {
+    if (rolAutenticado !== 'administrador') {
+      navigate('/');
+      return null;
+    }
+
+    return (
+      <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef]">
+        <DashboardPage
+          rolAutenticado={rolAutenticado}
+          onIrRoles={() =>
+            navigate('/admin/roles', {
+              state: { fromDashboard: true },
+            })
+          }
+          onIrEmprendimientos={() => {
+            navigate('/', {
+              state: {
+                fromDashboard: true,
+                seccionPublica: 'emprendimientos',
+              },
+            });
+          }}
+          onIrEventos={() => {
+            navigate('/', {
+              state: {
+                fromDashboard: true,
+                seccionPublica: 'eventos',
+              },
+            });
+          }}
+          onIrInscripciones={() =>
+            navigate('/admin/inscripciones', {
+              state: { fromDashboard: true },
+            })
+          }
+        />
+      </section>
+    );
+  }
+
   if (rutaActual === '/admin/roles') {
     if (rolAutenticado !== 'administrador') {
       navigate('/');
@@ -487,7 +571,14 @@ function App() {
 
     return (
       <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef] pt-20 sm:pt-24">
-        <BotonVolverInicio onClick={() => navigate('/')} />
+        <BotonVolverInicio
+          texto={
+            vieneDelDashboard
+              ? 'Volver al Dashboard'
+              : 'Volver al inicio'
+          }
+          onClick={volverDesdeModuloAdministrativo}
+        />
         <GestionRoles />
       </section>
     );
@@ -501,7 +592,14 @@ function App() {
 
     return (
       <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef] pt-20 sm:pt-24">
-        <BotonVolverInicio onClick={() => navigate('/')} />
+        <BotonVolverInicio
+          texto={
+            vieneDelDashboard
+              ? 'Volver al Dashboard'
+              : 'Volver al inicio'
+          }
+          onClick={volverDesdeModuloAdministrativo}
+        />
         <InscripcionesAdmin />
       </section>
     );
@@ -564,6 +662,10 @@ if (
             setUsuarioId(
               obtenerUsuarioIdDesdeToken()
             );
+
+            if (rol === 'administrador') {
+              navigate('/admin/dashboard');
+            }
           }}
         />
       </>
@@ -741,46 +843,61 @@ if (
   ) {
     return (
       <>
-        <Navbar
-          modoAdministracion
-          seccionActiva="eventos"
-          onRegistro={() =>
-            setMostrarRegistro(true)
-          }
-          onLogin={() =>
-            setMostrarLogin(true)
-          }
-          rolAutenticado={
-            rolAutenticado
-          }
-          nombreUsuario={
-            nombreUsuario
-          }
-          onCerrarSesion={() => {
-            void cerrarSesion();
-          }}
-          onGestionRoles={() =>
-            setMostrarGestionRoles(
-              true
-            )
-          }
-          onIrInicio={() =>
-            setSeccionActual('inicio')
-          }
-          onIrEmprendimientos={() =>
-            setSeccionActual(
-              'emprendimientos'
-            )
-          }
-          onIrEventos={() =>
-            setSeccionActual('eventos')
-          }
-        />
+        {!esModuloAdministrativoDesdeDashboard && (
+          <Navbar
+            modoAdministracion
+            seccionActiva="eventos"
+            onRegistro={() =>
+              setMostrarRegistro(true)
+            }
+            onLogin={() =>
+              setMostrarLogin(true)
+            }
+            rolAutenticado={
+              rolAutenticado
+            }
+            nombreUsuario={
+              nombreUsuario
+            }
+            onCerrarSesion={() => {
+              void cerrarSesion();
+            }}
+            onIrInicio={() =>
+              setSeccionActual('inicio')
+            }
+            onIrEmprendimientos={() =>
+              setSeccionActual(
+                'emprendimientos'
+              )
+            }
+            onIrEventos={() =>
+              setSeccionActual('eventos')
+            }
+          />
+        )}
 
-        <main className="sigtad-catalogo min-h-[80vh] overflow-x-hidden bg-[#f5f7ef] pt-24 sm:pt-28">
+        {esModuloAdministrativoDesdeDashboard && (
+          <BotonVolverInicio
+            texto="Volver al Dashboard"
+            onClick={volverDesdeModuloAdministrativo}
+          />
+        )}
+
+        <main
+          className={`sigtad-catalogo min-h-[80vh] overflow-x-hidden bg-[#f5f7ef] ${
+            esModuloAdministrativoDesdeDashboard
+              ? 'pt-20 sm:pt-24'
+              : 'pt-24 sm:pt-28'
+          }`}
+        >
           <ListaEventosCapacitaciones
             rolAutenticado={
               rolAutenticado
+            }
+            contexto={
+              esModuloAdministrativoDesdeDashboard
+                ? 'administrativo'
+                : 'publico'
             }
           />
         </main>
@@ -797,43 +914,53 @@ if (
   ) {
     return (
       <>
-        <Navbar
-          modoAdministracion
-          seccionActiva="emprendimientos"
-          onRegistro={() =>
-            setMostrarRegistro(true)
-          }
-          onLogin={() =>
-            setMostrarLogin(true)
-          }
-          rolAutenticado={
-            rolAutenticado
-          }
-          nombreUsuario={
-            nombreUsuario
-          }
-          onCerrarSesion={() => {
-            void cerrarSesion();
-          }}
-          onGestionRoles={() =>
-            setMostrarGestionRoles(
-              true
-            )
-          }
-          onIrInicio={() =>
-            setSeccionActual('inicio')
-          }
-          onIrEmprendimientos={() =>
-            setSeccionActual(
-              'emprendimientos'
-            )
-          }
-          onIrEventos={() =>
-            setSeccionActual('eventos')
-          }
-        />
+        {!esModuloAdministrativoDesdeDashboard && (
+          <Navbar
+            modoAdministracion
+            seccionActiva="emprendimientos"
+            onRegistro={() =>
+              setMostrarRegistro(true)
+            }
+            onLogin={() =>
+              setMostrarLogin(true)
+            }
+            rolAutenticado={
+              rolAutenticado
+            }
+            nombreUsuario={
+              nombreUsuario
+            }
+            onCerrarSesion={() => {
+              void cerrarSesion();
+            }}
+            onIrInicio={() =>
+              setSeccionActual('inicio')
+            }
+            onIrEmprendimientos={() =>
+              setSeccionActual(
+                'emprendimientos'
+              )
+            }
+            onIrEventos={() =>
+              setSeccionActual('eventos')
+            }
+          />
+        )}
 
-        <main className="sigtad-catalogo min-h-[80vh] overflow-x-hidden bg-[#f5f7ef] pt-24 sm:pt-28">
+        {esModuloAdministrativoDesdeDashboard && (
+          <BotonVolverInicio
+            texto="Volver al Dashboard"
+            onClick={volverDesdeModuloAdministrativo}
+          />
+        )}
+
+        <main
+          className={`sigtad-catalogo min-h-[80vh] overflow-x-hidden bg-[#f5f7ef] ${
+            esModuloAdministrativoDesdeDashboard
+              ? 'pt-20 sm:pt-24'
+              : 'pt-24 sm:pt-28'
+          }`}
+        >
           <ListaEmprendimientos
             rolAutenticado={
               rolAutenticado ===
@@ -842,6 +969,11 @@ if (
                 : rolAutenticado
             }
             usuarioId={usuarioId}
+            contexto={
+              esModuloAdministrativoDesdeDashboard
+                ? 'administrativo'
+                : 'publico'
+            }
             onRegistrar={() =>
               setSeccionActual(
                 'registroEmprendimiento'
@@ -927,6 +1059,10 @@ if (
                 obtenerUsuarioIdDesdeToken()
               );
               setMostrarLogin(false);
+
+              if (rol === 'administrador') {
+                navigate('/admin/dashboard');
+              }
             }}
           />
         </section>
@@ -1027,11 +1163,6 @@ if (
             onCerrarSesion={() => {
               void cerrarSesion();
             }}
-            onGestionRoles={() =>
-              setMostrarGestionRoles(
-                true
-              )
-            }
             onCuentasBloqueadas={() => {
               setMostrarGestionRoles(
                 false
