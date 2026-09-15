@@ -274,7 +274,7 @@ export default function MisInscripciones() {
       <div className="mx-auto max-w-5xl">
 
        {/* ENCABEZADO */}
-<div className="relative mb-6 overflow-hidden rounded-3xl border border-white/20 bg-white/70 px-6 py-6 text-[#073f31] shadow-lg shadow-black/5 backdrop-blur-md sm:px-8 sm:py-7 dark:border-white/10 dark:bg-emerald-950/40 dark:text-white">
+<div className="relative mb-6 overflow-hidden rounded-3xl border border-[#b9d6af] bg-[#fffef9]/95 px-6 py-6 text-[#073f31] shadow-[0_14px_34px_rgba(7,63,49,0.10)] backdrop-blur-md sm:px-8 sm:py-7 dark:border-white/10 dark:bg-emerald-950/40 dark:text-white">
 
   {/* Detalles decorativos sutiles */}
   <div
@@ -292,7 +292,7 @@ export default function MisInscripciones() {
     {/* TÍTULO */}
     <div className="flex items-center gap-3">
 
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/[0.08]">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#095540]/10 text-[#095540] dark:bg-white/[0.08] dark:text-white">
         <svg
           className="h-5 w-5"
           fill="none"
@@ -310,11 +310,11 @@ export default function MisInscripciones() {
       </div>
 
       <div>
-        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#095540]/65 dark:text-emerald-200/65">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#095540] dark:text-emerald-200/65">
           Área personal
         </p>
 
-        <h1 className="mt-0.5 text-xl font-semibold tracking-tight sm:text-2xl">
+        <h1 className="mt-0.5 text-xl font-semibold tracking-tight text-[#073f31] sm:text-2xl dark:text-white">
           Mis inscripciones
         </h1>
       </div>
@@ -322,7 +322,7 @@ export default function MisInscripciones() {
     </div>
 
     {/* DESCRIPCIÓN */}
-    <p className="mt-3 max-w-2xl text-[13px] leading-relaxed text-slate-600 dark:text-emerald-100/70 sm:text-sm">
+    <p className="mt-3 max-w-2xl text-[13px] leading-relaxed text-[#355448] dark:text-emerald-100/70 sm:text-sm">
       Consulta los eventos y capacitaciones en los que te has
       inscrito y revisa sus fechas, horarios y detalles.
     </p>
@@ -333,12 +333,12 @@ export default function MisInscripciones() {
       {/* PRÓXIMAS */}
       <div className="flex items-center gap-2.5">
 
-        <span className="flex h-7 min-w-7 items-center justify-center rounded-lg bg-[#8dc63f]/15 px-2 text-sm font-bold text-[#c8ee8d]">
+        <span className="flex h-7 min-w-7 items-center justify-center rounded-lg bg-[#dff0c7] px-2 text-sm font-bold text-[#095540] dark:bg-[#8dc63f]/15 dark:text-[#c8ee8d]">
           {totalProximas}
         </span>
 
         <div>
-          <p className="text-[11px] font-medium text-emerald-100/55">
+          <p className="text-[11px] font-medium text-[#355448] dark:text-emerald-100/55">
             Próximas
           </p>
         </div>
@@ -346,31 +346,31 @@ export default function MisInscripciones() {
       </div>
 
       {/* SEPARADOR */}
-      <div className="h-6 w-px bg-white/10" />
+      <div className="h-6 w-px bg-[#b9d6af] dark:bg-white/10" />
 
       {/* PASADAS */}
       <div className="flex items-center gap-2.5">
 
-        <span className="flex h-7 min-w-7 items-center justify-center rounded-lg bg-white/[0.08] px-2 text-sm font-bold text-white/85">
+        <span className="flex h-7 min-w-7 items-center justify-center rounded-lg bg-[#e4eee8] px-2 text-sm font-bold text-[#17372c] dark:bg-white/[0.08] dark:text-white/85">
           {totalPasadas}
         </span>
 
         <div>
-          <p className="text-[11px] font-medium text-emerald-100/55">
+          <p className="text-[11px] font-medium text-[#355448] dark:text-emerald-100/55">
             Pasadas
           </p>
         </div>
 
       </div>
 
-      <div className="h-6 w-px bg-white/10" />
+      <div className="h-6 w-px bg-[#b9d6af] dark:bg-white/10" />
 
       <div className="flex items-center gap-2.5">
-        <span className="flex h-7 min-w-7 items-center justify-center rounded-lg bg-rose-400/15 px-2 text-sm font-bold text-rose-100">
+        <span className="flex h-7 min-w-7 items-center justify-center rounded-lg bg-rose-100 px-2 text-sm font-bold text-rose-700 dark:bg-rose-400/15 dark:text-rose-100">
           {totalCanceladas}
         </span>
         <div>
-          <p className="text-[11px] font-medium text-emerald-100/55">
+          <p className="text-[11px] font-medium text-[#355448] dark:text-emerald-100/55">
             Canceladas
           </p>
         </div>
