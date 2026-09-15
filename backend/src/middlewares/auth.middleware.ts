@@ -35,7 +35,7 @@ export const verificarToken = async (
     return res.status(401).json({
       ok: false,
       code: 'TOKEN_NOT_PROVIDED',
-      message: 'Token no proporcionado',
+      message: 'Se requiere inicio de sesión',
     });
   }
 
