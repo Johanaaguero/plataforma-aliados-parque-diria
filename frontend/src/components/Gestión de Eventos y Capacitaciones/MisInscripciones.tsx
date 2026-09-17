@@ -6,6 +6,7 @@ import {
   obtenerMisInscripciones,
   type MiInscripcion,
 } from '../../services/MisInscripcionesService';
+
 import { mostrarFeedback } from '../ui/FeedbackToast';
 
 type FiltroTipo = 'todas' | 'evento' | 'capacitacion';
@@ -97,11 +98,12 @@ const esFechaFutura = (
   }
 
   const [anio, mes, dia] = partes;
-
   const fechaActividad = new Date(anio, mes - 1, dia);
+
   fechaActividad.setHours(0, 0, 0, 0);
 
   const hoy = new Date();
+
   hoy.setHours(0, 0, 0, 0);
 
   return fechaActividad.getTime() >= hoy.getTime();
@@ -124,21 +126,49 @@ export default function MisInscripciones() {
   const [expandidoId, setExpandidoId] = useState<number | null>(
     null,
   );
-  const [reservaACancelar, setReservaACancelar] = useState<MiInscripcion | null>(null);
+
+  const [reservaACancelar, setReservaACancelar] =
+    useState<MiInscripcion | null>(null);
+
   const [cancelando, setCancelando] = useState(false);
 
   const confirmarCancelacion = async () => {
     if (!reservaACancelar || cancelando) return;
+
     setCancelando(true);
+
     try {
-      const resultado = reservaACancelar.origen === 'reserva'
-        ? await cancelarReserva(reservaACancelar.id)
-        : await cancelarInscripcion(reservaACancelar.id);
-      setInscripciones((actuales) => actuales.map((inscripcion) => inscripcion.id === resultado.id ? { ...inscripcion, estado: resultado.estado, fechaCancelacion: resultado.fechaCancelacion } : inscripcion));
+      const resultado =
+        reservaACancelar.origen === 'reserva'
+          ? await cancelarReserva(reservaACancelar.id)
+          : await cancelarInscripcion(reservaACancelar.id);
+
+      setInscripciones((actuales) =>
+        actuales.map((inscripcion) =>
+          inscripcion.id === resultado.id
+            ? {
+                ...inscripcion,
+                estado: resultado.estado,
+                fechaCancelacion:
+                  resultado.fechaCancelacion,
+              }
+            : inscripcion,
+        ),
+      );
+
       setReservaACancelar(null);
-      mostrarFeedback('registro', 'Reserva cancelada correctamente.');
+
+      mostrarFeedback(
+        'registro',
+        'Reserva cancelada correctamente.',
+      );
     } catch (errorSolicitud: unknown) {
-      mostrarFeedback('error', errorSolicitud instanceof Error ? errorSolicitud.message : 'No se pudo cancelar la reserva.');
+      mostrarFeedback(
+        'error',
+        errorSolicitud instanceof Error
+          ? errorSolicitud.message
+          : 'No se pudo cancelar la reserva.',
+      );
     } finally {
       setCancelando(false);
     }
@@ -189,32 +219,44 @@ export default function MisInscripciones() {
 
   const totalProximas = useMemo(
     () =>
-      inscripciones.filter((inscripcion) =>
-        inscripcion.estado !== 'cancelada' &&
-        esFechaFutura(inscripcion.fechaActividad),
+      inscripciones.filter(
+        (inscripcion) =>
+          inscripcion.estado !== 'cancelada' &&
+          esFechaFutura(inscripcion.fechaActividad),
       ).length,
     [inscripciones],
   );
 
   const totalCanceladas = useMemo(
-    () => inscripciones.filter((inscripcion) => inscripcion.estado === 'cancelada').length,
+    () =>
+      inscripciones.filter(
+        (inscripcion) =>
+          inscripcion.estado === 'cancelada',
+      ).length,
     [inscripciones],
   );
 
   const totalPasadas = inscripciones.filter(
-    (inscripcion) => inscripcion.estado !== 'cancelada' && !esFechaFutura(inscripcion.fechaActividad),
+    (inscripcion) =>
+      inscripcion.estado !== 'cancelada' &&
+      !esFechaFutura(inscripcion.fechaActividad),
   ).length;
 
   const registrosVisibles = useMemo(() => {
     let lista = [...inscripciones];
 
     if (filtroTiempo === 'todas') {
-      lista = lista.filter((inscripcion) => inscripcion.estado !== 'cancelada');
+      lista = lista.filter(
+        (inscripcion) =>
+          inscripcion.estado !== 'cancelada',
+      );
     }
 
     if (filtroTiempo === 'proximas') {
-      lista = lista.filter((inscripcion) => inscripcion.estado !== 'cancelada' &&
-        esFechaFutura(inscripcion.fechaActividad),
+      lista = lista.filter(
+        (inscripcion) =>
+          inscripcion.estado !== 'cancelada' &&
+          esFechaFutura(inscripcion.fechaActividad),
       );
     }
 
@@ -227,7 +269,10 @@ export default function MisInscripciones() {
     }
 
     if (filtroTiempo === 'canceladas') {
-      lista = lista.filter((inscripcion) => inscripcion.estado === 'cancelada');
+      lista = lista.filter(
+        (inscripcion) =>
+          inscripcion.estado === 'cancelada',
+      );
     }
 
     if (filtroTipo !== 'todas') {
@@ -258,7 +303,8 @@ export default function MisInscripciones() {
         return -1;
       }
 
-      return filtroTiempo === 'pasadas' || filtroTiempo === 'canceladas'
+      return filtroTiempo === 'pasadas' ||
+        filtroTiempo === 'canceladas'
         ? fechaB - fechaA
         : fechaA - fechaB;
     });
@@ -280,122 +326,99 @@ export default function MisInscripciones() {
   return (
     <section className="min-h-screen overflow-x-clip bg-[#f5f7f1] px-4 py-8 font-sans transition-colors duration-300 dark:bg-[#071a15] sm:px-6 lg:px-10">
       <div className="mx-auto max-w-5xl">
-
-       {/* ENCABEZADO */}
-<div className="relative mb-6 overflow-hidden rounded-3xl border border-[#b9d6af] bg-[#fffef9]/95 px-6 py-6 text-[#073f31] shadow-[0_14px_34px_rgba(7,63,49,0.10)] backdrop-blur-md sm:px-8 sm:py-7 dark:border-white/10 dark:bg-emerald-950/40 dark:text-white">
-
-  {/* Detalles decorativos sutiles */}
-  <div
-    className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-[#8dc63f]/[0.12] blur-3xl"
-    aria-hidden="true"
-  />
-
-  <div
-    className="pointer-events-none absolute -bottom-24 -left-16 h-48 w-48 rounded-full bg-[#00AEEF]/[0.06] blur-3xl"
-    aria-hidden="true"
-  />
-
-  <div className="relative">
-
-    {/* TÍTULO */}
-    <div className="flex items-center gap-3">
-
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#095540]/10 text-[#095540] dark:bg-white/[0.08] dark:text-white">
-        <svg
-          className="h-5 w-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          strokeWidth="1.6"
-          stroke="currentColor"
-          aria-hidden="true"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M9 6.75V5.25A2.25 2.25 0 0 1 11.25 3h1.5A2.25 2.25 0 0 1 15 5.25v1.5m-9 0h12A2.25 2.25 0 0 1 20.25 9v9.75A2.25 2.25 0 0 1 18 21H6a2.25 2.25 0 0 1-2.25-2.25V9A2.25 2.25 0 0 1 6 6.75Zm0 4.5h12m-8.25 3h.008v.008H9.75v-.008Zm3 0h.008v.008h-.008v-.008Z"
+        <div className="relative mb-6 overflow-hidden rounded-3xl border border-[#b9d6af] bg-[#fffef9]/95 px-6 py-6 text-[#073f31] shadow-[0_14px_34px_rgba(7,63,49,0.10)] backdrop-blur-md sm:px-8 sm:py-7 dark:border-white/10 dark:bg-emerald-950/40 dark:text-white">
+          <div
+            className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-[#8dc63f]/[0.12] blur-3xl"
+            aria-hidden="true"
           />
-        </svg>
-      </div>
 
-      <div>
-        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#095540] dark:text-emerald-200/65">
-          Área personal
-        </p>
+          <div
+            className="pointer-events-none absolute -bottom-24 -left-16 h-48 w-48 rounded-full bg-[#00AEEF]/[0.06] blur-3xl"
+            aria-hidden="true"
+          />
 
-        <h1 className="mt-0.5 text-xl font-semibold tracking-tight text-[#073f31] sm:text-2xl dark:text-white">
-          Mis inscripciones
-        </h1>
-      </div>
+          <div className="relative">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#095540]/10 text-[#095540] dark:bg-white/[0.08] dark:text-white">
+                <svg
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth="1.6"
+                  stroke="currentColor"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M9 6.75V5.25A2.25 2.25 0 0 1 11.25 3h1.5A2.25 2.25 0 0 1 15 5.25v1.5m-9 0h12A2.25 2.25 0 0 1 20.25 9v9.75A2.25 2.25 0 0 1 18 21H6a2.25 2.25 0 0 1-2.25-2.25V9A2.25 2.25 0 0 1 6 6.75Zm0 4.5h12m-8.25 3h.008v.008H9.75v-.008Zm3 0h.008v.008h-.008v-.008Z"
+                  />
+                </svg>
+              </div>
 
-    </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#095540] dark:text-emerald-200/65">
+                  Área personal
+                </p>
 
-    {/* DESCRIPCIÓN */}
-    <p className="mt-3 max-w-2xl text-[13px] leading-relaxed text-[#355448] dark:text-emerald-100/70 sm:text-sm">
-      Consulta los eventos y capacitaciones en los que te has
-      inscrito y revisa sus fechas, horarios y detalles.
-    </p>
+                <h1 className="mt-0.5 text-xl font-semibold tracking-tight text-[#073f31] sm:text-2xl dark:text-white">
+                  Mis inscripciones
+                </h1>
+              </div>
+            </div>
 
-    {/* RESUMEN COMPACTO */}
-    <div className="mt-5 flex items-center gap-5">
+            <p className="mt-3 max-w-2xl text-[13px] leading-relaxed text-[#355448] dark:text-emerald-100/70 sm:text-sm">
+              Consulta los eventos y capacitaciones en los que
+              te has inscrito y revisa sus fechas, horarios y
+              detalles.
+            </p>
 
-      {/* PRÓXIMAS */}
-      <div className="flex items-center gap-2.5">
+            <div className="mt-5 flex items-center gap-5">
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-7 min-w-7 items-center justify-center rounded-lg bg-[#dff0c7] px-2 text-sm font-bold text-[#095540] dark:bg-[#8dc63f]/15 dark:text-[#c8ee8d]">
+                  {totalProximas}
+                </span>
 
-        <span className="flex h-7 min-w-7 items-center justify-center rounded-lg bg-[#dff0c7] px-2 text-sm font-bold text-[#095540] dark:bg-[#8dc63f]/15 dark:text-[#c8ee8d]">
-          {totalProximas}
-        </span>
+                <div>
+                  <p className="text-[11px] font-medium text-[#355448] dark:text-emerald-100/55">
+                    Próximas
+                  </p>
+                </div>
+              </div>
 
-        <div>
-          <p className="text-[11px] font-medium text-[#355448] dark:text-emerald-100/55">
-            Próximas
-          </p>
+              <div className="h-6 w-px bg-[#b9d6af] dark:bg-white/10" />
+
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-7 min-w-7 items-center justify-center rounded-lg bg-[#e4eee8] px-2 text-sm font-bold text-[#17372c] dark:bg-white/[0.08] dark:text-white/85">
+                  {totalPasadas}
+                </span>
+
+                <div>
+                  <p className="text-[11px] font-medium text-[#355448] dark:text-emerald-100/55">
+                    Pasadas
+                  </p>
+                </div>
+              </div>
+
+              <div className="h-6 w-px bg-[#b9d6af] dark:bg-white/10" />
+
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-7 min-w-7 items-center justify-center rounded-lg bg-rose-100 px-2 text-sm font-bold text-rose-700 dark:bg-rose-400/15 dark:text-rose-100">
+                  {totalCanceladas}
+                </span>
+
+                <div>
+                  <p className="text-[11px] font-medium text-[#355448] dark:text-emerald-100/55">
+                    Canceladas
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-      </div>
-
-      {/* SEPARADOR */}
-      <div className="h-6 w-px bg-[#b9d6af] dark:bg-white/10" />
-
-      {/* PASADAS */}
-      <div className="flex items-center gap-2.5">
-
-        <span className="flex h-7 min-w-7 items-center justify-center rounded-lg bg-[#e4eee8] px-2 text-sm font-bold text-[#17372c] dark:bg-white/[0.08] dark:text-white/85">
-          {totalPasadas}
-        </span>
-
-        <div>
-          <p className="text-[11px] font-medium text-[#355448] dark:text-emerald-100/55">
-            Pasadas
-          </p>
-        </div>
-
-      </div>
-
-      <div className="h-6 w-px bg-[#b9d6af] dark:bg-white/10" />
-
-      <div className="flex items-center gap-2.5">
-        <span className="flex h-7 min-w-7 items-center justify-center rounded-lg bg-rose-100 px-2 text-sm font-bold text-rose-700 dark:bg-rose-400/15 dark:text-rose-100">
-          {totalCanceladas}
-        </span>
-        <div>
-          <p className="text-[11px] font-medium text-[#355448] dark:text-emerald-100/55">
-            Canceladas
-          </p>
-        </div>
-      </div>
-
-    </div>
-
-  </div>
-</div>
-
-
-
-
-        {/* CARGANDO */}
         {cargando && (
           <div className="rounded-3xl border border-emerald-100 bg-white p-12 text-center shadow-sm transition-colors dark:border-white/10 dark:bg-[#0d241d]">
-
             <div className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-4 border-emerald-100 border-t-[#095540] dark:border-white/10 dark:border-t-[#8dc63f]" />
 
             <p className="text-sm font-semibold text-[#095540] dark:text-emerald-200">
@@ -408,14 +431,12 @@ export default function MisInscripciones() {
           </div>
         )}
 
-        {/* ERROR */}
         {!cargando && error && (
           <div
             className="rounded-3xl border border-rose-200 bg-white p-6 shadow-sm dark:border-rose-400/20 dark:bg-[#241317]"
             role="alert"
           >
             <div className="flex items-start gap-4">
-
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-500 dark:bg-rose-500/10 dark:text-rose-300">
                 <svg
                   className="h-5 w-5"
@@ -442,20 +463,14 @@ export default function MisInscripciones() {
                   {error}
                 </p>
               </div>
-
             </div>
           </div>
         )}
 
-        {/* CONTENIDO */}
         {!cargando && !error && (
           <div className="overflow-hidden rounded-[28px] border border-[#095540]/10 bg-white shadow-[0_16px_44px_rgba(9,85,64,0.07)] transition-colors dark:border-white/10 dark:bg-[#0d241d] dark:shadow-[0_16px_44px_rgba(0,0,0,0.25)]">
-
-            {/* CABECERA DE FILTROS */}
             <div className="border-b border-slate-100 px-5 py-5 dark:border-white/10 sm:px-7">
-
               <div className="flex flex-col gap-4">
-
                 <div>
                   <h2 className="text-lg font-bold text-[#073f31] dark:text-white">
                     Tus actividades
@@ -468,10 +483,7 @@ export default function MisInscripciones() {
                 </div>
 
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-
-                  {/* FILTRO TIEMPO */}
                   <div className="flex flex-wrap gap-2">
-
                     <button
                       type="button"
                       className={claseFiltro(
@@ -519,12 +531,9 @@ export default function MisInscripciones() {
                     >
                       Todas
                     </button>
-
                   </div>
 
-                  {/* FILTRO TIPO */}
                   <div className="flex flex-wrap gap-2">
-
                     <button
                       type="button"
                       className={claseFiltro(
@@ -560,17 +569,13 @@ export default function MisInscripciones() {
                     >
                       Capacitaciones
                     </button>
-
                   </div>
-
                 </div>
               </div>
             </div>
 
-            {/* SIN REGISTROS */}
             {registrosVisibles.length === 0 ? (
               <div className="px-6 py-16 text-center">
-
                 <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#00AEEF]/10 text-[#0087BA] dark:bg-[#00AEEF]/15 dark:text-[#67d5ff]">
                   <svg
                     className="h-7 w-7"
@@ -593,7 +598,7 @@ export default function MisInscripciones() {
                     ? 'No tienes próximas inscripciones'
                     : filtroTiempo === 'canceladas'
                       ? 'No tienes reservas canceladas'
-                    : 'No hay inscripciones para mostrar'}
+                      : 'No hay inscripciones para mostrar'}
                 </h3>
 
                 <p className="mx-auto mt-1 max-w-md text-sm leading-relaxed text-slate-500 dark:text-slate-400">
@@ -601,17 +606,12 @@ export default function MisInscripciones() {
                     ? 'Cuando te inscribas a un evento o capacitación, aparecerá aquí.'
                     : filtroTiempo === 'canceladas'
                       ? 'Las reservas que canceles se conservarán en este historial.'
-                    : 'Prueba cambiando los filtros para consultar otras actividades.'}
+                      : 'Prueba cambiando los filtros para consultar otras actividades.'}
                 </p>
-
               </div>
             ) : (
-
-              /* LISTA */
               <ul className="divide-y divide-slate-100 dark:divide-white/10">
-
                 {registrosVisibles.map((inscripcion) => {
-
                   const acentoTipo =
                     obtenerAcentoTipo(
                       inscripcion.tipoActividad,
@@ -625,8 +625,11 @@ export default function MisInscripciones() {
                       inscripcion.ubicacion ||
                       inscripcion.horaInicio,
                   );
+
                   const actividadPasada =
-                    !esFechaFutura(inscripcion.fechaActividad);
+                    !esFechaFutura(
+                      inscripcion.fechaActividad,
+                    );
 
                   const puedeCancelar =
                     !actividadPasada &&
@@ -634,22 +637,13 @@ export default function MisInscripciones() {
                       inscripcion.estado === 'confirmada' ||
                       inscripcion.estado === 'aprobada');
 
-const puedeCancelar =
-  !actividadPasada &&
-  (inscripcion.estado === 'pendiente' ||
-    inscripcion.estado === 'confirmada');
                   return (
                     <li
                       key={inscripcion.id}
                       className="group px-5 py-5 transition-colors duration-200 hover:bg-[#f9fbf7] dark:hover:bg-white/[0.035] sm:px-7"
                     >
-
                       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-
-                        {/* INFORMACIÓN PRINCIPAL */}
                         <div className="flex min-w-0 gap-4">
-
-                          {/* ICONO */}
                           <div
                             className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${acentoTipo.icono}`}
                           >
@@ -687,11 +681,8 @@ const puedeCancelar =
                             )}
                           </div>
 
-                          {/* DATOS */}
                           <div className="min-w-0">
-
                             <div className="flex flex-wrap items-center gap-2">
-
                               <h3 className="truncate text-base font-bold text-[#095540] dark:text-emerald-200">
                                 {inscripcion.nombreActividad}
                               </h3>
@@ -709,17 +700,32 @@ const puedeCancelar =
                               </span>
 
                               {inscripcion.estado && (
-                                <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${inscripcion.estado === 'cancelada' ? 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-300/20 dark:bg-rose-500/10 dark:text-rose-200' : 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-300/20 dark:bg-emerald-500/10 dark:text-emerald-200'}`}>
-                                  {inscripcion.estado === 'cancelada' ? 'Cancelada' : inscripcion.estado === 'pendiente' ? 'Pendiente' : inscripcion.estado === 'aprobada' ? 'Aprobada' : inscripcion.estado === 'rechazada' ? 'Rechazada' : 'Confirmada'}
+                                <span
+                                  className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${
+                                    inscripcion.estado ===
+                                    'cancelada'
+                                      ? 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-300/20 dark:bg-rose-500/10 dark:text-rose-200'
+                                      : 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-300/20 dark:bg-emerald-500/10 dark:text-emerald-200'
+                                  }`}
+                                >
+                                  {inscripcion.estado ===
+                                  'cancelada'
+                                    ? 'Cancelada'
+                                    : inscripcion.estado ===
+                                        'pendiente'
+                                      ? 'Pendiente'
+                                      : inscripcion.estado ===
+                                          'aprobada'
+                                        ? 'Aprobada'
+                                        : inscripcion.estado ===
+                                            'rechazada'
+                                          ? 'Rechazada'
+                                          : 'Confirmada'}
                                 </span>
                               )}
-
                             </div>
 
-                            {/* INFORMACIÓN DE ACTIVIDAD */}
                             <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-slate-500 dark:text-slate-400">
-
-                              {/* FECHA */}
                               <span className="inline-flex items-center gap-1.5">
                                 <svg
                                   className="h-4 w-4 text-slate-400 dark:text-slate-500"
@@ -741,7 +747,6 @@ const puedeCancelar =
                                 )}
                               </span>
 
-                              {/* HORA */}
                               {inscripcion.horaInicio && (
                                 <span className="inline-flex items-center gap-1.5">
                                   <svg
@@ -767,7 +772,6 @@ const puedeCancelar =
                                 </span>
                               )}
 
-                              {/* UBICACIÓN */}
                               {inscripcion.ubicacion && (
                                 <span className="inline-flex items-center gap-1.5">
                                   <svg
@@ -794,7 +798,6 @@ const puedeCancelar =
                                   {inscripcion.ubicacion}
                                 </span>
                               )}
-
                             </div>
 
                             <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
@@ -804,26 +807,32 @@ const puedeCancelar =
                               )}
                             </p>
 
-                            {inscripcion.estado === 'cancelada' && (
+                            {inscripcion.estado ===
+                              'cancelada' && (
                               <p className="mt-1 text-xs font-medium text-rose-600 dark:text-rose-300">
-                                Cancelada el {formatearFecha(inscripcion.fechaCancelacion)}
+                                Cancelada el{' '}
+                                {formatearFecha(
+                                  inscripcion.fechaCancelacion,
+                                )}
                               </p>
                             )}
-
                           </div>
                         </div>
 
                         {puedeCancelar && (
                           <button
                             type="button"
-                            onClick={() => setReservaACancelar(inscripcion)}
+                            onClick={() =>
+                              setReservaACancelar(
+                                inscripcion,
+                              )
+                            }
                             className="shrink-0 rounded-xl border border-rose-300/80 bg-rose-50/70 px-3.5 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-100 dark:border-rose-300/20 dark:bg-rose-500/10 dark:text-rose-200 dark:hover:bg-rose-500/20"
                           >
                             Cancelar reserva
                           </button>
                         )}
 
-                        {/* BOTÓN DETALLE */}
                         {tieneDetalle && (
                           <button
                             type="button"
@@ -860,14 +869,10 @@ const puedeCancelar =
                             </svg>
                           </button>
                         )}
-
                       </div>
 
-                      {/* DETALLE */}
                       {expandido && tieneDetalle && (
                         <div className="mt-4 rounded-2xl border border-[#095540]/8 bg-[#f7faf5] p-5 dark:border-white/10 dark:bg-[#091d17]">
-
-                          {/* DESCRIPCIÓN */}
                           {inscripcion.descripcion && (
                             <div>
                               <p className="text-xs font-bold uppercase tracking-wider text-[#095540]/60 dark:text-emerald-200/70">
@@ -881,11 +886,8 @@ const puedeCancelar =
                           )}
 
                           <dl className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
-
-                            {/* UBICACIÓN */}
                             {inscripcion.ubicacion && (
                               <div className="rounded-xl bg-white p-3.5 text-center shadow-sm dark:bg-white/[0.04] dark:shadow-none">
-
                                 <dt className="text-xs font-medium text-slate-400 dark:text-slate-500">
                                   Ubicación
                                 </dt>
@@ -893,14 +895,11 @@ const puedeCancelar =
                                 <dd className="mt-1 text-sm font-semibold text-slate-700 dark:text-slate-200">
                                   {inscripcion.ubicacion}
                                 </dd>
-
                               </div>
                             )}
 
-                            {/* HORARIO */}
                             {inscripcion.horaInicio && (
                               <div className="rounded-xl bg-white p-3.5 text-center shadow-sm dark:bg-white/[0.04] dark:shadow-none">
-
                                 <dt className="text-xs font-medium text-slate-400 dark:text-slate-500">
                                   Horario
                                 </dt>
@@ -912,61 +911,99 @@ const puedeCancelar =
                                     ? ` – ${inscripcion.horaFin}`
                                     : ''}
                                 </dd>
-
                               </div>
                             )}
-
                           </dl>
                         </div>
                       )}
-
                     </li>
                   );
                 })}
-
               </ul>
             )}
 
-            {/* PIE */}
             {registrosVisibles.length > 0 && (
               <div className="border-t border-slate-100 bg-slate-50/60 px-5 py-3.5 dark:border-white/10 dark:bg-black/10 sm:px-7">
-
                 <p className="text-xs font-medium text-slate-400 dark:text-slate-500">
                   Mostrando{' '}
-
                   <span className="font-bold text-slate-600 dark:text-slate-300">
                     {registrosVisibles.length}
-                  </span>
-
-                  {' '}de{' '}
-
+                  </span>{' '}
+                  de{' '}
                   <span className="font-bold text-slate-600 dark:text-slate-300">
                     {inscripciones.length}
-                  </span>
-
-                  {' '}inscripción
-                  {inscripciones.length === 1
-                    ? ''
-                    : 'es'}
+                  </span>{' '}
+                  inscripción
+                  {inscripciones.length === 1 ? '' : 'es'}
                 </p>
-
               </div>
             )}
-
           </div>
         )}
 
         {reservaACancelar && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#071a15]/45 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="titulo-cancelacion">
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-[#071a15]/45 p-4 backdrop-blur-sm"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="titulo-cancelacion"
+          >
             <div className="w-full max-w-md rounded-[28px] border border-white/60 bg-white/75 p-6 shadow-[0_22px_65px_rgba(7,63,49,0.3)] backdrop-blur-2xl dark:border-white/15 dark:bg-[#0d241d]/85">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-500/10 text-rose-600 dark:text-rose-300">
-                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M12 8v4m0 4h.01M10.3 3.9 2.8 17a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" strokeLinecap="round" /></svg>
+                <svg
+                  className="h-5 w-5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M12 8v4m0 4h.01M10.3 3.9 2.8 17a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"
+                    strokeLinecap="round"
+                  />
+                </svg>
               </div>
-              <h2 id="titulo-cancelacion" className="mt-4 text-lg font-bold text-[#073f31] dark:text-white">¿Está seguro de que desea cancelar esta reserva?</h2>
-              <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">Se liberará un cupo de “{reservaACancelar.nombreActividad}”. La reserva permanecerá en su historial como cancelada.</p>
+
+              <h2
+                id="titulo-cancelacion"
+                className="mt-4 text-lg font-bold text-[#073f31] dark:text-white"
+              >
+                ¿Está seguro de que desea cancelar esta
+                reserva?
+              </h2>
+
+              <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                Se liberará un cupo de “
+                {reservaACancelar.nombreActividad}”. La
+                reserva permanecerá en su historial como
+                cancelada.
+              </p>
+
               <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-                <button type="button" onClick={() => setReservaACancelar(null)} disabled={cancelando} className="rounded-xl px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-100 disabled:opacity-50 dark:text-slate-300 dark:hover:bg-white/10">Volver</button>
-                <button type="button" onClick={() => void confirmarCancelacion()} disabled={cancelando} className="rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-rose-600/20 transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60">{cancelando ? 'Cancelando…' : 'Confirmar cancelación'}</button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setReservaACancelar(null)
+                  }
+                  disabled={cancelando}
+                  className="rounded-xl px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-100 disabled:opacity-50 dark:text-slate-300 dark:hover:bg-white/10"
+                >
+                  Volver
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    void confirmarCancelacion()
+                  }
+                  disabled={cancelando}
+                  className="rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-rose-600/20 transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {cancelando
+                    ? 'Cancelando…'
+                    : 'Confirmar cancelación'}
+                </button>
               </div>
             </div>
           </div>
