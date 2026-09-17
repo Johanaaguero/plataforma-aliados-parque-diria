@@ -132,13 +132,6 @@ export default function ListaEventosCapacitaciones({
   const esAdministrador =
     rolAutenticado === 'administrador';
 
-  /*
-   * SOLAMENTE EL ADMINISTRADOR PUEDE:
-   * - Registrar
-   * - Editar
-   * - Eliminar
-   * - Cambiar estado
-   */
   const puedeCrearOEditar = esAdministrador;
   const puedeEliminar = esAdministrador;
 
@@ -192,8 +185,7 @@ export default function ListaEventosCapacitaciones({
       setNotificacion(null);
     }, 5000);
 
-    return () =>
-      window.clearTimeout(temporizador);
+    return () => window.clearTimeout(temporizador);
   }, [notificacion]);
 
   useEffect(() => {
@@ -422,6 +414,20 @@ export default function ListaEventosCapacitaciones({
         hour12: true,
       },
     );
+  }
+
+  function esEventoPasado(
+    evento: EventoCapacitacion,
+  ): boolean {
+    if (!evento.fecha) {
+      return false;
+    }
+
+    const fechaEvento =
+      new Date(`${evento.fecha}T23:59:59`);
+
+    return fechaEvento.getTime() <
+      Date.now();
   }
 
   function obtenerNombreTipo(
@@ -778,6 +784,24 @@ export default function ListaEventosCapacitaciones({
     filtro,
   ]);
 
+  const eventosProximos = useMemo(
+    () =>
+      eventosFiltrados.filter(
+        (evento) =>
+          !esEventoPasado(evento),
+      ),
+    [eventosFiltrados],
+  );
+
+  const eventosPasados = useMemo(
+    () =>
+      eventosFiltrados.filter(
+        (evento) =>
+          esEventoPasado(evento),
+      ),
+    [eventosFiltrados],
+  );
+
   const cantidadEventos =
     esGestionAdministrativa
       ? eventosVisibles.filter(
@@ -840,6 +864,573 @@ export default function ListaEventosCapacitaciones({
           }}
         />
       </>
+    );
+  }
+
+  function renderTarjetaEvento(
+    item: EventoCapacitacion,
+  ) {
+    const colores =
+      obtenerColorTipo(
+        item.tipoActividad,
+      );
+
+    const menuEstadoAbierto =
+      estadoAbierto === item.id;
+
+    const estaCambiando =
+      cambiandoEstado === item.id;
+
+    const estadosPermitidos =
+      obtenerEstadosPermitidos(
+        item.estado,
+      );
+
+    const eventoPasado =
+      esEventoPasado(item);
+
+    return (
+      <article
+        key={item.id}
+        className={`group flex min-h-[580px] w-[420px] shrink-0 snap-center flex-col overflow-hidden rounded-3xl border shadow-2xl backdrop-blur-md transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl sm:w-[480px] md:w-[520px] ${
+          eventoPasado
+            ? 'border-slate-200 bg-slate-100/90 dark:bg-slate-900/90'
+            : 'border-white/10 bg-white/85 dark:bg-emerald-950/80'
+        }`}
+      >
+        <div className="relative shrink-0">
+          <PortadaEventoCapacitacion
+            eventoId={item.id}
+            urlBaseApi={urlBaseApi}
+            colorAcento={
+              colores.fondo
+            }
+          />
+
+          {eventoPasado && (
+            <div className="absolute inset-0 flex items-center justify-center bg-slate-950/30">
+              <span className="rounded-full border border-white/30 bg-slate-950/75 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-white shadow-lg backdrop-blur-sm">
+                Actividad pasada
+              </span>
+            </div>
+          )}
+
+          <div className="absolute left-4 top-4">
+            <span
+              className="inline-flex items-center rounded-lg px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] shadow-md backdrop-blur-sm"
+              style={{
+                backgroundColor:
+                  colores.fondo,
+                color:
+                  colores.texto,
+              }}
+            >
+              {obtenerNombreTipo(
+                item.tipoActividad,
+              )}
+            </span>
+          </div>
+
+          {esAdministrador && (
+            <div className="absolute right-4 top-4">
+              <button
+                type="button"
+                onClick={() =>
+                  setEstadoAbierto(
+                    menuEstadoAbierto
+                      ? null
+                      : item.id,
+                  )
+                }
+                disabled={
+                  estaCambiando
+                }
+                className="inline-flex items-center gap-2 rounded-lg border border-white/60 bg-white/95 px-3 py-2 text-[10px] font-bold text-[#095540] shadow-md backdrop-blur-sm transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {estaCambiando ? (
+                  <>
+                    <span className="h-3 w-3 animate-spin rounded-full border-2 border-[#095540]/30 border-t-[#095540]" />
+                    Actualizando
+                  </>
+                ) : (
+                  <>
+                    Cambiar estado
+
+                    <svg
+                      className={`h-3 w-3 transition-transform ${
+                        menuEstadoAbierto
+                          ? 'rotate-180'
+                          : ''
+                      }`}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M6 9l6 6 6-6"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </>
+                )}
+              </button>
+
+              {menuEstadoAbierto && (
+                <div className="absolute right-0 top-full z-30 mt-2 w-52 overflow-hidden rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl">
+                  <div className="border-b border-slate-100 px-3 py-2">
+                    <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-slate-400">
+                      Cambiar a
+                    </p>
+                  </div>
+
+                  {estadosPermitidos.length >
+                  0 ? (
+                    estadosPermitidos.map(
+                      (
+                        estado,
+                      ) => (
+                        <button
+                          key={
+                            estado
+                          }
+                          type="button"
+                          onClick={() =>
+                            void cambiarEstado(
+                              item,
+                              estado,
+                            )
+                          }
+                          disabled={
+                            estaCambiando
+                          }
+                          className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-xs font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-[#095540] disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <span>
+                            {obtenerNombreEstado(
+                              estado,
+                            )}
+                          </span>
+
+                          <svg
+                            className="h-4 w-4 text-[#009444]"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            aria-hidden="true"
+                          >
+                            <path
+                              d="M5 13l4 4L19 7"
+                              stroke="currentColor"
+                              strokeWidth="2.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        </button>
+                      ),
+                    )
+                  ) : (
+                    <div className="px-3 py-2.5 text-xs text-slate-500">
+                      No hay cambios de estado disponibles.
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="flex min-h-0 flex-1 flex-col p-5">
+          <div className="mb-3 flex shrink-0 flex-wrap items-center gap-2">
+            <span
+              className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em] ${obtenerClaseEstado(
+                item.estado,
+              )}`}
+            >
+              {obtenerNombreEstado(
+                item.estado,
+              )}
+            </span>
+
+            {eventoPasado && (
+              <span className="inline-flex items-center rounded-lg border border-slate-300 bg-slate-200 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em] text-slate-600">
+                Finalizado
+              </span>
+            )}
+
+            {item.temporada ? (
+              <span
+                className={`inline-flex items-center gap-2 rounded-lg border px-2.5 py-1 text-[10px] font-semibold ${
+                  item.temporada ===
+                  'seca'
+                    ? 'border-[#D9D823]/40 bg-[#D9D823]/10 text-[#6B6900]'
+                    : 'border-[#00AEEF]/30 bg-[#00AEEF]/10 text-[#087AA8]'
+                }`}
+              >
+                <span
+                  className={`h-1.5 w-1.5 ${
+                    item.temporada ===
+                    'seca'
+                      ? 'bg-[#D9D823]'
+                      : 'bg-[#00AEEF]'
+                  } rounded-full`}
+                />
+
+                {item.temporada ===
+                'seca'
+                  ? 'Época seca'
+                  : 'Época lluviosa'}
+              </span>
+            ) : (
+              <span className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-semibold text-slate-500">
+                Temporada por confirmar
+              </span>
+            )}
+          </div>
+
+          <h2 className="line-clamp-2 min-h-[3.5rem] shrink-0 text-lg font-bold leading-7 text-[#095540] transition-colors duration-200 group-hover:text-[#009444]">
+            {item.nombre ??
+              'Sin nombre'}
+          </h2>
+
+          <p className="mt-2.5 line-clamp-2 min-h-[3rem] shrink-0 text-sm leading-6 text-slate-500">
+            {item.descripcion ??
+              'Sin descripción'}
+          </p>
+
+          <div className="mt-4 shrink-0 border-t border-slate-100 pt-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex min-w-0 items-start gap-2.5">
+                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#8DC63F]/10 text-[#095540]">
+                  <svg
+                    className="h-4 w-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <rect
+                      x="3"
+                      y="4"
+                      width="18"
+                      height="17"
+                      rx="2"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                    />
+
+                    <path
+                      d="M7 2v4M17 2v4M3 9h18"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </div>
+
+                <div className="min-w-0">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                    Fecha
+                  </p>
+
+                  <p className="mt-0.5 truncate text-xs font-semibold leading-5 text-slate-700">
+                    {formatearFecha(
+                      item.fecha,
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex min-w-0 items-start gap-2.5">
+                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#00AEEF]/10 text-[#087AA8]">
+                  <svg
+                    className="h-4 w-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="8.5"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                    />
+
+                    <path
+                      d="M12 7v5l3 2"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
+
+                <div className="min-w-0">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                    Hora
+                  </p>
+
+                  <p className="mt-0.5 truncate text-xs font-semibold leading-5 text-slate-700">
+                    {formatearHora(
+                      item.hora,
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex min-w-0 items-start gap-2.5">
+                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#095540]/10 text-[#095540]">
+                  <svg
+                    className="h-4 w-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M20 10.5c0 5.2-8 10-8 10s-8-4.8-8-10a8 8 0 1116 0z"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                    />
+
+                    <circle
+                      cx="12"
+                      cy="10.5"
+                      r="2.5"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                    />
+                  </svg>
+                </div>
+
+                <div className="min-w-0">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                    Lugar
+                  </p>
+
+                  <p
+                    className="mt-0.5 truncate text-xs font-semibold leading-5 text-slate-700"
+                    title={
+                      item.lugar ??
+                      undefined
+                    }
+                  >
+                    {item.lugar ??
+                      'Lugar pendiente'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex min-w-0 items-center justify-between gap-2 rounded-xl bg-slate-50 px-3 py-2.5">
+                <div className="flex min-w-0 items-center gap-2">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white text-[#095540] shadow-sm">
+                    <svg
+                      className="h-3.5 w-3.5"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      aria-hidden="true"
+                    >
+                      <circle
+                        cx="9"
+                        cy="8"
+                        r="3"
+                        stroke="currentColor"
+                        strokeWidth="1.7"
+                      />
+
+                      <path
+                        d="M3.5 19a5.5 5.5 0 0111 0"
+                        stroke="currentColor"
+                        strokeWidth="1.7"
+                        strokeLinecap="round"
+                      />
+
+                      <path
+                        d="M16 6.5a3 3 0 010 5.8M17 15a5.2 5.2 0 013.5 4"
+                        stroke="currentColor"
+                        strokeWidth="1.7"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </div>
+
+                  <span className="truncate text-xs font-medium text-slate-500">
+                    Disponibilidad
+                  </span>
+                </div>
+
+                <span className="shrink-0 rounded-lg border border-[#8DC63F]/30 bg-[#8DC63F]/10 px-2.5 py-1 text-xs font-bold text-[#095540]">
+                  {formatearCupos(
+                    item,
+                  )}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-auto shrink-0 pt-4">
+            <button
+              type="button"
+              onClick={() =>
+                setEventoDetalle(
+                  item,
+                )
+              }
+              className={`flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444] focus-visible:ring-offset-2 ${
+                eventoPasado
+                  ? 'bg-slate-600 text-white hover:bg-slate-700'
+                  : 'bg-[#095540] text-white hover:scale-[1.02] hover:bg-[#009444] active:scale-95'
+              }`}
+              aria-label={`Ver detalles de ${
+                item.nombre ??
+                'la actividad'
+              }`}
+            >
+              {eventoPasado
+                ? 'Ver actividad pasada'
+                : 'Ver detalles'}
+            </button>
+
+            {eventoPasado && (
+              <p className="mt-2 text-center text-xs font-medium text-slate-500">
+                Esta actividad ya finalizó y no admite nuevas inscripciones.
+              </p>
+            )}
+
+            {esAdministrador && (
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setEventoEditando(
+                      item,
+                    )
+                  }
+                  disabled={
+                    estaCambiando ||
+                    eliminando
+                  }
+                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#095540]/20 bg-white px-3 py-2.5 text-xs font-bold text-[#095540] shadow-sm transition hover:bg-[#8DC63F]/10 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <svg
+                    className="h-3.5 w-3.5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+
+                  Editar
+                </button>
+
+                <button
+                  type="button"
+                  onClick={(evento) => {
+                    botonQueAbrioEliminacionRef.current =
+                      evento.currentTarget;
+
+                    setEventoAEliminar(
+                      item,
+                    );
+                  }}
+                  disabled={
+                    estaCambiando ||
+                    eliminando
+                  }
+                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-3 py-2.5 text-xs font-bold text-red-600 shadow-sm transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <svg
+                    className="h-3.5 w-3.5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+
+                  Eliminar
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </article>
+    );
+  }
+
+  function renderSeccionEventos(
+    titulo: string,
+    descripcion: string,
+    lista: EventoCapacitacion[],
+    pasada: boolean,
+  ) {
+    if (lista.length === 0) {
+      return null;
+    }
+
+    return (
+      <div className="mb-12">
+        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <div className="flex items-center gap-3">
+              <div
+                className={`h-3 w-3 rounded-full ${
+                  pasada
+                    ? 'bg-slate-400'
+                    : 'bg-[#8DC63F]'
+                }`}
+              />
+
+              <h2 className="text-2xl font-bold tracking-tight text-[#095540]">
+                {titulo}
+              </h2>
+            </div>
+
+            <p className="mt-1.5 text-sm text-slate-500">
+              {descripcion}
+            </p>
+          </div>
+
+          <span
+            className={`inline-flex w-fit items-center rounded-full border px-3 py-1.5 text-xs font-bold ${
+              pasada
+                ? 'border-slate-200 bg-slate-100 text-slate-600'
+                : 'border-[#8DC63F]/30 bg-[#8DC63F]/10 text-[#095540]'
+            }`}
+          >
+            {lista.length}{' '}
+            {lista.length === 1
+              ? 'actividad'
+              : 'actividades'}
+          </span>
+        </div>
+
+        <div
+          className="flex items-stretch gap-6 overflow-x-auto scroll-smooth px-2 py-4 snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {lista.map(
+            (item) =>
+              renderTarjetaEvento(
+                item,
+              ),
+          )}
+        </div>
+      </div>
     );
   }
 
@@ -1180,7 +1771,8 @@ export default function ListaEventosCapacitaciones({
 
                 <span
                   className={`rounded-md px-1.5 py-0.5 text-[10px] ${
-                    filtro === 'capacitacion'
+                    filtro ===
+                    'capacitacion'
                       ? 'bg-[#00AEEF]/10 text-[#087AA8]'
                       : 'bg-slate-200 text-slate-500'
                   }`}
@@ -1387,550 +1979,20 @@ export default function ListaEventosCapacitaciones({
         {!cargando &&
           !error &&
           eventosFiltrados.length > 0 && (
-            <div className="sigtad-reveal-stagger relative">
-              <div className="mb-3 flex items-center justify-end gap-2 sm:mb-4">
-                <button
-                  type="button"
-                  onClick={() =>
-                    carruselEventosRef.current?.scrollBy(
-                      {
-                        left: -520,
-                        behavior:
-                          'smooth',
-                      },
-                    )
-                  }
-                  className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-emerald-950/60 text-white shadow-lg backdrop-blur-md transition-all duration-200 hover:bg-emerald-600/30 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] dark:bg-slate-900/80"
-                  aria-label="Ver actividades anteriores"
-                >
-                  <svg
-                    className="h-5 w-5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth="2"
-                    stroke="currentColor"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="m15 18-6-6 6-6"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </button>
+            <div className="sigtad-reveal-stagger">
+              {renderSeccionEventos(
+                'Próximas actividades',
+                'Eventos y capacitaciones que todavía no han finalizado.',
+                eventosProximos,
+                false,
+              )}
 
-                <button
-                  type="button"
-                  onClick={() =>
-                    carruselEventosRef.current?.scrollBy(
-                      {
-                        left: 520,
-                        behavior:
-                          'smooth',
-                      },
-                    )
-                  }
-                  className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-emerald-950/60 text-white shadow-lg backdrop-blur-md transition-all duration-200 hover:bg-emerald-600/30 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] dark:bg-slate-900/80"
-                  aria-label="Ver más actividades"
-                >
-                  <svg
-                    className="h-5 w-5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth="2"
-                    stroke="currentColor"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="m9 18 6-6-6-6"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </button>
-              </div>
-
-              <div
-                ref={carruselEventosRef}
-                className="flex items-stretch gap-6 overflow-x-auto scroll-smooth px-2 py-4 snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-              >
-                {eventosFiltrados.map(
-                  (item) => {
-                    const colores =
-                      obtenerColorTipo(
-                        item.tipoActividad,
-                      );
-
-                    const menuEstadoAbierto =
-                      estadoAbierto ===
-                      item.id;
-
-                    const estaCambiando =
-                      cambiandoEstado ===
-                      item.id;
-
-                    const estadosPermitidos =
-                      obtenerEstadosPermitidos(
-                        item.estado,
-                      );
-
-                    return (
-                      <article
-                        key={item.id}
-                        className="group flex min-h-[580px] w-[420px] shrink-0 snap-center flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/85 shadow-2xl backdrop-blur-md transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl sm:w-[480px] md:w-[520px] dark:bg-emerald-950/80"
-                      >
-                        <div className="relative shrink-0">
-                          <PortadaEventoCapacitacion
-                            eventoId={item.id}
-                            urlBaseApi={
-                              urlBaseApi
-                            }
-                            colorAcento={
-                              colores.fondo
-                            }
-                          />
-
-                          <div className="absolute left-4 top-4">
-                            <span
-                              className="inline-flex items-center rounded-lg px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] shadow-md backdrop-blur-sm"
-                              style={{
-                                backgroundColor:
-                                  colores.fondo,
-                                color:
-                                  colores.texto,
-                              }}
-                            >
-                              {obtenerNombreTipo(
-                                item.tipoActividad,
-                              )}
-                            </span>
-                          </div>
-
-                          {esAdministrador && (
-                            <div className="absolute right-4 top-4">
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setEstadoAbierto(
-                                    menuEstadoAbierto
-                                      ? null
-                                      : item.id,
-                                  )
-                                }
-                                disabled={
-                                  estaCambiando
-                                }
-                                className="inline-flex items-center gap-2 rounded-lg border border-white/60 bg-white/95 px-3 py-2 text-[10px] font-bold text-[#095540] shadow-md backdrop-blur-sm transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
-                              >
-                                {estaCambiando ? (
-                                  <>
-                                    <span className="h-3 w-3 animate-spin rounded-full border-2 border-[#095540]/30 border-t-[#095540]" />
-                                    Actualizando
-                                  </>
-                                ) : (
-                                  <>
-                                    Cambiar estado
-
-                                    <svg
-                                      className={`h-3 w-3 transition-transform ${
-                                        menuEstadoAbierto
-                                          ? 'rotate-180'
-                                          : ''
-                                      }`}
-                                      viewBox="0 0 24 24"
-                                      fill="none"
-                                      aria-hidden="true"
-                                    >
-                                      <path
-                                        d="M6 9l6 6 6-6"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                      />
-                                    </svg>
-                                  </>
-                                )}
-                              </button>
-
-                              {menuEstadoAbierto && (
-                                <div className="absolute right-0 top-full z-30 mt-2 w-52 overflow-hidden rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl">
-                                  <div className="border-b border-slate-100 px-3 py-2">
-                                    <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-slate-400">
-                                      Cambiar a
-                                    </p>
-                                  </div>
-
-                                  {estadosPermitidos.length >
-                                  0 ? (
-                                    estadosPermitidos.map(
-                                      (
-                                        estado,
-                                      ) => (
-                                        <button
-                                          key={
-                                            estado
-                                          }
-                                          type="button"
-                                          onClick={() =>
-                                            void cambiarEstado(
-                                              item,
-                                              estado,
-                                            )
-                                          }
-                                          disabled={
-                                            estaCambiando
-                                          }
-                                          className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-xs font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-[#095540] disabled:cursor-not-allowed disabled:opacity-50"
-                                        >
-                                          <span>
-                                            {obtenerNombreEstado(
-                                              estado,
-                                            )}
-                                          </span>
-
-                                          <svg
-                                            className="h-4 w-4 text-[#009444]"
-                                            viewBox="0 0 24 24"
-                                            fill="none"
-                                            aria-hidden="true"
-                                          >
-                                            <path
-                                              d="M5 13l4 4L19 7"
-                                              stroke="currentColor"
-                                              strokeWidth="2.5"
-                                              strokeLinecap="round"
-                                              strokeLinejoin="round"
-                                            />
-                                          </svg>
-                                        </button>
-                                      ),
-                                    )
-                                  ) : (
-                                    <div className="px-3 py-2.5 text-xs text-slate-500">
-                                      No hay cambios de estado disponibles.
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="flex min-h-0 flex-1 flex-col p-5">
-                          <div className="mb-3 flex shrink-0 flex-wrap items-center gap-2">
-                            <span
-                              className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em] ${obtenerClaseEstado(
-                                item.estado,
-                              )}`}
-                            >
-                              {obtenerNombreEstado(
-                                item.estado,
-                              )}
-                            </span>
-
-                            {item.temporada ? (
-                              <span
-                                className={`inline-flex items-center gap-2 rounded-lg border px-2.5 py-1 text-[10px] font-semibold ${
-                                  item.temporada ===
-                                  'seca'
-                                    ? 'border-[#D9D823]/40 bg-[#D9D823]/10 text-[#6B6900]'
-                                    : 'border-[#00AEEF]/30 bg-[#00AEEF]/10 text-[#087AA8]'
-                                }`}
-                              >
-                                <span
-                                  className={`h-1.5 w-1.5 ${
-                                    item.temporada ===
-                                    'seca'
-                                      ? 'bg-[#D9D823]'
-                                      : 'bg-[#00AEEF]'
-                                  } rounded-full`}
-                                />
-
-                                {item.temporada ===
-                                'seca'
-                                  ? 'Época seca'
-                                  : 'Época lluviosa'}
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-semibold text-slate-500">
-                                Temporada por confirmar
-                              </span>
-                            )}
-                          </div>
-
-                          <h2 className="line-clamp-2 min-h-[3.5rem] shrink-0 text-lg font-bold leading-7 text-[#095540] transition-colors duration-200 group-hover:text-[#009444]">
-                            {item.nombre ??
-                              'Sin nombre'}
-                          </h2>
-
-                          <p className="mt-2.5 line-clamp-2 min-h-[3rem] shrink-0 text-sm leading-6 text-slate-500">
-                            {item.descripcion ??
-                              'Sin descripción'}
-                          </p>
-
-                          <div className="mt-4 shrink-0 border-t border-slate-100 pt-4">
-                            <div className="grid grid-cols-2 gap-3">
-                              <div className="flex min-w-0 items-start gap-2.5">
-                                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#8DC63F]/10 text-[#095540]">
-                                  <svg
-                                    className="h-4 w-4"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    aria-hidden="true"
-                                  >
-                                    <rect
-                                      x="3"
-                                      y="4"
-                                      width="18"
-                                      height="17"
-                                      rx="2"
-                                      stroke="currentColor"
-                                      strokeWidth="1.7"
-                                    />
-
-                                    <path
-                                      d="M7 2v4M17 2v4M3 9h18"
-                                      stroke="currentColor"
-                                      strokeWidth="1.7"
-                                      strokeLinecap="round"
-                                    />
-                                  </svg>
-                                </div>
-
-                                <div className="min-w-0">
-                                  <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                                    Fecha
-                                  </p>
-
-                                  <p className="mt-0.5 truncate text-xs font-semibold leading-5 text-slate-700">
-                                    {formatearFecha(
-                                      item.fecha,
-                                    )}
-                                  </p>
-                                </div>
-                              </div>
-
-                              <div className="flex min-w-0 items-start gap-2.5">
-                                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#00AEEF]/10 text-[#087AA8]">
-                                  <svg
-                                    className="h-4 w-4"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    aria-hidden="true"
-                                  >
-                                    <circle
-                                      cx="12"
-                                      cy="12"
-                                      r="8.5"
-                                      stroke="currentColor"
-                                      strokeWidth="1.7"
-                                    />
-
-                                    <path
-                                      d="M12 7v5l3 2"
-                                      stroke="currentColor"
-                                      strokeWidth="1.7"
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                    />
-                                  </svg>
-                                </div>
-
-                                <div className="min-w-0">
-                                  <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                                    Hora
-                                  </p>
-
-                                  <p className="mt-0.5 truncate text-xs font-semibold leading-5 text-slate-700">
-                                    {formatearHora(
-                                      item.hora,
-                                    )}
-                                  </p>
-                                </div>
-                              </div>
-
-                              <div className="flex min-w-0 items-start gap-2.5">
-                                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#095540]/10 text-[#095540]">
-                                  <svg
-                                    className="h-4 w-4"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    aria-hidden="true"
-                                  >
-                                    <path
-                                      d="M20 10.5c0 5.2-8 10-8 10s-8-4.8-8-10a8 8 0 1116 0z"
-                                      stroke="currentColor"
-                                      strokeWidth="1.7"
-                                    />
-
-                                    <circle
-                                      cx="12"
-                                      cy="10.5"
-                                      r="2.5"
-                                      stroke="currentColor"
-                                      strokeWidth="1.7"
-                                    />
-                                  </svg>
-                                </div>
-
-                                <div className="min-w-0">
-                                  <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                                    Lugar
-                                  </p>
-
-                                  <p
-                                    className="mt-0.5 truncate text-xs font-semibold leading-5 text-slate-700"
-                                    title={
-                                      item.lugar ??
-                                      undefined
-                                    }
-                                  >
-                                    {item.lugar ??
-                                      'Lugar pendiente'}
-                                  </p>
-                                </div>
-                              </div>
-
-                              <div className="flex min-w-0 items-center justify-between gap-2 rounded-xl bg-slate-50 px-3 py-2.5">
-                                <div className="flex min-w-0 items-center gap-2">
-                                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white text-[#095540] shadow-sm">
-                                    <svg
-                                      className="h-3.5 w-3.5"
-                                      viewBox="0 0 24 24"
-                                      fill="none"
-                                      aria-hidden="true"
-                                    >
-                                      <circle
-                                        cx="9"
-                                        cy="8"
-                                        r="3"
-                                        stroke="currentColor"
-                                        strokeWidth="1.7"
-                                      />
-
-                                      <path
-                                        d="M3.5 19a5.5 5.5 0 0111 0"
-                                        stroke="currentColor"
-                                        strokeWidth="1.7"
-                                        strokeLinecap="round"
-                                      />
-
-                                      <path
-                                        d="M16 6.5a3 3 0 010 5.8M17 15a5.2 5.2 0 013.5 4"
-                                        stroke="currentColor"
-                                        strokeWidth="1.7"
-                                        strokeLinecap="round"
-                                      />
-                                    </svg>
-                                  </div>
-
-                                  <span className="truncate text-xs font-medium text-slate-500">
-                                    Disponibilidad
-                                  </span>
-                                </div>
-
-                                <span className="shrink-0 rounded-lg border border-[#8DC63F]/30 bg-[#8DC63F]/10 px-2.5 py-1 text-xs font-bold text-[#095540]">
-                                  {formatearCupos(
-                                    item,
-                                  )}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="mt-auto shrink-0 pt-4">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setEventoDetalle(
-                                  item,
-                                )
-                              }
-                              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#095540] px-4 py-3 text-sm font-bold text-white shadow-sm transition-all hover:scale-[1.02] hover:bg-[#009444] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444] focus-visible:ring-offset-2"
-                              aria-label={`Ver detalles de ${
-                                item.nombre ??
-                                'la actividad'
-                              }`}
-                            >
-                              Ver detalles
-                            </button>
-
-                            {esAdministrador && (
-                              <div className="mt-3 grid grid-cols-2 gap-3">
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setEventoEditando(
-                                      item,
-                                    )
-                                  }
-                                  disabled={
-                                    estaCambiando ||
-                                    eliminando
-                                  }
-                                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#095540]/20 bg-white px-3 py-2.5 text-xs font-bold text-[#095540] shadow-sm transition hover:bg-[#8DC63F]/10 disabled:cursor-not-allowed disabled:opacity-60"
-                                >
-                                  <svg
-                                    className="h-3.5 w-3.5"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    aria-hidden="true"
-                                  >
-                                    <path
-                                      d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"
-                                      stroke="currentColor"
-                                      strokeWidth="1.8"
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                    />
-                                  </svg>
-
-                                  Editar
-                                </button>
-
-                                <button
-                                  type="button"
-                                  onClick={(evento) => {
-                                    botonQueAbrioEliminacionRef.current =
-                                      evento.currentTarget;
-
-                                    setEventoAEliminar(
-                                      item,
-                                    );
-                                  }}
-                                  disabled={
-                                    estaCambiando ||
-                                    eliminando
-                                  }
-                                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-3 py-2.5 text-xs font-bold text-red-600 shadow-sm transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
-                                >
-                                  <svg
-                                    className="h-3.5 w-3.5"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    aria-hidden="true"
-                                  >
-                                    <path
-                                      d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"
-                                      stroke="currentColor"
-                                      strokeWidth="1.8"
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                    />
-                                  </svg>
-
-                                  Eliminar
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </article>
-                    );
-                  },
-                )}
-              </div>
+              {renderSeccionEventos(
+                'Actividades pasadas',
+                'Eventos y capacitaciones cuya fecha ya finalizó.',
+                eventosPasados,
+                true,
+              )}
             </div>
           )}
       </div>
@@ -1982,28 +2044,29 @@ export default function ListaEventosCapacitaciones({
         />
       )}
 
-      {eventoEditando && esAdministrador && (
-        <EdicionEventoCapacitacion
-          isOpen={Boolean(
-            eventoEditando,
-          )}
-          evento={eventoEditando}
-          onClose={() =>
-            setEventoEditando(null)
-          }
-          onActualizado={async () => {
-            setEventoEditando(null);
+      {eventoEditando &&
+        esAdministrador && (
+          <EdicionEventoCapacitacion
+            isOpen={Boolean(
+              eventoEditando,
+            )}
+            evento={eventoEditando}
+            onClose={() =>
+              setEventoEditando(null)
+            }
+            onActualizado={async () => {
+              setEventoEditando(null);
 
-            await cargarDatos();
+              await cargarDatos();
 
-            mostrarNotificacion(
-              'exito',
-              'Actividad actualizada',
-              'Los cambios se guardaron correctamente.',
-            );
-          }}
-        />
-      )}
+              mostrarNotificacion(
+                'exito',
+                'Actividad actualizada',
+                'Los cambios se guardaron correctamente.',
+              );
+            }}
+          />
+        )}
 
       {eventoAEliminar &&
         esAdministrador && (
@@ -2106,4 +2169,3 @@ export default function ListaEventosCapacitaciones({
     </section>
   );
 }
-
