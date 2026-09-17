@@ -90,16 +90,21 @@ const esFechaFutura = (
     return false;
   }
 
-  const fecha = new Date(valor);
+  const partes = valor.split('-').map(Number);
 
-  if (Number.isNaN(fecha.getTime())) {
+  if (partes.length !== 3 || partes.some(Number.isNaN)) {
     return false;
   }
+
+  const [anio, mes, dia] = partes;
+
+  const fechaActividad = new Date(anio, mes - 1, dia);
+  fechaActividad.setHours(0, 0, 0, 0);
 
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
 
-  return fecha.getTime() >= hoy.getTime();
+  return fechaActividad.getTime() >= hoy.getTime();
 };
 
 export default function MisInscripciones() {
@@ -620,10 +625,19 @@ export default function MisInscripciones() {
                       inscripcion.ubicacion ||
                       inscripcion.horaInicio,
                   );
-                  const puedeCancelar = inscripcion.estado === 'pendiente' ||
-                    inscripcion.estado === 'confirmada' ||
-                    inscripcion.estado === 'aprobada';
+                  const actividadPasada =
+                    !esFechaFutura(inscripcion.fechaActividad);
 
+                  const puedeCancelar =
+                    !actividadPasada &&
+                    (inscripcion.estado === 'pendiente' ||
+                      inscripcion.estado === 'confirmada' ||
+                      inscripcion.estado === 'aprobada');
+
+const puedeCancelar =
+  !actividadPasada &&
+  (inscripcion.estado === 'pendiente' ||
+    inscripcion.estado === 'confirmada');
                   return (
                     <li
                       key={inscripcion.id}
