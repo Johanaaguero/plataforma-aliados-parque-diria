@@ -3,9 +3,37 @@ import { Request, Response } from 'express';
 import {
   listarMisInscripciones,
   cancelarInscripcion,
+  cancelarReserva as cancelarReservaService,
 } from './inscripciones.service';
 
 export class InscripcionesController {
+  async cancelarReserva(req: Request, res: Response) {
+    try {
+      if (!req.usuario?.id) {
+        return res.status(401).json({ status: 'error', code: 'UNAUTHORIZED', message: 'Usuario no autenticado.', data: null });
+      }
+
+      const idParam = req.params.id;
+      if (typeof idParam !== 'string' || !/^[1-9]\d*$/.test(idParam) || !Number.isSafeInteger(Number(idParam))) {
+        return res.status(400).json({ status: 'error', code: 'INVALID_ID', message: 'El id de la reserva no es válido.', data: null });
+      }
+
+      const resultado = await cancelarReservaService(req.usuario.id, Number(idParam));
+      return res.status(200).json({ status: 'success', message: 'Reserva cancelada correctamente.', data: resultado });
+    } catch (error) {
+      if (error instanceof Error && error.name === 'NotFoundError') {
+        return res.status(404).json({ status: 'error', code: 'REGISTRATION_NOT_FOUND', message: error.message, data: null });
+      }
+      if (error instanceof Error && error.name === 'ForbiddenError') {
+        return res.status(403).json({ status: 'error', message: error.message, data: null });
+      }
+      if (error instanceof Error && error.name === 'InvalidReservationStateError') {
+        return res.status(400).json({ status: 'error', message: error.message, data: null });
+      }
+      return res.status(500).json({ status: 'error', code: 'INTERNAL_SERVER_ERROR', message: 'Error interno del servidor.', data: null });
+    }
+  }
+
   async listarMias(req: Request, res: Response) {
     try {
       if (!req.usuario?.id) {

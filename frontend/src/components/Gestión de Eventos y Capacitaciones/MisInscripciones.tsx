@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import {
   cancelarInscripcion,
+  cancelarReserva,
   obtenerMisInscripciones,
   type MiInscripcion,
 } from '../../services/MisInscripcionesService';
@@ -125,7 +126,9 @@ export default function MisInscripciones() {
     if (!reservaACancelar || cancelando) return;
     setCancelando(true);
     try {
-      const resultado = await cancelarInscripcion(reservaACancelar.id);
+      const resultado = reservaACancelar.origen === 'reserva'
+        ? await cancelarReserva(reservaACancelar.id)
+        : await cancelarInscripcion(reservaACancelar.id);
       setInscripciones((actuales) => actuales.map((inscripcion) => inscripcion.id === resultado.id ? { ...inscripcion, estado: resultado.estado, fechaCancelacion: resultado.fechaCancelacion } : inscripcion));
       setReservaACancelar(null);
       mostrarFeedback('registro', 'Reserva cancelada correctamente.');
@@ -617,7 +620,9 @@ export default function MisInscripciones() {
                       inscripcion.ubicacion ||
                       inscripcion.horaInicio,
                   );
-                  const puedeCancelar = inscripcion.estado === 'pendiente' || inscripcion.estado === 'confirmada';
+                  const puedeCancelar = inscripcion.estado === 'pendiente' ||
+                    inscripcion.estado === 'confirmada' ||
+                    inscripcion.estado === 'aprobada';
 
                   return (
                     <li
@@ -691,7 +696,7 @@ export default function MisInscripciones() {
 
                               {inscripcion.estado && (
                                 <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${inscripcion.estado === 'cancelada' ? 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-300/20 dark:bg-rose-500/10 dark:text-rose-200' : 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-300/20 dark:bg-emerald-500/10 dark:text-emerald-200'}`}>
-                                  {inscripcion.estado === 'cancelada' ? 'Cancelada' : inscripcion.estado === 'pendiente' ? 'Pendiente' : 'Confirmada'}
+                                  {inscripcion.estado === 'cancelada' ? 'Cancelada' : inscripcion.estado === 'pendiente' ? 'Pendiente' : inscripcion.estado === 'aprobada' ? 'Aprobada' : inscripcion.estado === 'rechazada' ? 'Rechazada' : 'Confirmada'}
                                 </span>
                               )}
 

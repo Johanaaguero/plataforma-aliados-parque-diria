@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import {formatearCupos,obtenerDetalleEvento,type EventoCapacitacion,}from '../../services/eventosCapacitacionesService';
-import { inscribirseEnEvento } from '../../services/inscripcionService';
+import { consultarReservaEvento } from '../../services/inscripcionService';
 import PortadaEventoCapacitacion from './Portadaeventocapacitacion';
+import FormularioReserva from './FormularioReserva';
 
 interface DetalleEventoCapacitacionProps {
   eventoId: number;
   urlBaseApi: string;
   eventoAdministrativo?: EventoCapacitacion;
+  usuarioAutenticado: boolean;
+  onSolicitarLogin: (mensaje?: string) => void;
   onClose: () => void;
   onInscripcionActualizada?: (
     eventoId: number,
@@ -18,6 +21,8 @@ export default function DetalleEventoCapacitacion({
   eventoId,
   urlBaseApi,
   eventoAdministrativo,
+  usuarioAutenticado,
+  onSolicitarLogin,
   onClose,
   onInscripcionActualizada,
 }: DetalleEventoCapacitacionProps) {
@@ -25,47 +30,39 @@ export default function DetalleEventoCapacitacion({
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [intento, setIntento] = useState(0);
-  const [inscribiendo, setInscribiendo] = useState(false);
+  const [mostrarFormularioReserva, setMostrarFormularioReserva] = useState(false);
+  const [consultandoReserva, setConsultandoReserva] = useState(false);
   const [mensajeInscripcion, setMensajeInscripcion] = useState<string | null>(null);
   const [errorInscripcion, setErrorInscripcion] = useState<string | null>(null);
   const dialogoRef = useRef<HTMLDivElement>(null);
   const cerrarRef = useRef<HTMLButtonElement>(null);
 
   async function manejarInscripcion() {
-    if (!evento || inscribiendo) return;
-
-    setInscribiendo(true);
+    if (!evento) return;
     setMensajeInscripcion(null);
     setErrorInscripcion(null);
 
+    if (!usuarioAutenticado) {
+      onSolicitarLogin('Debes iniciar sesión o registrarte para inscribirte.');
+      return;
+    }
+
+    setConsultandoReserva(true);
     try {
-      const resultado = await inscribirseEnEvento(evento.id);
-
-      setEvento((actual) =>
-        actual
-          ? {
-              ...actual,
-              cuposDisponibles: resultado.cuposDisponibles,
-            }
-          : actual,
-      );
-
-      onInscripcionActualizada?.(
-        evento.id,
-        resultado.cuposDisponibles,
-      );
-
-      setMensajeInscripcion(
-        '¡Inscripción realizada correctamente!',
-      );
+      const reserva = await consultarReservaEvento(evento.id);
+      if (reserva.estado === 'pendiente') {
+        setMensajeInscripcion('Ya tienes una solicitud de inscripción para este evento. Estado: Pendiente.');
+        return;
+      }
+      if (reserva.estado === 'aprobada') {
+        setMensajeInscripcion('Ya estás inscrito en este evento.');
+        return;
+      }
+      setMostrarFormularioReserva(true);
     } catch (error) {
-      setErrorInscripcion(
-        error instanceof Error
-          ? error.message
-          : 'No se pudo realizar la inscripción.',
-      );
+      setErrorInscripcion(error instanceof Error ? error.message : 'No se pudo consultar tu solicitud de inscripción.');
     } finally {
-      setInscribiendo(false);
+      setConsultandoReserva(false);
     }
   }
 
@@ -193,10 +190,10 @@ export default function DetalleEventoCapacitacion({
               <button
                 type="button"
                 onClick={manejarInscripcion}
-                disabled={inscribiendo || evento.cuposDisponibles === 0}
+                disabled={consultandoReserva || evento.cuposDisponibles === 0}
                 className="rounded-full bg-[#095540] px-4 py-1.5 text-sm font-bold text-white transition hover:bg-[#009444] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444] focus-visible:ring-offset-2"
               >
-                {inscribiendo ? 'Inscribiendo...' : 'Inscribirme'}
+                {consultandoReserva ? 'Consultando...' : 'Inscribirme'}
               </button>
             </div>
 
@@ -247,6 +244,16 @@ export default function DetalleEventoCapacitacion({
           </>
         )}
       </div>
+      {mostrarFormularioReserva && evento && (
+        <FormularioReserva
+          evento={evento}
+          onClose={() => setMostrarFormularioReserva(false)}
+          onSuccess={(cuposDisponibles) => {
+            setEvento((actual) => actual ? { ...actual, cuposDisponibles } : actual);
+            onInscripcionActualizada?.(evento.id, cuposDisponibles);
+          }}
+        />
+      )}
     </div>
   );
 }

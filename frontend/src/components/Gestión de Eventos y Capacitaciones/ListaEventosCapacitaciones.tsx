@@ -20,6 +20,7 @@ type NombreRol =
 
 interface ListaEventosCapacitacionesProps {
   rolAutenticado: NombreRol | null;
+  onSolicitarLogin: (mensaje?: string) => void;
   contexto?: 'publico' | 'administrativo';
 }
 
@@ -68,6 +69,7 @@ function obtenerToken(): string | null {
 
 export default function ListaEventosCapacitaciones({
   rolAutenticado,
+  onSolicitarLogin,
   contexto = 'publico',
 }: ListaEventosCapacitacionesProps) {
   const [eventos, setEventos] = useState<EventoCapacitacion[]>([]);
@@ -1939,6 +1941,8 @@ export default function ListaEventosCapacitaciones({
         <DetalleEventoCapacitacion
           eventoId={eventoDetalle.id}
           urlBaseApi={urlBaseApi}
+          usuarioAutenticado={rolAutenticado !== null}
+          onSolicitarLogin={onSolicitarLogin}
           eventoAdministrativo={
             esAdministrador &&
             eventoDetalle.estado !==

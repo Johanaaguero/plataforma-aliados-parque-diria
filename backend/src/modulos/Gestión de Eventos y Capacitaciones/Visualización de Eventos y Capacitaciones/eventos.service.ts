@@ -1,7 +1,4 @@
 import { AppDataSource } from '../../../data-source';
-import { EstadoReserva, Participantes } from '../../../models/Participantes';
-import { In } from 'typeorm';
-import { calcularCuposDisponibles } from '../cuposDisponibles';
 import {
   EventosCapacitaciones,
   EstadoEventoCapacitacion,
@@ -25,28 +22,9 @@ export type EventoPublico = ReturnType<EventosCapacitaciones['toPublic']> & {
 const serializarEvento = async (
   evento: EventosCapacitaciones,
 ): Promise<EventoPublico> => {
-  if (evento.cupoMaximo === null) {
-    return {
-      ...evento.toPublic(),
-      cuposDisponibles: null,
-    };
-  }
-
-  const inscritos = await AppDataSource.getRepository(
-    Participantes,
-  ).count({
-    where: {
-      eventoCapacitacionId: evento.id,
-      estado: In([EstadoReserva.PENDIENTE, EstadoReserva.CONFIRMADA]),
-    },
-  });
-
   return {
     ...evento.toPublic(),
-    cuposDisponibles: calcularCuposDisponibles(
-      evento.cupoMaximo,
-      inscritos,
-    ),
+    cuposDisponibles: evento.cuposDisponibles,
   };
 };
 

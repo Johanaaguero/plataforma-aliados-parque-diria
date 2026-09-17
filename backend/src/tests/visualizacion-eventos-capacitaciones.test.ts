@@ -120,20 +120,22 @@ const crearEvento = async (
 ): Promise<EventosCapacitaciones> => {
   const conexion = await exigirConexionAislada();
   secuencia += 1;
-  return conexion.getRepository(EventosCapacitaciones).save(
-    new EventosCapacitaciones({
-      nombre: `Actividad ${secuencia}`,
-      descripcion: 'Actividad de educación ambiental en el parque.',
-      fecha: '2099-12-20',
-      hora: '10:30:00',
-      lugar: 'Parque Nacional Diriá',
-      tipoActividad: TipoActividad.EVENTO,
-      temporada: Temporada.SECA,
-      cupoMaximo: 25,
-      estado: EstadoEventoCapacitacion.PUBLICADO,
-      ...cambios,
-    }),
-  );
+  const evento = new EventosCapacitaciones({
+    nombre: `Actividad ${secuencia}`,
+    descripcion: 'Actividad de educación ambiental en el parque.',
+    fecha: '2099-12-20',
+    hora: '10:30:00',
+    lugar: 'Parque Nacional Diriá',
+    tipoActividad: TipoActividad.EVENTO,
+    temporada: Temporada.SECA,
+    cupoMaximo: 25,
+    estado: EstadoEventoCapacitacion.PUBLICADO,
+    ...cambios,
+  });
+  evento.cuposDisponibles = cambios.cupoMaximo === undefined
+    ? 25
+    : cambios.cupoMaximo;
+  return conexion.getRepository(EventosCapacitaciones).save(evento);
 };
 
 before(async () => {
@@ -356,7 +358,7 @@ describe('GET /api/eventos/:id: detalle público', () => {
     const body = comoObjeto(respuesta.body);
     assert.equal(body.ok, true);
     const detalle = comoObjeto(body.data);
-    const esperado = JSON.parse(JSON.stringify({ ...evento.toPublic(), cuposDisponibles: 25 })) as unknown;
+    const esperado = JSON.parse(JSON.stringify({ ...evento.toPublic(), cuposDisponibles: evento.cuposDisponibles })) as unknown;
     assert.deepEqual(detalle, esperado);
     assert.equal('imagenes' in detalle, false);
     assert.equal(respuesta.texto.includes(bytes.toString('base64')), false);
@@ -369,9 +371,9 @@ describe('GET /api/eventos/:id: detalle público', () => {
       assert.equal(respuesta.status, 200);
       const detalle = comoObjeto(comoObjeto(respuesta.body).data);
       assert.equal(detalle.cupoMaximo, cupoMaximo);
-      assert.equal(detalle.cuposDisponibles, cupoMaximo);
+      assert.equal(detalle.cuposDisponibles, evento.cuposDisponibles);
       const enCatalogo = (await obtenerCatalogo()).data.find((item) => item.id === evento.id);
-      assert.equal(enCatalogo?.cuposDisponibles, cupoMaximo);
+      assert.equal(enCatalogo?.cuposDisponibles, evento.cuposDisponibles);
     }
   });
 

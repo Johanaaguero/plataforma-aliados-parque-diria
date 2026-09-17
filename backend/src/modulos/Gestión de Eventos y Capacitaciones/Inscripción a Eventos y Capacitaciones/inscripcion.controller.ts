@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { InscripcionService } from './inscripcion.service';
+import { DatosReserva, InscripcionService } from './inscripcion.service';
 
 const service = new InscripcionService();
 
@@ -17,6 +17,46 @@ function manejarError(res: Response, error: unknown) {
       return res.status(404).json({
         ok: false,
         code: 'EVENT_NOT_FOUND',
+        message: error.message,
+      });
+    }
+
+    if (error.name === 'EventNotFoundError') {
+      return res.status(404).json({
+        ok: false,
+        code: 'EVENT_NOT_FOUND',
+        message: error.message,
+      });
+    }
+
+    if (error.name === 'EventNotPublishedError') {
+      return res.status(409).json({
+        ok: false,
+        code: 'EVENT_NOT_PUBLISHED',
+        message: error.message,
+      });
+    }
+
+    if (error.name === 'EventDatePassedError') {
+      return res.status(409).json({
+        ok: false,
+        code: 'EVENT_DATE_PASSED',
+        message: error.message,
+      });
+    }
+
+    if (error.name === 'AgeNotAllowedError') {
+      return res.status(400).json({
+        ok: false,
+        code: 'AGE_NOT_ALLOWED',
+        message: error.message,
+      });
+    }
+
+    if (error.name === 'ReservationAlreadyExistsError') {
+      return res.status(409).json({
+        ok: false,
+        code: 'RESERVATION_ALREADY_EXISTS',
         message: error.message,
       });
     }
@@ -52,6 +92,111 @@ function manejarError(res: Response, error: unknown) {
 }
 
 export class InscripcionController {
+  async consultarReserva(req: Request, res: Response) {
+    try {
+      if (!req.usuario?.id) {
+        return res.status(401).json({
+          ok: false,
+          code: 'UNAUTHORIZED',
+          message: 'Usuario no autenticado.',
+        });
+      }
+
+      const idParam = req.params.id;
+      if (typeof idParam !== 'string' || !/^[1-9]\d*$/.test(idParam)) {
+        return res.status(400).json({
+          ok: false,
+          code: 'INVALID_EVENT_ID',
+          message: 'El id debe ser un número entero positivo.',
+        });
+      }
+
+      const eventoCapacitacionId = Number(idParam);
+      if (!Number.isSafeInteger(eventoCapacitacionId)) {
+        return res.status(400).json({
+          ok: false,
+          code: 'INVALID_EVENT_ID',
+          message: 'El id debe ser un número entero positivo.',
+        });
+      }
+
+      const resultado = await service.consultarReserva(
+        req.usuario.id,
+        eventoCapacitacionId,
+      );
+
+      return res.status(200).json({
+        ok: true,
+        message: 'Reserva consultada correctamente.',
+        data: resultado,
+      });
+    } catch {
+      return res.status(500).json({
+        ok: false,
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Error interno del servidor.',
+      });
+    }
+  }
+
+  async crearReserva(req: Request, res: Response) {
+    try {
+      if (!req.usuario?.id) {
+        return res.status(401).json({
+          ok: false,
+          code: 'UNAUTHORIZED',
+          message: 'Usuario no autenticado.',
+        });
+      }
+
+      const idParam = req.params.id;
+      if (typeof idParam !== 'string' || !/^[1-9]\d*$/.test(idParam)) {
+        return res.status(400).json({
+          ok: false,
+          code: 'INVALID_EVENT_ID',
+          message: 'El id debe ser un número entero positivo.',
+        });
+      }
+
+      const eventoCapacitacionId = Number(idParam);
+      if (!Number.isSafeInteger(eventoCapacitacionId)) {
+        return res.status(400).json({
+          ok: false,
+          code: 'INVALID_EVENT_ID',
+          message: 'El id debe ser un número entero positivo.',
+        });
+      }
+
+      const resultado = await service.crearReserva(
+        req.usuario.id,
+        eventoCapacitacionId,
+        req.body as DatosReserva,
+      );
+
+      return res.status(201).json({
+        ok: true,
+        message: 'Reserva creada correctamente.',
+        data: {
+          id: resultado.reserva.id,
+          usuarioId: resultado.reserva.usuarioId,
+          eventoCapacitacionId: resultado.reserva.eventoCapacitacionId,
+          nombreCompleto: resultado.reserva.nombreCompleto,
+          fechaNacimiento: resultado.reserva.fechaNacimiento,
+          tipoIdentificacion: resultado.reserva.tipoIdentificacion,
+          numeroIdentificacion: resultado.reserva.numeroIdentificacion,
+          correo: resultado.reserva.correo,
+          telefono: resultado.reserva.telefono,
+          estado: resultado.reserva.estado,
+          createdAt: resultado.reserva.createdAt,
+          updatedAt: resultado.reserva.updatedAt,
+          cuposDisponibles: resultado.cuposDisponibles,
+        },
+      });
+    } catch (error) {
+      return manejarError(res, error);
+    }
+  }
+
   async inscribir(req: Request, res: Response) {
     try {
       if (!req.usuario?.id) {

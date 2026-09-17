@@ -53,6 +53,18 @@ router.post(
   (req, res) => inscripcionController.inscribir(req, res),
 );
 
+router.post(
+  '/:id/reserva',
+  verificarToken,
+  (req, res) => inscripcionController.crearReserva(req, res),
+);
+
+router.get(
+  '/:id/reserva',
+  verificarToken,
+  (req, res) => inscripcionController.consultarReserva(req, res),
+);
+
 /*
  * ============================================================
  * ACTUALIZAR EVENTO / CAPACITACIÓN

@@ -901,6 +901,10 @@ if (
             rolAutenticado={
               rolAutenticado
             }
+            onSolicitarLogin={(mensaje) => {
+              if (mensaje) mostrarFeedback('error', mensaje);
+              setMostrarLogin(true);
+            }}
             contexto={
               esModuloAdministrativoDesdeDashboard
                 ? 'administrativo'

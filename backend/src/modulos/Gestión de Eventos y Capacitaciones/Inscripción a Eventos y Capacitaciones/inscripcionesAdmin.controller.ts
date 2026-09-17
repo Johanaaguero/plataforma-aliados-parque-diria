@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
-import { listarInscripcionesAdministrativas } from './inscripcionesAdmin.service';
+import { listarInscripcionesAdministrativas, actualizarEstadoReserva } from './inscripcionesAdmin.service';
+import { EstadoReserva } from '../../../models/Reserva';
 
 export const getInscripcionesAdministrativas = async (
   _req: Request,
@@ -22,3 +23,29 @@ export const getInscripcionesAdministrativas = async (
     });
   }
 };
+
+const cambiarEstadoReserva = (estado: 'aprobada' | 'rechazada') => async (req: Request, res: Response) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isSafeInteger(id) || id <= 0) {
+      return res.status(400).json({ ok: false, code: 'INVALID_ID', message: 'El id de la reserva no es válido.' });
+    }
+
+    const reserva = await actualizarEstadoReserva(
+      id,
+      estado === 'aprobada' ? EstadoReserva.APROBADA : EstadoReserva.RECHAZADA,
+    );
+    return res.status(200).json({ ok: true, message: `Reserva ${estado} correctamente.`, data: { id: reserva.id, estado: reserva.estado } });
+  } catch (error) {
+    if (error instanceof Error && error.name === 'NotFoundError') {
+      return res.status(404).json({ ok: false, code: 'RESERVATION_NOT_FOUND', message: error.message });
+    }
+    if (error instanceof Error && error.name === 'InvalidReservationStateError') {
+      return res.status(409).json({ ok: false, code: 'INVALID_RESERVATION_STATE', message: error.message });
+    }
+    return res.status(500).json({ ok: false, code: 'INTERNAL_SERVER_ERROR', message: 'Error interno del servidor.' });
+  }
+};
+
+export const aprobarReserva = cambiarEstadoReserva('aprobada');
+export const rechazarReserva = cambiarEstadoReserva('rechazada');
