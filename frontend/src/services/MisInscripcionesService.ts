@@ -27,7 +27,7 @@ export async function inscribirseEnEvento(
 
 // Estado de la inscripción del usuario respecto a la actividad.
 // Ajusta estos valores si el backend usa otros nombres.
-export type EstadoInscripcion = 'confirmada' | 'pendiente' | 'cancelada' | string;
+export type EstadoInscripcion = 'confirmada' | 'pendiente' | 'aprobada' | 'rechazada' | 'cancelada' | string;
 
 export interface MiInscripcion {
   id: number;
@@ -44,6 +44,7 @@ export interface MiInscripcion {
   fechaCancelacion?: string | null;
   fechaActividad: string | null;
   fechaInscripcion: string | null;
+  origen?: 'participante' | 'reserva';
 }
 
 // NOTA: ruta asumida. Cambia '/inscripciones/mias' por la ruta real del backend
@@ -75,6 +76,17 @@ export async function cancelarInscripcion(inscripcionId: number): Promise<Cancel
     {
       incluirAuth: true,
       mensajeError: 'No se pudo cancelar la inscripción.',
+    },
+  );
+}
+
+export async function cancelarReserva(reservaId: number): Promise<CancelacionInscripcionResponse> {
+  return api.solicitar<CancelacionInscripcionResponse>(
+    `/reservas/${reservaId}/cancelar`,
+    { method: 'PATCH' },
+    {
+      incluirAuth: true,
+      mensajeError: 'No se pudo cancelar la reserva.',
     },
   );
 }

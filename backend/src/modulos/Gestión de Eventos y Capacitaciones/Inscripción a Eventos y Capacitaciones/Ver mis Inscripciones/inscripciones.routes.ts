@@ -8,6 +8,14 @@ const router = Router();
 
 const controller = new InscripcionesController();
 
+export const reservasRouter = Router();
+
+reservasRouter.patch(
+  '/:id/cancelar',
+  verificarToken,
+  (req, res) => controller.cancelarReserva(req, res),
+);
+
 router.get(
   '/mias',
   verificarToken,

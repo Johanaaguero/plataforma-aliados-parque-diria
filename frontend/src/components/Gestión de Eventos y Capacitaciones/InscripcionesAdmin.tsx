@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { obtenerInscripcionesAdministrativas, type InscripcionAdministrativa } from '../../services/inscripcionesAdminService';
+import { actualizarEstadoReserva, obtenerInscripcionesAdministrativas, type InscripcionAdministrativa } from '../../services/inscripcionesAdminService';
 
 type FiltroTemporal = 'todos' | 'proximos' | 'pasados';
 
@@ -48,6 +48,7 @@ export default function InscripcionesAdmin() {
   const [error, setError] = useState('');
   const [busqueda, setBusqueda] = useState('');
   const [filtroTemporal, setFiltroTemporal] = useState<FiltroTemporal>('todos');
+  const [actualizandoId, setActualizandoId] = useState<number | null>(null);
 
   useEffect(() => {
     let activo = true;
@@ -87,6 +88,19 @@ export default function InscripcionesAdmin() {
       activo = false;
     };
   }, []);
+
+  const cambiarEstadoReserva = async (id: number, estado: 'aprobada' | 'rechazada') => {
+    if (actualizandoId !== null) return;
+    setActualizandoId(id);
+    try {
+      const resultado = await actualizarEstadoReserva(id, estado);
+      setInscripciones((actuales) => actuales.map((registro) => registro.id === id ? { ...registro, estado: resultado.estado } : registro));
+    } catch (errorSolicitud) {
+      setError(errorSolicitud instanceof Error ? errorSolicitud.message : 'No se pudo actualizar la reserva.');
+    } finally {
+      setActualizandoId(null);
+    }
+  };
 
   const registros = useMemo(
     () =>
@@ -249,6 +263,8 @@ export default function InscripcionesAdmin() {
                       <th className="py-3 px-5">Tipo</th>
                       <th className="py-3 px-5">Fecha Actividad</th>
                       <th className="py-3 px-5">Fecha Inscripción</th>
+                      <th className="py-3 px-5">Estado</th>
+                      <th className="py-3 px-5">Acciones</th>
                     </tr>
                   </thead>
 
@@ -310,6 +326,21 @@ export default function InscripcionesAdmin() {
                           </td>
 
                           <td className="py-3.5 px-5 text-slate-400 dark:text-emerald-100/40">{inscripcion.fechaInscripcionFormateada}</td>
+
+                          <td className="py-3.5 px-5">
+                            <span className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${inscripcion.estado === 'pendiente' ? 'border-amber-200 bg-amber-50 text-amber-700' : inscripcion.estado === 'aprobada' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : inscripcion.estado === 'rechazada' ? 'border-rose-200 bg-rose-50 text-rose-700' : 'border-slate-200 bg-slate-50 text-slate-600'}`}>
+                              {inscripcion.estado === 'pendiente' ? 'Pendiente' : inscripcion.estado === 'aprobada' ? 'Aprobada' : inscripcion.estado === 'rechazada' ? 'Rechazada' : inscripcion.estado === 'cancelada' ? 'Cancelada' : 'Confirmada'}
+                            </span>
+                          </td>
+
+                          <td className="py-3.5 px-5">
+                            {inscripcion.origen === 'reserva' && inscripcion.estado === 'pendiente' && (
+                              <div className="flex gap-2">
+                                <button type="button" disabled={actualizandoId !== null} onClick={() => void cambiarEstadoReserva(inscripcion.id, 'aprobada')} className="rounded-lg bg-emerald-700 px-2.5 py-1.5 text-[11px] font-bold text-white disabled:opacity-50">Aprobar</button>
+                                <button type="button" disabled={actualizandoId !== null} onClick={() => void cambiarEstadoReserva(inscripcion.id, 'rechazada')} className="rounded-lg bg-rose-600 px-2.5 py-1.5 text-[11px] font-bold text-white disabled:opacity-50">Rechazar</button>
+                              </div>
+                            )}
+                          </td>
                         </tr>
                       );
                     })}

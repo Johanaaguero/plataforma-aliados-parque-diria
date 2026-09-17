@@ -18,7 +18,8 @@ import {
   Temporada,
   TipoActividad,
 } from '../models/EventosCapacitaciones';
-import { Participantes } from '../models/Participantes';
+import { EstadoReserva as EstadoParticipante, Participantes } from '../models/Participantes';
+import { EstadoReserva, Reserva } from '../models/Reserva';
 import type { Rol, NombreRol } from '../models/Rol';
 import type { Usuario } from '../models/Usuario';
 import { errorMiddleware } from '../middlewares/registro.middleware';
@@ -47,6 +48,26 @@ interface RespuestaInscripcion {
     eventoCapacitacionId: number;
     createdAt: string;
     cuposDisponibles: number | null;
+  };
+}
+
+interface RespuestaReserva {
+  ok: true;
+  message: string;
+  data: {
+    id: number;
+    usuarioId: number;
+    eventoCapacitacionId: number;
+    nombreCompleto: string;
+    fechaNacimiento: string;
+    tipoIdentificacion: string;
+    numeroIdentificacion: string;
+    correo: string;
+    telefono: string;
+    estado: EstadoReserva;
+    createdAt: string;
+    updatedAt: string;
+    cuposDisponibles: number;
   };
 }
 
@@ -137,20 +158,33 @@ const crearEvento = async (
 ): Promise<EventosCapacitaciones> => {
   const conexion = await exigirConexionAislada();
   secuencia += 1;
-  return conexion.getRepository(EventosCapacitaciones).save(
-    new EventosCapacitaciones({
-      nombre: `Evento de inscripción ${secuencia}`,
-      descripcion: 'Fixture aislado de inscripción.',
-      fecha: '2099-12-20',
-      hora: '10:30:00',
-      lugar: 'Parque Nacional Diriá',
-      tipoActividad: TipoActividad.EVENTO,
-      cupoMaximo,
-      estado: EstadoEventoCapacitacion.PUBLICADO,
-      temporada: Temporada.SECA,
-    }),
-  );
+  const evento = new EventosCapacitaciones({
+    nombre: `Evento de inscripción ${secuencia}`,
+    descripcion: 'Fixture aislado de inscripción.',
+    fecha: '2099-12-20',
+    hora: '10:30:00',
+    lugar: 'Parque Nacional Diriá',
+    tipoActividad: TipoActividad.EVENTO,
+    cupoMaximo,
+    estado: EstadoEventoCapacitacion.PUBLICADO,
+    temporada: Temporada.SECA,
+  });
+  evento.cuposDisponibles = cupoMaximo;
+  return conexion.getRepository(EventosCapacitaciones).save(evento);
 };
+
+const datosReserva = (cambios: Partial<Record<
+  'nombreCompleto' | 'fechaNacimiento' | 'tipoIdentificacion' | 'numeroIdentificacion' | 'correo' | 'telefono',
+  string
+>> = {}) => ({
+  nombreCompleto: 'María Reserva',
+  fechaNacimiento: '1990-05-10',
+  tipoIdentificacion: 'cedula',
+  numeroIdentificacion: '123456789',
+  correo: 'reserva@test.local',
+  telefono: '+50688887777',
+  ...cambios,
+});
 
 const inscribir = async (
   eventoId: number | string,
@@ -162,6 +196,39 @@ const inscribir = async (
     ...(token ? { headers: { Authorization: `Bearer ${token}` } } : {}),
   },
 );
+
+const reservar = async (
+  eventoId: number | string,
+  token: string | undefined,
+  datos = datosReserva(),
+): Promise<RespuestaHttp> => solicitar(
+  `/api/eventos-capacitaciones/${encodeURIComponent(String(eventoId))}/reserva`,
+  {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(datos),
+  },
+);
+
+const actualizarReservaComoAdmin = async (
+  reservaId: number,
+  estado: 'aprobar' | 'rechazar',
+  token: string,
+): Promise<RespuestaHttp> => solicitar(`/api/admin/inscripciones/${reservaId}/${estado}`, {
+  method: 'PATCH',
+  headers: { Authorization: `Bearer ${token}` },
+});
+
+const cancelarReserva = async (
+  reservaId: number,
+  token: string,
+): Promise<RespuestaHttp> => solicitar(`/api/reservas/${reservaId}/cancelar`, {
+  method: 'PATCH',
+  headers: { Authorization: `Bearer ${token}` },
+});
 
 const consultarInscripcionesAdmin = async (
   token?: string,
@@ -180,6 +247,7 @@ const obtenerDetalle = async (eventoId: number): Promise<Record<string, unknown>
 
 const limpiarBaseTest = async (): Promise<void> => {
   const conexion = await exigirConexionAislada();
+  await conexion.query('DELETE FROM reservas');
   await conexion.query('DELETE FROM participantes');
   await conexion.query('DELETE FROM eventos_capacitaciones');
   await conexion.query('DELETE FROM usuarios');
@@ -220,6 +288,9 @@ before(async () => {
   const rutasAdminInscripciones = await import(
     '../modulos/Gestión de Eventos y Capacitaciones/Inscripción a Eventos y Capacitaciones/inscripcionesAdmin.route'
   );
+  const rutasMisInscripciones = await import(
+    '../modulos/Gestión de Eventos y Capacitaciones/Inscripción a Eventos y Capacitaciones/Ver mis Inscripciones/inscripciones.routes'
+  );
 
   dataSource = dataSourceModule.AppDataSource;
   UsuarioModel = usuarioModule.Usuario;
@@ -235,6 +306,8 @@ before(async () => {
   app.use('/api/eventos-capacitaciones', rutasInscripcion.default);
   app.use('/api/eventos', rutasPublicas.default);
   app.use('/api/admin', rutasAdminInscripciones.default);
+  app.use('/api/inscripciones', rutasMisInscripciones.default);
+  app.use('/api/reservas', rutasMisInscripciones.reservasRouter);
   app.use(errorMiddleware);
   await new Promise<void>((resolveListen, rejectListen) => {
     server = app.listen(0, '127.0.0.1', (error?: Error) => {
@@ -384,7 +457,7 @@ describe('POST /api/eventos-capacitaciones/:id/inscripcion', () => {
     assert.deepEqual(respuesta.body, {
       ok: false,
       code: 'TOKEN_NOT_PROVIDED',
-      message: 'Se requiere inicio se sesión',
+      message: 'Se requiere inicio de sesión',
     });
   });
 
@@ -408,6 +481,9 @@ describe('POST /api/eventos-capacitaciones/:id/inscripcion', () => {
     await conexion.getRepository(Participantes).save({
       usuarioId: usuarioInscrito.id,
       eventoCapacitacionId: evento.id,
+    });
+    await conexion.getRepository(EventosCapacitaciones).update(evento.id, {
+      cuposDisponibles: null,
     });
 
     const respuesta = await inscribir(evento.id, crearToken(usuarioSinCupo.id, 'visitante'));
@@ -449,5 +525,372 @@ describe('POST /api/eventos-capacitaciones/:id/inscripcion', () => {
     assert.equal(respuesta.status, 201, respuesta.texto);
     assert.equal((respuesta.body as RespuestaInscripcion).data.cuposDisponibles, null);
     assert.equal((await obtenerDetalle(evento.id)).cuposDisponibles, null);
+  });
+});
+
+describe('POST /api/eventos-capacitaciones/:id/reserva', () => {
+  test('crea una reserva pendiente y persiste los datos personales', async () => {
+    const usuario = await crearUsuario();
+    const evento = await crearEvento(3);
+    const datos = datosReserva();
+
+    const respuesta = await reservar(evento.id, crearToken(usuario.id, 'visitante'), datos);
+
+    assert.equal(respuesta.status, 201, respuesta.texto);
+    const body = respuesta.body as RespuestaReserva;
+    assert.equal(body.ok, true);
+    assert.equal(body.data.usuarioId, usuario.id);
+    assert.equal(body.data.eventoCapacitacionId, evento.id);
+    assert.equal(body.data.estado, EstadoReserva.PENDIENTE);
+    assert.equal(body.data.cuposDisponibles, 2);
+
+    const reserva = await (await exigirConexionAislada())
+      .getRepository(Reserva)
+      .findOneBy({ usuarioId: usuario.id, eventoCapacitacionId: evento.id });
+    assert.ok(reserva);
+    assert.equal(reserva.nombreCompleto, datos.nombreCompleto);
+    assert.equal(reserva.fechaNacimiento, datos.fechaNacimiento);
+    assert.equal(reserva.tipoIdentificacion, datos.tipoIdentificacion);
+    assert.equal(reserva.numeroIdentificacion, datos.numeroIdentificacion);
+    assert.equal(reserva.correo, datos.correo);
+    assert.equal(reserva.telefono, datos.telefono);
+    assert.equal(reserva.estado, EstadoReserva.PENDIENTE);
+  });
+
+  test('rechaza una segunda reserva pendiente', async () => {
+    const usuario = await crearUsuario();
+    const evento = await crearEvento(3);
+    const token = crearToken(usuario.id, 'visitante');
+
+    assert.equal((await reservar(evento.id, token)).status, 201);
+    const respuesta = await reservar(evento.id, token);
+
+    assert.equal(respuesta.status, 409, respuesta.texto);
+    assert.deepEqual(respuesta.body, {
+      ok: false,
+      code: 'RESERVATION_ALREADY_EXISTS',
+      message: 'El usuario ya tiene una reserva activa para este evento.',
+    });
+    assert.equal(
+      (await (await exigirConexionAislada()).getRepository(EventosCapacitaciones).findOneByOrFail({ id: evento.id })).cuposDisponibles,
+      2,
+    );
+  });
+
+  test('rechaza una segunda reserva aprobada', async () => {
+    const usuario = await crearUsuario();
+    const evento = await crearEvento(3);
+    const token = crearToken(usuario.id, 'visitante');
+
+    assert.equal((await reservar(evento.id, token)).status, 201);
+    await (await exigirConexionAislada()).getRepository(Reserva).update(
+      { usuarioId: usuario.id, eventoCapacitacionId: evento.id },
+      { estado: EstadoReserva.APROBADA },
+    );
+
+    const respuesta = await reservar(evento.id, token);
+    assert.equal(respuesta.status, 409, respuesta.texto);
+    assert.equal(comoObjeto(respuesta.body).code, 'RESERVATION_ALREADY_EXISTS');
+    assert.equal(
+      (await (await exigirConexionAislada()).getRepository(EventosCapacitaciones).findOneByOrFail({ id: evento.id })).cuposDisponibles,
+      2,
+    );
+  });
+
+  for (const estado of [EstadoReserva.CANCELADA, EstadoReserva.RECHAZADA]) {
+    test(`reutiliza una reserva ${estado} y actualiza sus datos`, async () => {
+      const usuario = await crearUsuario();
+      const evento = await crearEvento(3);
+      const token = crearToken(usuario.id, 'visitante');
+
+      const primera = await reservar(evento.id, token);
+      assert.equal(primera.status, 201, primera.texto);
+      const primeraId = (primera.body as RespuestaReserva).data.id;
+      await (await exigirConexionAislada()).getRepository(Reserva).update(
+        { id: primeraId },
+        { estado },
+      );
+
+      const nuevosDatos = datosReserva({
+        nombreCompleto: 'Persona Actualizada',
+        numeroIdentificacion: '987654321',
+        correo: 'actualizada@test.local',
+      });
+      const segunda = await reservar(evento.id, token, nuevosDatos);
+
+      assert.equal(segunda.status, 201, segunda.texto);
+      const reserva = await (await exigirConexionAislada())
+        .getRepository(Reserva)
+        .findOneByOrFail({ id: primeraId });
+      assert.equal(reserva.id, primeraId);
+      assert.equal(reserva.estado, EstadoReserva.PENDIENTE);
+      assert.equal(reserva.nombreCompleto, nuevosDatos.nombreCompleto);
+      assert.equal(reserva.numeroIdentificacion, nuevosDatos.numeroIdentificacion);
+      assert.equal(reserva.correo, nuevosDatos.correo);
+      assert.equal((segunda.body as RespuestaReserva).data.cuposDisponibles, 1);
+    });
+  }
+
+  test('rechaza la reserva cuando no hay cupos', async () => {
+    const usuario = await crearUsuario();
+    const evento = await crearEvento(0);
+
+    const respuesta = await reservar(evento.id, crearToken(usuario.id, 'visitante'));
+
+    assert.equal(respuesta.status, 409, respuesta.texto);
+    assert.equal(comoObjeto(respuesta.body).code, 'NO_AVAILABLE_SLOTS');
+  });
+
+  test('rechaza un evento no publicado', async () => {
+    const usuario = await crearUsuario();
+    const evento = await crearEvento(3);
+    await (await exigirConexionAislada()).getRepository(EventosCapacitaciones).update(
+      evento.id,
+      { estado: EstadoEventoCapacitacion.BORRADOR },
+    );
+
+    const respuesta = await reservar(evento.id, crearToken(usuario.id, 'visitante'));
+
+    assert.equal(respuesta.status, 409, respuesta.texto);
+    assert.equal(comoObjeto(respuesta.body).code, 'EVENT_NOT_PUBLISHED');
+  });
+
+  test('rechaza un evento con fecha vencida', async () => {
+    const usuario = await crearUsuario();
+    const evento = await crearEvento(3);
+    await (await exigirConexionAislada()).getRepository(EventosCapacitaciones).update(
+      evento.id,
+      { fecha: '2000-01-01' },
+    );
+
+    const respuesta = await reservar(evento.id, crearToken(usuario.id, 'visitante'));
+
+    assert.equal(respuesta.status, 409, respuesta.texto);
+    assert.equal(comoObjeto(respuesta.body).code, 'EVENT_DATE_PASSED');
+  });
+
+  test('rechaza una edad fuera de las restricciones del evento', async () => {
+    const usuario = await crearUsuario();
+    const evento = await crearEvento(3);
+    await (await exigirConexionAislada()).getRepository(EventosCapacitaciones).update(
+      evento.id,
+      { edadMinima: 40 },
+    );
+
+    const respuesta = await reservar(evento.id, crearToken(usuario.id, 'visitante'));
+
+    assert.equal(respuesta.status, 400, respuesta.texto);
+    assert.equal(comoObjeto(respuesta.body).code, 'AGE_NOT_ALLOWED');
+  });
+});
+
+describe('PATCH /api/admin/inscripciones/:id/{aprobar|rechazar}', () => {
+  const crearAdministrador = async () => {
+    const admin = await crearUsuario();
+    const conexion = await exigirConexionAislada();
+    const rolAdministrador = await conexion.getRepository(RolModel).findOneByOrFail({ nombre: 'administrador' });
+    await conexion.getRepository(UsuarioModel).update(admin.id, { rol: rolAdministrador });
+    return admin;
+  };
+
+  test('pendiente a rechazada incrementa el cupo una vez', async () => {
+    const usuario = await crearUsuario();
+    const admin = await crearAdministrador();
+    const evento = await crearEvento(3);
+    const reservaRespuesta = await reservar(evento.id, crearToken(usuario.id, 'visitante'));
+    const reservaId = (reservaRespuesta.body as RespuestaReserva).data.id;
+
+    const respuesta = await actualizarReservaComoAdmin(
+      reservaId,
+      'rechazar',
+      crearToken(admin.id, 'administrador'),
+    );
+
+    assert.equal(respuesta.status, 200, respuesta.texto);
+    const reserva = await (await exigirConexionAislada()).getRepository(Reserva).findOneByOrFail({ id: reservaId });
+    const eventoActualizado = await (await exigirConexionAislada()).getRepository(EventosCapacitaciones).findOneByOrFail({ id: evento.id });
+    assert.equal(reserva.estado, EstadoReserva.RECHAZADA);
+    assert.equal(eventoActualizado.cuposDisponibles, 3);
+  });
+
+  test('pendiente a aprobada conserva el cupo descontado', async () => {
+    const usuario = await crearUsuario();
+    const admin = await crearAdministrador();
+    const evento = await crearEvento(3);
+    const reservaRespuesta = await reservar(evento.id, crearToken(usuario.id, 'visitante'));
+    const reservaId = (reservaRespuesta.body as RespuestaReserva).data.id;
+
+    const respuesta = await actualizarReservaComoAdmin(
+      reservaId,
+      'aprobar',
+      crearToken(admin.id, 'administrador'),
+    );
+
+    assert.equal(respuesta.status, 200, respuesta.texto);
+    const reserva = await (await exigirConexionAislada()).getRepository(Reserva).findOneByOrFail({ id: reservaId });
+    const eventoActualizado = await (await exigirConexionAislada()).getRepository(EventosCapacitaciones).findOneByOrFail({ id: evento.id });
+    const participante = await (await exigirConexionAislada()).getRepository(Participantes).findOneBy({ usuarioId: usuario.id, eventoCapacitacionId: evento.id });
+    assert.equal(reserva.estado, EstadoReserva.APROBADA);
+    assert.equal(eventoActualizado.cuposDisponibles, 2);
+    assert.ok(participante);
+    assert.equal(participante?.estado, 'confirmada');
+  });
+
+  test('no crea un Participante duplicado al aprobar', async () => {
+    const usuario = await crearUsuario();
+    const admin = await crearAdministrador();
+    const evento = await crearEvento(3);
+    const conexion = await exigirConexionAislada();
+    const participanteInicial = await conexion.getRepository(Participantes).save({
+      usuarioId: usuario.id,
+      eventoCapacitacionId: evento.id,
+      estado: EstadoParticipante.PENDIENTE,
+    });
+    const reservaRespuesta = await reservar(evento.id, crearToken(usuario.id, 'visitante'));
+    const reservaId = (reservaRespuesta.body as RespuestaReserva).data.id;
+
+    const respuesta = await actualizarReservaComoAdmin(
+      reservaId,
+      'aprobar',
+      crearToken(admin.id, 'administrador'),
+    );
+
+    assert.equal(respuesta.status, 200, respuesta.texto);
+    const participantes = await conexion.getRepository(Participantes).find({
+      where: { usuarioId: usuario.id, eventoCapacitacionId: evento.id },
+    });
+    assert.equal(participantes.length, 1);
+    assert.equal(participantes[0]?.id, participanteInicial.id);
+    assert.equal(participantes[0]?.estado, 'confirmada');
+  });
+
+  test('revierte la aprobación y el Participante si falla el guardado de la Reserva', async () => {
+    const usuario = await crearUsuario();
+    const admin = await crearAdministrador();
+    const evento = await crearEvento(3);
+    const reservaRespuesta = await reservar(evento.id, crearToken(usuario.id, 'visitante'));
+    const reservaId = (reservaRespuesta.body as RespuestaReserva).data.id;
+    const conexion = await exigirConexionAislada();
+    const nombreTrigger = `reservas_bloqueo_${Date.now()}`;
+
+    await conexion.query(`
+      CREATE TRIGGER \`${nombreTrigger}\`
+      BEFORE UPDATE ON \`reservas\`
+      FOR EACH ROW
+      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Fallo de prueba al aprobar reserva'
+    `);
+
+    try {
+      const respuesta = await actualizarReservaComoAdmin(
+        reservaId,
+        'aprobar',
+        crearToken(admin.id, 'administrador'),
+      );
+
+      assert.equal(respuesta.status, 500, respuesta.texto);
+      const reserva = await conexion.getRepository(Reserva).findOneByOrFail({ id: reservaId });
+      const participantes = await conexion.getRepository(Participantes).find({
+        where: { usuarioId: usuario.id, eventoCapacitacionId: evento.id },
+      });
+      assert.equal(reserva.estado, EstadoReserva.PENDIENTE);
+      assert.equal(participantes.length, 0);
+    } finally {
+      await conexion.query(`DROP TRIGGER \`${nombreTrigger}\``);
+    }
+  });
+
+  test('rechazada a rechazada no vuelve a liberar cupo', async () => {
+    const usuario = await crearUsuario();
+    const admin = await crearAdministrador();
+    const evento = await crearEvento(3);
+    const reservaRespuesta = await reservar(evento.id, crearToken(usuario.id, 'visitante'));
+    const reservaId = (reservaRespuesta.body as RespuestaReserva).data.id;
+    const tokenAdmin = crearToken(admin.id, 'administrador');
+
+    assert.equal((await actualizarReservaComoAdmin(reservaId, 'rechazar', tokenAdmin)).status, 200);
+    const segundaRespuesta = await actualizarReservaComoAdmin(reservaId, 'rechazar', tokenAdmin);
+
+    assert.equal(segundaRespuesta.status, 409, segundaRespuesta.texto);
+    const eventoActualizado = await (await exigirConexionAislada()).getRepository(EventosCapacitaciones).findOneByOrFail({ id: evento.id });
+    assert.equal(eventoActualizado.cuposDisponibles, 3);
+  });
+});
+
+describe('PATCH /api/reservas/:id/cancelar', () => {
+  const crearAdministrador = async () => {
+    const admin = await crearUsuario();
+    const conexion = await exigirConexionAislada();
+    const rolAdministrador = await conexion.getRepository(RolModel).findOneByOrFail({ nombre: 'administrador' });
+    await conexion.getRepository(UsuarioModel).update(admin.id, { rol: rolAdministrador });
+    return admin;
+  };
+
+  test('cancela una reserva pendiente y libera un cupo', async () => {
+    const usuario = await crearUsuario();
+    const evento = await crearEvento(3);
+    const respuestaReserva = await reservar(evento.id, crearToken(usuario.id, 'visitante'));
+    const reservaId = (respuestaReserva.body as RespuestaReserva).data.id;
+
+    const respuesta = await cancelarReserva(reservaId, crearToken(usuario.id, 'visitante'));
+    assert.equal(respuesta.status, 200, respuesta.texto);
+    const reserva = await (await exigirConexionAislada()).getRepository(Reserva).findOneByOrFail({ id: reservaId });
+    const eventoActualizado = await (await exigirConexionAislada()).getRepository(EventosCapacitaciones).findOneByOrFail({ id: evento.id });
+    assert.equal(reserva.estado, EstadoReserva.CANCELADA);
+    assert.equal(eventoActualizado.cuposDisponibles, 3);
+  });
+
+  test('cancela una reserva aprobada, cancela su Participante y libera un cupo', async () => {
+    const usuario = await crearUsuario();
+    const admin = await crearAdministrador();
+    const evento = await crearEvento(3);
+    const respuestaReserva = await reservar(evento.id, crearToken(usuario.id, 'visitante'));
+    const reservaId = (respuestaReserva.body as RespuestaReserva).data.id;
+    assert.equal((await actualizarReservaComoAdmin(reservaId, 'aprobar', crearToken(admin.id, 'administrador'))).status, 200);
+
+    const respuesta = await cancelarReserva(reservaId, crearToken(usuario.id, 'visitante'));
+    assert.equal(respuesta.status, 200, respuesta.texto);
+    const conexion = await exigirConexionAislada();
+    const reserva = await conexion.getRepository(Reserva).findOneByOrFail({ id: reservaId });
+    const participante = await conexion.getRepository(Participantes).findOneByOrFail({ usuarioId: usuario.id, eventoCapacitacionId: evento.id });
+    const eventoActualizado = await conexion.getRepository(EventosCapacitaciones).findOneByOrFail({ id: evento.id });
+    assert.equal(reserva.estado, EstadoReserva.CANCELADA);
+    assert.equal(participante.estado, 'cancelada');
+    assert.equal(eventoActualizado.cuposDisponibles, 3);
+  });
+
+  test('cancelar una reserva dos veces no libera dos cupos', async () => {
+    const usuario = await crearUsuario();
+    const evento = await crearEvento(3);
+    const respuestaReserva = await reservar(evento.id, crearToken(usuario.id, 'visitante'));
+    const reservaId = (respuestaReserva.body as RespuestaReserva).data.id;
+    const token = crearToken(usuario.id, 'visitante');
+
+    assert.equal((await cancelarReserva(reservaId, token)).status, 200);
+    const segunda = await cancelarReserva(reservaId, token);
+    assert.equal(segunda.status, 400, segunda.texto);
+    assert.equal((await (await exigirConexionAislada()).getRepository(EventosCapacitaciones).findOneByOrFail({ id: evento.id })).cuposDisponibles, 3);
+  });
+
+  test('rechaza cancelar una reserva rechazada', async () => {
+    const usuario = await crearUsuario();
+    const admin = await crearAdministrador();
+    const evento = await crearEvento(3);
+    const respuestaReserva = await reservar(evento.id, crearToken(usuario.id, 'visitante'));
+    const reservaId = (respuestaReserva.body as RespuestaReserva).data.id;
+    assert.equal((await actualizarReservaComoAdmin(reservaId, 'rechazar', crearToken(admin.id, 'administrador'))).status, 200);
+
+    const respuesta = await cancelarReserva(reservaId, crearToken(usuario.id, 'visitante'));
+    assert.equal(respuesta.status, 400, respuesta.texto);
+  });
+
+  test('rechaza cancelar una reserva de otro usuario', async () => {
+    const usuario = await crearUsuario();
+    const otroUsuario = await crearUsuario();
+    const evento = await crearEvento(3);
+    const respuestaReserva = await reservar(evento.id, crearToken(usuario.id, 'visitante'));
+    const reservaId = (respuestaReserva.body as RespuestaReserva).data.id;
+
+    const respuesta = await cancelarReserva(reservaId, crearToken(otroUsuario.id, 'visitante'));
+    assert.equal(respuesta.status, 403, respuesta.texto);
   });
 });
