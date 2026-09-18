@@ -52,6 +52,11 @@ router.post(
   verificarToken,
   (req, res) => inscripcionController.inscribir(req, res),
 );
+router.put(
+  '/:id/reserva',
+  verificarToken,
+  (req, res) => inscripcionController.editarReserva(req, res),
+);
 
 router.post(
   '/:id/reserva',

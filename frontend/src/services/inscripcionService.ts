@@ -17,21 +17,26 @@ export interface DatosReserva {
   telefono: string;
 }
 
+export type EstadoReserva =
+  | 'pendiente'
+  | 'aprobada'
+  | 'rechazada'
+  | 'cancelada';
+
 export interface ReservaResponse extends DatosReserva {
   id: number;
   usuarioId: number;
   eventoCapacitacionId: number;
-  estado: 'pendiente' | 'aprobada' | 'rechazada' | 'cancelada';
+  estado: EstadoReserva;
   createdAt: string;
   updatedAt: string;
-  cuposDisponibles: number;
+  cuposDisponibles: number | null;
 }
-
-export type EstadoReserva = 'pendiente' | 'aprobada' | 'rechazada' | 'cancelada';
 
 export interface ConsultaReservaResponse {
   existe: boolean;
   estado: EstadoReserva | null;
+  reserva: ReservaResponse | null;
 }
 
 export async function inscribirseEnEvento(
@@ -65,7 +70,8 @@ export async function crearReserva(
       incluirAuth: true,
       incluirContentType: true,
       desempaquetarData: true,
-      mensajeError: 'No se pudo enviar la solicitud de inscripción.',
+      mensajeError:
+        'No se pudo enviar la solicitud de inscripción.',
     },
   );
 }
@@ -75,10 +81,33 @@ export async function consultarReservaEvento(
 ): Promise<ConsultaReservaResponse> {
   return api.solicitar<ConsultaReservaResponse>(
     `/eventos-capacitaciones/${eventoId}/reserva`,
-    { method: 'GET' },
+    {
+      method: 'GET',
+    },
     {
       incluirAuth: true,
-      mensajeError: 'No se pudo consultar la solicitud de inscripción.',
+      desempaquetarData: true,
+      mensajeError:
+        'No se pudo consultar la solicitud de inscripción.',
+    },
+  );
+}
+
+export async function editarReserva(
+  eventoId: number,
+  datos: DatosReserva,
+): Promise<ReservaResponse> {
+  return api.solicitar<ReservaResponse>(
+    `/eventos-capacitaciones/${eventoId}/reserva`,
+    {
+      method: 'PUT',
+      body: JSON.stringify(datos),
+    },
+    {
+      incluirAuth: true,
+      incluirContentType: true,
+      desempaquetarData: true,
+      mensajeError: 'No se pudo actualizar la reserva.',
     },
   );
 }

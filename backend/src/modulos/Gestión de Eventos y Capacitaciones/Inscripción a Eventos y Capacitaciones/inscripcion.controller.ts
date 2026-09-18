@@ -197,6 +197,106 @@ export class InscripcionController {
     }
   }
 
+    async editarReserva(req: Request, res: Response) {
+    try {
+      // ---------------------------------------------------------
+      // 1. Verificar usuario autenticado
+      // ---------------------------------------------------------
+      if (!req.usuario?.id) {
+        return res.status(401).json({
+          ok: false,
+          code: 'UNAUTHORIZED',
+          message: 'Usuario no autenticado.',
+        });
+      }
+
+      // ---------------------------------------------------------
+      // 2. Validar ID del evento/capacitación
+      // ---------------------------------------------------------
+      const idParam = req.params.id;
+
+      if (
+        typeof idParam !== 'string' ||
+        !/^[1-9]\d*$/.test(idParam)
+      ) {
+        return res.status(400).json({
+          ok: false,
+          code: 'INVALID_EVENT_ID',
+          message: 'El id debe ser un número entero positivo.',
+        });
+      }
+
+      const eventoCapacitacionId = Number(idParam);
+
+      if (!Number.isSafeInteger(eventoCapacitacionId)) {
+        return res.status(400).json({
+          ok: false,
+          code: 'INVALID_EVENT_ID',
+          message: 'El id debe ser un número entero positivo.',
+        });
+      }
+
+      // ---------------------------------------------------------
+      // 3. Editar reserva
+      // ---------------------------------------------------------
+      const resultado = await service.editarReserva(
+        req.usuario.id,
+        eventoCapacitacionId,
+        req.body as DatosReserva,
+      );
+
+      // ---------------------------------------------------------
+      // 4. Respuesta exitosa
+      // ---------------------------------------------------------
+      return res.status(200).json({
+        ok: true,
+        message: 'Su reserva ah sido actualizada correctamente.',
+        data: {
+          id: resultado.reserva.id,
+          usuarioId: resultado.reserva.usuarioId,
+          eventoCapacitacionId:
+            resultado.reserva.eventoCapacitacionId,
+          nombreCompleto:
+            resultado.reserva.nombreCompleto,
+          fechaNacimiento:
+            resultado.reserva.fechaNacimiento,
+          tipoIdentificacion:
+            resultado.reserva.tipoIdentificacion,
+          numeroIdentificacion:
+            resultado.reserva.numeroIdentificacion,
+          correo:
+            resultado.reserva.correo,
+          telefono:
+            resultado.reserva.telefono,
+          estado:
+            resultado.reserva.estado,
+          createdAt:
+            resultado.reserva.createdAt,
+          updatedAt:
+            resultado.reserva.updatedAt,
+          cuposDisponibles:
+            resultado.cuposDisponibles,
+        },
+      });
+    } catch (error) {
+      // ---------------------------------------------------------
+      // 5. Manejar errores del service
+      // ---------------------------------------------------------
+      if (
+        error instanceof Error &&
+        error.name === 'ReservationNotEditableError'
+      ) {
+        return res.status(409).json({
+          ok: false,
+          code: 'RESERVATION_NOT_EDITABLE',
+          message: error.message,
+        });
+      }
+
+      return manejarError(res, error);
+    }
+  }
+
   async inscribir(req: Request, res: Response) {
     try {
       if (!req.usuario?.id) {

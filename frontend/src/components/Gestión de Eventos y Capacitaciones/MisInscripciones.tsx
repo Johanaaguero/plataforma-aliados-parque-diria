@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import {
-  cancelarInscripcion,
-  cancelarReserva,
-  obtenerMisInscripciones,
-  type MiInscripcion,
-} from '../../services/MisInscripcionesService';
-
+import {cancelarInscripcion, cancelarReserva, obtenerMisInscripciones, type MiInscripcion,} from '../../services/MisInscripcionesService';
 import { mostrarFeedback } from '../ui/FeedbackToast';
+import FormularioReserva from './FormularioReserva';
+import {
+  consultarReservaEvento,
+  type DatosReserva,
+} from '../../services/inscripcionService';
+import type { EventoCapacitacion } from '../../services/eventosCapacitacionesService';
 
 type FiltroTipo = 'todas' | 'evento' | 'capacitacion';
 type FiltroTiempo = 'proximas' | 'pasadas' | 'canceladas' | 'todas';
@@ -132,6 +132,15 @@ export default function MisInscripciones() {
 
   const [cancelando, setCancelando] = useState(false);
 
+  const [reservaAEditar, setReservaAEditar] =
+    useState<MiInscripcion | null>(null);
+
+  const [datosReservaAEditar, setDatosReservaAEditar] =
+    useState<DatosReserva | null>(null);
+
+  const [cargandoEdicion, setCargandoEdicion] =
+    useState(false);
+
   const confirmarCancelacion = async () => {
     if (!reservaACancelar || cancelando) return;
 
@@ -171,6 +180,72 @@ export default function MisInscripciones() {
       );
     } finally {
       setCancelando(false);
+    }
+  };
+
+  const abrirEdicionReserva = async (
+    inscripcion: MiInscripcion,
+  ) => {
+    if (
+      inscripcion.origen !== 'reserva' ||
+      inscripcion.estado !== 'pendiente' ||
+      !esFechaFutura(inscripcion.fechaActividad)
+    ) {
+      mostrarFeedback(
+        'error',
+        'Esta reserva ya no se puede editar.',
+      );
+      return;
+    }
+
+    setCargandoEdicion(true);
+
+    try {
+      const resultado =
+        await consultarReservaEvento(
+          inscripcion.eventoCapacitacionId,
+        );
+
+      if (
+        !resultado.existe ||
+        !resultado.reserva ||
+        resultado.reserva.estado !== 'pendiente'
+      ) {
+        mostrarFeedback(
+          'error',
+          'La reserva ya no está disponible para edición.',
+        );
+        return;
+      }
+
+      setDatosReservaAEditar({
+        nombreCompleto:
+          resultado.reserva.nombreCompleto,
+        fechaNacimiento:
+          resultado.reserva.fechaNacimiento,
+        tipoIdentificacion:
+          resultado.reserva.tipoIdentificacion,
+        numeroIdentificacion:
+          resultado.reserva.numeroIdentificacion,
+        correo: resultado.reserva.correo,
+        telefono: resultado.reserva.telefono,
+      });
+
+      setReservaAEditar(inscripcion);
+    } catch (errorSolicitud: unknown) {
+      console.error(
+        'Error al cargar la reserva para editar:',
+        errorSolicitud,
+      );
+
+      mostrarFeedback(
+        'error',
+        errorSolicitud instanceof Error
+          ? errorSolicitud.message
+          : 'No se pudo cargar la reserva para editar.',
+      );
+    } finally {
+      setCargandoEdicion(false);
     }
   };
 
@@ -637,6 +712,12 @@ export default function MisInscripciones() {
                       inscripcion.estado === 'confirmada' ||
                       inscripcion.estado === 'aprobada');
 
+                console.log('INSCRIPCIÓN:', inscripcion);
+                  const puedeEditar =
+                    !actividadPasada &&
+                    inscripcion.estado === 'pendiente' &&
+                    inscripcion.origen === 'reserva';
+
                   return (
                     <li
                       key={inscripcion.id}
@@ -819,19 +900,38 @@ export default function MisInscripciones() {
                           </div>
                         </div>
 
-                        {puedeCancelar && (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setReservaACancelar(
-                                inscripcion,
-                              )
-                            }
-                            className="shrink-0 rounded-xl border border-rose-300/80 bg-rose-50/70 px-3.5 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-100 dark:border-rose-300/20 dark:bg-rose-500/10 dark:text-rose-200 dark:hover:bg-rose-500/20"
-                          >
-                            Cancelar reserva
-                          </button>
-                        )}
+                        <div className="flex shrink-0 flex-wrap gap-2">
+                          {puedeEditar && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                void abrirEdicionReserva(
+                                  inscripcion,
+                                )
+                              }
+                              disabled={cargandoEdicion}
+                              className="rounded-xl border border-[#095540]/20 bg-[#eef7e7] px-3.5 py-2 text-xs font-bold text-[#095540] transition hover:border-[#095540]/30 hover:bg-[#dff0c7] disabled:cursor-not-allowed disabled:opacity-60 dark:border-[#8dc63f]/20 dark:bg-[#8dc63f]/10 dark:text-[#b7e86c] dark:hover:bg-[#8dc63f]/15"
+                            >
+                              {cargandoEdicion
+                                ? 'Cargando...'
+                                : 'Editar reserva'}
+                            </button>
+                          )}
+
+                          {puedeCancelar && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setReservaACancelar(
+                                  inscripcion,
+                                )
+                              }
+                              className="rounded-xl border border-rose-300/80 bg-rose-50/70 px-3.5 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-100 dark:border-rose-300/20 dark:bg-rose-500/10 dark:text-rose-200 dark:hover:bg-rose-500/20"
+                            >
+                              Cancelar reserva
+                            </button>
+                          )}
+                        </div>
 
                         {tieneDetalle && (
                           <button
@@ -939,6 +1039,31 @@ export default function MisInscripciones() {
               </div>
             )}
           </div>
+        )}
+
+        {reservaAEditar && datosReservaAEditar && (
+          <FormularioReserva
+            evento={
+              {
+                id: reservaAEditar.eventoCapacitacionId,
+                nombre: reservaAEditar.nombreActividad,
+                edadMinima: null,
+                edadMaxima: null,
+              } as EventoCapacitacion
+            }
+            reservaInicial={datosReservaAEditar}
+            onClose={() => {
+              setReservaAEditar(null);
+              setDatosReservaAEditar(null);
+            }}
+            onSuccess={() => {
+              void cargarInscripciones();
+              mostrarFeedback(
+                'registro',
+                'Reserva actualizada correctamente.',
+              );
+            }}
+          />
         )}
 
         {reservaACancelar && (
