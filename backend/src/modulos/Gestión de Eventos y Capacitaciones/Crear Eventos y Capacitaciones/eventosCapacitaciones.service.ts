@@ -1,10 +1,12 @@
 import { AppDataSource } from '../../../data-source';
+
 import {
   EventosCapacitaciones,
   TipoActividad,
   EstadoEventoCapacitacion,
   Temporada,
 } from '../../../models/EventosCapacitaciones';
+
 import { EventoCapacitacionImagen } from '../../../models/EventoCapacitacionImagen';
 import { EstadoReserva, Participantes } from '../../../models/Participantes';
 import { In, Repository } from 'typeorm';
@@ -42,8 +44,7 @@ const TIPOS_MIME_PERMITIDOS = [
   'image/gif',
 ];
 
-const TAMANO_MAXIMO_BYTES =
-  5 * 1024 * 1024;
+const TAMANO_MAXIMO_BYTES = 5 * 1024 * 1024;
 
 export class EventosCapacitacionesService {
   private repo: Repository<EventosCapacitaciones>;
@@ -52,24 +53,14 @@ export class EventosCapacitacionesService {
 
   constructor() {
     this.repo =
-      AppDataSource.getRepository(
-        EventosCapacitaciones,
-      );
+      AppDataSource.getRepository(EventosCapacitaciones);
 
     this.imagenesRepo =
-      AppDataSource.getRepository(
-        EventoCapacitacionImagen,
-      );
+      AppDataSource.getRepository(EventoCapacitacionImagen);
 
     this.participantesRepo =
-      AppDataSource.getRepository(
-        Participantes,
-      );
+      AppDataSource.getRepository(Participantes);
   }
-
-  // =========================================================
-  // VALIDACIONES GENERALES
-  // =========================================================
 
   private validar(
     data: Partial<CreateEventoCapacitacionDTO>,
@@ -82,12 +73,7 @@ export class EventosCapacitacionesService {
       EstadoEventoCapacitacion.BORRADOR;
 
     const esBorrador =
-      estado ===
-      EstadoEventoCapacitacion.BORRADOR;
-
-    // ---------------------------------------------------------
-    // NOMBRE
-    // ---------------------------------------------------------
+      estado === EstadoEventoCapacitacion.BORRADOR;
 
     if (
       data.nombre !== undefined &&
@@ -100,10 +86,6 @@ export class EventosCapacitacionesService {
       }
     }
 
-    // ---------------------------------------------------------
-    // LUGAR
-    // ---------------------------------------------------------
-
     if (
       data.lugar !== undefined &&
       data.lugar !== null
@@ -114,10 +96,6 @@ export class EventosCapacitacionesService {
         );
       }
     }
-
-    // ---------------------------------------------------------
-    // TIPO DE ACTIVIDAD
-    // ---------------------------------------------------------
 
     if (
       data.tipoActividad !== undefined &&
@@ -146,10 +124,6 @@ export class EventosCapacitacionesService {
       );
     }
 
-    // ---------------------------------------------------------
-    // CUPO MÍNIMO
-    // ---------------------------------------------------------
-
     if (
       data.cupoMinimo !== undefined &&
       data.cupoMinimo !== null
@@ -163,10 +137,6 @@ export class EventosCapacitacionesService {
         );
       }
     }
-
-    // ---------------------------------------------------------
-    // CUPO MÁXIMO
-    // ---------------------------------------------------------
 
     if (
       data.cupoMaximo !== undefined &&
@@ -182,10 +152,6 @@ export class EventosCapacitacionesService {
       }
     }
 
-    // ---------------------------------------------------------
-    // RELACIÓN ENTRE CUPOS
-    // ---------------------------------------------------------
-
     if (
       data.cupoMinimo !== undefined &&
       data.cupoMinimo !== null &&
@@ -197,10 +163,6 @@ export class EventosCapacitacionesService {
         'El cupo mínimo no puede ser mayor que el cupo máximo.',
       );
     }
-
-    // ---------------------------------------------------------
-    // EDAD MÍNIMA
-    // ---------------------------------------------------------
 
     if (
       data.edadMinima !== undefined &&
@@ -216,10 +178,6 @@ export class EventosCapacitacionesService {
       }
     }
 
-    // ---------------------------------------------------------
-    // EDAD MÁXIMA
-    // ---------------------------------------------------------
-
     if (
       data.edadMaxima !== undefined &&
       data.edadMaxima !== null
@@ -234,10 +192,6 @@ export class EventosCapacitacionesService {
       }
     }
 
-    // ---------------------------------------------------------
-    // RELACIÓN ENTRE EDADES
-    // ---------------------------------------------------------
-
     if (
       data.edadMinima !== undefined &&
       data.edadMinima !== null &&
@@ -249,10 +203,6 @@ export class EventosCapacitacionesService {
         'La edad mínima no puede ser mayor que la edad máxima.',
       );
     }
-
-    // ---------------------------------------------------------
-    // ESTADO
-    // ---------------------------------------------------------
 
     if (
       data.estado !== undefined &&
@@ -267,10 +217,6 @@ export class EventosCapacitacionesService {
       );
     }
 
-    // ---------------------------------------------------------
-    // TEMPORADA
-    // ---------------------------------------------------------
-
     if (
       data.temporada !== undefined &&
       data.temporada !== null &&
@@ -284,10 +230,6 @@ export class EventosCapacitacionesService {
         ).join(', ')}.`,
       );
     }
-
-    // ---------------------------------------------------------
-    // FECHA
-    // ---------------------------------------------------------
 
     if (
       data.fecha !== undefined &&
@@ -315,7 +257,6 @@ export class EventosCapacitacionesService {
           );
         } else {
           const hoy = new Date();
-
           hoy.setHours(0, 0, 0, 0);
 
           if (fechaIngresada < hoy) {
@@ -326,10 +267,6 @@ export class EventosCapacitacionesService {
         }
       }
     }
-
-    // ---------------------------------------------------------
-    // HORA
-    // ---------------------------------------------------------
 
     if (
       data.hora !== undefined &&
@@ -344,10 +281,6 @@ export class EventosCapacitacionesService {
         );
       }
     }
-
-    // =========================================================
-    // CAMPOS OBLIGATORIOS AL CREAR EN UN ESTADO NO BORRADOR
-    // =========================================================
 
     if (!isUpdate && !esBorrador) {
       if (
@@ -407,11 +340,6 @@ export class EventosCapacitacionesService {
     }
   }
 
-  // =========================================================
-  // VALIDAR QUE UN REGISTRO ESTÉ COMPLETO
-  // ANTES DE PASAR A NO_PUBLICADO O PUBLICADO
-  // =========================================================
-
   private validarDatosCompletosParaCambioEstado(
     registro: Pick<
       EventosCapacitaciones,
@@ -430,10 +358,6 @@ export class EventosCapacitacionesService {
   ) {
     const errores: string[] = [];
 
-    // ---------------------------------------------------------
-    // NOMBRE
-    // ---------------------------------------------------------
-
     if (
       !registro.nombre ||
       registro.nombre.trim().length === 0
@@ -442,10 +366,6 @@ export class EventosCapacitacionesService {
         'El nombre es obligatorio.',
       );
     }
-
-    // ---------------------------------------------------------
-    // DESCRIPCIÓN
-    // ---------------------------------------------------------
 
     if (
       !registro.descripcion ||
@@ -456,29 +376,17 @@ export class EventosCapacitacionesService {
       );
     }
 
-    // ---------------------------------------------------------
-    // FECHA
-    // ---------------------------------------------------------
-
     if (!registro.fecha) {
       errores.push(
         'La fecha es obligatoria.',
       );
     }
 
-    // ---------------------------------------------------------
-    // HORA
-    // ---------------------------------------------------------
-
     if (!registro.hora) {
       errores.push(
         'La hora es obligatoria.',
       );
     }
-
-    // ---------------------------------------------------------
-    // LUGAR
-    // ---------------------------------------------------------
 
     if (
       !registro.lugar ||
@@ -488,10 +396,6 @@ export class EventosCapacitacionesService {
         'El lugar es obligatorio.',
       );
     }
-
-    // ---------------------------------------------------------
-    // TIPO DE ACTIVIDAD
-    // ---------------------------------------------------------
 
     if (
       !registro.tipoActividad ||
@@ -504,19 +408,11 @@ export class EventosCapacitacionesService {
       );
     }
 
-    // ---------------------------------------------------------
-    // TEMPORADA
-    // ---------------------------------------------------------
-
     if (!registro.temporada) {
       errores.push(
         'La temporada es obligatoria.',
       );
     }
-
-    // ---------------------------------------------------------
-    // CUPO MÍNIMO
-    // ---------------------------------------------------------
 
     if (registro.cupoMinimo === null) {
       errores.push(
@@ -530,10 +426,6 @@ export class EventosCapacitacionesService {
         'El cupo mínimo debe ser un número entero positivo.',
       );
     }
-
-    // ---------------------------------------------------------
-    // CUPO MÁXIMO
-    // ---------------------------------------------------------
 
     if (registro.cupoMaximo === null) {
       errores.push(
@@ -558,10 +450,6 @@ export class EventosCapacitacionesService {
       );
     }
 
-    // ---------------------------------------------------------
-    // EDAD MÍNIMA
-    // ---------------------------------------------------------
-
     if (registro.edadMinima === null) {
       errores.push(
         'La edad mínima es obligatoria.',
@@ -574,10 +462,6 @@ export class EventosCapacitacionesService {
         'La edad mínima debe ser un número entero mayor o igual a 0.',
       );
     }
-
-    // ---------------------------------------------------------
-    // EDAD MÁXIMA
-    // ---------------------------------------------------------
 
     if (registro.edadMaxima === null) {
       errores.push(
@@ -602,10 +486,6 @@ export class EventosCapacitacionesService {
       );
     }
 
-    // =========================================================
-    // VALIDAR FORMATO DE FECHA
-    // =========================================================
-
     if (registro.fecha) {
       const fechaRegex =
         /^\d{4}-\d{2}-\d{2}$/;
@@ -629,7 +509,6 @@ export class EventosCapacitacionesService {
           );
         } else {
           const hoy = new Date();
-
           hoy.setHours(0, 0, 0, 0);
 
           if (fechaIngresada < hoy) {
@@ -641,10 +520,6 @@ export class EventosCapacitacionesService {
       }
     }
 
-    // =========================================================
-    // VALIDAR FORMATO DE HORA
-    // =========================================================
-
     if (registro.hora) {
       const horaRegex =
         /^([01]\d|2[0-3]):([0-5]\d)(:[0-5]\d)?$/;
@@ -655,10 +530,6 @@ export class EventosCapacitacionesService {
         );
       }
     }
-
-    // =========================================================
-    // VALIDAR LONGITUD
-    // =========================================================
 
     if (
       registro.nombre &&
@@ -678,10 +549,6 @@ export class EventosCapacitacionesService {
       );
     }
 
-    // =========================================================
-    // LANZAR ERROR
-    // =========================================================
-
     if (errores.length > 0) {
       const err = new Error(
         `El registro no está completo. ${errores.join(' ')}`,
@@ -692,10 +559,6 @@ export class EventosCapacitacionesService {
       throw err;
     }
   }
-
-  // =========================================================
-  // VALIDAR IMAGEN
-  // =========================================================
 
   private validarImagen(
     data: ImagenUploadDTO,
@@ -730,8 +593,7 @@ export class EventosCapacitacionesService {
     ) {
       errores.push(
         `La imagen supera el tamaño máximo permitido de ${
-          TAMANO_MAXIMO_BYTES /
-          (1024 * 1024)
+          TAMANO_MAXIMO_BYTES / (1024 * 1024)
         } MB.`,
       );
     }
@@ -746,10 +608,6 @@ export class EventosCapacitacionesService {
       throw err;
     }
   }
-
-  // =========================================================
-  // OBTENER EVENTO
-  // =========================================================
 
   private async obtenerOFallar(
     id: number,
@@ -772,10 +630,6 @@ export class EventosCapacitacionesService {
     return registro;
   }
 
-  // =========================================================
-  // OBTENER IMAGEN
-  // =========================================================
-
   private async obtenerImagenOFallar(
     id: number,
   ) {
@@ -797,9 +651,46 @@ export class EventosCapacitacionesService {
     return imagen;
   }
 
-  // =========================================================
-  // CREAR
-  // =========================================================
+  private async obtenerCantidadInscritos(
+    eventoCapacitacionId: number,
+  ): Promise<number> {
+    const resultado =
+      await this.participantesRepo
+        .createQueryBuilder('participante')
+        .where(
+          'participante.eventoCapacitacionId = :eventoCapacitacionId',
+          { eventoCapacitacionId },
+        )
+        .andWhere(
+          'participante.estado IN (:...estadosActivos)',
+          {
+            estadosActivos: [
+              EstadoReserva.PENDIENTE,
+              EstadoReserva.CONFIRMADA,
+            ],
+          },
+        )
+        .getCount();
+
+    return resultado;
+  }
+
+  private async actualizarCuposDisponibles(
+    registro: EventosCapacitaciones,
+  ) {
+    const inscritos =
+      await this.obtenerCantidadInscritos(
+        registro.id,
+      );
+
+    registro.cuposDisponibles =
+      calcularCuposDisponibles(
+        registro.cupoMaximo,
+        inscritos,
+      );
+
+    return registro;
+  }
 
   async create(
     data: CreateEventoCapacitacionDTO,
@@ -857,46 +748,40 @@ export class EventosCapacitacionesService {
     const nuevo =
       this.repo.create({
         nombre: data.nombre ?? null,
-
         descripcion:
           data.descripcion ?? null,
-
         fecha:
           data.fecha ?? null,
-
         hora:
           data.hora ?? null,
-
         lugar:
           data.lugar ?? null,
-
         tipoActividad:
           data.tipoActividad,
-
         cupoMinimo:
           data.cupoMinimo ?? null,
-
         cupoMaximo:
           data.cupoMaximo ?? null,
-
+        cuposDisponibles:
+          data.cupoMaximo ?? null,
         edadMinima:
           data.edadMinima ?? null,
-
         edadMaxima:
           data.edadMaxima ?? null,
-
         estado,
-
         temporada:
           data.temporada ?? null,
       });
 
-    return this.repo.save(nuevo);
-  }
+    const guardado =
+      await this.repo.save(nuevo);
 
-  // =========================================================
-  // ACTUALIZAR
-  // =========================================================
+    await this.actualizarCuposDisponibles(
+      guardado,
+    );
+
+    return this.repo.save(guardado);
+  }
 
   async update(
     id: number,
@@ -904,10 +789,6 @@ export class EventosCapacitacionesService {
   ) {
     const registro =
       await this.obtenerOFallar(id);
-
-    // ---------------------------------------------------------
-    // VALIDAR ESTADO
-    // ---------------------------------------------------------
 
     if (data.estado !== undefined) {
       if (
@@ -936,33 +817,23 @@ export class EventosCapacitacionesService {
       }
     }
 
-    // ---------------------------------------------------------
-    // VALIDAR LOS DATOS RECIBIDOS
-    // ---------------------------------------------------------
-
     this.validar(data, true);
-        // ---------------------------------------------------------
-    // NO PERMITIR CAMBIAR EL TIPO DE ACTIVIDAD
-    // UNA VEZ QUE YA FUE PUBLICADO
-    // ---------------------------------------------------------
+
     if (
       data.tipoActividad !== undefined &&
-      data.tipoActividad !== registro.tipoActividad &&
-      registro.estado === EstadoEventoCapacitacion.PUBLICADO
+      data.tipoActividad !==
+        registro.tipoActividad &&
+      registro.estado ===
+        EstadoEventoCapacitacion.PUBLICADO
     ) {
       const err = new Error(
         'No se puede cambiar el tipo de actividad una vez que fue publicado.',
       );
+
       err.name = 'ValidationError';
+
       throw err;
     }
-
-    // ---------------------------------------------------------
-    // CONSTRUIR LOS DATOS FINALES
-    //
-    // Se toman los valores nuevos cuando vienen en data
-    // y los valores actuales cuando no vienen.
-    // ---------------------------------------------------------
 
     const datosFinales: Pick<
       EventosCapacitaciones,
@@ -1042,20 +913,18 @@ export class EventosCapacitacionesService {
     ) {
       this.validar(
         {
-          cupoMinimo: datosFinales.cupoMinimo,
-          cupoMaximo: datosFinales.cupoMaximo,
-          edadMinima: datosFinales.edadMinima,
-          edadMaxima: datosFinales.edadMaxima,
+          cupoMinimo:
+            datosFinales.cupoMinimo,
+          cupoMaximo:
+            datosFinales.cupoMaximo,
+          edadMinima:
+            datosFinales.edadMinima,
+          edadMaxima:
+            datosFinales.edadMaxima,
         },
         true,
       );
     }
-
-    // =========================================================
-    // BORRADOR → NO_PUBLICADO
-    //
-    // DEBE ESTAR COMPLETO
-    // =========================================================
 
     if (
       data.estado ===
@@ -1068,12 +937,6 @@ export class EventosCapacitacionesService {
       );
     }
 
-    // =========================================================
-    // CUALQUIER TRANSICIÓN → PUBLICADO
-    //
-    // DEBE ESTAR COMPLETO
-    // =========================================================
-
     if (
       data.estado ===
       EstadoEventoCapacitacion.PUBLICADO
@@ -1083,9 +946,10 @@ export class EventosCapacitacionesService {
       );
     }
 
-    // ---------------------------------------------------------
-    // APLICAR CAMBIOS
-    // ---------------------------------------------------------
+    const cambioCupoMaximo =
+      data.cupoMaximo !== undefined &&
+      data.cupoMaximo !==
+        registro.cupoMaximo;
 
     this.repo.merge(registro, {
       ...data,
@@ -1151,12 +1015,19 @@ export class EventosCapacitacionesService {
           : registro.temporada,
     });
 
-    return this.repo.save(registro);
-  }
+    const guardado =
+      await this.repo.save(registro);
 
-  // =========================================================
-  // OBTENER TODOS
-  // =========================================================
+    if (cambioCupoMaximo) {
+      await this.actualizarCuposDisponibles(
+        guardado,
+      );
+
+      return this.repo.save(guardado);
+    }
+
+    return guardado;
+  }
 
   async findAll(filtros?: {
     tipoActividad?: TipoActividad;
@@ -1183,70 +1054,95 @@ export class EventosCapacitacionesService {
         filtros.temporada;
     }
 
-    const registros = await this.repo.find({
-      where,
-      order: {
-        fecha: 'ASC',
-        hora: 'ASC',
-      },
-    });
+    const registros =
+      await this.repo.find({
+        where,
+        order: {
+          fecha: 'ASC',
+          hora: 'ASC',
+        },
+      });
 
     if (registros.length === 0) {
       return [];
     }
 
-    const idsEventos = registros.map((registro) => registro.id);
-    const conteos = await this.participantesRepo
-      .createQueryBuilder('participante')
-      .select(
-        'participante.eventoCapacitacionId',
-        'eventoCapacitacionId',
-      )
-      .addSelect('COUNT(*)', 'inscritos')
-      .where(
-        'participante.eventoCapacitacionId IN (:...idsEventos)',
-        { idsEventos },
-      )
-      .andWhere('participante.estado IN (:...estadosActivos)', {
-        estadosActivos: [EstadoReserva.PENDIENTE, EstadoReserva.CONFIRMADA],
-      })
-      .groupBy('participante.eventoCapacitacionId')
-      .getRawMany<{
-        eventoCapacitacionId: string | number;
-        inscritos: string | number;
-      }>();
+    const idsEventos =
+      registros.map(
+        (registro) => registro.id,
+      );
 
-    const inscritosPorEvento = new Map(
-      conteos.map((conteo) => [
-        Number(conteo.eventoCapacitacionId),
-        Number(conteo.inscritos),
-      ]),
-    );
+    const conteos =
+      await this.participantesRepo
+        .createQueryBuilder('participante')
+        .select(
+          'participante.eventoCapacitacionId',
+          'eventoCapacitacionId',
+        )
+        .addSelect(
+          'COUNT(*)',
+          'inscritos',
+        )
+        .where(
+          'participante.eventoCapacitacionId IN (:...idsEventos)',
+          { idsEventos },
+        )
+        .andWhere(
+          'participante.estado IN (:...estadosActivos)',
+          {
+            estadosActivos: [
+              EstadoReserva.PENDIENTE,
+              EstadoReserva.CONFIRMADA,
+            ],
+          },
+        )
+        .groupBy(
+          'participante.eventoCapacitacionId',
+        )
+        .getRawMany<{
+          eventoCapacitacionId:
+            | string
+            | number;
+          inscritos: string | number;
+        }>();
 
-    return registros.map((registro) => ({
-      ...registro.toPublic(),
-      cuposDisponibles: calcularCuposDisponibles(
-        registro.cupoMaximo,
-        inscritosPorEvento.get(registro.id) ?? 0,
-      ),
-    }));
+    const inscritosPorEvento =
+      new Map(
+        conteos.map((conteo) => [
+          Number(
+            conteo.eventoCapacitacionId,
+          ),
+          Number(conteo.inscritos),
+        ]),
+      );
+
+    return registros.map((registro) => {
+      const cuposDisponibles =
+        calcularCuposDisponibles(
+          registro.cupoMaximo,
+          inscritosPorEvento.get(
+            registro.id,
+          ) ?? 0,
+        );
+
+      registro.cuposDisponibles =
+        cuposDisponibles;
+
+      return {
+        ...registro.toPublic(),
+        cuposDisponibles,
+      };
+    });
   }
 
-  // =========================================================
-  // ELIMINAR FÍSICAMENTE
-  // Las imágenes relacionadas se eliminan por ON DELETE CASCADE.
-  // =========================================================
-
-  async remove(id: number): Promise<void> {
+  async remove(
+    id: number,
+  ): Promise<void> {
     const registro =
       await this.obtenerOFallar(id);
 
     await this.repo.remove(registro);
   }
-
-  // =========================================================
-  // VALIDAR TRANSICIONES DE ESTADO
-  // =========================================================
 
   private validarCambioEstado(
     estadoActual: EstadoEventoCapacitacion,
@@ -1256,24 +1152,20 @@ export class EventosCapacitacionesService {
       EstadoEventoCapacitacion,
       EstadoEventoCapacitacion[]
     > = {
-      // BORRADOR → NO_PUBLICADO
       [EstadoEventoCapacitacion.BORRADOR]: [
         EstadoEventoCapacitacion.NO_PUBLICADO,
       ],
 
-      // NO_PUBLICADO → PUBLICADO / DESACTIVADO
       [EstadoEventoCapacitacion.NO_PUBLICADO]: [
         EstadoEventoCapacitacion.PUBLICADO,
         EstadoEventoCapacitacion.DESACTIVADO,
       ],
 
-      // PUBLICADO → NO_PUBLICADO / DESACTIVADO
       [EstadoEventoCapacitacion.PUBLICADO]: [
         EstadoEventoCapacitacion.NO_PUBLICADO,
         EstadoEventoCapacitacion.DESACTIVADO,
       ],
 
-      // DESACTIVADO → NO_PUBLICADO
       [EstadoEventoCapacitacion.DESACTIVADO]: [
         EstadoEventoCapacitacion.NO_PUBLICADO,
       ],
@@ -1297,20 +1189,12 @@ export class EventosCapacitacionesService {
     }
   }
 
-  // =========================================================
-  // CAMBIAR ESTADO
-  // =========================================================
-
   async cambiarEstado(
     id: number,
     estado: EstadoEventoCapacitacion,
   ) {
     const registro =
       await this.obtenerOFallar(id);
-
-    // ---------------------------------------------------------
-    // VALIDAR QUE EL ESTADO EXISTA
-    // ---------------------------------------------------------
 
     if (
       !Object.values(
@@ -1328,28 +1212,18 @@ export class EventosCapacitacionesService {
       throw err;
     }
 
-    // ---------------------------------------------------------
-    // SI YA TIENE ESE ESTADO
-    // ---------------------------------------------------------
-
     if (registro.estado === estado) {
-      return registro;
-    }
+      await this.actualizarCuposDisponibles(
+        registro,
+      );
 
-    // ---------------------------------------------------------
-    // VALIDAR LA TRANSICIÓN
-    // ---------------------------------------------------------
+      return this.repo.save(registro);
+    }
 
     this.validarCambioEstado(
       registro.estado,
       estado,
     );
-
-    // =========================================================
-    // BORRADOR → NO_PUBLICADO
-    //
-    // AQUÍ ESTÁ LA CORRECCIÓN PRINCIPAL
-    // =========================================================
 
     if (
       registro.estado ===
@@ -1362,12 +1236,6 @@ export class EventosCapacitacionesService {
       );
     }
 
-    // =========================================================
-    // NO_PUBLICADO → PUBLICADO
-    //
-    // TAMBIÉN DEBE ESTAR COMPLETO
-    // =========================================================
-
     if (
       estado ===
       EstadoEventoCapacitacion.PUBLICADO
@@ -1377,18 +1245,14 @@ export class EventosCapacitacionesService {
       );
     }
 
-    // ---------------------------------------------------------
-    // CAMBIAR ESTADO
-    // ---------------------------------------------------------
-
     registro.estado = estado;
+
+    await this.actualizarCuposDisponibles(
+      registro,
+    );
 
     return this.repo.save(registro);
   }
-
-  // =========================================================
-  // AGREGAR IMAGEN
-  // =========================================================
 
   async addImagen(
     eventoCapacitacionId: number,
@@ -1416,10 +1280,6 @@ export class EventosCapacitacionesService {
     );
   }
 
-  // =========================================================
-  // OBTENER IMÁGENES DE UN EVENTO
-  // =========================================================
-
   async getImagenesPorEvento(
     eventoCapacitacionId: number,
   ) {
@@ -1431,6 +1291,7 @@ export class EventosCapacitacionesService {
       where: {
         eventoCapacitacionId,
       },
+
       select: {
         id: true,
         tipoMime: true,
@@ -1439,15 +1300,12 @@ export class EventosCapacitacionesService {
         fechaCreacion: true,
         eventoCapacitacionId: true,
       },
+
       order: {
         fechaCreacion: 'DESC',
       },
     });
   }
-
-  // =========================================================
-  // OBTENER UNA IMAGEN
-  // =========================================================
 
   async getImagenPorId(
     imagenId: number,
@@ -1457,9 +1315,6 @@ export class EventosCapacitacionesService {
     );
   }
 
-  // =========================================================
-  // ELIMINAR IMAGEN
-  // =========================================================
   async removeImagen(
     eventoCapacitacionId: number,
     imagenId: number,
@@ -1469,11 +1324,16 @@ export class EventosCapacitacionesService {
         imagenId,
       );
 
-    if (imagen.eventoCapacitacionId !== eventoCapacitacionId) {
+    if (
+      imagen.eventoCapacitacionId !==
+      eventoCapacitacionId
+    ) {
       const err = new Error(
         'La imagen no pertenece al evento o capacitación indicado.',
       );
+
       err.name = 'ValidationError';
+
       throw err;
     }
 

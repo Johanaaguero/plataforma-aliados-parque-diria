@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   OneToMany,
 } from 'typeorm';
+
 import { EventoCapacitacionImagen } from './EventoCapacitacionImagen';
 
 export enum TipoActividad {
@@ -30,7 +31,6 @@ export class EventosCapacitaciones {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  // Puede quedar vacío cuando la actividad es un borrador
   @Column({
     type: 'varchar',
     length: 150,
@@ -38,28 +38,24 @@ export class EventosCapacitaciones {
   })
   nombre!: string | null;
 
-  // Puede quedar vacío cuando la actividad es un borrador
   @Column({
     type: 'text',
     nullable: true,
   })
   descripcion!: string | null;
 
-  // Puede quedar vacío cuando la actividad es un borrador
   @Column({
     type: 'date',
     nullable: true,
   })
   fecha!: string | null;
 
-  // Puede quedar vacío cuando la actividad es un borrador
   @Column({
     type: 'time',
     nullable: true,
   })
   hora!: string | null;
 
-  // Puede quedar vacío cuando la actividad es un borrador
   @Column({
     type: 'varchar',
     length: 255,
@@ -67,7 +63,6 @@ export class EventosCapacitaciones {
   })
   lugar!: string | null;
 
-  // siempre puede tener un tipo seleccionado por defecto.
   @Column({
     type: 'enum',
     enum: TipoActividad,
@@ -75,7 +70,6 @@ export class EventosCapacitaciones {
   })
   tipoActividad!: TipoActividad;
 
-  // Es opcional tanto para borradores como para publicaciones
   @Column({
     type: 'int',
     nullable: true,
@@ -83,7 +77,11 @@ export class EventosCapacitaciones {
   })
   cupoMaximo!: number | null;
 
-  @Column({ type: 'int', nullable: true, name: 'cupos_disponibles' })
+  @Column({
+    type: 'int',
+    nullable: true,
+    name: 'cupos_disponibles',
+  })
   cuposDisponibles!: number | null;
 
   @Column({
@@ -107,7 +105,6 @@ export class EventosCapacitaciones {
   })
   edadMaxima!: number | null;
 
-  // Toda actividad nueva comienza como borrador
   @Column({
     type: 'enum',
     enum: EstadoEventoCapacitacion,
@@ -115,7 +112,6 @@ export class EventosCapacitaciones {
   })
   estado!: EstadoEventoCapacitacion;
 
-  // Puede quedar vacío mientras sea borrador
   @Column({
     type: 'enum',
     enum: Temporada,
@@ -148,6 +144,7 @@ export class EventosCapacitaciones {
     lugar?: string | null;
     tipoActividad?: TipoActividad;
     cupoMaximo?: number | null;
+    cuposDisponibles?: number | null;
     cupoMinimo?: number | null;
     edadMinima?: number | null;
     edadMaxima?: number | null;
@@ -181,23 +178,35 @@ export class EventosCapacitaciones {
     }
 
     if (params.tipoActividad !== undefined) {
-      this.tipoActividad = params.tipoActividad;
+      this.tipoActividad =
+        params.tipoActividad;
     }
 
     if (params.cupoMaximo !== undefined) {
-      this.cupoMaximo = params.cupoMaximo;
+      this.cupoMaximo =
+        params.cupoMaximo;
+    }
+
+    if (
+      params.cuposDisponibles !== undefined
+    ) {
+      this.cuposDisponibles =
+        params.cuposDisponibles;
     }
 
     if (params.cupoMinimo !== undefined) {
-      this.cupoMinimo = params.cupoMinimo;
+      this.cupoMinimo =
+        params.cupoMinimo;
     }
 
     if (params.edadMinima !== undefined) {
-      this.edadMinima = params.edadMinima;
+      this.edadMinima =
+        params.edadMinima;
     }
 
     if (params.edadMaxima !== undefined) {
-      this.edadMaxima = params.edadMaxima;
+      this.edadMaxima =
+        params.edadMaxima;
     }
 
     if (params.estado !== undefined) {
@@ -219,6 +228,9 @@ export class EventosCapacitaciones {
       lugar: this.lugar,
       tipoActividad: this.tipoActividad,
       cupoMaximo: this.cupoMaximo,
+      cuposDisponibles:
+        this.cuposDisponibles ??
+        this.cupoMaximo,
       cupoMinimo: this.cupoMinimo,
       edadMinima: this.edadMinima,
       edadMaxima: this.edadMaxima,

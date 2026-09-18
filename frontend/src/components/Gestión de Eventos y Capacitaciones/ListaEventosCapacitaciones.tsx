@@ -2001,51 +2001,35 @@ export default function ListaEventosCapacitaciones({
 
       {eventoDetalle && (
         <DetalleEventoCapacitacion
-          eventoId={eventoDetalle.id}
-          urlBaseApi={urlBaseApi}
-          usuarioAutenticado={rolAutenticado !== null}
-          onSolicitarLogin={onSolicitarLogin}
-          eventoAdministrativo={
-            esAdministrador &&
-            eventoDetalle.estado !==
-              'publicado'
-              ? eventoDetalle
-              : undefined
-          }
-          onInscripcionActualizada={(
-            eventoId,
-            cuposDisponibles,
-          ) => {
-            setEventos(
-              (eventosActuales) =>
-                eventosActuales.map(
-                  (evento) =>
-                    evento.id ===
-                    eventoId
-                      ? {
-                          ...evento,
-                          cuposDisponibles,
-                        }
-                      : evento,
-                ),
-            );
+  eventoId={eventoDetalle.id}
+  urlBaseApi={urlBaseApi}
+  usuarioAutenticado={rolAutenticado !== null}
+  onSolicitarLogin={onSolicitarLogin}
+  eventoAdministrativo={
+    esAdministrador
+      ? eventoDetalle
+      : undefined
+  }
+  onInscripcionActualizada={(
+    eventoId,
+    cuposDisponibles,
+  ) => {
+    setEventos((eventosActuales) =>
+      eventosActuales.map((evento) =>
+        evento.id === eventoId
+          ? { ...evento, cuposDisponibles }
+          : evento,
+      ),
+    );
 
-            setEventoDetalle(
-              (eventoActual) =>
-                eventoActual &&
-                eventoActual.id ===
-                  eventoId
-                  ? {
-                      ...eventoActual,
-                      cuposDisponibles,
-                    }
-                  : eventoActual,
-            );
-          }}
-          onClose={() =>
-            setEventoDetalle(null)
-          }
-        />
+    setEventoDetalle((eventoActual) =>
+      eventoActual && eventoActual.id === eventoId
+        ? { ...eventoActual, cuposDisponibles }
+        : eventoActual,
+    );
+  }}
+  onClose={() => setEventoDetalle(null)}
+/>
       )}
 
       {eventoEditando &&
