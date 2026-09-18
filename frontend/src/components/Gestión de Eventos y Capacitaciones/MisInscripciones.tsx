@@ -93,6 +93,12 @@ const obtenerAcentoTipo = (tipo: string) =>
       'bg-slate-100 text-slate-600 dark:bg-white/5 dark:text-slate-300',
   };
 
+const normalizarEstado = (
+  estado: string | null | undefined,
+): string => {
+  return (estado ?? '').trim().toLowerCase();
+};
+
 const esFechaFutura = (
   valor: string | null | undefined,
 ): boolean => {
@@ -100,9 +106,14 @@ const esFechaFutura = (
     return false;
   }
 
-  const partes = valor.split('-').map(Number);
+  const fechaTexto = valor.substring(0, 10);
 
-  if (partes.length !== 3 || partes.some(Number.isNaN)) {
+  const partes = fechaTexto.split('-').map(Number);
+
+  if (
+    partes.length !== 3 ||
+    partes.some((parte) => Number.isNaN(parte))
+  ) {
     return false;
   }
 
@@ -123,6 +134,7 @@ export default function MisInscripciones() {
   >([]);
 
   const [cargando, setCargando] = useState(true);
+
   const [error, setError] = useState('');
 
   const [filtroTipo, setFiltroTipo] =
@@ -131,9 +143,8 @@ export default function MisInscripciones() {
   const [filtroTiempo, setFiltroTiempo] =
     useState<FiltroTiempo>('proximas');
 
-  const [expandidoId, setExpandidoId] = useState<number | null>(
-    null,
-  );
+  const [expandidoId, setExpandidoId] =
+    useState<number | null>(null);
 
   const [reservaACancelar, setReservaACancelar] =
     useState<MiInscripcion | null>(null);
@@ -154,13 +165,29 @@ export default function MisInscripciones() {
       return;
     }
 
-    if (reservaACancelar.estado !== 'pendiente') {
+    const estado = normalizarEstado(
+      reservaACancelar.estado,
+    );
+
+    const actividadPasada = !esFechaFutura(
+      reservaACancelar.fechaActividad,
+    );
+
+    if (
+      actividadPasada ||
+      (
+        estado !== 'pendiente' &&
+        estado !== 'confirmada' &&
+        estado !== 'aprobada'
+      )
+    ) {
       mostrarFeedback(
         'error',
-        'Solo se pueden cancelar reservas que estén pendientes.',
+        'Solo se pueden cancelar reservas pendientes, confirmadas o aprobadas de actividades futuras.',
       );
 
       setReservaACancelar(null);
+
       return;
     }
 
@@ -206,15 +233,18 @@ export default function MisInscripciones() {
   const abrirEdicionReserva = async (
     inscripcion: MiInscripcion,
   ) => {
+    const estado = normalizarEstado(inscripcion.estado);
+
     if (
       inscripcion.origen !== 'reserva' ||
-      inscripcion.estado !== 'pendiente' ||
+      estado !== 'pendiente' ||
       !esFechaFutura(inscripcion.fechaActividad)
     ) {
       mostrarFeedback(
         'error',
         'Esta reserva ya no se puede editar.',
       );
+
       return;
     }
 
@@ -226,28 +256,43 @@ export default function MisInscripciones() {
           inscripcion.eventoCapacitacionId,
         );
 
-      if (
-        !resultado.existe ||
-        !resultado.reserva ||
-        resultado.reserva.estado !== 'pendiente'
-      ) {
+      if (!resultado.existe || !resultado.reserva) {
         mostrarFeedback(
           'error',
           'La reserva ya no está disponible para edición.',
         );
+
+        return;
+      }
+
+      const estadoReserva = normalizarEstado(
+        resultado.reserva.estado,
+      );
+
+      if (estadoReserva !== 'pendiente') {
+        mostrarFeedback(
+          'error',
+          'La reserva ya no está disponible para edición.',
+        );
+
         return;
       }
 
       setDatosReservaAEditar({
         nombreCompleto:
           resultado.reserva.nombreCompleto,
+
         fechaNacimiento:
           resultado.reserva.fechaNacimiento,
+
         tipoIdentificacion:
           resultado.reserva.tipoIdentificacion,
+
         numeroIdentificacion:
           resultado.reserva.numeroIdentificacion,
+
         correo: resultado.reserva.correo,
+
         telefono: resultado.reserva.telefono,
       });
 
@@ -316,7 +361,8 @@ export default function MisInscripciones() {
     () =>
       inscripciones.filter(
         (inscripcion) =>
-          inscripcion.estado !== 'cancelada' &&
+          normalizarEstado(inscripcion.estado) !==
+            'cancelada' &&
           esFechaFutura(inscripcion.fechaActividad),
       ).length,
     [inscripciones],
@@ -326,14 +372,16 @@ export default function MisInscripciones() {
     () =>
       inscripciones.filter(
         (inscripcion) =>
-          inscripcion.estado === 'cancelada',
+          normalizarEstado(inscripcion.estado) ===
+          'cancelada',
       ).length,
     [inscripciones],
   );
 
   const totalPasadas = inscripciones.filter(
     (inscripcion) =>
-      inscripcion.estado !== 'cancelada' &&
+      normalizarEstado(inscripcion.estado) !==
+        'cancelada' &&
       !esFechaFutura(inscripcion.fechaActividad),
   ).length;
 
@@ -343,14 +391,16 @@ export default function MisInscripciones() {
     if (filtroTiempo === 'todas') {
       lista = lista.filter(
         (inscripcion) =>
-          inscripcion.estado !== 'cancelada',
+          normalizarEstado(inscripcion.estado) !==
+          'cancelada',
       );
     }
 
     if (filtroTiempo === 'proximas') {
       lista = lista.filter(
         (inscripcion) =>
-          inscripcion.estado !== 'cancelada' &&
+          normalizarEstado(inscripcion.estado) !==
+            'cancelada' &&
           esFechaFutura(inscripcion.fechaActividad),
       );
     }
@@ -358,7 +408,8 @@ export default function MisInscripciones() {
     if (filtroTiempo === 'pasadas') {
       lista = lista.filter(
         (inscripcion) =>
-          inscripcion.estado !== 'cancelada' &&
+          normalizarEstado(inscripcion.estado) !==
+            'cancelada' &&
           !esFechaFutura(inscripcion.fechaActividad),
       );
     }
@@ -366,7 +417,8 @@ export default function MisInscripciones() {
     if (filtroTiempo === 'canceladas') {
       lista = lista.filter(
         (inscripcion) =>
-          inscripcion.estado === 'cancelada',
+          normalizarEstado(inscripcion.estado) ===
+          'cancelada',
       );
     }
 
@@ -722,14 +774,34 @@ export default function MisInscripciones() {
                       inscripcion.fechaActividad,
                     );
 
+                  const estadoInscripcion =
+                    normalizarEstado(inscripcion.estado);
+
                   const puedeCancelar =
                     !actividadPasada &&
-                    inscripcion.estado === 'pendiente';
+                    (
+                      estadoInscripcion === 'pendiente' ||
+                      estadoInscripcion === 'confirmada' ||
+                      estadoInscripcion === 'aprobada'
+                    );
 
                   const puedeEditar =
                     !actividadPasada &&
-                    inscripcion.estado === 'pendiente' &&
+                    estadoInscripcion === 'pendiente' &&
                     inscripcion.origen === 'reserva';
+
+                  const textoEstado =
+                    estadoInscripcion === 'cancelada'
+                      ? 'Cancelada'
+                      : estadoInscripcion === 'pendiente'
+                        ? 'Pendiente'
+                        : estadoInscripcion === 'aprobada'
+                          ? 'Aprobada'
+                          : estadoInscripcion === 'rechazada'
+                            ? 'Rechazada'
+                            : estadoInscripcion === 'confirmada'
+                              ? 'Confirmada'
+                              : inscripcion.estado ?? 'Estado';
 
                   return (
                     <li
@@ -796,25 +868,19 @@ export default function MisInscripciones() {
                               {inscripcion.estado && (
                                 <span
                                   className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${
-                                    inscripcion.estado ===
+                                    estadoInscripcion ===
                                     'cancelada'
                                       ? 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-300/20 dark:bg-rose-500/10 dark:text-rose-200'
-                                      : 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-300/20 dark:bg-emerald-500/10 dark:text-emerald-200'
+                                      : estadoInscripcion ===
+                                          'rechazada'
+                                        ? 'border-red-200 bg-red-50 text-red-700 dark:border-red-300/20 dark:bg-red-500/10 dark:text-red-200'
+                                        : estadoInscripcion ===
+                                            'pendiente'
+                                          ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-300/20 dark:bg-amber-500/10 dark:text-amber-200'
+                                          : 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-300/20 dark:bg-emerald-500/10 dark:text-emerald-200'
                                   }`}
                                 >
-                                  {inscripcion.estado ===
-                                  'cancelada'
-                                    ? 'Cancelada'
-                                    : inscripcion.estado ===
-                                        'pendiente'
-                                      ? 'Pendiente'
-                                      : inscripcion.estado ===
-                                          'aprobada'
-                                        ? 'Aprobada'
-                                        : inscripcion.estado ===
-                                            'rechazada'
-                                          ? 'Rechazada'
-                                          : 'Confirmada'}
+                                  {textoEstado}
                                 </span>
                               )}
                             </div>
@@ -901,7 +967,7 @@ export default function MisInscripciones() {
                               )}
                             </p>
 
-                            {inscripcion.estado ===
+                            {estadoInscripcion ===
                               'cancelada' && (
                               <p className="mt-1 text-xs font-medium text-rose-600 dark:text-rose-300">
                                 Cancelada el{' '}
