@@ -6,6 +6,13 @@ export interface InscripcionAdministrativa {
   nombreUsuario: string;
   correo: string;
   nombreCompleto: string;
+  // Campos capturados en el formulario de inscripción (FormularioReserva).
+  // El backend debe incluirlos en la respuesta de /admin/inscripciones para
+  // que dejen de mostrarse como "No disponible" en el panel.
+  telefono: string | null;
+  fechaNacimiento: string | null;
+  tipoIdentificacion: 'cedula' | 'dimex' | 'pasaporte' | string | null;
+  numeroIdentificacion: string | null;
   eventoCapacitacionId: number;
   nombreActividad: string;
   tipoActividad: 'evento' | 'capacitacion' | string;
