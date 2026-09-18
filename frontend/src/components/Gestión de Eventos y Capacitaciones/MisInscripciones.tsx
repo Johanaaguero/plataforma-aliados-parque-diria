@@ -1,15 +1,25 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import {cancelarInscripcion, cancelarReserva, obtenerMisInscripciones, type MiInscripcion,} from '../../services/MisInscripcionesService';
+import {
+  cancelarInscripcion,
+  cancelarReserva,
+  obtenerMisInscripciones,
+  type MiInscripcion,
+} from '../../services/MisInscripcionesService';
+
 import { mostrarFeedback } from '../ui/FeedbackToast';
+
 import FormularioReserva from './FormularioReserva';
+
 import {
   consultarReservaEvento,
   type DatosReserva,
 } from '../../services/inscripcionService';
+
 import type { EventoCapacitacion } from '../../services/eventosCapacitacionesService';
 
 type FiltroTipo = 'todas' | 'evento' | 'capacitacion';
+
 type FiltroTiempo = 'proximas' | 'pasadas' | 'canceladas' | 'todas';
 
 const formatearFecha = (
@@ -63,7 +73,6 @@ const acentoPorTipo: Record<
     icono:
       'bg-[#00AEEF]/10 text-[#0087BA] dark:bg-[#00AEEF]/15 dark:text-[#67d5ff]',
   },
-
   capacitacion: {
     punto: 'bg-[#8dc63f]',
     texto: 'text-[#567d16] dark:text-[#b7e86c]',
@@ -98,12 +107,11 @@ const esFechaFutura = (
   }
 
   const [anio, mes, dia] = partes;
-  const fechaActividad = new Date(anio, mes - 1, dia);
 
+  const fechaActividad = new Date(anio, mes - 1, dia);
   fechaActividad.setHours(0, 0, 0, 0);
 
   const hoy = new Date();
-
   hoy.setHours(0, 0, 0, 0);
 
   return fechaActividad.getTime() >= hoy.getTime();
@@ -142,7 +150,19 @@ export default function MisInscripciones() {
     useState(false);
 
   const confirmarCancelacion = async () => {
-    if (!reservaACancelar || cancelando) return;
+    if (!reservaACancelar || cancelando) {
+      return;
+    }
+
+    if (reservaACancelar.estado !== 'pendiente') {
+      mostrarFeedback(
+        'error',
+        'Solo se pueden cancelar reservas que estén pendientes.',
+      );
+
+      setReservaACancelar(null);
+      return;
+    }
 
     setCancelando(true);
 
@@ -385,11 +405,7 @@ export default function MisInscripciones() {
     });
 
     return lista;
-  }, [
-    inscripciones,
-    filtroTipo,
-    filtroTiempo,
-  ]);
+  }, [inscripciones, filtroTipo, filtroTiempo]);
 
   const claseFiltro = (activo: boolean) =>
     `rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-200 ${
@@ -708,11 +724,8 @@ export default function MisInscripciones() {
 
                   const puedeCancelar =
                     !actividadPasada &&
-                    (inscripcion.estado === 'pendiente' ||
-                      inscripcion.estado === 'confirmada' ||
-                      inscripcion.estado === 'aprobada');
+                    inscripcion.estado === 'pendiente';
 
-                console.log('INSCRIPCIÓN:', inscripcion);
                   const puedeEditar =
                     !actividadPasada &&
                     inscripcion.estado === 'pendiente' &&
@@ -1058,6 +1071,7 @@ export default function MisInscripciones() {
             }}
             onSuccess={() => {
               void cargarInscripciones();
+
               mostrarFeedback(
                 'registro',
                 'Reserva actualizada correctamente.',
