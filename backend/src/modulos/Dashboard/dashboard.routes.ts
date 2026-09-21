@@ -8,7 +8,7 @@ const router = Router();
 router.get(
   '/',
   verificarToken,
-  autorizarRoles('administrador'),
+  autorizarRoles('administrador', 'super_admin'),
   getDashboard,
 );
 

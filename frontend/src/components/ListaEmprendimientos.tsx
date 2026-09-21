@@ -198,7 +198,8 @@ function ListaEmprendimientos({
   const [errorEliminacion, setErrorEliminacion] = useState<string | null>(null);
 
   const esContextoAdministrativo = contexto === 'administrativo';
-  const esAdministrador = rolAutenticado === 'administrador';
+  const esAdministrador =
+    esContextoAdministrativo && rolAutenticado === 'administrador';
   const esAsociado = rolAutenticado === 'asociado';
   const esGestionAdministrativa = esContextoAdministrativo || esAdministrador || esAsociado;
   const esCatalogoPublico = !esGestionAdministrativa;
@@ -1023,7 +1024,7 @@ useEffect(() => {
           role={esCatalogoPublico ? 'button' : undefined}
           tabIndex={esCatalogoPublico ? 0 : undefined}
           className="
-            sigtad-image-reveal group flex min-h-[580px] max-h-[640px] w-[420px] shrink-0 cursor-pointer snap-center flex-col overflow-hidden sm:w-[480px] md:w-[520px]
+            sigtad-image-reveal group flex min-h-[580px] w-[420px] shrink-0 cursor-pointer snap-center flex-col overflow-hidden sm:w-[480px] md:w-[520px]
             rounded-[1.75rem]
             border border-[#095540]/10
             bg-white/85 backdrop-blur-md dark:bg-emerald-950/80
@@ -1126,23 +1127,6 @@ useEffect(() => {
                 </span>
               )}
             </div>
-
-            {puedeEditar && onEditar && (
-              <button
-                type="button"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onEditar(emprendimiento);
-                }}
-                className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-xl border border-white/25 bg-emerald-600/85 px-2.5 py-2 text-xs font-bold text-white shadow-md backdrop-blur-md transition-all duration-200 hover:bg-emerald-500 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-emerald-950"
-                aria-label={`Editar ${emprendimiento.nombre}`}
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
-                </svg>
-                Editar
-              </button>
-            )}
 
             {/* Categoría */}
             {nombreCategoria && (
@@ -1639,18 +1623,6 @@ useEffect(() => {
                     <h2 id="titulo-detalle-emprendimiento" className="mt-1 font-brand text-xl font-bold text-[#095540] sm:text-2xl">{detalleSeleccionado.nombre}</h2>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
-                    {puedeEditarEmprendimiento(detalleSeleccionado) && onEditar && (
-                      <button
-                        type="button"
-                        onClick={() => onEditar(detalleSeleccionado)}
-                        className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-bold text-white shadow-sm transition-all duration-200 hover:bg-emerald-500 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
-                      >
-                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" aria-hidden="true">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
-                        </svg>
-                        Editar
-                      </button>
-                    )}
                     <button type="button" onClick={() => setDetalleSeleccionado(null)} className="rounded-full p-2 text-[#095540] hover:bg-[#8DC63F]/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444]" aria-label="Cerrar detalles">×</button>
                   </div>
                 </div>
