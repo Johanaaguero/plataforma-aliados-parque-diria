@@ -1,31 +1,57 @@
 import { useEffect, useState } from 'react';
+
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import Registro from './components/Registro';
+
 import Login from './components/login';
+
 import GestionRoles from './components/GestionRoles';
+
 import CuentasBloqueadas from './components/Super_admin/CuentasBloqueadas';
+
 import RecuperarContrasena from './components/RecuperarContrasena';
+
 import RestablecerContrasena from './components/RestablecerContrasena';
+
 import ListaEventosCapacitaciones from './components/Gestión de Eventos y Capacitaciones/ListaEventosCapacitaciones';
+
 import InscripcionesAdmin from './components/Gestión de Eventos y Capacitaciones/InscripcionesAdmin';
+
 import MisInscripciones from './components/Gestión de Eventos y Capacitaciones/MisInscripciones';
+
 import Bitacora from './components/Super_admin/Bitacora';
+
 import { mostrarFeedback } from './components/ui/FeedbackToast';
+
 import { mostrarBienvenidaLogin } from './components/ui/LoginWelcomeOverlay';
 
+import RegistroIncidencia from './components/Gestión de incidencias/RegistroIncidencia';
+
 import { api } from './services/api';
+
 import { useInactividad } from './services/useInactividad';
+
 import RegistroEmprendimiento from './components/RegistroEmprendimiento';
+
 import ListaEmprendimientos from './components/ListaEmprendimientos';
+
 import RegistroCategoria from './components/RegistroCategoria';
+
 import EditarEmprendimiento from './components/EditarEmprendimiento';
+
 import DashboardPage from './components/dashboard/DashboardPage';
+
 import Navbar from './components/informativo/Navbar';
+
 import Hero from './components/informativo/Hero';
+
 import Footer from './components/informativo/Footer';
+
 import Informativo from './components/informativo/general';
+
 import MapaParque from './components/informativo/MapaParque';
+
 import type { Emprendimiento } from './services/emprendimientoService';
 
 type NombreRol =
@@ -176,9 +202,21 @@ function BotonVolverInicio({
       aria-label={texto}
       title={texto}
     >
-      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-        <path d="m15 18-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+      <svg
+        className="h-5 w-5"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        aria-hidden="true"
+      >
+        <path
+          d="m15 18-6-6 6-6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       </svg>
+
       <span className="sr-only">{texto}</span>
     </button>
   );
@@ -187,6 +225,7 @@ function BotonVolverInicio({
 function App() {
   const location = useLocation();
   const navigate = useNavigate();
+
   const [mostrarRegistro, setMostrarRegistro] =
     useState(() => new URLSearchParams(window.location.search).get('registro') === '1');
 
@@ -203,6 +242,7 @@ function App() {
     | 'inicio'
     | 'emprendimientos'
     | 'eventos'
+    | 'incidencias'
     | 'registroEmprendimiento'
     | 'registroCategoria'
     | 'editarEmprendimiento'
@@ -363,6 +403,7 @@ function App() {
         'editarEmprendimiento'
     ) {
       setEmprendimientoEditar(null);
+
       setSeccionActual(
         'emprendimientos'
       );
@@ -403,14 +444,26 @@ function App() {
       registroEmprendimiento: 'Registrar emprendimiento | Aliados Diriá',
       registroCategoria: 'Registrar categoría | Aliados Diriá',
       editarEmprendimiento: 'Editar emprendimiento | Aliados Diriá',
+      incidencias: 'Incidencias | Aliados Diriá',
     };
 
-    document.title = titulos[seccionActual] ?? 'Aliados Diriá';
-  }, [mostrarLogin, mostrarRegistro, seccionActual]);
+    document.title =
+      titulos[seccionActual] ?? 'Aliados Diriá';
+  }, [
+    mostrarLogin,
+    mostrarRegistro,
+    seccionActual,
+  ]);
 
   const cerrarSesion = async () => {
-    mostrarFeedback('despedida', '¡Gracias por visitarnos! Vuelve pronto a Aliados Diriá.');
-    await new Promise((resolver) => window.setTimeout(resolver, 2000));
+    mostrarFeedback(
+      'despedida',
+      '¡Gracias por visitarnos! Vuelve pronto a Aliados Diriá.'
+    );
+
+    await new Promise((resolver) =>
+      window.setTimeout(resolver, 2000)
+    );
 
     try {
       await api.logout();
@@ -473,13 +526,17 @@ function App() {
       setSeccionActual(
         seccionPublicaSolicitada ?? 'inicio'
       );
+
       window.scrollTo({
         top: 0,
         left: 0,
         behavior: 'auto',
       });
     }
-  }, [rutaActual, seccionPublicaSolicitada]);
+  }, [
+    rutaActual,
+    seccionPublicaSolicitada,
+  ]);
 
   const vieneDelDashboard =
     estadoNavegacion?.fromDashboard === true;
@@ -487,11 +544,14 @@ function App() {
   const esModuloAdministrativoDesdeDashboard =
     rolAutenticado === 'administrador' &&
     vieneDelDashboard &&
-    (seccionActual === 'emprendimientos' ||
-      seccionActual === 'eventos');
+    (
+      seccionActual === 'emprendimientos' ||
+      seccionActual === 'eventos'
+    );
 
   const volverDesdeModuloAdministrativo = () => {
     setSeccionActual('inicio');
+
     navigate(
       vieneDelDashboard
         ? '/admin/dashboard'
@@ -569,11 +629,13 @@ function App() {
       <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef]">
         <DashboardPage
           rolAutenticado={rolAutenticado}
+
           onIrRoles={() =>
             navigate('/admin/roles', {
               state: { fromDashboard: true },
             })
           }
+
           onIrEmprendimientos={() => {
             navigate('/', {
               state: {
@@ -582,6 +644,7 @@ function App() {
               },
             });
           }}
+
           onIrEventos={() => {
             navigate('/', {
               state: {
@@ -590,6 +653,7 @@ function App() {
               },
             });
           }}
+
           onIrInscripciones={() =>
             navigate('/admin/inscripciones', {
               state: { fromDashboard: true },
@@ -616,6 +680,7 @@ function App() {
           }
           onClick={volverDesdeModuloAdministrativo}
         />
+
         <GestionRoles />
       </section>
     );
@@ -637,6 +702,7 @@ function App() {
           }
           onClick={volverDesdeModuloAdministrativo}
         />
+
         <InscripcionesAdmin />
       </section>
     );
@@ -650,7 +716,10 @@ function App() {
 
     return (
       <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef] pt-20 sm:pt-24">
-        <BotonVolverInicio onClick={() => navigate('/')} />
+        <BotonVolverInicio
+          onClick={() => navigate('/')}
+        />
+
         <MisInscripciones />
       </section>
     );
@@ -673,10 +742,22 @@ if (
         onClick={() => navigate('/super-admin/dashboard')}
       />
 
-      <Bitacora />
-    </section>
-  );
-}
+  if (
+    rutaActual === '/bitacora' &&
+    rolAutenticado === 'super_admin'
+  ) {
+    return (
+      <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef] pt-20 sm:pt-24">
+        <BotonVolverInicio
+          onClick={() => {
+            window.location.href = '/';
+          }}
+        />
+
+        <Bitacora />
+      </section>
+    );
+  }
 
   /*
    * =========================================================
@@ -693,14 +774,24 @@ if (
           onIrRegistro={() => {
             window.location.href = '/?registro=1';
           }}
+
           onLogin={(rol) => {
-            mostrarFeedback('bienvenida', '¡Bienvenido de nuevo a Aliados del Parque Diriá!');
+            mostrarFeedback(
+              'bienvenida',
+              '¡Bienvenido de nuevo a Aliados del Parque Diriá!'
+            );
+
             setRolAutenticado(rol);
-            const nombre = obtenerNombreUsuarioDesdeToken();
+
+            const nombre =
+              obtenerNombreUsuarioDesdeToken();
+
             setNombreUsuario(nombre);
+
             setUsuarioId(
               obtenerUsuarioIdDesdeToken()
             );
+
             mostrarBienvenidaLogin(nombre);
 
             if (rol === 'administrador') {
@@ -750,8 +841,19 @@ if (
           aria-label="Volver"
           title="Volver"
         >
-          <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-            <path d="m15 18-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+          <svg
+            className="h-5 w-5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            aria-hidden="true"
+          >
+            <path
+              d="m15 18-6-6 6-6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
         </button>
 
@@ -800,8 +902,19 @@ if (
           aria-label="Volver"
           title="Volver"
         >
-          <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-            <path d="m15 18-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+          <svg
+            className="h-5 w-5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            aria-hidden="true"
+          >
+            <path
+              d="m15 18-6-6 6-6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
         </button>
 
@@ -847,6 +960,7 @@ if (
           className="fixed left-3 top-3 z-[60] flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-gray-100/80 text-gray-800 shadow-[0_10px_30px_rgba(7,63,49,0.12)] backdrop-blur-md transition-all duration-200 hover:bg-gray-200/80 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/20 sm:left-5 sm:top-5"
           onClick={() => {
             setEmprendimientoEditar(null);
+
             setSeccionActual(
               'emprendimientos'
             );
@@ -854,8 +968,19 @@ if (
           aria-label="Volver"
           title="Volver"
         >
-          <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-            <path d="m15 18-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+          <svg
+            className="h-5 w-5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            aria-hidden="true"
+          >
+            <path
+              d="m15 18-6-6 6-6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
         </button>
 
@@ -867,6 +992,7 @@ if (
             setEmprendimientoEditar(
               null
             );
+
             setSeccionActual(
               'emprendimientos'
             );
@@ -875,12 +1001,81 @@ if (
             setEmprendimientoEditar(
               null
             );
+
             setSeccionActual(
               'emprendimientos'
             );
           }}
         />
       </section>
+    );
+  }
+
+  /*
+   * =========================================================
+   * INCIDENCIAS
+   * =========================================================
+   */
+
+ if (
+  seccionActual === 'incidencias' &&
+  !mostrarLogin &&
+  !mostrarRegistro
+) {
+  return (
+      <>
+        <Navbar
+          modoAdministracion
+          seccionActiva="inicio"
+          onRegistro={() =>
+            setMostrarRegistro(true)
+          }
+          onLogin={() =>
+            setMostrarLogin(true)
+          }
+          rolAutenticado={
+            rolAutenticado
+          }
+          nombreUsuario={
+            nombreUsuario
+          }
+          onCerrarSesion={() => {
+            void cerrarSesion();
+          }}
+          onCuentasBloqueadas={() =>
+            setMostrarCuentasBloqueadas(
+              true
+            )
+          }
+          onBitacora={() =>
+            navigate('/bitacora')
+          }
+          onIrInicio={() =>
+            setSeccionActual('inicio')
+          }
+          onIrEmprendimientos={() =>
+            setSeccionActual(
+              'emprendimientos'
+            )
+          }
+          onIrEventos={() =>
+            setSeccionActual('eventos')
+          }
+          onRegistrarIncidencia={() =>
+            setSeccionActual('incidencias')
+          }
+        />
+
+        <main className="min-h-[80vh] overflow-x-hidden bg-[#f5f7ef] pt-24 sm:pt-28">
+          <RegistroIncidencia
+            onClose={() =>
+              setSeccionActual('inicio')
+            }
+          />
+        </main>
+
+        <Footer />
+      </>
     );
   }
 
@@ -910,16 +1105,23 @@ if (
             onCerrarSesion={() => {
               void cerrarSesion();
             }}
+
             onIrInicio={() =>
               setSeccionActual('inicio')
             }
+
             onIrEmprendimientos={() =>
               setSeccionActual(
                 'emprendimientos'
               )
             }
+
             onIrEventos={() =>
               setSeccionActual('eventos')
+            }
+
+            onRegistrarIncidencia={() =>
+              setSeccionActual('incidencias')
             }
           />
         )}
@@ -927,7 +1129,9 @@ if (
         {esModuloAdministrativoDesdeDashboard && (
           <BotonVolverInicio
             texto="Volver al Dashboard"
-            onClick={volverDesdeModuloAdministrativo}
+            onClick={
+              volverDesdeModuloAdministrativo
+            }
           />
         )}
 
@@ -943,7 +1147,13 @@ if (
               rolAutenticado
             }
             onSolicitarLogin={(mensaje) => {
-              if (mensaje) mostrarFeedback('error', mensaje);
+              if (mensaje) {
+                mostrarFeedback(
+                  'error',
+                  mensaje
+                );
+              }
+
               setMostrarLogin(true);
             }}
             contexto={
@@ -985,16 +1195,23 @@ if (
             onCerrarSesion={() => {
               void cerrarSesion();
             }}
+
             onIrInicio={() =>
               setSeccionActual('inicio')
             }
+
             onIrEmprendimientos={() =>
               setSeccionActual(
                 'emprendimientos'
               )
             }
+
             onIrEventos={() =>
               setSeccionActual('eventos')
+            }
+
+            onRegistrarIncidencia={() =>
+              setSeccionActual('incidencias')
             }
           />
         )}
@@ -1002,7 +1219,9 @@ if (
         {esModuloAdministrativoDesdeDashboard && (
           <BotonVolverInicio
             texto="Volver al Dashboard"
-            onClick={volverDesdeModuloAdministrativo}
+            onClick={
+              volverDesdeModuloAdministrativo
+            }
           />
         )}
 
@@ -1071,7 +1290,10 @@ if (
 
           <Registro
             onRegistroExitoso={() => {
-              mostrarFeedback('registro', '¡Registro completado con éxito! Bienvenido a la comunidad.');
+              mostrarFeedback(
+                'registro',
+                '¡Registro completado con éxito! Bienvenido a la comunidad.'
+              );
             }}
             onIrLogin={() => {
               setMostrarRegistro(
@@ -1102,14 +1324,24 @@ if (
               setMostrarRegistro(true);
             }}
             onLogin={(rol) => {
-              mostrarFeedback('bienvenida', '¡Bienvenido de nuevo a Aliados del Parque Diriá!');
+              mostrarFeedback(
+                'bienvenida',
+                '¡Bienvenido de nuevo a Aliados del Parque Diriá!'
+              );
+
               setRolAutenticado(rol);
-              const nombre = obtenerNombreUsuarioDesdeToken();
+
+              const nombre =
+                obtenerNombreUsuarioDesdeToken();
+
               setNombreUsuario(nombre);
+
               setUsuarioId(
                 obtenerUsuarioIdDesdeToken()
               );
+
               mostrarBienvenidaLogin(nombre);
+
               setMostrarLogin(false);
               if (rol === 'administrador') {
                 navigate('/admin/dashboard');
@@ -1146,8 +1378,19 @@ if (
             aria-label="Volver"
             title="Volver"
           >
-            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-              <path d="m15 18-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+            <svg
+              className="h-5 w-5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              aria-hidden="true"
+            >
+              <path
+                d="m15 18-6-6 6-6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </button>
 
@@ -1180,8 +1423,19 @@ if (
             aria-label="Volver"
             title="Volver"
           >
-            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-              <path d="m15 18-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+            <svg
+              className="h-5 w-5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              aria-hidden="true"
+            >
+              <path
+                d="m15 18-6-6 6-6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </button>
 
@@ -1216,9 +1470,9 @@ if (
               );
             }}
             onBitacora={() => {
-              window.location.href = '/bitacora';
+              window.location.href =
+                '/bitacora';
             }}
-
             onIrInicio={() =>
               setSeccionActual('inicio')
             }
@@ -1229,6 +1483,10 @@ if (
             }
             onIrEventos={() =>
               setSeccionActual('eventos')
+            }
+
+            onRegistrarIncidencia={() =>
+              setSeccionActual('incidencias')
             }
           />
 

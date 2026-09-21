@@ -16,6 +16,8 @@ import { EventosCapacitaciones } from './models/EventosCapacitaciones';
 import { Participantes } from './models/Participantes';
 import { Reserva } from './models/Reserva';
 import { EventoCapacitacionImagen } from './models/EventoCapacitacionImagen';
+import { Incidencia } from './models/Incidencia';
+import { IncidenciaEvidencia } from './models/IncidenciaEvidencia';
 
 dotenv.config();
 
@@ -55,6 +57,8 @@ export const AppDataSource = new DataSource({
       EventosCapacitaciones,
       Participantes,
         Reserva,
+          Incidencia,
+  IncidenciaEvidencia,
   ],
  
 
