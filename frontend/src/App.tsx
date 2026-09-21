@@ -91,7 +91,7 @@ const obtenerPayloadDesdeToken = (): Record<string, unknown> | null => {
 
     const base64 = payloadCodificado
       .replace(/-/g, '+')
-      .replace(/_/g, '/')
+      .replace(/\_/g, '/')
       .padEnd(
         Math.ceil(payloadCodificado.length / 4) * 4,
         '='
@@ -403,7 +403,6 @@ function App() {
         'editarEmprendimiento'
     ) {
       setEmprendimientoEditar(null);
-
       setSeccionActual(
         'emprendimientos'
       );
@@ -582,6 +581,7 @@ function App() {
       </>
     );
   }
+
   if (rutaActual === '/super-admin/dashboard') {
     if (rolAutenticado !== 'super_admin') {
       navigate('/');
@@ -629,13 +629,11 @@ function App() {
       <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef]">
         <DashboardPage
           rolAutenticado={rolAutenticado}
-
           onIrRoles={() =>
             navigate('/admin/roles', {
               state: { fromDashboard: true },
             })
           }
-
           onIrEmprendimientos={() => {
             navigate('/', {
               state: {
@@ -644,7 +642,6 @@ function App() {
               },
             });
           }}
-
           onIrEventos={() => {
             navigate('/', {
               state: {
@@ -653,7 +650,6 @@ function App() {
               },
             });
           }}
-
           onIrInscripciones={() =>
             navigate('/admin/inscripciones', {
               state: { fromDashboard: true },
@@ -726,21 +722,10 @@ function App() {
   }
 
   /*
- * =========================================================
- * BITÁCORA
- * =========================================================
- */
-
-if (
-  rutaActual === '/bitacora' &&
-  rolAutenticado === 'super_admin'
-) {
-  return (
-    <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef] pt-20 sm:pt-24">
-      <BotonVolverInicio
-        texto="Volver al Dashboard"
-        onClick={() => navigate('/super-admin/dashboard')}
-      />
+   * =========================================================
+   * BITÁCORA
+   * =========================================================
+   */
 
   if (
     rutaActual === '/bitacora' &&
@@ -749,9 +734,8 @@ if (
     return (
       <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef] pt-20 sm:pt-24">
         <BotonVolverInicio
-          onClick={() => {
-            window.location.href = '/';
-          }}
+          texto="Volver al Dashboard"
+          onClick={() => navigate('/super-admin/dashboard')}
         />
 
         <Bitacora />
@@ -774,7 +758,6 @@ if (
           onIrRegistro={() => {
             window.location.href = '/?registro=1';
           }}
-
           onLogin={(rol) => {
             mostrarFeedback(
               'bienvenida',
@@ -960,7 +943,6 @@ if (
           className="fixed left-3 top-3 z-[60] flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-gray-100/80 text-gray-800 shadow-[0_10px_30px_rgba(7,63,49,0.12)] backdrop-blur-md transition-all duration-200 hover:bg-gray-200/80 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/20 sm:left-5 sm:top-5"
           onClick={() => {
             setEmprendimientoEditar(null);
-
             setSeccionActual(
               'emprendimientos'
             );
@@ -1017,12 +999,12 @@ if (
    * =========================================================
    */
 
- if (
-  seccionActual === 'incidencias' &&
-  !mostrarLogin &&
-  !mostrarRegistro
-) {
-  return (
+  if (
+    seccionActual === 'incidencias' &&
+    !mostrarLogin &&
+    !mostrarRegistro
+  ) {
+    return (
       <>
         <Navbar
           modoAdministracion
@@ -1105,21 +1087,17 @@ if (
             onCerrarSesion={() => {
               void cerrarSesion();
             }}
-
             onIrInicio={() =>
               setSeccionActual('inicio')
             }
-
             onIrEmprendimientos={() =>
               setSeccionActual(
                 'emprendimientos'
               )
             }
-
             onIrEventos={() =>
               setSeccionActual('eventos')
             }
-
             onRegistrarIncidencia={() =>
               setSeccionActual('incidencias')
             }
@@ -1195,21 +1173,17 @@ if (
             onCerrarSesion={() => {
               void cerrarSesion();
             }}
-
             onIrInicio={() =>
               setSeccionActual('inicio')
             }
-
             onIrEmprendimientos={() =>
               setSeccionActual(
                 'emprendimientos'
               )
             }
-
             onIrEventos={() =>
               setSeccionActual('eventos')
             }
-
             onRegistrarIncidencia={() =>
               setSeccionActual('incidencias')
             }
@@ -1343,6 +1317,7 @@ if (
               mostrarBienvenidaLogin(nombre);
 
               setMostrarLogin(false);
+
               if (rol === 'administrador') {
                 navigate('/admin/dashboard');
               } else if (rol === 'super_admin') {
@@ -1484,7 +1459,6 @@ if (
             onIrEventos={() =>
               setSeccionActual('eventos')
             }
-
             onRegistrarIncidencia={() =>
               setSeccionActual('incidencias')
             }

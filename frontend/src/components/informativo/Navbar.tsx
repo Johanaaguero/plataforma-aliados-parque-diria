@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
+
 import { useNavigate } from 'react-router-dom';
 
 import logo from '../../assets/logo.png';
+
 import logoBlanco from '../../../logo-blanco.png';
 
 import TemaInterfaz from '../ui/TemaInterfaz';
@@ -19,7 +21,7 @@ interface NavbarProps {
   onIrEmprendimientos: () => void;
   onIrEventos: () => void;
 
-  // Abrir sección de incidencias (visible para cualquier usuario autenticado)
+  // Abrir sección de incidencias
   onRegistrarIncidencia?: () => void;
 
   seccionActiva?: 'inicio' | 'emprendimientos' | 'eventos';
@@ -38,9 +40,7 @@ function Navbar({
   onIrInicio,
   onIrEmprendimientos,
   onIrEventos,
-
   onRegistrarIncidencia,
-
   seccionActiva = 'inicio',
   modoAdministracion = false,
 }: NavbarProps) {
@@ -53,6 +53,7 @@ function Navbar({
   const [navbarVisible, setNavbarVisible] = useState(true);
 
   const ultimoScrollY = useRef(0);
+
   const menuUsuarioRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -83,7 +84,7 @@ function Navbar({
       if (
         menuUsuarioRef.current &&
         !menuUsuarioRef.current.contains(
-          evento.target as Node
+          evento.target as Node,
         )
       ) {
         setMenuUsuarioAbierto(false);
@@ -136,10 +137,10 @@ function Navbar({
   };
 
   const irDashboardSuperAdmin = () => {
-  setMenuAbierto(false);
-  setMenuUsuarioAbierto(false);
-  navigate('/super-admin/dashboard');
-};
+    setMenuAbierto(false);
+    setMenuUsuarioAbierto(false);
+    navigate('/super-admin/dashboard');
+  };
 
   const irMisInscripciones = () => {
     setMenuAbierto(false);
@@ -287,7 +288,7 @@ function Navbar({
               Eventos y Capacitaciones
             </button>
 
-            {/* INCIDENCIAS - VISIBLE SIEMPRE, con o sin sesión */}
+            {/* INCIDENCIAS - VISIBLE SIEMPRE */}
             {onRegistrarIncidencia && (
               <button
                 type="button"
@@ -338,6 +339,7 @@ function Navbar({
                         cy="8"
                         r="3.5"
                       />
+
                       <path d="M5.5 20c.8-3.5 3.2-5.5 6.5-5.5s5.7 2 6.5 5.5" />
                     </svg>
                   </button>
@@ -400,10 +402,8 @@ function Navbar({
                         )}
                       </div>
 
-                      {(
-                        rolAutenticado === 'visitante' ||
-                        rolAutenticado === 'asociado'
-                      ) && (
+                      {(rolAutenticado === 'visitante' ||
+                        rolAutenticado === 'asociado') && (
                         <button
                           type="button"
                           onClick={irMisInscripciones}
@@ -439,9 +439,7 @@ function Navbar({
                           <button
                             type="button"
                             onClick={() => {
-                              setMenuUsuarioAbierto(
-                                false
-                              );
+                              setMenuUsuarioAbierto(false);
                               onCuentasBloqueadas();
                             }}
                             className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10"
@@ -455,9 +453,7 @@ function Navbar({
                           <button
                             type="button"
                             onClick={() => {
-                              setMenuUsuarioAbierto(
-                                false
-                              );
+                              setMenuUsuarioAbierto(false);
                               onBitacora();
                             }}
                             className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10"
@@ -521,30 +517,6 @@ function Navbar({
                   >
                     <path d="M4 7h16M4 12h16M4 17h16" />
                   </svg>
-                </button>
-
-                {menuUsuarioAbierto && (
-                  <div id="menu-usuario" className="sigtad-menu-reveal absolute right-0 top-full z-50 mt-2 w-56 origin-top-right rounded-2xl border border-white/25 bg-[#073f31]/90 p-2 text-white shadow-[0_18px_45px_rgba(7,63,49,0.32)] backdrop-blur-md">
-                    <div className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-emerald-100/60">{rolAutenticado.replace('_', ' ')}</div>
-                    {(rolAutenticado === 'visitante' || rolAutenticado === 'asociado') && <button type="button" onClick={irMisInscripciones} className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10">Mis reservas</button>}
-                    {rolAutenticado === 'asociado' && <>
-                      <button type="button" onClick={irMisEventos} className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10">Mis eventos y capacitaciones</button>
-                      <button type="button" onClick={irMisEmprendimientos} className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10">Mis emprendimientos</button>
-                    </>}
-                    {rolAutenticado === 'administrador' && (
-                      <button type="button" onClick={irDashboard} className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10">Dashboard</button>
-                    )}
-                    {rolAutenticado === 'super_admin' && (
-                      <button
-                        type="button"
-                        onClick={irDashboardSuperAdmin}
-                        className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10"
-                      >
-                        Dashboard
-                      </button>
-                    )}
-                    <button type="button" onClick={cerrarSesionDesdeMenu} className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-bold text-[#d9f3bd] transition hover:bg-white/10">Cerrar sesión</button>
-                  </div>
                 )}
               </button>
             </div>
@@ -636,7 +608,7 @@ function Navbar({
                 </button>
               )}
 
-              {/* INCIDENCIAS - VISIBLE SIEMPRE (con o sin sesión) */}
+              {/* INCIDENCIAS - VISIBLE SIEMPRE */}
               {onRegistrarIncidencia && (
                 <button
                   type="button"
@@ -681,6 +653,7 @@ function Navbar({
             {/* USUARIO AUTENTICADO */}
             {rolAutenticado && (
               <div className="mt-3 grid min-w-0 gap-2 border-t border-[#e2ebe5] pt-3 sm:grid-cols-2">
+
                 {nombreUsuario && (
                   <span
                     className="min-w-0 truncate rounded-full border border-[#8DC63F]/45 bg-[#8DC63F]/15 px-4 py-3 text-center text-sm font-bold text-[#095540]"
@@ -709,6 +682,19 @@ function Navbar({
                 <button
                   type="button"
                   onClick={irDashboard}
+                  className="min-h-12 w-full rounded-full bg-[#095540] px-4 py-3 text-sm font-bold text-white shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f]"
+                >
+                  Dashboard
+                </button>
+              </div>
+            )}
+
+            {/* SUPER ADMIN - DASHBOARD */}
+            {rolAutenticado === 'super_admin' && (
+              <div className="mt-3 border-t border-[#e2ebe5] pt-3">
+                <button
+                  type="button"
+                  onClick={irDashboardSuperAdmin}
                   className="min-h-12 w-full rounded-full bg-[#095540] px-4 py-3 text-sm font-bold text-white shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f]"
                 >
                   Dashboard
