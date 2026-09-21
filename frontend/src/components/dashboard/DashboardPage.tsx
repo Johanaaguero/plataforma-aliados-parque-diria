@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 
 import DashboardAdministrador from './dashboards/DashboardAdministrador';
+import DashboardSuperAdmin from './dashboards/DashboardSuper_admin';
 import AdminLayout from './AdminLayout';
 
 type NombreRol =
@@ -15,6 +16,9 @@ interface DashboardPageProps {
   onIrEmprendimientos: () => void;
   onIrEventos: () => void;
   onIrInscripciones: () => void;
+  onIrBitacora?: () => void;
+  onIrCuentasBloqueadas?: () => void;
+  onCerrarSesion?: () => void;
 }
 
 export default function DashboardPage({
@@ -23,6 +27,9 @@ export default function DashboardPage({
   onIrEmprendimientos,
   onIrEventos,
   onIrInscripciones,
+  onIrBitacora,
+  onIrCuentasBloqueadas,
+  onCerrarSesion,
 }: DashboardPageProps) {
   switch (rolAutenticado) {
     case 'administrador':
@@ -47,7 +54,11 @@ export default function DashboardPage({
               strokeWidth="2"
               aria-hidden="true"
             >
-              <path d="m15 18-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="m15 18-6-6 6-6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
             <span className="sr-only">Volver al inicio</span>
           </Link>
@@ -59,6 +70,15 @@ export default function DashboardPage({
             onIrInscripciones={onIrInscripciones}
           />
         </AdminLayout>
+      );
+
+    case 'super_admin':
+      return (
+        <DashboardSuperAdmin
+          onIrBitacora={onIrBitacora ?? (() => {})}
+          onIrCuentasBloqueadas={onIrCuentasBloqueadas ?? (() => {})}
+          onCerrarSesion={onCerrarSesion ?? (() => {})}
+        />
       );
 
     default:

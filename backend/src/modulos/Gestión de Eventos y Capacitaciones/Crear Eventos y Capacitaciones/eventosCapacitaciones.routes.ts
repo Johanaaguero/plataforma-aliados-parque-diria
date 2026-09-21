@@ -50,23 +50,27 @@ router.patch(
 router.post(
   '/:id/inscripcion',
   verificarToken,
+  autorizarRoles('visitante', 'asociado'),
   (req, res) => inscripcionController.inscribir(req, res),
 );
 router.put(
   '/:id/reserva',
   verificarToken,
+  autorizarRoles('visitante', 'asociado'),
   (req, res) => inscripcionController.editarReserva(req, res),
 );
 
 router.post(
   '/:id/reserva',
   verificarToken,
+  autorizarRoles('visitante', 'asociado'),
   (req, res) => inscripcionController.crearReserva(req, res),
 );
 
 router.get(
   '/:id/reserva',
   verificarToken,
+  autorizarRoles('visitante', 'asociado'),
   (req, res) => inscripcionController.consultarReserva(req, res),
 );
 

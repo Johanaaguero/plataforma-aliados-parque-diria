@@ -1,4 +1,5 @@
 import { obtenerDashboardAdministrador } from './dashboards/administrador.service';
+import { obtenerDashboardSuperAdmin } from './dashboards/super_admin.service';
 
 type UsuarioAutenticado = {
   id: number;
@@ -17,7 +18,10 @@ export const obtenerDashboard = async (usuario: UsuarioAutenticado) => {
   switch (usuario.rol) {
     case 'administrador':
       return obtenerDashboardAdministrador();
-    // Los dashboards de asociado, visitante y super_admin se agregarán aquí.
+
+    case 'super_admin':
+      return obtenerDashboardSuperAdmin();
+
     default:
       throw new DashboardNoDisponibleError();
   }

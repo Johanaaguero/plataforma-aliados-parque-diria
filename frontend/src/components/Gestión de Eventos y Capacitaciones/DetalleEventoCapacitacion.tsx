@@ -16,6 +16,7 @@ interface DetalleEventoCapacitacionProps {
   urlBaseApi: string;
   eventoAdministrativo?: EventoCapacitacion;
   usuarioAutenticado: boolean;
+  puedeInscribirse: boolean;
   onSolicitarLogin: (mensaje?: string) => void;
   onClose: () => void;
   onInscripcionActualizada?: (
@@ -68,6 +69,7 @@ export default function DetalleEventoCapacitacion({
   urlBaseApi,
   eventoAdministrativo,
   usuarioAutenticado,
+  puedeInscribirse,
   onSolicitarLogin,
   onClose,
   onInscripcionActualizada,
@@ -116,6 +118,13 @@ export default function DetalleEventoCapacitacion({
     if (!usuarioAutenticado) {
       onSolicitarLogin(
         'Debes iniciar sesión o registrarte para inscribirte.',
+      );
+      return;
+    }
+
+    if (!puedeInscribirse) {
+      setErrorInscripcion(
+        'Tu rol no permite solicitar inscripciones.',
       );
       return;
     }
@@ -358,10 +367,15 @@ export default function DetalleEventoCapacitacion({
                 disabled={
                   consultandoReserva ||
                   inscribiendo ||
+                  !puedeInscribirse ||
                   evento.cuposDisponibles === 0 ||
                   actividadPasada
                 }
-                className="rounded-full bg-[#095540] px-4 py-1.5 text-sm font-bold text-white transition hover:bg-[#009444] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444] focus-visible:ring-offset-2"
+                className={`rounded-full px-4 py-1.5 text-sm font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444] focus-visible:ring-offset-2 ${
+                  !puedeInscribirse
+                    ? 'border border-[#095540]/15 bg-[#095540]/8 text-[#095540] shadow-sm disabled:cursor-not-allowed'
+                    : 'bg-[#095540] text-white hover:bg-[#009444] disabled:cursor-not-allowed disabled:opacity-50'
+                }`}
               >
                 {actividadPasada
                   ? 'Actividad finalizada'
@@ -369,9 +383,11 @@ export default function DetalleEventoCapacitacion({
                     ? 'Consultando...'
                     : inscribiendo
                       ? 'Inscribiendo...'
-                      : evento.cuposDisponibles === 0
-                        ? 'Sin cupos'
-                        : 'Inscribirme'}
+                      : !puedeInscribirse
+                        ? 'Inscripción no disponible'
+                        : evento.cuposDisponibles === 0
+                          ? 'Sin cupos'
+                          : 'Inscribirme'}
               </button>
             </div>
 

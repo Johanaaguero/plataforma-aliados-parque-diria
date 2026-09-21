@@ -132,9 +132,8 @@ export default function ListaEventosCapacitaciones({
     contexto === 'administrativo';
 
   const esAdministrador =
-    rolAutenticado === 'administrador';
+    esContextoAdministrativo && rolAutenticado === 'administrador';
 
-  const puedeCrearOEditar = esAdministrador;
   const puedeEliminar = esAdministrador;
 
   const esGestionAdministrativa =
@@ -1422,7 +1421,76 @@ export default function ListaEventosCapacitaciones({
           </span>
         </div>
 
+        {!pasada && (
+          <div className="mb-3 flex items-center justify-end gap-2 sm:mb-4">
+            <button
+              type="button"
+              onClick={() =>
+                carruselEventosRef.current?.scrollBy(
+                  {
+                    left: -520,
+                    behavior:
+                      'smooth',
+                  },
+                )
+              }
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-emerald-950/60 text-white shadow-lg backdrop-blur-md transition-all duration-200 hover:bg-emerald-600/30 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] dark:bg-slate-900/80"
+              aria-label="Ver actividades anteriores"
+            >
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth="2"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  d="m15 18-6-6 6-6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                carruselEventosRef.current?.scrollBy(
+                  {
+                    left: 520,
+                    behavior:
+                      'smooth',
+                  },
+                )
+              }
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-emerald-950/60 text-white shadow-lg backdrop-blur-md transition-all duration-200 hover:bg-emerald-600/30 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] dark:bg-slate-900/80"
+              aria-label="Ver más actividades"
+            >
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth="2"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  d="m9 18 6-6-6-6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          </div>
+        )}
+
         <div
+          ref={
+            pasada
+              ? undefined
+              : carruselEventosRef
+          }
           className="flex items-stretch gap-6 overflow-x-auto scroll-smooth px-2 py-4 snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
         >
           {lista.map(
@@ -2004,6 +2072,10 @@ export default function ListaEventosCapacitaciones({
   eventoId={eventoDetalle.id}
   urlBaseApi={urlBaseApi}
   usuarioAutenticado={rolAutenticado !== null}
+  puedeInscribirse={
+    rolAutenticado === 'visitante' ||
+    rolAutenticado === 'asociado'
+  }
   onSolicitarLogin={onSolicitarLogin}
   eventoAdministrativo={
     esAdministrador

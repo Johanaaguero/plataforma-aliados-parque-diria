@@ -111,6 +111,12 @@ function Navbar({
     navigate('/admin/dashboard');
   };
 
+  const irDashboardSuperAdmin = () => {
+  setMenuAbierto(false);
+  setMenuUsuarioAbierto(false);
+  navigate('/super-admin/dashboard');
+};
+
   const irMisInscripciones = () => {
     setMenuAbierto(false);
     setMenuUsuarioAbierto(false);
@@ -334,9 +340,15 @@ function Navbar({
                     {rolAutenticado === 'administrador' && (
                       <button type="button" onClick={irDashboard} className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10">Dashboard</button>
                     )}
-                    {rolAutenticado === 'super_admin' && onCuentasBloqueadas && <button type="button" onClick={() => { setMenuUsuarioAbierto(false); onCuentasBloqueadas(); }} className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10">Cuentas bloqueadas</button>}
-                    {rolAutenticado === 'super_admin' && onBitacora && <button type="button" onClick={() => { setMenuUsuarioAbierto(false); onBitacora(); }} className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10">Bitácora</button>}
-                    <div className="my-2 border-t border-white/15" />
+                    {rolAutenticado === 'super_admin' && (
+                      <button
+                        type="button"
+                        onClick={irDashboardSuperAdmin}
+                        className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10"
+                      >
+                        Dashboard
+                      </button>
+                    )}
                     <button type="button" onClick={cerrarSesionDesdeMenu} className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-bold text-[#d9f3bd] transition hover:bg-white/10">Cerrar sesión</button>
                   </div>
                 )}
