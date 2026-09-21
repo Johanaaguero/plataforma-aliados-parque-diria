@@ -135,6 +135,12 @@ function Navbar({
     navigate('/admin/dashboard');
   };
 
+  const irDashboardSuperAdmin = () => {
+  setMenuAbierto(false);
+  setMenuUsuarioAbierto(false);
+  navigate('/super-admin/dashboard');
+};
+
   const irMisInscripciones = () => {
     setMenuAbierto(false);
     setMenuUsuarioAbierto(false);
@@ -515,6 +521,30 @@ function Navbar({
                   >
                     <path d="M4 7h16M4 12h16M4 17h16" />
                   </svg>
+                </button>
+
+                {menuUsuarioAbierto && (
+                  <div id="menu-usuario" className="sigtad-menu-reveal absolute right-0 top-full z-50 mt-2 w-56 origin-top-right rounded-2xl border border-white/25 bg-[#073f31]/90 p-2 text-white shadow-[0_18px_45px_rgba(7,63,49,0.32)] backdrop-blur-md">
+                    <div className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-emerald-100/60">{rolAutenticado.replace('_', ' ')}</div>
+                    {(rolAutenticado === 'visitante' || rolAutenticado === 'asociado') && <button type="button" onClick={irMisInscripciones} className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10">Mis reservas</button>}
+                    {rolAutenticado === 'asociado' && <>
+                      <button type="button" onClick={irMisEventos} className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10">Mis eventos y capacitaciones</button>
+                      <button type="button" onClick={irMisEmprendimientos} className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10">Mis emprendimientos</button>
+                    </>}
+                    {rolAutenticado === 'administrador' && (
+                      <button type="button" onClick={irDashboard} className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10">Dashboard</button>
+                    )}
+                    {rolAutenticado === 'super_admin' && (
+                      <button
+                        type="button"
+                        onClick={irDashboardSuperAdmin}
+                        className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10"
+                      >
+                        Dashboard
+                      </button>
+                    )}
+                    <button type="button" onClick={cerrarSesionDesdeMenu} className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-bold text-[#d9f3bd] transition hover:bg-white/10">Cerrar sesión</button>
+                  </div>
                 )}
               </button>
             </div>

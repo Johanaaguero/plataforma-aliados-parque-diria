@@ -582,6 +582,42 @@ function App() {
       </>
     );
   }
+  if (rutaActual === '/super-admin/dashboard') {
+    if (rolAutenticado !== 'super_admin') {
+      navigate('/');
+      return null;
+    }
+
+    if (mostrarCuentasBloqueadas) {
+      return (
+        <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef] pt-20 sm:pt-24">
+          <BotonVolverInicio
+            texto="Volver al Dashboard"
+            onClick={() => setMostrarCuentasBloqueadas(false)}
+          />
+
+          <CuentasBloqueadas />
+        </section>
+      );
+    }
+
+    return (
+      <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef]">
+        <DashboardPage
+          rolAutenticado={rolAutenticado}
+          onIrRoles={() => {}}
+          onIrEmprendimientos={() => {}}
+          onIrEventos={() => {}}
+          onIrInscripciones={() => {}}
+          onIrBitacora={() => navigate('/bitacora')}
+          onIrCuentasBloqueadas={() => setMostrarCuentasBloqueadas(true)}
+          onCerrarSesion={() => {
+            void cerrarSesion();
+          }}
+        />
+      </section>
+    );
+  }
 
   if (rutaActual === '/admin/dashboard') {
     if (rolAutenticado !== 'administrador') {
@@ -690,10 +726,21 @@ function App() {
   }
 
   /*
-   * =========================================================
-   * BITÁCORA
-   * =========================================================
-   */
+ * =========================================================
+ * BITÁCORA
+ * =========================================================
+ */
+
+if (
+  rutaActual === '/bitacora' &&
+  rolAutenticado === 'super_admin'
+) {
+  return (
+    <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef] pt-20 sm:pt-24">
+      <BotonVolverInicio
+        texto="Volver al Dashboard"
+        onClick={() => navigate('/super-admin/dashboard')}
+      />
 
   if (
     rutaActual === '/bitacora' &&
@@ -749,6 +796,8 @@ function App() {
 
             if (rol === 'administrador') {
               navigate('/admin/dashboard');
+            } else if (rol === 'super_admin') {
+              navigate('/super-admin/dashboard');
             }
           }}
         />
@@ -1294,9 +1343,10 @@ function App() {
               mostrarBienvenidaLogin(nombre);
 
               setMostrarLogin(false);
-
               if (rol === 'administrador') {
                 navigate('/admin/dashboard');
+              } else if (rol === 'super_admin') {
+                navigate('/super-admin/dashboard');
               }
             }}
           />
