@@ -1,9 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-
 import { useNavigate } from 'react-router-dom';
 
 import logo from '../../assets/logo.png';
-
 import logoBlanco from '../../../logo-blanco.png';
 
 import TemaInterfaz from '../ui/TemaInterfaz';
@@ -20,6 +18,10 @@ interface NavbarProps {
   onIrInicio: () => void;
   onIrEmprendimientos: () => void;
   onIrEventos: () => void;
+
+  // Abrir sección de incidencias (visible para cualquier usuario autenticado)
+  onRegistrarIncidencia?: () => void;
+
   seccionActiva?: 'inicio' | 'emprendimientos' | 'eventos';
   modoAdministracion?: boolean;
 }
@@ -36,6 +38,9 @@ function Navbar({
   onIrInicio,
   onIrEmprendimientos,
   onIrEventos,
+
+  onRegistrarIncidencia,
+
   seccionActiva = 'inicio',
   modoAdministracion = false,
 }: NavbarProps) {
@@ -43,7 +48,8 @@ function Navbar({
 
   const [scrolled, setScrolled] = useState(false);
   const [menuAbierto, setMenuAbierto] = useState(false);
-  const [menuUsuarioAbierto, setMenuUsuarioAbierto] = useState(false);
+  const [menuUsuarioAbierto, setMenuUsuarioAbierto] =
+    useState(false);
   const [navbarVisible, setNavbarVisible] = useState(true);
 
   const ultimoScrollY = useRef(0);
@@ -62,7 +68,6 @@ function Navbar({
       }
 
       setScrolled(scrollActual > 50);
-
       ultimoScrollY.current = scrollActual;
     };
 
@@ -77,21 +82,40 @@ function Navbar({
     const cerrarMenuUsuario = (evento: MouseEvent) => {
       if (
         menuUsuarioRef.current &&
-        !menuUsuarioRef.current.contains(evento.target as Node)
+        !menuUsuarioRef.current.contains(
+          evento.target as Node
+        )
       ) {
         setMenuUsuarioAbierto(false);
       }
     };
 
     const cerrarConEscape = (evento: KeyboardEvent) => {
-      if (evento.key === 'Escape') setMenuUsuarioAbierto(false);
+      if (evento.key === 'Escape') {
+        setMenuUsuarioAbierto(false);
+      }
     };
 
-    document.addEventListener('mousedown', cerrarMenuUsuario);
-    document.addEventListener('keydown', cerrarConEscape);
+    document.addEventListener(
+      'mousedown',
+      cerrarMenuUsuario
+    );
+
+    document.addEventListener(
+      'keydown',
+      cerrarConEscape
+    );
+
     return () => {
-      document.removeEventListener('mousedown', cerrarMenuUsuario);
-      document.removeEventListener('keydown', cerrarConEscape);
+      document.removeEventListener(
+        'mousedown',
+        cerrarMenuUsuario
+      );
+
+      document.removeEventListener(
+        'keydown',
+        cerrarConEscape
+      );
     };
   }, []);
 
@@ -116,11 +140,6 @@ function Navbar({
     setMenuUsuarioAbierto(false);
     navigate('/mis-inscripciones');
     onMisInscripciones?.();
-  };
-
-  const irMisEventos = () => {
-    setMenuUsuarioAbierto(false);
-    onIrEventos();
   };
 
   const irMisEmprendimientos = () => {
@@ -176,7 +195,7 @@ function Navbar({
         }`}
       >
         <div className="flex min-h-[82px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-7">
-          
+
           {/* LOGO */}
           <button
             type="button"
@@ -201,6 +220,7 @@ function Navbar({
 
           {/* NAVEGACIÓN PRINCIPAL */}
           <div className="hidden items-center gap-2 xl:flex xl:gap-4">
+
             <button
               type="button"
               onClick={irInicio}
@@ -260,133 +280,244 @@ function Navbar({
             >
               Eventos y Capacitaciones
             </button>
+
+            {/* INCIDENCIAS - VISIBLE SIEMPRE, con o sin sesión */}
+            {onRegistrarIncidencia && (
+              <button
+                type="button"
+                onClick={onRegistrarIncidencia}
+                className={claseNavegacion}
+              >
+                Incidencias
+              </button>
+            )}
           </div>
 
-          {/* PERFIL, TEMA Y MENÚ: un único grupo visual en el extremo derecho. */}
+          {/* PERFIL, TEMA Y MENÚ */}
           <div className="flex shrink-0 items-center gap-1.5">
-          {/* ACCIONES DE ESCRITORIO */}
-          <div className="hidden items-center gap-1 xl:flex">
 
-            {/* USUARIO NO AUTENTICADO */}
-            {!rolAutenticado && (
-              <>
-                <button
-                  type="button"
-                  onClick={onRegistro}
-                  className="min-h-10 rounded-full border border-[#8DC63F] bg-[#8DC63F] px-4 py-2 text-sm font-bold text-[#095540] motion-safe:transition motion-safe:duration-200 hover:border-[#009444] hover:bg-[#009444] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8DC63F] focus-visible:ring-offset-2"
-                >
-                  Registrarse
-                </button>
+            {/* ACCIONES DE ESCRITORIO */}
+            <div className="hidden items-center gap-1 xl:flex">
 
-                <button
-                  type="button"
-                  onClick={onLogin}
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-[#095540] text-white shadow-md shadow-[#095540]/20 motion-safe:transition motion-safe:duration-200 hover:bg-[#009444] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8DC63F] focus-visible:ring-offset-2 motion-safe:hover:-translate-y-0.5 motion-reduce:transform-none"
-                  aria-label="Ingresar"
-                  title="Ingresar"
+              {/* USUARIO NO AUTENTICADO */}
+              {!rolAutenticado && (
+                <>
+                  <button
+                    type="button"
+                    onClick={onRegistro}
+                    className="min-h-10 rounded-full border border-[#8DC63F] bg-[#8DC63F] px-4 py-2 text-sm font-bold text-[#095540] motion-safe:transition motion-safe:duration-200 hover:border-[#009444] hover:bg-[#009444] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8DC63F] focus-visible:ring-offset-2"
+                  >
+                    Registrarse
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={onLogin}
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-[#095540] text-white shadow-md shadow-[#095540]/20 motion-safe:transition motion-safe:duration-200 hover:bg-[#009444] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8DC63F] focus-visible:ring-offset-2 motion-safe:hover:-translate-y-0.5 motion-reduce:transform-none"
+                    aria-label="Ingresar"
+                    title="Ingresar"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      className="h-6 w-6"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <circle
+                        cx="12"
+                        cy="8"
+                        r="3.5"
+                      />
+                      <path d="M5.5 20c.8-3.5 3.2-5.5 6.5-5.5s5.7 2 6.5 5.5" />
+                    </svg>
+                  </button>
+                </>
+              )}
+
+              {/* USUARIO AUTENTICADO */}
+              {rolAutenticado && (
+                <div
+                  ref={menuUsuarioRef}
+                  className="relative"
                 >
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setMenuUsuarioAbierto(
+                        (abierto) => !abierto
+                      )
+                    }
+                    className="flex min-h-10 max-w-52 items-center gap-2 rounded-full border border-[#8DC63F]/45 bg-[#8DC63F]/15 px-4 py-2 text-sm font-bold text-[#095540] transition hover:bg-[#8DC63F]/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8DC63F] focus-visible:ring-offset-2"
+                    aria-expanded={menuUsuarioAbierto}
+                    aria-controls="menu-usuario"
+                  >
+                    <span
+                      className="truncate"
+                      title={nombreUsuario ?? undefined}
+                    >
+                      {nombreUsuario ?? 'Mi cuenta'}
+                    </span>
+
+                    <svg
+                      viewBox="0 0 24 24"
+                      className={`h-4 w-4 shrink-0 transition-transform duration-200 ${
+                        menuUsuarioAbierto
+                          ? 'rotate-180'
+                          : ''
+                      }`}
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="m6 9 6 6 6-6"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </button>
+
+                  {menuUsuarioAbierto && (
+                    <div
+                      id="menu-usuario"
+                      className="sigtad-menu-reveal absolute right-0 top-full z-50 mt-2 w-56 origin-top-right rounded-2xl border border-white/25 bg-[#073f31]/90 p-2 text-white shadow-[0_18px_45px_rgba(7,63,49,0.32)] backdrop-blur-md"
+                    >
+                      <div className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-emerald-100/60">
+                        {rolAutenticado.replace(
+                          '_',
+                          ' '
+                        )}
+                      </div>
+
+                      {(
+                        rolAutenticado === 'visitante' ||
+                        rolAutenticado === 'asociado'
+                      ) && (
+                        <button
+                          type="button"
+                          onClick={irMisInscripciones}
+                          className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10"
+                        >
+                          Mis reservas
+                        </button>
+                      )}
+
+                      {rolAutenticado === 'asociado' && (
+                        <button
+                          type="button"
+                          onClick={irMisEmprendimientos}
+                          className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10"
+                        >
+                          Mis emprendimientos
+                        </button>
+                      )}
+
+                      {/* ADMINISTRADOR */}
+                      {rolAutenticado === 'administrador' && (
+                        <button
+                          type="button"
+                          onClick={irDashboard}
+                          className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10"
+                        >
+                          Dashboard
+                        </button>
+                      )}
+
+                      {rolAutenticado === 'super_admin' &&
+                        onCuentasBloqueadas && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setMenuUsuarioAbierto(
+                                false
+                              );
+                              onCuentasBloqueadas();
+                            }}
+                            className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10"
+                          >
+                            Cuentas bloqueadas
+                          </button>
+                        )}
+
+                      {rolAutenticado === 'super_admin' &&
+                        onBitacora && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setMenuUsuarioAbierto(
+                                false
+                              );
+                              onBitacora();
+                            }}
+                            className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10"
+                          >
+                            Bitácora
+                          </button>
+                        )}
+
+                      <div className="my-2 border-t border-white/15" />
+
+                      <button
+                        type="button"
+                        onClick={cerrarSesionDesdeMenu}
+                        className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-bold text-[#d9f3bd] transition hover:bg-white/10"
+                      >
+                        Cerrar sesión
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* TEMA + MENÚ MÓVIL */}
+            <div className="flex shrink-0 items-center gap-0.5">
+              <TemaInterfaz enNavbar />
+
+              <button
+                type="button"
+                onClick={() =>
+                  setMenuAbierto(!menuAbierto)
+                }
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#095540] text-white shadow-sm motion-safe:transition motion-safe:duration-200 hover:bg-[#009444] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8DC63F] focus-visible:ring-offset-2 xl:hidden"
+                aria-label={
+                  menuAbierto
+                    ? 'Cerrar menú'
+                    : 'Abrir menú'
+                }
+                aria-expanded={menuAbierto}
+                aria-controls="menu-principal-movil"
+              >
+                {menuAbierto ? (
                   <svg
                     viewBox="0 0 24 24"
-                    className="h-6 w-6"
+                    className="h-5 w-5"
                     fill="none"
                     stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+                    strokeWidth="2"
                     aria-hidden="true"
                   >
-                    <circle
-                      cx="12"
-                      cy="8"
-                      r="3.5"
-                    />
-
-                    <path d="M5.5 20c.8-3.5 3.2-5.5 6.5-5.5s5.7 2 6.5 5.5" />
+                    <path d="M6 6l12 12M18 6 6 18" />
                   </svg>
-                </button>
-              </>
-            )}
-
-            {/* USUARIO AUTENTICADO */}
-            {rolAutenticado && (
-              <div ref={menuUsuarioRef} className="relative">
-                <button
-                  type="button"
-                  onClick={() => setMenuUsuarioAbierto((abierto) => !abierto)}
-                  className="flex min-h-10 max-w-52 items-center gap-2 rounded-full border border-[#8DC63F]/45 bg-[#8DC63F]/15 px-4 py-2 text-sm font-bold text-[#095540] transition hover:bg-[#8DC63F]/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8DC63F] focus-visible:ring-offset-2"
-                  aria-expanded={menuUsuarioAbierto}
-                  aria-controls="menu-usuario"
-                >
-                  <span className="truncate" title={nombreUsuario ?? undefined}>{nombreUsuario ?? 'Mi cuenta'}</span>
-                  <svg viewBox="0 0 24 24" className={`h-4 w-4 shrink-0 transition-transform duration-200 ${menuUsuarioAbierto ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                    <path d="m6 9 6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+                ) : (
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-5 w-5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    aria-hidden="true"
+                  >
+                    <path d="M4 7h16M4 12h16M4 17h16" />
                   </svg>
-                </button>
-
-                {menuUsuarioAbierto && (
-                  <div id="menu-usuario" className="sigtad-menu-reveal absolute right-0 top-full z-50 mt-2 w-56 origin-top-right rounded-2xl border border-white/25 bg-[#073f31]/90 p-2 text-white shadow-[0_18px_45px_rgba(7,63,49,0.32)] backdrop-blur-md">
-                    <div className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-emerald-100/60">{rolAutenticado.replace('_', ' ')}</div>
-                    {(rolAutenticado === 'visitante' || rolAutenticado === 'asociado') && <button type="button" onClick={irMisInscripciones} className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10">Mis reservas</button>}
-                    {rolAutenticado === 'asociado' && <>
-                      <button type="button" onClick={irMisEventos} className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10">Mis eventos y capacitaciones</button>
-                      <button type="button" onClick={irMisEmprendimientos} className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10">Mis emprendimientos</button>
-                    </>}
-                    {rolAutenticado === 'administrador' && (
-                      <button type="button" onClick={irDashboard} className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10">Dashboard</button>
-                    )}
-                    {rolAutenticado === 'super_admin' && onCuentasBloqueadas && <button type="button" onClick={() => { setMenuUsuarioAbierto(false); onCuentasBloqueadas(); }} className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10">Cuentas bloqueadas</button>}
-                    {rolAutenticado === 'super_admin' && onBitacora && <button type="button" onClick={() => { setMenuUsuarioAbierto(false); onBitacora(); }} className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10">Bitácora</button>}
-                    <div className="my-2 border-t border-white/15" />
-                    <button type="button" onClick={cerrarSesionDesdeMenu} className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-bold text-[#d9f3bd] transition hover:bg-white/10">Cerrar sesión</button>
-                  </div>
                 )}
-              </div>
-            )}
-          </div>
-
-          {/* TEMA + MENÚ MÓVIL */}
-          <div className="flex shrink-0 items-center gap-0.5">
-            <TemaInterfaz enNavbar />
-
-            <button
-              type="button"
-              onClick={() =>
-                setMenuAbierto(!menuAbierto)
-              }
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#095540] text-white shadow-sm motion-safe:transition motion-safe:duration-200 hover:bg-[#009444] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8DC63F] focus-visible:ring-offset-2 xl:hidden"
-              aria-label={
-                menuAbierto
-                  ? 'Cerrar menú'
-                  : 'Abrir menú'
-              }
-              aria-expanded={menuAbierto}
-              aria-controls="menu-principal-movil"
-            >
-              {menuAbierto ? (
-                <svg
-                  viewBox="0 0 24 24"
-                  className="h-5 w-5"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  aria-hidden="true"
-                >
-                  <path d="M6 6l12 12M18 6 6 18" />
-                </svg>
-              ) : (
-                <svg
-                  viewBox="0 0 24 24"
-                  className="h-5 w-5"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  aria-hidden="true"
-                >
-                  <path d="M4 7h16M4 12h16M4 17h16" />
-                </svg>
-              )}
-            </button>
-          </div>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -419,9 +550,7 @@ function Navbar({
 
               <button
                 type="button"
-                onClick={() =>
-                  setMenuAbierto(false)
-                }
+                onClick={() => setMenuAbierto(false)}
                 data-sigtad-about
                 className={claseNavegacionMovil}
               >
@@ -474,6 +603,20 @@ function Navbar({
                   className={claseNavegacionMovil}
                 >
                   Mis reservas
+                </button>
+              )}
+
+              {/* INCIDENCIAS - VISIBLE SIEMPRE (con o sin sesión) */}
+              {onRegistrarIncidencia && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuAbierto(false);
+                    onRegistrarIncidencia();
+                  }}
+                  className={claseNavegacionMovil}
+                >
+                  Incidencias
                 </button>
               )}
             </div>
@@ -530,7 +673,7 @@ function Navbar({
               </div>
             )}
 
-            {/* ADMINISTRADOR - OPCIONES ADMINISTRATIVAS */}
+            {/* ADMINISTRADOR - DASHBOARD */}
             {rolAutenticado === 'administrador' && (
               <div className="mt-3 border-t border-[#e2ebe5] pt-3">
                 <button

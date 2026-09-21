@@ -23,6 +23,7 @@ import { iniciarLimpiezaTokensBlacklist } from './modulos/Autenticación y gesti
 import dashboardRoutes from './modulos/Dashboard/dashboard.routes';
 import { AppDataSource } from './data-source';
 import { errorMiddleware } from './middlewares/registro.middleware';
+import incidenciaRoutes from './modulos/Gestión de Incidencias/Crear incidencias/IncidenciaRoutes';
 
 dotenv.config();
 
@@ -46,6 +47,8 @@ app.use('/api/inscripciones', inscripcionesRoutes);
 app.use('/api/reservas', reservasRouter);
 app.use('/api/admin', bitacoraRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/incidencias', incidenciaRoutes);
+
 app.use(errorMiddleware);
 
 const PORT = process.env.PORT || 3000;
