@@ -76,3 +76,16 @@ export const crearEvidencia = async (
 
   return await evidenciaRepository.save(evidencia);
 };
+export const obtenerEvidenciaPorId = async (
+  id: number,
+): Promise<IncidenciaEvidencia> => {
+  const evidencia = await evidenciaRepository.findOne({
+    where: { id },
+  });
+
+  if (!evidencia) {
+    throw new Error('La evidencia no existe.');
+  }
+
+  return evidencia;
+};

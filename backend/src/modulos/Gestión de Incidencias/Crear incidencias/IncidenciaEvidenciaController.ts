@@ -1,8 +1,5 @@
 import { Request, Response } from 'express';
-
-import {
-  crearEvidencia,
-} from './IncidenciaEvidenciaService';
+import {crearEvidencia, obtenerEvidenciaPorId, } from './IncidenciaEvidenciaService';
 
 import {
   TipoEvidenciaIncidencia,
@@ -183,5 +180,40 @@ export const registrarEvidencia = async (
     res.status(500).json({
       mensaje: 'No se pudo registrar la evidencia.',
     });
+  }
+};
+
+export const obtenerArchivoEvidencia = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const id = Number(req.params.id);
+
+    if (Number.isNaN(id) || id <= 0) {
+      res.status(400).json({
+        mensaje: 'El ID de la evidencia no es válido.',
+      });
+      return;
+    }
+
+    const evidencia = await obtenerEvidenciaPorId(id);
+
+    res.set('Content-Type', evidencia.tipoMime);
+    res.send(evidencia.archivo);
+  } catch (error) {
+    console.error('Error al obtener el archivo de evidencia:', error);
+
+    const mensaje =
+      error instanceof Error
+        ? error.message
+        : 'No se pudo obtener el archivo.';
+
+    if (mensaje === 'La evidencia no existe.') {
+      res.status(404).json({ mensaje });
+      return;
+    }
+
+    res.status(500).json({ mensaje: 'No se pudo obtener el archivo.' });
   }
 };

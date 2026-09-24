@@ -8,7 +8,7 @@ import {
 } from '../../../models/Incidencia';
 
 import { Usuario } from '../../../models/Usuario';
-
+import { Between, LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
 const incidenciaRepository = AppDataSource.getRepository(Incidencia);
 const usuarioRepository = AppDataSource.getRepository(Usuario);
 
@@ -78,6 +78,13 @@ export interface CambiarEstadoIncidenciaDTO {
   adminId: number;
   observacionesAdmin?: string | null;
 }
+export interface FiltrosIncidenciaDTO {
+  categoria?: CategoriaIncidencia;
+  prioridad?: PrioridadIncidencia;
+  estado?: EstadoIncidencia;
+  fechaDesde?: Date;
+  fechaHasta?: Date;
+}
 
 /**
  * Crear una nueva incidencia.
@@ -100,6 +107,7 @@ export const crearIncidencia = async (
       throw new Error('El usuario que reporta no existe.');
     }
   }
+  
 
   const incidencia = incidenciaRepository.create({
     titulo: datos.titulo.trim(),
@@ -121,16 +129,31 @@ export const crearIncidencia = async (
 /**
  * Obtener todas las incidencias.
  */
-export const obtenerIncidencias = async (): Promise<Incidencia[]> => {
+export const obtenerIncidencias = async (
+  filtros?: FiltrosIncidenciaDTO,
+): Promise<Incidencia[]> => {
+  const where: Record<string, unknown> = {};
+
+  if (filtros?.categoria) where.categoria = filtros.categoria;
+  if (filtros?.prioridad) where.prioridad = filtros.prioridad;
+  if (filtros?.estado) where.estado = filtros.estado;
+
+  if (filtros?.fechaDesde && filtros?.fechaHasta) {
+    where.fechaRegistro = Between(filtros.fechaDesde, filtros.fechaHasta);
+  } else if (filtros?.fechaDesde) {
+    where.fechaRegistro = MoreThanOrEqual(filtros.fechaDesde);
+  } else if (filtros?.fechaHasta) {
+    where.fechaRegistro = LessThanOrEqual(filtros.fechaHasta);
+  }
+
   return await incidenciaRepository.find({
+    where,
     relations: {
       usuarioReporta: true,
       adminActualiza: true,
       evidencias: true,
     },
-    order: {
-      fechaRegistro: 'DESC',
-    },
+    order: { fechaRegistro: 'DESC' },
   });
 };
 
