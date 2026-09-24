@@ -486,7 +486,17 @@ export default function ListaIncidencias() {
     <>
       <style>{estilosCarrusel}</style>
 
-      <section className="w-full bg-gradient-to-b from-lime-50 to-white px-4 py-16 sm:px-6 lg:px-8">
+<section
+  className="
+    w-full
+    bg-[#f7fbe9]
+    px-4
+    py-16
+    sm:px-6
+    lg:px-8
+    dark:bg-[#0b241b]
+  "
+>
 
         <div className="mx-auto max-w-5xl">
 
