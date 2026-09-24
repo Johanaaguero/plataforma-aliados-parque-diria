@@ -1,13 +1,9 @@
 import { Request, Response } from 'express';
-
-import {
-  crearIncidencia,
-  obtenerIncidencias,
+import {crearIncidencia, obtenerIncidencias, obtenerIncidenciaPorId, FiltrosIncidenciaDTO,
 } from '../Crear incidencias/IncidenciaService';
-
-import {
-  CategoriaIncidencia,
+import {CategoriaIncidencia, PrioridadIncidencia, EstadoIncidencia,
 } from '../../../models/Incidencia';
+
 
 /**
  * Registrar una incidencia.
@@ -260,7 +256,58 @@ export const listarIncidencias = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const incidencias = await obtenerIncidencias();
+    const { categoria, prioridad, estado, fechaDesde, fechaHasta } = req.query;
+    const filtros: FiltrosIncidenciaDTO = {};
+
+    if (categoria !== undefined && categoria !== '') {
+      if (!Object.values(CategoriaIncidencia).includes(categoria as CategoriaIncidencia)) {
+        res.status(400).json({ mensaje: 'La categoría de filtro no es válida.' });
+        return;
+      }
+      filtros.categoria = categoria as CategoriaIncidencia;
+    }
+
+    if (prioridad !== undefined && prioridad !== '') {
+      if (!Object.values(PrioridadIncidencia).includes(prioridad as PrioridadIncidencia)) {
+        res.status(400).json({ mensaje: 'La prioridad de filtro no es válida.' });
+        return;
+      }
+      filtros.prioridad = prioridad as PrioridadIncidencia;
+    }
+
+    if (estado !== undefined && estado !== '') {
+      if (!Object.values(EstadoIncidencia).includes(estado as EstadoIncidencia)) {
+        res.status(400).json({ mensaje: 'El estado de filtro no es válido.' });
+        return;
+      }
+      filtros.estado = estado as EstadoIncidencia;
+    }
+
+    if (fechaDesde !== undefined && fechaDesde !== '') {
+      const desde = new Date(fechaDesde as string);
+      if (Number.isNaN(desde.getTime())) {
+        res.status(400).json({ mensaje: 'La fecha "desde" no es válida.' });
+        return;
+      }
+      filtros.fechaDesde = desde;
+    }
+
+    if (fechaHasta !== undefined && fechaHasta !== '') {
+      const hasta = new Date(fechaHasta as string);
+      if (Number.isNaN(hasta.getTime())) {
+        res.status(400).json({ mensaje: 'La fecha "hasta" no es válida.' });
+        return;
+      }
+      hasta.setHours(23, 59, 59, 999); // incluye todo el día "hasta"
+      filtros.fechaHasta = hasta;
+    }
+
+    if (filtros.fechaDesde && filtros.fechaHasta && filtros.fechaDesde > filtros.fechaHasta) {
+      res.status(400).json({ mensaje: 'La fecha "desde" no puede ser posterior a "hasta".' });
+      return;
+    }
+
+    const incidencias = await obtenerIncidencias(filtros);
 
     res.status(200).json({
       mensaje: 'Incidencias obtenidas correctamente.',
@@ -268,9 +315,37 @@ export const listarIncidencias = async (
     });
   } catch (error) {
     console.error('Error al obtener incidencias:', error);
+    res.status(500).json({ mensaje: 'No se pudieron obtener las incidencias.' });
+  }
+};
 
-    res.status(500).json({
-      mensaje: 'No se pudieron obtener las incidencias.',
+export const obtenerDetalleIncidencia = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const id = Number(req.params.id);
+
+    if (Number.isNaN(id) || id <= 0) {
+      res.status(400).json({ mensaje: 'El ID de la incidencia no es válido.' });
+      return;
+    }
+
+    const incidencia = await obtenerIncidenciaPorId(id);
+
+    res.status(200).json({
+      mensaje: 'Incidencia obtenida correctamente.',
+      incidencia,
     });
+  } catch (error) {
+    console.error('Error al obtener el detalle de la incidencia:', error);
+    const mensaje = error instanceof Error ? error.message : 'No se pudo obtener la incidencia.';
+
+    if (mensaje === 'Incidencia no encontrada.') {
+      res.status(404).json({ mensaje });
+      return;
+    }
+
+    res.status(500).json({ mensaje: 'No se pudo obtener la incidencia.' });
   }
 };

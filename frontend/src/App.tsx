@@ -53,6 +53,7 @@ import Informativo from './components/informativo/general';
 import MapaParque from './components/informativo/MapaParque';
 
 import type { Emprendimiento } from './services/emprendimientoService';
+import ListaIncidencias from './components/Gestión de incidencias/ListaIncidencias';
 
 type NombreRol =
   | 'administrador'
@@ -1467,6 +1468,7 @@ function App() {
           <main>
             <Hero />
             <Informativo />
+            <ListaIncidencias />
             <MapaParque />
           </main>
 
