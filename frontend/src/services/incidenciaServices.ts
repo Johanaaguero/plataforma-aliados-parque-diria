@@ -100,6 +100,7 @@ interface RespuestaDetalle {
 interface RespuestaActualizacion {
   mensaje: string;
   incidencia: Incidencia;
+  incidenciaActualizada?: Incidencia;
 }
 
 // ============================================================
@@ -173,5 +174,5 @@ export async function actualizarIncidenciaAdministrativa(
     },
   );
 
-  return respuesta.incidencia;
+  return respuesta.incidenciaActualizada ?? respuesta.incidencia;
 }

@@ -391,6 +391,7 @@ export const actualizarIncidenciaAdministrativa = async (
     }
 
     incidencia.adminActualiza = administrador;
+    incidencia.fechaActualizacion = new Date();
 
     const incidenciaActualizada = await incidenciaRepo.save(incidencia);
 
@@ -449,7 +450,20 @@ export const actualizarIncidenciaAdministrativa = async (
       await historialRepo.save(cambiosHistorial);
     }
 
-    return incidenciaActualizada;
+    const incidenciaConRelaciones = await incidenciaRepo.findOne({
+      where: { id: incidenciaActualizada.id },
+      relations: {
+        usuarioReporta: true,
+        adminActualiza: true,
+        evidencias: true,
+      },
+    });
+
+    if (!incidenciaConRelaciones) {
+      throw new Error('Incidencia no encontrada.');
+    }
+
+    return incidenciaConRelaciones;
   });
 };
 

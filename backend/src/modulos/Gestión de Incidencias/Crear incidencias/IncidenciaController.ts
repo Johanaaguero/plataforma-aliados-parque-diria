@@ -467,9 +467,12 @@ export const actualizarIncidenciaAdmin = async (
       datosActualizacion,
     );
 
+    const incidenciaActualizada = serializarIncidencia(incidencia);
+
     res.status(200).json({
       mensaje: 'Incidencia actualizada correctamente.',
-      incidencia: serializarIncidencia(incidencia),
+      incidencia: incidenciaActualizada,
+      incidenciaActualizada,
     });
   } catch (error) {
     console.error('Error al actualizar incidencia:', error);

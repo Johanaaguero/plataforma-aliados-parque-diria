@@ -345,6 +345,12 @@ export default function EditarIncidencia({
   const [observacionesAdmin, setObservacionesAdmin] =
     useState(incidencia.observacionesAdmin ?? '');
 
+  const [ultimaActualizacion, setUltimaActualizacion] =
+    useState(incidencia.fechaActualizacion);
+
+  const [actualizadoPor, setActualizadoPor] =
+    useState(incidencia.adminActualiza);
+
   const [estadoGuardado, setEstadoGuardado] =
     useState<EstadoGuardado>('inicial');
 
@@ -426,6 +432,11 @@ export default function EditarIncidencia({
     };
   }, [incidencia.evidencias.length]);
 
+  useEffect(() => {
+    setUltimaActualizacion(incidencia.fechaActualizacion);
+    setActualizadoPor(incidencia.adminActualiza);
+  }, [incidencia.adminActualiza, incidencia.fechaActualizacion]);
+
   /* =======================================================
      FECHAS
   ======================================================= */
@@ -452,8 +463,8 @@ export default function EditarIncidencia({
         minute: '2-digit',
         hour12: true,
         timeZone: 'America/Costa_Rica',
-      }).format(new Date(incidencia.fechaActualizacion)),
-    [incidencia.fechaActualizacion],
+      }).format(new Date(ultimaActualizacion)),
+    [ultimaActualizacion],
   );
 
   /* =======================================================
@@ -514,6 +525,10 @@ export default function EditarIncidencia({
           incidencia.evidencias,
       };
 
+      setUltimaActualizacion(
+        incidenciaParaGuardar.fechaActualizacion,
+      );
+      setActualizadoPor(incidenciaParaGuardar.adminActualiza);
       onGuardar(incidenciaParaGuardar);
 
       setEstadoGuardado('exito');
@@ -1174,7 +1189,7 @@ export default function EditarIncidencia({
                     <InfoItem
                       etiqueta="Actualizado por"
                       valor={
-                        incidencia.adminActualiza
+                        actualizadoPor
                           ?.nombre ??
                         'Sin actualización administrativa'
                       }
