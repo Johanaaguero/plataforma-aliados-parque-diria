@@ -8,6 +8,7 @@ import {
 } from '../../../models/Incidencia';
 
 import { Usuario } from '../../../models/Usuario';
+import { IncidenciaHistorial } from '../../../models/IncidenciaHistorial';
 import { Between, LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
 const incidenciaRepository = AppDataSource.getRepository(Incidencia);
 const usuarioRepository = AppDataSource.getRepository(Usuario);
@@ -68,6 +69,8 @@ export interface ActualizarIncidenciaDTO {
   ubicacion?: string | null;
   latitud?: number | null;
   longitud?: number | null;
+  observacionesAdmin?: string | null;
+  adminActualizaId?: number;
 }
 
 /**
@@ -84,6 +87,14 @@ export interface FiltrosIncidenciaDTO {
   estado?: EstadoIncidencia;
   fechaDesde?: Date;
   fechaHasta?: Date;
+}
+
+export interface ActualizarIncidenciaAdministrativaDTO {
+  categoria?: CategoriaIncidencia;
+  prioridad?: PrioridadIncidencia;
+  estado?: EstadoIncidencia;
+  observacionesAdmin?: string | null;
+  adminId: number;
 }
 
 /**
@@ -226,6 +237,25 @@ export const actualizarIncidencia = async (
     incidencia.longitud = datos.longitud;
   }
 
+  if (datos.observacionesAdmin !== undefined) {
+    incidencia.observacionesAdmin =
+      datos.observacionesAdmin?.trim() || null;
+  }
+
+  if (datos.adminActualizaId !== undefined) {
+    const administrador = await usuarioRepository.findOne({
+      where: {
+        id: datos.adminActualizaId,
+      },
+    });
+
+    if (!administrador) {
+      throw new Error('El administrador no existe.');
+    }
+
+    incidencia.adminActualiza = administrador;
+  }
+
   return await incidenciaRepository.save(incidencia);
 };
 
@@ -278,6 +308,149 @@ export const cambiarEstadoIncidencia = async (
   }
 
   return await incidenciaRepository.save(incidencia);
+};
+
+const normalizarValorHistorial = (
+  valor: string | number | Date | null | undefined,
+): string | null => {
+  if (valor === undefined || valor === null) {
+    return null;
+  }
+
+  if (valor instanceof Date) {
+    return valor.toISOString();
+  }
+
+  return String(valor);
+};
+
+export const actualizarIncidenciaAdministrativa = async (
+  id: number,
+  datos: ActualizarIncidenciaAdministrativaDTO,
+): Promise<Incidencia> => {
+  return await AppDataSource.transaction(async (manager) => {
+    const incidenciaRepo = manager.getRepository(Incidencia);
+    const usuarioRepo = manager.getRepository(Usuario);
+    const historialRepo = manager.getRepository(IncidenciaHistorial);
+
+    const incidencia = await incidenciaRepo.findOne({
+      where: {
+        id,
+      },
+    });
+
+    if (!incidencia) {
+      throw new Error('Incidencia no encontrada.');
+    }
+
+    const administrador = await usuarioRepo.findOne({
+      where: {
+        id: datos.adminId,
+      },
+    });
+
+    if (!administrador) {
+      throw new Error('El administrador no existe.');
+    }
+
+    const valoresOriginales = {
+      categoria: incidencia.categoria,
+      prioridad: incidencia.prioridad,
+      estado: incidencia.estado,
+      observacionesAdmin: incidencia.observacionesAdmin,
+    };
+
+    if (datos.categoria !== undefined) {
+      incidencia.categoria = datos.categoria;
+
+      if (datos.prioridad === undefined) {
+        incidencia.prioridad = determinarPrioridad(datos.categoria);
+      }
+    }
+
+    if (datos.prioridad !== undefined) {
+      incidencia.prioridad = datos.prioridad;
+    }
+
+    if (datos.observacionesAdmin !== undefined) {
+      incidencia.observacionesAdmin =
+        datos.observacionesAdmin?.trim() || null;
+    }
+
+    if (datos.estado !== undefined) {
+      incidencia.estado = datos.estado;
+
+      if (
+        datos.estado === EstadoIncidencia.RESUELTA ||
+        datos.estado === EstadoIncidencia.CERRADA
+      ) {
+        incidencia.fechaResolucion = new Date();
+      } else {
+        incidencia.fechaResolucion = null;
+      }
+    }
+
+    incidencia.adminActualiza = administrador;
+
+    const incidenciaActualizada = await incidenciaRepo.save(incidencia);
+
+    const cambiosHistorial: IncidenciaHistorial[] = [];
+
+    const agregarCambioHistorial = (
+      campoModificado: string,
+      valorAnterior: string | number | Date | null | undefined,
+      valorNuevo: string | number | Date | null | undefined,
+    ) => {
+      const anterior = normalizarValorHistorial(valorAnterior);
+      const nuevo = normalizarValorHistorial(valorNuevo);
+
+      if (anterior === nuevo) {
+        return;
+      }
+
+      cambiosHistorial.push(
+        historialRepo.create({
+          incidencia: incidenciaActualizada,
+          incidenciaId: incidenciaActualizada.id,
+          usuario: administrador,
+          usuarioId: administrador.id,
+          campoModificado,
+          valorAnterior: anterior,
+          valorNuevo: nuevo,
+        }),
+      );
+    };
+
+    agregarCambioHistorial(
+      'categoria',
+      valoresOriginales.categoria,
+      incidenciaActualizada.categoria,
+    );
+
+    agregarCambioHistorial(
+      'prioridad',
+      valoresOriginales.prioridad,
+      incidenciaActualizada.prioridad,
+    );
+
+    agregarCambioHistorial(
+      'estado',
+      valoresOriginales.estado,
+      incidenciaActualizada.estado,
+    );
+
+    agregarCambioHistorial(
+      'observaciones_admin',
+      valoresOriginales.observacionesAdmin,
+      incidenciaActualizada.observacionesAdmin,
+    );
+
+    if (cambiosHistorial.length > 0) {
+      await historialRepo.save(cambiosHistorial);
+    }
+
+    return incidenciaActualizada;
+  });
 };
 
 /**

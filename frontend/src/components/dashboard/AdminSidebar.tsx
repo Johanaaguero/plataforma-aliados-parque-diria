@@ -5,6 +5,7 @@ interface Props {
   onIrEmprendimientos: () => void;
   onIrEventos: () => void;
   onIrInscripciones: () => void;
+  onIrIncidencias: () => void;
 }
 
 function IconoResumen() {
@@ -62,6 +63,7 @@ export default function AdminSidebar({
   onIrEmprendimientos,
   onIrEventos,
   onIrInscripciones,
+  onIrIncidencias,
 }: Props) {
   const items = [
     { label: "Resumen", Icono: IconoResumen, onClick: undefined },
@@ -69,6 +71,7 @@ export default function AdminSidebar({
     { label: "Emprendimientos", Icono: IconoEmprendimientos, onClick: onIrEmprendimientos },
     { label: "Eventos y capacitaciones", Icono: IconoEventos, onClick: onIrEventos },
     { label: "Inscripciones", Icono: IconoInscripciones, onClick: onIrInscripciones },
+    { label: "Gestión de Incidencias", Icono: IconoInscripciones, onClick: onIrIncidencias },
   ];
 
   return (

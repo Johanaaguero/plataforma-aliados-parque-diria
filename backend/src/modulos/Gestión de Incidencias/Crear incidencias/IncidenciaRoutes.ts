@@ -4,6 +4,7 @@ import {
   registrarIncidencia,
   listarIncidencias,
   obtenerDetalleIncidencia,
+  actualizarIncidenciaAdmin,
 } from './IncidenciaController';
 
 import {
@@ -14,6 +15,8 @@ import {
 import {
   verificarTokenOpcional,
 } from '../../../middlewares/verificarTokenOpcional';
+import { verificarToken } from '../../../middlewares/auth.middleware';
+import { autorizarRoles } from '../../../middlewares/authorization.middleware';
 
 
 const router = Router();
@@ -43,6 +46,14 @@ router.get(
   '/:id',
   (req, res) => obtenerDetalleIncidencia(req, res),
 );
+
+router.patch(
+  '/:id/administracion',
+  verificarToken,
+  autorizarRoles('administrador'),
+  (req, res) => actualizarIncidenciaAdmin(req, res),
+);
+
 router.get(
   '/evidencias/:id/archivo',
   (req, res) => obtenerArchivoEvidencia(req, res),

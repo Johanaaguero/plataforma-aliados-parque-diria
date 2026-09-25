@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import {crearIncidencia, obtenerIncidencias, obtenerIncidenciaPorId, FiltrosIncidenciaDTO,
+import {crearIncidencia, obtenerIncidencias, obtenerIncidenciaPorId, actualizarIncidenciaAdministrativa, FiltrosIncidenciaDTO,
 } from '../Crear incidencias/IncidenciaService';
 import {CategoriaIncidencia, PrioridadIncidencia, EstadoIncidencia,
 } from '../../../models/Incidencia';
@@ -347,5 +347,143 @@ export const obtenerDetalleIncidencia = async (
     }
 
     res.status(500).json({ mensaje: 'No se pudo obtener la incidencia.' });
+  }
+};
+
+export const actualizarIncidenciaAdmin = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const id = Number(req.params.id);
+
+    if (Number.isNaN(id) || id <= 0) {
+      res.status(400).json({ mensaje: 'El ID de la incidencia no es valido.' });
+      return;
+    }
+
+    const adminId = req.usuario?.id;
+
+    if (adminId === undefined || adminId === null) {
+      res.status(401).json({ mensaje: 'Usuario autenticado no encontrado.' });
+      return;
+    }
+
+    const {
+      categoria,
+      estado,
+      observacionesAdmin,
+      prioridad,
+    } = req.body;
+
+    if (
+      categoria === undefined &&
+      estado === undefined &&
+      observacionesAdmin === undefined &&
+      prioridad === undefined
+    ) {
+      res.status(400).json({
+        mensaje: 'Debe indicar al menos un cambio para la incidencia.',
+      });
+      return;
+    }
+
+    if (
+      categoria !== undefined &&
+      !Object.values(CategoriaIncidencia).includes(categoria)
+    ) {
+      res.status(400).json({
+        mensaje: 'La categoria de la incidencia no es valida.',
+      });
+      return;
+    }
+
+    if (
+      estado !== undefined &&
+      !Object.values(EstadoIncidencia).includes(estado)
+    ) {
+      res.status(400).json({
+        mensaje: 'El estado de la incidencia no es valido.',
+      });
+      return;
+    }
+
+    if (
+      prioridad !== undefined &&
+      !Object.values(PrioridadIncidencia).includes(prioridad)
+    ) {
+      res.status(400).json({
+        mensaje: 'La prioridad de la incidencia no es valida.',
+      });
+      return;
+    }
+
+    if (
+      observacionesAdmin !== undefined &&
+      observacionesAdmin !== null &&
+      typeof observacionesAdmin !== 'string'
+    ) {
+      res.status(400).json({
+        mensaje: 'Las observaciones no son validas.',
+      });
+      return;
+    }
+
+    const datosActualizacion = {
+      adminId,
+    } as {
+      categoria?: CategoriaIncidencia;
+      prioridad?: PrioridadIncidencia;
+      estado?: EstadoIncidencia;
+      observacionesAdmin?: string | null;
+      adminId: number;
+    };
+
+    if (categoria !== undefined) {
+      datosActualizacion.categoria = categoria;
+    }
+
+    if (prioridad !== undefined) {
+      datosActualizacion.prioridad = prioridad;
+    }
+
+    if (estado !== undefined) {
+      datosActualizacion.estado = estado;
+    }
+
+    if (observacionesAdmin !== undefined) {
+      datosActualizacion.observacionesAdmin = observacionesAdmin;
+    }
+
+    const incidencia = await actualizarIncidenciaAdministrativa(
+      id,
+      datosActualizacion,
+    );
+
+    res.status(200).json({
+      mensaje: 'Incidencia actualizada correctamente.',
+      incidencia,
+    });
+  } catch (error) {
+    console.error('Error al actualizar incidencia:', error);
+
+    const mensaje =
+      error instanceof Error
+        ? error.message
+        : 'No se pudo actualizar la incidencia.';
+
+    if (mensaje === 'Incidencia no encontrada.') {
+      res.status(404).json({ mensaje });
+      return;
+    }
+
+    if (mensaje === 'El administrador no existe.') {
+      res.status(401).json({ mensaje });
+      return;
+    }
+
+    res.status(500).json({
+      mensaje: 'No se pudo actualizar la incidencia.',
+    });
   }
 };

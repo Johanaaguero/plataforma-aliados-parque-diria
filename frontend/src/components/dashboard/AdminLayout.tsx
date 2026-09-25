@@ -7,6 +7,7 @@ interface Props {
   onIrEmprendimientos: () => void;
   onIrEventos: () => void;
   onIrInscripciones: () => void;
+  onIrIncidencias: () => void;
 }
 
 export default function AdminLayout({
@@ -15,6 +16,7 @@ export default function AdminLayout({
   onIrEmprendimientos,
   onIrEventos,
   onIrInscripciones,
+  onIrIncidencias,
 }: Props) {
   const [collapsed, setCollapsed] = useState(false);
 
@@ -27,6 +29,7 @@ export default function AdminLayout({
         onIrEmprendimientos={onIrEmprendimientos}
         onIrEventos={onIrEventos}
         onIrInscripciones={onIrInscripciones}
+        onIrIncidencias={onIrIncidencias}
       />
       <main className="flex-1 p-6 overflow-x-hidden">{children}</main>
     </div>
