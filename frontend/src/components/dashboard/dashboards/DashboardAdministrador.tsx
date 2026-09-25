@@ -15,6 +15,7 @@ interface DashboardAdministradorProps {
   onIrEmprendimientos: () => void;
   onIrEventos: () => void;
   onIrInscripciones: () => void;
+  onIrIncidencias: () => void;
 }
 
 type EstadoCarga = 'cargando' | 'listo' | 'error';
@@ -30,6 +31,7 @@ const iconos = {
   emprendimientos: <Icono><path d="M4 20h16" /><path d="M6 20V9l6-5 6 5v11" /><path d="M9 20v-5h6v5M9 10h.01M15 10h.01" /></Icono>,
   eventos: <Icono><rect x="4" y="5" width="16" height="15" rx="2" /><path d="M8 3v4M16 3v4M4 10h16M8 14h3M8 17h6" /></Icono>,
   inscripciones: <Icono><rect x="5" y="4" width="14" height="16" rx="2" /><path d="M8 8h8M8 12h8M8 16h5" /></Icono>,
+  incidencias: <Icono><path d="M12 3 2.8 20h18.4L12 3Z" /><path d="M12 9v5M12 17h.01" /></Icono>,
 };
 
 const obtenerMensajeError = (error: unknown): string => {
@@ -40,7 +42,7 @@ const obtenerMensajeError = (error: unknown): string => {
   return 'No fue posible cargar el dashboard. Inténtalo nuevamente.';
 };
 
-export default function DashboardAdministrador({ onIrRoles, onIrEmprendimientos, onIrEventos, onIrInscripciones }: DashboardAdministradorProps) {
+export default function DashboardAdministrador({ onIrRoles, onIrEmprendimientos, onIrEventos, onIrInscripciones, onIrIncidencias }: DashboardAdministradorProps) {
   const [sidebarAbierto, setSidebarAbierto] = useState(true);
   const [menuMovilAbierto, setMenuMovilAbierto] = useState(false);
   const [estado, setEstado] = useState<EstadoCarga>('cargando');
@@ -76,6 +78,7 @@ export default function DashboardAdministrador({ onIrRoles, onIrEmprendimientos,
     { etiqueta: 'Emprendimientos', icono: iconos.emprendimientos, accion: onIrEmprendimientos },
     { etiqueta: 'Eventos y capacitaciones', icono: iconos.eventos, accion: onIrEventos },
     { etiqueta: 'Inscripciones', icono: iconos.inscripciones, accion: onIrInscripciones },
+    { etiqueta: 'Incidencias', icono: iconos.incidencias, accion: onIrIncidencias },
   ];
   const anchoContenido = sidebarAbierto ? 'lg:pl-[clamp(250px,18vw,318px)]' : 'lg:pl-[clamp(96px,7vw,136px)]';
   const claseOpcion = `group flex w-full items-center rounded-2xl py-3 text-left text-[#718078] transition-all duration-300 hover:bg-white hover:text-[#0b6849] dark:text-[#a7bdb1] dark:hover:bg-white/[0.06] dark:hover:text-white`;

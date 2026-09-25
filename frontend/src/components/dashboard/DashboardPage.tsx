@@ -25,7 +25,7 @@ export default function DashboardPage({
   onIrEmprendimientos,
   onIrEventos,
   onIrInscripciones,
-  onIrIncidencias: _onIrIncidencias,
+  onIrIncidencias,
   onIrBitacora,
   onIrCuentasBloqueadas,
   onCerrarSesion,
@@ -38,6 +38,7 @@ export default function DashboardPage({
           onIrEmprendimientos={onIrEmprendimientos}
           onIrEventos={onIrEventos}
           onIrInscripciones={onIrInscripciones}
+          onIrIncidencias={onIrIncidencias}
         />
       );
 
