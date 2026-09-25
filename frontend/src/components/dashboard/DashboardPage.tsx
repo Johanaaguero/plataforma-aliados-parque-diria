@@ -16,6 +16,7 @@ interface DashboardPageProps {
   onIrEmprendimientos: () => void;
   onIrEventos: () => void;
   onIrInscripciones: () => void;
+  onIrIncidencias: () => void;
   onIrBitacora?: () => void;
   onIrCuentasBloqueadas?: () => void;
   onCerrarSesion?: () => void;
@@ -27,6 +28,7 @@ export default function DashboardPage({
   onIrEmprendimientos,
   onIrEventos,
   onIrInscripciones,
+  onIrIncidencias,
   onIrBitacora,
   onIrCuentasBloqueadas,
   onCerrarSesion,
@@ -39,6 +41,7 @@ export default function DashboardPage({
           onIrEmprendimientos={onIrEmprendimientos}
           onIrEventos={onIrEventos}
           onIrInscripciones={onIrInscripciones}
+          onIrIncidencias={onIrIncidencias}
         >
           <Link
             to="/"

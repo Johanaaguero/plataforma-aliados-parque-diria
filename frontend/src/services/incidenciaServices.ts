@@ -42,6 +42,7 @@ export interface Incidencia {
   estado: EstadoIncidencia;
   ubicacion: string | null;
   fechaRegistro: string;
+  fechaActualizacion: string;
   usuarioReporta: { id: number; nombre: string } | null;
   adminActualiza: { id: number; nombre: string } | null;
   observacionesAdmin: string | null;
@@ -55,6 +56,14 @@ export interface FiltrosIncidencia {
   fechaDesde?: string;
   fechaHasta?: string;
 }
+
+export interface ActualizarIncidenciaAdministrativa {
+  estado?: EstadoIncidencia;
+  categoria?: CategoriaIncidencia;
+  prioridad?: PrioridadIncidencia;
+  observacionesAdmin?: string | null;
+}
+
 export interface Evidencia {
   id: number;
   tipoMime: string;
@@ -84,6 +93,11 @@ interface RespuestaLista {
 }
 
 interface RespuestaDetalle {
+  mensaje: string;
+  incidencia: Incidencia;
+}
+
+interface RespuestaActualizacion {
   mensaje: string;
   incidencia: Incidencia;
 }
@@ -133,6 +147,29 @@ export async function obtenerDetalleIncidencia(
       incluirAuth: false,
       desempaquetarData: false,
       mensajeError: 'No se pudo cargar el detalle de la incidencia',
+    },
+  );
+
+  return respuesta.incidencia;
+}
+
+// ============================================================
+// ACTUALIZAR ADMINISTRATIVAMENTE
+// ============================================================
+
+export async function actualizarIncidenciaAdministrativa(
+  id: number,
+  datos: ActualizarIncidenciaAdministrativa,
+): Promise<Incidencia> {
+  const respuesta = await api.solicitar<RespuestaActualizacion>(
+    `/incidencias/${id}/administracion`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify(datos),
+    },
+    {
+      desempaquetarData: false,
+      mensajeError: 'No se pudo actualizar la incidencia',
     },
   );
 

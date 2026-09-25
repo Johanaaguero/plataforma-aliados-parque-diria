@@ -28,6 +28,8 @@ import { mostrarBienvenidaLogin } from './components/ui/LoginWelcomeOverlay';
 
 import RegistroIncidencia from './components/Gestión de incidencias/RegistroIncidencia';
 
+import IncidenciasAdmin from './components/Gestión de incidencias/admin/IncidenciasAdmin';
+
 import { api } from './services/api';
 
 import { useInactividad } from './services/useInactividad';
@@ -272,6 +274,12 @@ function App() {
 
   const [mostrarErrorModal, setMostrarErrorModal] =
     useState(false);
+
+  const [incidenciasAdminEnEdicion, setIncidenciasAdminEnEdicion] =
+    useState(false);
+
+  const [incidenciasAdminKey, setIncidenciasAdminKey] =
+    useState(0);
 
   useEffect(() => {
     const sincronizarSesion = () => {
@@ -610,6 +618,7 @@ function App() {
           onIrEmprendimientos={() => {}}
           onIrEventos={() => {}}
           onIrInscripciones={() => {}}
+          onIrIncidencias={() => {}}
           onIrBitacora={() => navigate('/bitacora')}
           onIrCuentasBloqueadas={() => setMostrarCuentasBloqueadas(true)}
           onCerrarSesion={() => {
@@ -653,6 +662,11 @@ function App() {
           }}
           onIrInscripciones={() =>
             navigate('/admin/inscripciones', {
+              state: { fromDashboard: true },
+            })
+          }
+          onIrIncidencias={() =>
+            navigate('/admin/incidencias', {
               state: { fromDashboard: true },
             })
           }
@@ -701,6 +715,36 @@ function App() {
         />
 
         <InscripcionesAdmin />
+      </section>
+    );
+  }
+
+  if (rutaActual === '/admin/incidencias') {
+    if (rolAutenticado !== 'administrador') {
+      navigate('/');
+      return null;
+    }
+
+    return (
+      <section className="relative min-h-screen w-full overflow-x-hidden bg-transparent p-0 m-0">
+        <BotonVolverInicio
+          texto="Volver al Dashboard"
+          onClick={() => {
+            if (incidenciasAdminEnEdicion) {
+              setIncidenciasAdminKey((key) => key + 1);
+              setIncidenciasAdminEnEdicion(false);
+              navigate('/admin/incidencias');
+              return;
+            }
+
+            navigate('/admin/dashboard');
+          }}
+        />
+
+        <IncidenciasAdmin
+          key={incidenciasAdminKey}
+          onModoEdicionChange={setIncidenciasAdminEnEdicion}
+        />
       </section>
     );
   }
