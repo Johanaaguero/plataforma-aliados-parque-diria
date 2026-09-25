@@ -268,14 +268,23 @@ function SelectFiltro<T extends string>({
    FECHA
 ========================================================= */
 
-const formatearFechaHora = (fecha: string) =>
-  new Date(fecha).toLocaleString('es-CR', {
+const formatearFechaHoraLocal = (fecha: string | Date | null | undefined) => {
+  if (!fecha) return 'No disponible';
+
+  const valor = new Date(fecha);
+
+  if (Number.isNaN(valor.getTime())) return 'No disponible';
+
+  return new Intl.DateTimeFormat('es-CR', {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
     hour: 'numeric',
     minute: '2-digit',
-  });
+    hour12: true,
+    timeZone: 'America/Costa_Rica',
+  }).format(valor);
+};
 
 /* =========================================================
    COMPONENTE PRINCIPAL
@@ -920,7 +929,7 @@ export default function IncidenciasAdmin({
                                   <strong className="font-bold text-[#50675C]">
                                     Actualización:
                                   </strong>{' '}
-                                  {formatearFechaHora(
+                                  {formatearFechaHoraLocal(
                                     incidencia.fechaActualizacion,
                                   )}
                                 </span>

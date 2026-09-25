@@ -93,6 +93,12 @@ export class EventosCapacitacionesController {
           tipoActividad as TipoActividad;
       }
 
+      if (estado && estado !== EstadoEventoCapacitacion.PUBLICADO) {
+        return res.status(400).json({
+          mensaje: 'El listado público solo permite actividades publicadas.',
+        });
+      }
+
       if (estado) {
         if (
           !Object.values(EstadoEventoCapacitacion).includes(
@@ -127,8 +133,10 @@ export class EventosCapacitacionesController {
           temporada as Temporada;
       }
 
-      const registros =
-        await service.findAll(filtros);
+      const registros = await service.findAll({
+        ...filtros,
+        estado: EstadoEventoCapacitacion.PUBLICADO,
+      });
 
       return res.status(200).json(registros);
     } catch (error) {

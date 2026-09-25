@@ -29,8 +29,6 @@ router.post(
  */
 router.get(
   '/',
-  verificarToken,
-  autorizarRoles('administrador', 'asociado'),
   (req, res) => controller.findAll(req, res),
 );
 

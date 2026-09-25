@@ -108,17 +108,21 @@ export function SelectorUbicacion({
 
   return (
     <div className="space-y-4">
-      <div className="overflow-hidden rounded-xl border border-slate-200">
+      <div className="overflow-hidden rounded-2xl border border-white/30 shadow-xl shadow-emerald-950/10">
         <MapContainer
           center={posicion}
           zoom={DEFAULT_ZOOM}
           scrollWheelZoom={!disabled}
           className="h-[350px] w-full"
         >
-         <TileLayer
-  attribution='&copy; OpenStreetMap contributors'
-  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-/>
+          <TileLayer
+            attribution="Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community"
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+          />
+          <TileLayer
+            attribution="&copy; OpenStreetMap contributors &copy; CARTO"
+            url="https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{y}/{x}{r}.png"
+          />
 
           <CentrarMapa
             latitud={latitud}

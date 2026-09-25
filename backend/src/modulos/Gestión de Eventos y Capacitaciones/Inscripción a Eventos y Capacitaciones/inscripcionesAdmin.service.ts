@@ -11,6 +11,7 @@ import {
 } from '../../../models/Reserva';
 
 import { EventosCapacitaciones } from '../../../models/EventosCapacitaciones';
+import { serializarFechaCalendario, serializarFechaUtc } from '../../../utils/fechas';
 
 export interface InscripcionAdministrativaDTO {
   id: number;
@@ -76,8 +77,8 @@ export const listarInscripcionesAdministrativas = async (): Promise<
       ),
       nombreActividad: registro.nombreActividad,
       tipoActividad: registro.tipoActividad,
-      fechaActividad: registro.fechaActividad ?? null,
-      fechaInscripcion: registro.fechaInscripcion ?? null,
+      fechaActividad: serializarFechaCalendario(registro.fechaActividad),
+      fechaInscripcion: serializarFechaUtc(registro.fechaInscripcion),
       estado: 'confirmada',
       origen: 'participante' as const,
     };
@@ -118,7 +119,7 @@ export const listarInscripcionesAdministrativas = async (): Promise<
       nombreUsuario: registro.nombreUsuario,
       correo: registro.correo,
       nombreCompleto: registro.nombreCompleto,
-      fechaNacimiento: registro.fechaNacimiento ?? null,
+      fechaNacimiento: serializarFechaCalendario(registro.fechaNacimiento),
       tipoIdentificacion: registro.tipoIdentificacion ?? null,
       numeroIdentificacion:
         registro.numeroIdentificacion ?? null,
@@ -128,8 +129,8 @@ export const listarInscripcionesAdministrativas = async (): Promise<
       ),
       nombreActividad: registro.nombreActividad,
       tipoActividad: registro.tipoActividad,
-      fechaActividad: registro.fechaActividad ?? null,
-      fechaInscripcion: registro.fechaInscripcion ?? null,
+      fechaActividad: serializarFechaCalendario(registro.fechaActividad),
+      fechaInscripcion: serializarFechaUtc(registro.fechaInscripcion),
       estado: registro.estado,
       origen: 'reserva' as const,
     })),

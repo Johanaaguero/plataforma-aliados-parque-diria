@@ -245,6 +245,9 @@ export default function InscripcionesAdmin() {
   const [error, setError] = useState('');
   const [busqueda, setBusqueda] = useState('');
   const [filtroTemporal, setFiltroTemporal] = useState<FiltroTemporal>('todos');
+  const [reservaEnActualizacion, setReservaEnActualizacion] = useState<number | null>(null);
+  const [accionEnActualizacion, setAccionEnActualizacion] = useState<'aprobada' | 'rechazada' | null>(null);
+  const [mensajeExito, setMensajeExito] = useState('');
 
   const cargarInscripciones = async () => {
     try {
@@ -278,19 +281,41 @@ export default function InscripcionesAdmin() {
     void cargarInscripciones();
   }, []);
 
+  useEffect(() => {
+    if (!mensajeExito) return;
+
+    const temporizador = window.setTimeout(() => {
+      setMensajeExito('');
+    }, 4000);
+
+    return () => window.clearTimeout(temporizador);
+  }, [mensajeExito]);
+
   const cambiarEstadoReserva = async (id: number, estado: 'aprobada' | 'rechazada') => {
+    if (reservaEnActualizacion !== null) return;
+
     try {
-      await actualizarEstadoReserva(id, estado);
+      setReservaEnActualizacion(id);
+      setAccionEnActualizacion(estado);
+      setError('');
+
+      const reservaActualizada = await actualizarEstadoReserva(id, estado);
 
       setInscripciones((actuales) =>
         actuales.map((inscripcion) =>
           inscripcion.id === id
             ? {
                 ...inscripcion,
-                estado
+                estado: reservaActualizada.estado
               }
             : inscripcion
         )
+      );
+
+      setMensajeExito(
+        estado === 'aprobada'
+          ? 'Inscripción aprobada exitosamente.'
+          : 'Inscripción rechazada exitosamente.'
       );
     } catch (err: unknown) {
       const errorConRespuesta = err as {
@@ -303,6 +328,9 @@ export default function InscripcionesAdmin() {
           errorConRespuesta?.message ||
           'No se pudo actualizar el estado de la reserva.'
       );
+    } finally {
+      setReservaEnActualizacion(null);
+      setAccionEnActualizacion(null);
     }
   };
 
@@ -373,7 +401,7 @@ const registrosFiltrados = useMemo(() => {
         ? new Date(b.fechaInscripcion).getTime()
         : 0;
 
-      return fechaA - fechaB;
+      return fechaB - fechaA;
     });
 }, [registros, busqueda, filtroTemporal]);
 
@@ -394,6 +422,17 @@ const registrosFiltrados = useMemo(() => {
 
   return (
     <section className="min-h-screen bg-slate-50 px-3 py-5 dark:bg-[#07100b] sm:px-6 lg:px-8">
+      {mensajeExito && (
+        <div
+          className="fixed right-4 top-4 z-50 flex max-w-sm items-start gap-3 rounded-2xl border border-emerald-200/80 bg-white/90 px-4 py-3 text-sm text-emerald-800 shadow-xl backdrop-blur-md dark:border-emerald-700/60 dark:bg-emerald-950/90 dark:text-emerald-100"
+          role="status"
+        >
+          <svg className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="m5 12 4 4L19 6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <p className="font-semibold">{mensajeExito}</p>
+        </div>
+      )}
       <div className="mx-auto w-full max-w-7xl">
         <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
@@ -472,8 +511,8 @@ const registrosFiltrados = useMemo(() => {
         </div>
 
         <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-5">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
-            <div className="relative min-w-0 flex-1">
+          <div className="flex min-h-[52px] w-full flex-wrap items-center justify-between gap-4">
+            <div className="relative min-w-[min(100%,280px)] flex-1">
               <svg
                 className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400"
                 viewBox="0 0 24 24"
@@ -494,7 +533,7 @@ const registrosFiltrados = useMemo(() => {
               />
             </div>
 
-            <div className="flex min-w-0 gap-2 overflow-x-auto pb-1 lg:pb-0">
+            <div className="no-scrollbar flex h-auto min-w-[140px] shrink-0 items-center gap-2 overflow-x-auto overflow-y-hidden py-1 whitespace-nowrap">
               {[
                 { valor: 'todos' as const, texto: 'Todos' },
                 { valor: 'proximos' as const, texto: 'Próximos' },
@@ -504,7 +543,7 @@ const registrosFiltrados = useMemo(() => {
                   key={filtro.valor}
                   type="button"
                   onClick={() => setFiltroTemporal(filtro.valor)}
-                  className={`shrink-0 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
+                  className={`min-w-[140px] shrink-0 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
                     filtroTemporal === filtro.valor
                       ? 'bg-emerald-600 text-white shadow-sm'
                       : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
@@ -538,6 +577,7 @@ const registrosFiltrados = useMemo(() => {
           </div>
         )}
 
+        <div className="min-h-[400px]">
         {cargando ? (
           <div className="rounded-2xl border border-slate-200 bg-white px-6 py-16 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-emerald-600 dark:border-slate-700 dark:border-t-emerald-400" />
@@ -563,6 +603,9 @@ const registrosFiltrados = useMemo(() => {
             {registrosFiltrados.map((inscripcion) => {
               const tipo = acentoPorTipo(inscripcion.tipoActividad);
               const puedeGestionar = inscripcion.origen === 'reserva' && inscripcion.estado === 'pendiente';
+              const isSubmitting = reservaEnActualizacion === inscripcion.id;
+              const rechazando = isSubmitting && accionEnActualizacion === 'rechazada';
+              const aprobando = isSubmitting && accionEnActualizacion === 'aprobada';
 
               return (
                 <details
@@ -714,23 +757,35 @@ const registrosFiltrados = useMemo(() => {
                             <button
                               type="button"
                               onClick={() => void cambiarEstadoReserva(inscripcion.id, 'rechazada')}
-                              className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-700 transition hover:bg-red-50 dark:border-red-900/60 dark:bg-slate-900 dark:text-red-300 dark:hover:bg-red-950/30"
+                              disabled={isSubmitting}
+                              aria-busy={isSubmitting}
+                              className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-900/60 dark:bg-slate-900 dark:text-red-300 dark:hover:bg-red-950/30"
                             >
-                              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M6 6l12 12M18 6 6 18" />
-                              </svg>
-                              Rechazar
+                              {rechazando ? (
+                                <span className="h-4 w-4 animate-spin rounded-full border-2 border-red-300 border-t-red-700 dark:border-red-800 dark:border-t-red-300" />
+                              ) : (
+                                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <path d="M6 6l12 12M18 6 6 18" />
+                                </svg>
+                              )}
+                              {rechazando ? 'Actualizando...' : 'Rechazar'}
                             </button>
 
                             <button
                               type="button"
                               onClick={() => void cambiarEstadoReserva(inscripcion.id, 'aprobada')}
-                              className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
+                              disabled={isSubmitting}
+                              aria-busy={isSubmitting}
+                              className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
                             >
-                              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="m5 12 4 4L19 6" />
-                              </svg>
-                              Aprobar
+                              {aprobando ? (
+                                <span className="h-4 w-4 animate-spin rounded-full border-2 border-emerald-200 border-t-white" />
+                              ) : (
+                                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <path d="m5 12 4 4L19 6" />
+                                </svg>
+                              )}
+                              {aprobando ? 'Actualizando...' : 'Aprobar'}
                             </button>
                           </div>
                         </div>
@@ -748,6 +803,7 @@ const registrosFiltrados = useMemo(() => {
             Mostrando {registrosFiltrados.length} de {registros.length} inscripciones
           </div>
         )}
+        </div>
       </div>
     </section>
   );

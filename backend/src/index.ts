@@ -38,6 +38,7 @@ app.use('/api/auth', recuperacionRoutes);
 app.use('/api/users', rolesRoutes);
 app.use('/api/admin', cuentasBloqueadasRoutes);
 app.use('/api/emprendimientos', emprendimientoRoutes);
+app.use('/api/categorias-emprendimiento', categoriaEmprendimientoRoutes);
 app.use('/api/categorias-emprendimientos', categoriaEmprendimientoRoutes);
 app.use('/api/emprendimientos', eliminarEmprendimientoRoutes);
 app.use('/api/eventos-capacitaciones', eventosCapacitacionesRoutes); 

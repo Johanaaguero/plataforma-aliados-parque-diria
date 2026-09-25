@@ -444,15 +444,15 @@ export default function EditarIncidencia({
 
   const fechaActualizacion = useMemo(
     () =>
-      new Date(
-        incidencia.fechaActualizacion,
-      ).toLocaleString('es-CR', {
+      new Intl.DateTimeFormat('es-CR', {
         day: 'numeric',
         month: 'long',
         year: 'numeric',
         hour: 'numeric',
         minute: '2-digit',
-      }),
+        hour12: true,
+        timeZone: 'America/Costa_Rica',
+      }).format(new Date(incidencia.fechaActualizacion)),
     [incidencia.fechaActualizacion],
   );
 

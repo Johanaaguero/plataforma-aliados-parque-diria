@@ -430,30 +430,15 @@ export default function MisInscripciones() {
     }
 
     lista.sort((a, b) => {
-      const fechaA = a.fechaActividad
-        ? new Date(a.fechaActividad).getTime()
-        : null;
+      const fechaA = a.fechaInscripcion
+        ? new Date(a.fechaInscripcion).getTime()
+        : 0;
 
-      const fechaB = b.fechaActividad
-        ? new Date(b.fechaActividad).getTime()
-        : null;
+      const fechaB = b.fechaInscripcion
+        ? new Date(b.fechaInscripcion).getTime()
+        : 0;
 
-      if (fechaA === null && fechaB === null) {
-        return 0;
-      }
-
-      if (fechaA === null) {
-        return 1;
-      }
-
-      if (fechaB === null) {
-        return -1;
-      }
-
-      return filtroTiempo === 'pasadas' ||
-        filtroTiempo === 'canceladas'
-        ? fechaB - fechaA
-        : fechaA - fechaB;
+      return fechaB - fechaA;
     });
 
     return lista;

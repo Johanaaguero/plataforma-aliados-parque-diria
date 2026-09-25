@@ -126,23 +126,13 @@ const obtenerTransicionesDisponibles = (
           accion: 'publicar',
           texto: 'Publicar',
         },
-        {
-          estado: 'Desactivado',
-          accion: 'desactivar',
-          texto: 'Desactivar',
-        },
       ];
     case 'publicado':
       return [
         {
           estado: 'No Publicado',
           accion: 'ocultar',
-          texto: 'Ocultar',
-        },
-        {
-          estado: 'Desactivado',
-          accion: 'desactivar',
-          texto: 'Desactivar',
+          texto: 'Despublicar',
         },
       ];
     case 'desactivado':
@@ -150,7 +140,7 @@ const obtenerTransicionesDisponibles = (
         {
           estado: 'No Publicado',
           accion: 'activar',
-          texto: 'Reactivar',
+          texto: 'Activar',
         },
       ];
     default:

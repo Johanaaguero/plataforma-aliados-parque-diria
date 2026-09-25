@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 
 import { EventoCapacitacionImagen } from './EventoCapacitacionImagen';
+import { serializarFechaCalendario, serializarFechaUtc } from '../utils/fechas';
 
 export enum TipoActividad {
   EVENTO = 'evento',
@@ -223,7 +224,7 @@ export class EventosCapacitaciones {
       id: this.id,
       nombre: this.nombre,
       descripcion: this.descripcion,
-      fecha: this.fecha,
+      fecha: serializarFechaCalendario(this.fecha),
       hora: this.hora,
       lugar: this.lugar,
       tipoActividad: this.tipoActividad,
@@ -236,8 +237,8 @@ export class EventosCapacitaciones {
       edadMaxima: this.edadMaxima,
       estado: this.estado,
       temporada: this.temporada,
-      createdAt: this.createdAt,
-      updatedAt: this.updatedAt,
+      createdAt: serializarFechaUtc(this.createdAt),
+      updatedAt: serializarFechaUtc(this.updatedAt),
     };
   }
 }

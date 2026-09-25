@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { DatosReserva, InscripcionService } from './inscripcion.service';
+import { serializarFechaCalendario, serializarFechaUtc } from '../../../utils/fechas';
 
 const service = new InscripcionService();
 
@@ -181,14 +182,14 @@ export class InscripcionController {
           usuarioId: resultado.reserva.usuarioId,
           eventoCapacitacionId: resultado.reserva.eventoCapacitacionId,
           nombreCompleto: resultado.reserva.nombreCompleto,
-          fechaNacimiento: resultado.reserva.fechaNacimiento,
+          fechaNacimiento: serializarFechaCalendario(resultado.reserva.fechaNacimiento),
           tipoIdentificacion: resultado.reserva.tipoIdentificacion,
           numeroIdentificacion: resultado.reserva.numeroIdentificacion,
           correo: resultado.reserva.correo,
           telefono: resultado.reserva.telefono,
           estado: resultado.reserva.estado,
-          createdAt: resultado.reserva.createdAt,
-          updatedAt: resultado.reserva.updatedAt,
+          createdAt: serializarFechaUtc(resultado.reserva.createdAt),
+          updatedAt: serializarFechaUtc(resultado.reserva.updatedAt),
           cuposDisponibles: resultado.cuposDisponibles,
         },
       });
@@ -258,8 +259,7 @@ export class InscripcionController {
             resultado.reserva.eventoCapacitacionId,
           nombreCompleto:
             resultado.reserva.nombreCompleto,
-          fechaNacimiento:
-            resultado.reserva.fechaNacimiento,
+          fechaNacimiento: serializarFechaCalendario(resultado.reserva.fechaNacimiento),
           tipoIdentificacion:
             resultado.reserva.tipoIdentificacion,
           numeroIdentificacion:
@@ -270,10 +270,8 @@ export class InscripcionController {
             resultado.reserva.telefono,
           estado:
             resultado.reserva.estado,
-          createdAt:
-            resultado.reserva.createdAt,
-          updatedAt:
-            resultado.reserva.updatedAt,
+          createdAt: serializarFechaUtc(resultado.reserva.createdAt),
+          updatedAt: serializarFechaUtc(resultado.reserva.updatedAt),
           cuposDisponibles:
             resultado.cuposDisponibles,
         },
@@ -343,7 +341,7 @@ export class InscripcionController {
           usuarioId: resultado.participante.usuarioId,
           eventoCapacitacionId:
             resultado.participante.eventoCapacitacionId,
-          createdAt: resultado.participante.createdAt,
+          createdAt: serializarFechaUtc(resultado.participante.createdAt),
           cuposDisponibles: resultado.cuposDisponibles,
         },
       });

@@ -1,8 +1,15 @@
 import { Request, Response } from 'express';
 import {crearIncidencia, obtenerIncidencias, obtenerIncidenciaPorId, actualizarIncidenciaAdministrativa, FiltrosIncidenciaDTO,
 } from '../Crear incidencias/IncidenciaService';
-import {CategoriaIncidencia, PrioridadIncidencia, EstadoIncidencia,
+import {CategoriaIncidencia, PrioridadIncidencia, EstadoIncidencia, Incidencia,
 } from '../../../models/Incidencia';
+
+const serializarIncidencia = (incidencia: Incidencia) => ({
+  ...incidencia,
+  fechaRegistro: incidencia.fechaRegistro.toISOString(),
+  fechaActualizacion: incidencia.fechaActualizacion.toISOString(),
+  fechaResolucion: incidencia.fechaResolucion?.toISOString() ?? null,
+});
 
 
 /**
@@ -233,7 +240,7 @@ usuarioReportaId: usuarioReporta,    });
           ? 'Incidencia registrada de forma anónima correctamente.'
           : 'Incidencia registrada correctamente.',
 
-      incidencia,
+      incidencia: serializarIncidencia(incidencia),
     });
   } catch (error) {
     console.error('Error al registrar incidencia:', error);
@@ -311,7 +318,7 @@ export const listarIncidencias = async (
 
     res.status(200).json({
       mensaje: 'Incidencias obtenidas correctamente.',
-      incidencias,
+      incidencias: incidencias.map(serializarIncidencia),
     });
   } catch (error) {
     console.error('Error al obtener incidencias:', error);
@@ -335,7 +342,7 @@ export const obtenerDetalleIncidencia = async (
 
     res.status(200).json({
       mensaje: 'Incidencia obtenida correctamente.',
-      incidencia,
+      incidencia: serializarIncidencia(incidencia),
     });
   } catch (error) {
     console.error('Error al obtener el detalle de la incidencia:', error);
@@ -462,7 +469,7 @@ export const actualizarIncidenciaAdmin = async (
 
     res.status(200).json({
       mensaje: 'Incidencia actualizada correctamente.',
-      incidencia,
+      incidencia: serializarIncidencia(incidencia),
     });
   } catch (error) {
     console.error('Error al actualizar incidencia:', error);

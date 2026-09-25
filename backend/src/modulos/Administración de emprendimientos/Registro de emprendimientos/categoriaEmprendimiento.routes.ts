@@ -8,7 +8,7 @@ const router = Router();
 router.post(
   '/',
   verificarToken,
-  autorizarRoles('administrador'),
+  autorizarRoles('administrador', 'super_admin'),
   categoriaEmprendimientoController.crear.bind(categoriaEmprendimientoController),
 );
 router.get('/', categoriaEmprendimientoController.obtenerTodas.bind(categoriaEmprendimientoController));

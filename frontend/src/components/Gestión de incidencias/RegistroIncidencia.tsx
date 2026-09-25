@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import SelectorUbicacion from '../SelectorUbicacion';
 
 import type {
   ChangeEvent,
@@ -1002,6 +1003,24 @@ export default function RegistroIncidencia({
                   {longitud.toFixed(4)})
                 </p>
               )}
+
+            <div className="rounded-2xl border border-white/20 bg-white/60 p-3 backdrop-blur-md dark:border-white/10 dark:bg-slate-900/60">
+              <p className="mb-3 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                Seleccione el punto exacto en el mapa o arrastre el marcador.
+              </p>
+              <SelectorUbicacion
+                latitud={latitud}
+                longitud={longitud}
+                onChange={(nuevaLatitud, nuevaLongitud) => {
+                  setLatitud(nuevaLatitud);
+                  setLongitud(nuevaLongitud);
+                  setUbicacion(
+                    `${nuevaLatitud.toFixed(6)}, ${nuevaLongitud.toFixed(6)}`,
+                  );
+                }}
+                disabled={cargando}
+              />
+            </div>
           </section>
 
           <section className="space-y-4">

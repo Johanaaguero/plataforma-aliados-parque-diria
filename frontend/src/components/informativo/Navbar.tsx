@@ -24,19 +24,19 @@ interface NavbarProps {
   // Abrir sección de incidencias
   onRegistrarIncidencia?: () => void;
 
-  seccionActiva?: 'inicio' | 'emprendimientos' | 'eventos';
+  seccionActiva?: 'inicio' | 'emprendimientos' | 'eventos' | 'incidencias';
   modoAdministracion?: boolean;
 }
 
 function Navbar({
-  onRegistro,
+  onRegistro: _onRegistro,
   onLogin,
   rolAutenticado,
   nombreUsuario,
   onCerrarSesion,
   onMisInscripciones,
-  onCuentasBloqueadas,
-  onBitacora,
+  onCuentasBloqueadas: _onCuentasBloqueadas,
+  onBitacora: _onBitacora,
   onIrInicio,
   onIrEmprendimientos,
   onIrEventos,
@@ -159,14 +159,6 @@ function Navbar({
     onCerrarSesion();
   };
 
-  /*
-   * Mis reservas solamente está disponible
-   * para visitantes y asociados.
-   */
-  const puedeVerMisReservas =
-    rolAutenticado === 'visitante' ||
-    rolAutenticado === 'asociado';
-
   const claseNavegacion =
     'rounded-full border border-transparent px-3.5 py-2 text-sm font-semibold text-[#17372c] motion-safe:transition-all motion-safe:duration-200 motion-safe:ease-out hover:bg-[#eef7e7]/70 hover:text-[#095540] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2';
 
@@ -247,15 +239,6 @@ function Navbar({
 
             <button
               type="button"
-              onClick={() => setMenuAbierto(false)}
-              data-sigtad-about
-              className={claseNavegacion}
-            >
-              Sobre Aliados del Parque
-            </button>
-
-            <button
-              type="button"
               onClick={irEmprendimientos}
               className={`${claseNavegacion} ${
                 seccionActiva === 'emprendimientos'
@@ -293,9 +276,18 @@ function Navbar({
               <button
                 type="button"
                 onClick={onRegistrarIncidencia}
-                className={claseNavegacion}
+                className={`${claseNavegacion} ${
+                  seccionActiva === 'incidencias'
+                    ? claseNavegacionActiva
+                    : ''
+                }`}
+                aria-current={
+                  seccionActiva === 'incidencias'
+                    ? 'page'
+                    : undefined
+                }
               >
-                Incidencias
+                Reportar incidencia
               </button>
             )}
           </div>
@@ -308,42 +300,13 @@ function Navbar({
 
               {/* USUARIO NO AUTENTICADO */}
               {!rolAutenticado && (
-                <>
-                  <button
-                    type="button"
-                    onClick={onRegistro}
-                    className="min-h-10 rounded-full border border-[#8DC63F] bg-[#8DC63F] px-4 py-2 text-sm font-bold text-[#095540] motion-safe:transition motion-safe:duration-200 hover:border-[#009444] hover:bg-[#009444] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8DC63F] focus-visible:ring-offset-2"
-                  >
-                    Registrarse
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={onLogin}
-                    className="flex h-10 w-10 items-center justify-center rounded-full bg-[#095540] text-white shadow-md shadow-[#095540]/20 motion-safe:transition motion-safe:duration-200 hover:bg-[#009444] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8DC63F] focus-visible:ring-offset-2 motion-safe:hover:-translate-y-0.5 motion-reduce:transform-none"
-                    aria-label="Ingresar"
-                    title="Ingresar"
-                  >
-                    <svg
-                      viewBox="0 0 24 24"
-                      className="h-6 w-6"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden="true"
-                    >
-                      <circle
-                        cx="12"
-                        cy="8"
-                        r="3.5"
-                      />
-
-                      <path d="M5.5 20c.8-3.5 3.2-5.5 6.5-5.5s5.7 2 6.5 5.5" />
-                    </svg>
-                  </button>
-                </>
+                <button
+                  type="button"
+                  onClick={onLogin}
+                  className="min-h-10 rounded-full bg-[#095540] px-4 py-2 text-sm font-bold text-white shadow-md shadow-[#095540]/20 motion-safe:transition motion-safe:duration-200 hover:bg-[#009444] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8DC63F] focus-visible:ring-offset-2 motion-safe:hover:-translate-y-0.5 motion-reduce:transform-none"
+                >
+                  Iniciar sesión
+                </button>
               )}
 
               {/* USUARIO AUTENTICADO */}
@@ -402,8 +365,7 @@ function Navbar({
                         )}
                       </div>
 
-                      {(rolAutenticado === 'visitante' ||
-                        rolAutenticado === 'asociado') && (
+                      {rolAutenticado === 'visitante' && (
                         <button
                           type="button"
                           onClick={irMisInscripciones}
@@ -414,53 +376,40 @@ function Navbar({
                       )}
 
                       {rolAutenticado === 'asociado' && (
-                        <button
-                          type="button"
-                          onClick={irMisEmprendimientos}
-                          className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10"
-                        >
-                          Mis emprendimientos
-                        </button>
-                      )}
-
-                      {/* ADMINISTRADOR */}
-                      {rolAutenticado === 'administrador' && (
-                        <button
-                          type="button"
-                          onClick={irDashboard}
-                          className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10"
-                        >
-                          Dashboard
-                        </button>
-                      )}
-
-                      {rolAutenticado === 'super_admin' &&
-                        onCuentasBloqueadas && (
+                        <>
                           <button
                             type="button"
-                            onClick={() => {
-                              setMenuUsuarioAbierto(false);
-                              onCuentasBloqueadas();
-                            }}
+                            onClick={irMisInscripciones}
                             className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10"
                           >
-                            Cuentas bloqueadas
+                            Mis eventos y capacitaciones
                           </button>
-                        )}
-
-                      {rolAutenticado === 'super_admin' &&
-                        onBitacora && (
                           <button
                             type="button"
-                            onClick={() => {
-                              setMenuUsuarioAbierto(false);
-                              onBitacora();
-                            }}
+                            onClick={irMisEmprendimientos}
                             className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10"
                           >
-                            Bitácora
+                            Mis emprendimientos
                           </button>
-                        )}
+                        </>
+                      )}
+
+                      {(rolAutenticado === 'administrador' ||
+                        rolAutenticado === 'super_admin') && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={
+                              rolAutenticado === 'super_admin'
+                                ? irDashboardSuperAdmin
+                                : irDashboard
+                            }
+                            className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10"
+                          >
+                            Panel de control
+                          </button>
+                        </>
+                      )}
 
                       <div className="my-2 border-t border-white/15" />
 
@@ -552,15 +501,6 @@ function Navbar({
 
               <button
                 type="button"
-                onClick={() => setMenuAbierto(false)}
-                data-sigtad-about
-                className={claseNavegacionMovil}
-              >
-                Sobre Aliados del Parque
-              </button>
-
-              <button
-                type="button"
                 onClick={irEmprendimientos}
                 className={`${claseNavegacionMovil} ${
                   seccionActiva === 'emprendimientos'
@@ -598,7 +538,7 @@ function Navbar({
 
               {/* MIS RESERVAS
                   SOLO VISITANTE Y ASOCIADO */}
-              {puedeVerMisReservas && (
+              {rolAutenticado === 'visitante' && (
                 <button
                   type="button"
                   onClick={irMisInscripciones}
@@ -606,6 +546,25 @@ function Navbar({
                 >
                   Mis reservas
                 </button>
+              )}
+
+              {rolAutenticado === 'asociado' && (
+                <>
+                  <button
+                    type="button"
+                    onClick={irMisInscripciones}
+                    className={claseNavegacionMovil}
+                  >
+                    Mis eventos y capacitaciones
+                  </button>
+                  <button
+                    type="button"
+                    onClick={irMisEmprendimientos}
+                    className={claseNavegacionMovil}
+                  >
+                    Mis emprendimientos
+                  </button>
+                </>
               )}
 
               {/* INCIDENCIAS - VISIBLE SIEMPRE */}
@@ -616,27 +575,25 @@ function Navbar({
                     setMenuAbierto(false);
                     onRegistrarIncidencia();
                   }}
-                  className={claseNavegacionMovil}
+                  className={`${claseNavegacionMovil} ${
+                    seccionActiva === 'incidencias'
+                      ? claseNavegacionMovilActiva
+                      : ''
+                  }`}
+                  aria-current={
+                    seccionActiva === 'incidencias'
+                      ? 'page'
+                      : undefined
+                  }
                 >
-                  Incidencias
+                  Reportar incidencia
                 </button>
               )}
             </div>
 
             {/* USUARIO NO AUTENTICADO */}
             {!rolAutenticado && (
-              <div className="mt-3 grid gap-2 border-t border-[#e2ebe5] pt-3 sm:grid-cols-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMenuAbierto(false);
-                    onRegistro();
-                  }}
-                  className="min-h-12 rounded-full border border-[#8DC63F] bg-[#8DC63F] px-4 py-3 text-sm font-bold text-[#095540] motion-safe:transition motion-safe:duration-200 hover:border-[#009444] hover:bg-[#009444] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8DC63F]"
-                >
-                  Registrarse
-                </button>
-
+              <div className="mt-3 border-t border-[#e2ebe5] pt-3">
                 <button
                   type="button"
                   onClick={() => {
@@ -645,7 +602,7 @@ function Navbar({
                   }}
                   className="min-h-12 rounded-full bg-[#095540] px-4 py-3 text-sm font-bold text-white shadow-md motion-safe:transition motion-safe:duration-200 hover:bg-[#009444] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8DC63F]"
                 >
-                  Ingresar
+                  Iniciar sesión
                 </button>
               </div>
             )}
@@ -684,7 +641,7 @@ function Navbar({
                   onClick={irDashboard}
                   className="min-h-12 w-full rounded-full bg-[#095540] px-4 py-3 text-sm font-bold text-white shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f]"
                 >
-                  Dashboard
+                  Panel de control
                 </button>
               </div>
             )}
@@ -697,40 +654,11 @@ function Navbar({
                   onClick={irDashboardSuperAdmin}
                   className="min-h-12 w-full rounded-full bg-[#095540] px-4 py-3 text-sm font-bold text-white shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f]"
                 >
-                  Dashboard
+                  Panel de control
                 </button>
               </div>
             )}
 
-            {/* SUPER ADMIN - CUENTAS BLOQUEADAS */}
-            {rolAutenticado === 'super_admin' &&
-              onCuentasBloqueadas && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMenuAbierto(false);
-                    onCuentasBloqueadas();
-                  }}
-                  className="mt-3 min-h-[42px] w-full cursor-pointer rounded-[9px] border border-[#095540] bg-white px-4 py-0 text-[13px] font-bold text-[#095540] shadow-[0_5px_14px_rgba(23,48,31,0.14)] [font-family:inherit] [transition:0.2s_ease] hover:bg-[#095540] hover:text-white hover:[transform:translateY(-1px)]"
-                >
-                  Cuentas bloqueadas
-                </button>
-              )}
-
-            {/* SUPER ADMIN - BITÁCORA */}
-            {rolAutenticado === 'super_admin' &&
-              onBitacora && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMenuAbierto(false);
-                    onBitacora();
-                  }}
-                  className="mt-3 min-h-[42px] w-full cursor-pointer rounded-[9px] border border-[#095540] bg-white px-4 py-0 text-[13px] font-bold text-[#095540] shadow-[0_5px_14px_rgba(23,48,31,0.14)] [font-family:inherit] [transition:0.2s_ease] hover:bg-[#095540] hover:text-white hover:[transform:translateY(-1px)]"
-                >
-                  Bitácora
-                </button>
-              )}
           </div>
         )}
       </div>

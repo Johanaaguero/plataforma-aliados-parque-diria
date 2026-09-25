@@ -87,8 +87,8 @@ function Informativo() {
       />
 
       <div className="relative mx-auto max-w-7xl">
-        <ScrollReveal className="grid items-center gap-10 lg:grid-cols-[1.08fr_0.92fr] lg:gap-16">
-            <div className="sigtad-image-reveal relative min-h-[360px] overflow-hidden rounded-[2rem] bg-[#095540] shadow-[0_24px_70px_rgba(9,85,64,0.18)] sm:min-h-[460px] lg:min-h-[540px]">
+        <ScrollReveal className="grid grid-cols-1 items-center gap-10 px-6 py-12 md:grid-cols-2">
+            <div className="sigtad-image-reveal relative h-[400px] w-full overflow-hidden rounded-3xl bg-[#095540] shadow-xl md:h-[480px]">
             {IMAGENES_PARQUE.map((imagen, index) => (
               <img
                 key={imagen.src}
@@ -148,12 +148,12 @@ function Informativo() {
             </div>
           </div>
 
-          <div>
+          <div className="order-first md:order-none">
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#009444] sm:text-sm">
-              {CONTENIDO_PARQUE.etiqueta}
+              Conoce quiénes somos y el parque
             </p>
-            <h2 className="mt-4 text-3xl font-semibold leading-tight tracking-[-0.025em] text-[#095540] sm:text-4xl lg:text-5xl">
-              {CONTENIDO_PARQUE.titulo}
+            <h2 className="mt-4 text-3xl font-bold tracking-tight text-emerald-950 dark:text-white md:text-4xl">
+              Un refugio natural conectado con su comunidad.
             </h2>
             <p className="mt-6 text-base leading-7 text-slate-600 sm:text-lg sm:leading-8">
               {CONTENIDO_PARQUE.descripcion}
@@ -161,6 +161,18 @@ function Informativo() {
             <p className="mt-4 text-base leading-7 text-slate-600 sm:text-lg sm:leading-8">
               {CONTENIDO_PARQUE.comunidad}
             </p>
+
+            <div className="mt-6 rounded-[1.5rem] border border-white/30 bg-white/70 p-5 shadow-[0_12px_34px_rgba(7,63,49,0.08)] backdrop-blur-md dark:border-white/10 dark:bg-slate-900/70">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#009444] dark:text-[#8dc63f]">
+                Asociación Aliados del Parque Nacional Diriá
+              </p>
+              <h3 className="mt-2 text-xl font-bold text-[#095540] dark:text-white">
+                Aliados que conservan y hacen comunidad.
+              </h3>
+              <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                La Asociación Aliados del Parque Nacional Diriá impulsa el turismo rural, la conservación comunitaria y oportunidades sostenibles para las familias cercanas al parque.
+              </p>
+            </div>
 
             <div className="mt-8 flex items-center gap-3 rounded-[1.5rem] border border-[#095540]/15 bg-white/80 p-4 shadow-sm backdrop-blur-sm sm:p-5">
               <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#8dc63f]/15 text-[#095540]">

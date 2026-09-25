@@ -1,8 +1,5 @@
-import { Link } from 'react-router-dom';
-
 import DashboardAdministrador from './dashboards/DashboardAdministrador';
 import DashboardSuperAdmin from './dashboards/DashboardSuper_admin';
-import AdminLayout from './AdminLayout';
 
 type NombreRol =
   | 'administrador'
@@ -28,7 +25,7 @@ export default function DashboardPage({
   onIrEmprendimientos,
   onIrEventos,
   onIrInscripciones,
-  onIrIncidencias,
+  onIrIncidencias: _onIrIncidencias,
   onIrBitacora,
   onIrCuentasBloqueadas,
   onCerrarSesion,
@@ -36,43 +33,12 @@ export default function DashboardPage({
   switch (rolAutenticado) {
     case 'administrador':
       return (
-        <AdminLayout
+        <DashboardAdministrador
           onIrRoles={onIrRoles}
           onIrEmprendimientos={onIrEmprendimientos}
           onIrEventos={onIrEventos}
           onIrInscripciones={onIrInscripciones}
-          onIrIncidencias={onIrIncidencias}
-        >
-          <Link
-            to="/"
-            aria-label="Volver al inicio"
-            title="Volver al inicio"
-            className="fixed left-3 top-3 z-[60] flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-gray-100/80 text-gray-800 shadow-[0_10px_30px_rgba(7,63,49,0.12)] backdrop-blur-md transition-all duration-200 hover:bg-gray-200/80 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 sm:left-5 sm:top-5"
-          >
-            <svg
-              className="h-5 w-5"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              aria-hidden="true"
-            >
-              <path
-                d="m15 18-6-6 6-6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            <span className="sr-only">Volver al inicio</span>
-          </Link>
-
-          <DashboardAdministrador
-            onIrRoles={onIrRoles}
-            onIrEmprendimientos={onIrEmprendimientos}
-            onIrEventos={onIrEventos}
-            onIrInscripciones={onIrInscripciones}
-          />
-        </AdminLayout>
+        />
       );
 
     case 'super_admin':

@@ -2,6 +2,7 @@ import { AppDataSource } from '../../../../data-source';
 import { Participantes, EstadoReserva } from '../../../../models/Participantes';
 import { Reserva, EstadoReserva as EstadoReservaNueva } from '../../../../models/Reserva';
 import { EventosCapacitaciones } from '../../../../models/EventosCapacitaciones';
+import { serializarFechaCalendario, serializarFechaUtc } from '../../../../utils/fechas';
 
 export interface MiInscripcionDTO {
   id: number;
@@ -35,8 +36,7 @@ export const listarMisInscripciones = async (
     .where('participante.usuarioId = :usuarioId', {
       usuarioId,
     })
-    .orderBy('evento.fecha', 'ASC')
-    .addOrderBy('evento.hora', 'ASC')
+    .orderBy('participante.createdAt', 'DESC')
     .getMany();
 
   const resultado: MiInscripcionDTO[] = [];
@@ -61,9 +61,9 @@ export const listarMisInscripciones = async (
       horaFin: null,
       cuposDisponibles,
       estado: participante.estado,
-      fechaCancelacion: participante.fechaCancelacion,
-      fechaActividad: evento.fecha ?? null,
-      fechaInscripcion: participante.createdAt ?? null,
+      fechaCancelacion: serializarFechaUtc(participante.fechaCancelacion),
+      fechaActividad: serializarFechaCalendario(evento.fecha),
+      fechaInscripcion: serializarFechaUtc(participante.createdAt),
     });
   }
 
@@ -71,8 +71,7 @@ export const listarMisInscripciones = async (
     .createQueryBuilder('reserva')
     .innerJoinAndSelect('reserva.eventoCapacitacion', 'evento')
     .where('reserva.usuarioId = :usuarioId', { usuarioId })
-    .orderBy('evento.fecha', 'ASC')
-    .addOrderBy('evento.hora', 'ASC')
+    .orderBy('reserva.createdAt', 'DESC')
     .getMany();
 
   const participantesPorEvento = new Map(
@@ -100,7 +99,7 @@ export const listarMisInscripciones = async (
           ...inscripcionParticipante,
           id: reserva.id,
           estado: EstadoReservaNueva.APROBADA,
-          fechaInscripcion: reserva.createdAt ?? null,
+          fechaInscripcion: serializarFechaUtc(reserva.createdAt),
           origen: 'reserva',
         };
         reservasUnificadas.add(reserva.id);
@@ -122,15 +121,20 @@ export const listarMisInscripciones = async (
       cuposDisponibles: reserva.eventoCapacitacion.cuposDisponibles,
       estado: reserva.estado as string,
       fechaCancelacion: null,
-      fechaActividad: reserva.eventoCapacitacion.fecha ?? null,
-      fechaInscripcion: reserva.createdAt ?? null,
+      fechaActividad: serializarFechaCalendario(reserva.eventoCapacitacion.fecha),
+      fechaInscripcion: serializarFechaUtc(reserva.createdAt),
       origen: 'reserva' as const,
     })));
 
   return resultado.sort((a, b) => {
-    const fechaA = a.fechaActividad ? new Date(a.fechaActividad).getTime() : Number.MAX_SAFE_INTEGER;
-    const fechaB = b.fechaActividad ? new Date(b.fechaActividad).getTime() : Number.MAX_SAFE_INTEGER;
-    return fechaA - fechaB;
+    const fechaA = a.fechaInscripcion
+      ? new Date(a.fechaInscripcion).getTime()
+      : 0;
+    const fechaB = b.fechaInscripcion
+      ? new Date(b.fechaInscripcion).getTime()
+      : 0;
+
+    return fechaB - fechaA;
   });
 };
 

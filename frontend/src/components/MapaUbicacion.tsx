@@ -64,8 +64,12 @@ function MapaUbicacion({
         className="relative z-0 h-56 w-full"
       >
         <TileLayer
-          attribution="&copy; OpenStreetMap contributors"
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution="Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community"
+          url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+        />
+        <TileLayer
+          attribution="&copy; OpenStreetMap contributors &copy; CARTO"
+          url="https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{y}/{x}{r}.png"
         />
 
         <Marker position={[lat, lng]} icon={marcador}>

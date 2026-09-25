@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 
 import {
@@ -528,102 +528,44 @@ export default function ListaIncidencias() {
           ================================== */}
           <div className="mb-8 flex flex-wrap items-center justify-center gap-2.5">
 
-            {/* Categoría */}
-            <select
-              value={filtroCategoria}
-              onChange={(e) =>
-                setFiltroCategoria(
-                  e.target.value as
-                    | CategoriaIncidencia
-                    | ''
-                )
-              }
-              className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 shadow-sm focus:border-emerald-500 focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
-            >
+            <FiltroFlotante
+              etiqueta="Todas las categorías"
+              valor={filtroCategoria}
+              onChange={setFiltroCategoria}
+              opciones={[
+                { valor: '', etiqueta: 'Todas las categorías' },
+                ...Object.entries(categoriasInfo).map(([valor, info]) => ({
+                  valor: valor as CategoriaIncidencia,
+                  etiqueta: info.nombre,
+                })),
+              ]}
+            />
 
-              <option value="">
-                Todas las categorias
-              </option>
+            <FiltroFlotante
+              etiqueta="Toda prioridad"
+              valor={filtroPrioridad}
+              onChange={setFiltroPrioridad}
+              opciones={[
+                { valor: '', etiqueta: 'Toda prioridad' },
+                { valor: 'baja', etiqueta: 'Baja' },
+                { valor: 'media', etiqueta: 'Media' },
+                { valor: 'alta', etiqueta: 'Alta' },
+                { valor: 'critica', etiqueta: 'Crítica' },
+              ]}
+            />
 
-              {Object.entries(categoriasInfo).map(
-                ([valor, info]) => (
-                  <option
-                    key={valor}
-                    value={valor}
-                  >
-                    {info.nombre}
-                  </option>
-                )
-              )}
-
-            </select>
-
-            {/* Prioridad */}
-            <select
-              value={filtroPrioridad}
-              onChange={(e) =>
-                setFiltroPrioridad(
-                  e.target.value as
-                    | PrioridadIncidencia
-                    | ''
-                )
-              }
-              className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 shadow-sm focus:border-emerald-500 focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
-            >
-
-              <option value="">
-                Toda prioridad
-              </option>
-
-              <option value="baja">
-                Baja
-              </option>
-
-              <option value="media">
-                Media
-              </option>
-
-              <option value="alta">
-                Alta
-              </option>
-
-              <option value="critica">
-                Critica
-              </option>
-
-            </select>
-
-            {/* Estado */}
-            <select
-              value={filtroEstado}
-              onChange={(e) =>
-                setFiltroEstado(
-                  e.target.value as
-                    | EstadoIncidencia
-                    | ''
-                )
-              }
-              className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 shadow-sm focus:border-emerald-500 focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
-            >
-
-              <option value="">
-                Todo estado
-              </option>
-
-              {Object.entries(
-                ETIQUETAS_ESTADO
-              ).map(
-                ([valor, etiqueta]) => (
-                  <option
-                    key={valor}
-                    value={valor}
-                  >
-                    {etiqueta}
-                  </option>
-                )
-              )}
-
-            </select>
+            <FiltroFlotante
+              etiqueta="Todo estado"
+              valor={filtroEstado}
+              onChange={setFiltroEstado}
+              opciones={[
+                { valor: '', etiqueta: 'Todo estado' },
+                ...Object.entries(ETIQUETAS_ESTADO).map(([valor, etiqueta]) => ({
+                  valor: valor as EstadoIncidencia,
+                  etiqueta,
+                })),
+              ]}
+            />
 
             {/* Limpiar filtros */}
             {hayFiltrosActivos && (
@@ -723,7 +665,7 @@ export default function ListaIncidencias() {
 
               <div className="relative">
 
-                <div className="relative flex min-h-[430px] items-center justify-center overflow-hidden py-8">
+                <div className="relative flex min-h-[430px] snap-x snap-mandatory items-center justify-center overflow-x-auto scroll-smooth py-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 
                   {/* =================================
                       TARJETA ANTERIOR
@@ -791,6 +733,7 @@ export default function ListaIncidencias() {
                     className="
                       relative
                       z-10
+                      snap-center
                       w-full
                       max-w-2xl
                     "
@@ -829,18 +772,18 @@ export default function ListaIncidencias() {
                         justify-center
                         rounded-full
                         border
-                        border-slate-200
-                        bg-white/95
+                        border-white/30
+                        bg-white/80
                         text-slate-600
                         shadow-lg
-                        backdrop-blur
+                        backdrop-blur-xl
                         transition-all
                         duration-200
                         hover:scale-105
                         hover:bg-white
                         active:scale-95
-                        dark:border-slate-700
-                        dark:bg-slate-800/95
+                        dark:border-white/10
+                        dark:bg-slate-900/80
                         dark:text-slate-200
                       "
                     >
@@ -873,18 +816,18 @@ export default function ListaIncidencias() {
                         justify-center
                         rounded-full
                         border
-                        border-slate-200
-                        bg-white/95
+                        border-white/30
+                        bg-white/80
                         text-slate-600
                         shadow-lg
-                        backdrop-blur
+                        backdrop-blur-xl
                         transition-all
                         duration-200
                         hover:scale-105
                         hover:bg-white
                         active:scale-95
-                        dark:border-slate-700
-                        dark:bg-slate-800/95
+                        dark:border-white/10
+                        dark:bg-slate-900/80
                         dark:text-slate-200
                       "
                     >
@@ -946,5 +889,80 @@ export default function ListaIncidencias() {
 
       </section>
     </>
+  );
+}
+
+interface OpcionFiltro<T extends string> {
+  valor: T | '';
+  etiqueta: string;
+}
+
+function FiltroFlotante<T extends string>({
+  etiqueta,
+  valor,
+  opciones,
+  onChange,
+}: {
+  etiqueta: string;
+  valor: T | '';
+  opciones: OpcionFiltro<T>[];
+  onChange: (valor: T | '') => void;
+}) {
+  const [abierto, setAbierto] = useState(false);
+  const contenedorRef = useRef<HTMLDivElement>(null);
+  const opcionActiva = opciones.find((opcion) => opcion.valor === valor);
+
+  useEffect(() => {
+    const cerrarAlHacerClickFuera = (event: MouseEvent) => {
+      if (!contenedorRef.current?.contains(event.target as Node)) {
+        setAbierto(false);
+      }
+    };
+
+    document.addEventListener('mousedown', cerrarAlHacerClickFuera);
+    return () => document.removeEventListener('mousedown', cerrarAlHacerClickFuera);
+  }, []);
+
+  return (
+    <div ref={contenedorRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setAbierto((actual) => !actual)}
+        aria-haspopup="listbox"
+        aria-expanded={abierto}
+        className="inline-flex min-w-[172px] items-center justify-between gap-3 rounded-2xl border border-white/30 bg-white/80 px-5 py-3 text-left text-xs font-semibold text-slate-700 shadow-xl shadow-emerald-950/10 backdrop-blur-xl transition duration-200 hover:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-500/15 dark:border-white/10 dark:bg-slate-900/80 dark:text-slate-100 dark:hover:bg-slate-900"
+      >
+        <span>{opcionActiva?.etiqueta ?? etiqueta}</span>
+        <Icon className={`h-4 w-4 text-emerald-700 transition-transform duration-200 dark:text-emerald-300 ${abierto ? 'rotate-180' : ''}`}>
+          <path d="m6 9 6 6 6-6" />
+        </Icon>
+      </button>
+
+      {abierto && (
+        <div className="absolute left-0 top-full z-40 mt-2 min-w-full origin-top rounded-3xl border border-white/20 bg-white/80 p-2 shadow-2xl shadow-emerald-950/20 backdrop-blur-xl motion-safe:animate-[fadeInIncidencia_160ms_ease-out] dark:border-white/10 dark:bg-slate-900/80">
+          <div role="listbox" aria-label={etiqueta} className="max-h-64 overflow-y-auto p-1">
+            {opciones.map((opcion) => {
+              const seleccionada = opcion.valor === valor;
+              return (
+                <button
+                  key={opcion.valor || 'todos'}
+                  type="button"
+                  role="option"
+                  aria-selected={seleccionada}
+                  onClick={() => {
+                    onChange(opcion.valor);
+                    setAbierto(false);
+                  }}
+                  className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-xs font-semibold transition ${seleccionada ? 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-200' : 'text-slate-600 hover:bg-emerald-500/10 hover:text-emerald-800 dark:text-slate-300 dark:hover:text-emerald-100'}`}
+                >
+                  {opcion.etiqueta}
+                  {seleccionada && <span className="h-2 w-2 rounded-full bg-emerald-500" />}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

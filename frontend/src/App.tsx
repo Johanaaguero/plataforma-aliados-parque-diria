@@ -1053,7 +1053,7 @@ function App() {
       <>
         <Navbar
           modoAdministracion
-          seccionActiva="inicio"
+          seccionActiva="incidencias"
           onRegistro={() =>
             setMostrarRegistro(true)
           }
@@ -1095,19 +1095,6 @@ function App() {
 
 <main className="min-h-[80vh] overflow-x-hidden bg-[#f5f7ef] pt-24 sm:pt-28 dark:bg-[#0b241b]">
 
-  {/* =====================================
-      INCIDENCIAS REPORTADAS
-  ====================================== */}
-  <ListaIncidencias />
-
-  {/* Separador */}
-  <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
-    <div className="border-t border-[#dfe8d5] dark:border-emerald-900/40" />
-  </div>
-
-  {/* =====================================
-      REGISTRAR NUEVA INCIDENCIA
-  ====================================== */}
   <RegistroIncidencia
     onClose={() =>
       setSeccionActual('inicio')

@@ -86,7 +86,7 @@ function Hero() {
   return (
     <section
       id="inicio"
-      className="relative isolate min-h-[720px] overflow-hidden bg-[#095540] text-white sm:min-h-[760px] lg:min-h-[820px]"
+      className="relative isolate w-screen min-h-[480px] overflow-hidden rounded-none bg-[#095540] text-white sm:min-h-[500px] lg:min-h-[540px] lg:max-h-[540px]"
       aria-roledescription="carrusel"
       aria-label="Paisajes y experiencias del Parque Nacional Diriá"
       onMouseEnter={() => setPunteroSobreCarrusel(true)}
@@ -111,7 +111,7 @@ function Hero() {
             loading={index === 0 ? 'eager' : 'lazy'}
             fetchPriority={index === 0 ? 'high' : 'low'}
             decoding="async"
-            className={`absolute inset-0 h-full w-full object-cover motion-safe:transition-[opacity,transform,filter] motion-safe:duration-[800ms] motion-safe:ease-out motion-reduce:transform-none motion-reduce:transition-none ${
+            className={`absolute inset-0 h-full w-full rounded-none object-cover object-center motion-safe:transition-[opacity,transform,filter] motion-safe:duration-[800ms] motion-safe:ease-out motion-reduce:transform-none motion-reduce:transition-none ${
               indiceActual === index
                 ? 'scale-100 opacity-100 blur-0'
                 : 'scale-105 opacity-0 blur-[4px]'
@@ -133,25 +133,16 @@ function Hero() {
         aria-hidden="true"
       />
 
-      <div className="relative z-10 mx-auto flex min-h-[720px] w-full max-w-7xl items-center px-4 pb-32 pt-32 sm:min-h-[760px] sm:px-6 sm:pb-36 sm:pt-36 lg:min-h-[820px] lg:px-8">
+      <div className="relative z-10 flex min-h-[480px] w-full items-center px-6 pb-20 pt-28 sm:min-h-[500px] sm:px-10 sm:pb-24 sm:pt-32 md:pt-36 lg:min-h-[540px] lg:px-14 lg:pb-24 lg:pt-36">
         <div className="max-w-4xl">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#d9d823] shadow-sm backdrop-blur-md sm:text-sm">
-            <span className="h-2 w-2 rounded-full bg-[#8dc63f]" aria-hidden="true" />
-            Guanacaste, Costa Rica
-          </div>
-
-          <h1 className="sigtad-animate-in font-brand max-w-4xl text-4xl font-bold leading-[1.04] tracking-[-0.035em] text-white sm:text-5xl md:text-6xl lg:text-7xl">
+          <h1 className="sigtad-animate-in font-brand max-w-3xl text-3xl font-bold leading-tight tracking-[-0.035em] text-white md:text-4xl lg:text-5xl">
             Uniendo la Conservación, la Comunidad
             <span className="block text-[#8dc63f]">y el Desarrollo Sostenible en el Parque Nacional Diriá.</span>
           </h1>
 
-          <p className="sigtad-animate-in mt-6 max-w-2xl text-base leading-7 text-white/85 sm:text-lg sm:leading-8 lg:text-xl">
+          <p className="sigtad-animate-in mt-4 max-w-2xl text-sm leading-6 text-white/85 sm:text-base sm:leading-7 lg:text-lg">
             Descubre el Parque Nacional Diriá y las experiencias, actividades y
             emprendimientos que nacen alrededor de este paisaje único.
-          </p>
-
-          <p className="sigtad-animate-in mt-6 max-w-2xl text-sm font-semibold uppercase tracking-[0.12em] text-white/85 sm:text-base">
-            Asociación Aliados del Parque Nacional Diriá
           </p>
         </div>
       </div>
@@ -166,24 +157,6 @@ function Hero() {
       </p>
 
       <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-between px-3 sm:px-6">
-        <button
-          type="button"
-          onClick={mostrarAnterior}
-          className="pointer-events-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/20 text-white backdrop-blur-md transition-all duration-200 hover:bg-white/40 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d9d823]"
-          aria-label="Mostrar imagen anterior"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            className="h-4 w-4"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            aria-hidden="true"
-          >
-            <path d="m15 18-6-6 6-6" />
-          </svg>
-        </button>
-
         <div className="pointer-events-auto absolute bottom-7 left-1/2 inline-flex -translate-x-1/2 items-center gap-4 rounded-full border border-white/15 bg-emerald-950/60 px-4 py-2 shadow-lg backdrop-blur-md dark:bg-slate-900/70 sm:bottom-9">
           <div
             className="flex items-center justify-center gap-1"
@@ -242,23 +215,6 @@ function Hero() {
           </button>
         </div>
 
-        <button
-          type="button"
-          onClick={mostrarSiguiente}
-          className="pointer-events-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/20 text-white backdrop-blur-md transition-all duration-200 hover:bg-white/40 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d9d823]"
-          aria-label="Mostrar imagen siguiente"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            className="h-4 w-4"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            aria-hidden="true"
-          >
-            <path d="m9 18 6-6-6-6" />
-          </svg>
-        </button>
       </div>
     </section>
   );

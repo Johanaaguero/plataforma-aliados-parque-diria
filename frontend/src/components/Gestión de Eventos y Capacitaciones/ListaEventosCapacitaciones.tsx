@@ -35,6 +35,12 @@ type EstadoEvento =
   | 'no_publicado'
   | 'desactivado';
 
+interface AccionEstado {
+  estadoDestino: EstadoEvento;
+  etiqueta: string;
+  icono: 'visibilidad' | 'ocultar' | 'activar';
+}
+
 interface RespuestaApi {
   mensaje?: string;
   message?: string;
@@ -524,6 +530,43 @@ export default function ListaEventosCapacitaciones({
     }
   }
 
+  function obtenerAccionEstado(
+    estadoActual: EstadoEvento,
+  ): AccionEstado | null {
+    switch (estadoActual) {
+      case 'publicado':
+        return {
+          estadoDestino: 'no_publicado',
+          etiqueta: 'Despublicar',
+          icono: 'ocultar',
+        };
+
+      case 'no_publicado':
+        return {
+          estadoDestino: 'publicado',
+          etiqueta: 'Publicar',
+          icono: 'visibilidad',
+        };
+
+      case 'desactivado':
+        return {
+          estadoDestino: 'no_publicado',
+          etiqueta: 'Activar',
+          icono: 'activar',
+        };
+
+      case 'borrador':
+        return {
+          estadoDestino: 'no_publicado',
+          etiqueta: 'Habilitar publicación',
+          icono: 'activar',
+        };
+
+      default:
+        return null;
+    }
+  }
+
   function abrirRegistro() {
     if (!esAdministrador) return;
 
@@ -882,10 +925,7 @@ export default function ListaEventosCapacitaciones({
     const estaCambiando =
       cambiandoEstado === item.id;
 
-    const estadosPermitidos =
-      obtenerEstadosPermitidos(
-        item.estado,
-      );
+    const accionEstado = obtenerAccionEstado(item.estado);
 
     const eventoPasado =
       esEventoPasado(item);
@@ -980,58 +1020,50 @@ export default function ListaEventosCapacitaciones({
               </button>
 
               {menuEstadoAbierto && (
-                <div className="absolute right-0 top-full z-30 mt-2 w-52 overflow-hidden rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl">
+                <div className="absolute right-0 top-full z-30 mt-2 w-52 overflow-hidden rounded-xl border border-white/40 bg-white/90 p-1.5 shadow-xl backdrop-blur-md dark:border-emerald-900/50 dark:bg-emerald-950/90">
                   <div className="border-b border-slate-100 px-3 py-2">
                     <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-slate-400">
-                      Cambiar a
+                      Acción disponible
                     </p>
                   </div>
 
-                  {estadosPermitidos.length >
-                  0 ? (
-                    estadosPermitidos.map(
-                      (
-                        estado,
-                      ) => (
-                        <button
-                          key={
-                            estado
-                          }
-                          type="button"
-                          onClick={() =>
-                            void cambiarEstado(
-                              item,
-                              estado,
-                            )
-                          }
-                          disabled={
-                            estaCambiando
-                          }
-                          className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-xs font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-[#095540] disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          <span>
-                            {obtenerNombreEstado(
-                              estado,
-                            )}
-                          </span>
-
-                          <svg
-                            className="h-4 w-4 text-[#009444]"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            aria-hidden="true"
-                          >
-                            <path
-                              d="M5 13l4 4L19 7"
-                              stroke="currentColor"
-                              strokeWidth="2.5"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                        </button>
-                      ),
-                    )
+                  {accionEstado ? (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        void cambiarEstado(
+                          item,
+                          accionEstado.estadoDestino,
+                        )
+                      }
+                      disabled={estaCambiando}
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-xs font-semibold text-slate-600 transition hover:bg-emerald-50 hover:text-[#095540] disabled:cursor-not-allowed disabled:opacity-50 dark:text-slate-200 dark:hover:bg-emerald-900/30"
+                    >
+                      <svg
+                        className="h-4 w-4 text-[#009444]"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        aria-hidden="true"
+                      >
+                        {accionEstado.icono === 'ocultar' ? (
+                          <>
+                            <path d="M3 3l18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                            <path d="M10.6 5.1A10.9 10.9 0 0 1 12 5c5 0 8.8 4.2 9.8 7-0.4 1.2-1.2 2.5-2.4 3.6M6.2 6.2C4.5 7.7 3.4 9.8 3 12c1 2.8 4.8 7 9 7 1.2 0 2.4-.3 3.5-.8M9.9 9.9a3 3 0 0 0 4.2 4.2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </>
+                        ) : accionEstado.icono === 'visibilidad' ? (
+                          <>
+                            <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+                            <circle cx="12" cy="12" r="2.5" stroke="currentColor" strokeWidth="2" />
+                          </>
+                        ) : (
+                          <>
+                            <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                            <circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="2" />
+                          </>
+                        )}
+                      </svg>
+                      {accionEstado.etiqueta}
+                    </button>
                   ) : (
                     <div className="px-3 py-2.5 text-xs text-slate-500">
                       No hay cambios de estado disponibles.
