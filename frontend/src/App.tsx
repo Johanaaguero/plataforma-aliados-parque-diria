@@ -54,8 +54,10 @@ import Informativo from './components/informativo/general';
 
 import MapaParque from './components/informativo/MapaParque';
 
+
 import type { Emprendimiento } from './services/emprendimientoService';
 import ListaIncidencias from './components/Gestión de incidencias/ListaIncidencias';
+import ReportesPage from './components/Reportes y Estatisticas/ReportesPage';
 
 type NombreRol =
   | 'administrador'
@@ -610,23 +612,24 @@ function App() {
       );
     }
 
-    return (
-      <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef]">
-        <DashboardPage
-          rolAutenticado={rolAutenticado}
-          onIrRoles={() => {}}
-          onIrEmprendimientos={() => {}}
-          onIrEventos={() => {}}
-          onIrInscripciones={() => {}}
-          onIrIncidencias={() => {}}
-          onIrBitacora={() => navigate('/bitacora')}
-          onIrCuentasBloqueadas={() => setMostrarCuentasBloqueadas(true)}
-          onCerrarSesion={() => {
-            void cerrarSesion();
-          }}
-        />
-      </section>
-    );
+   return (
+  <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef]">
+    <DashboardPage
+      rolAutenticado={rolAutenticado}
+      onIrRoles={() => {}}
+      onIrEmprendimientos={() => {}}
+      onIrEventos={() => {}}
+      onIrInscripciones={() => {}}
+      onIrIncidencias={() => {}}
+      onIrReportes={() => navigate('/admin/reportes')}
+      onIrBitacora={() => navigate('/bitacora')}
+      onIrCuentasBloqueadas={() => setMostrarCuentasBloqueadas(true)}
+      onCerrarSesion={() => {
+        void cerrarSesion();
+      }}
+    />
+  </section>
+);
   }
 
   if (rutaActual === '/admin/dashboard') {
@@ -636,43 +639,48 @@ function App() {
     }
 
     return (
-      <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef]">
-        <DashboardPage
-          rolAutenticado={rolAutenticado}
-          onIrRoles={() =>
-            navigate('/admin/roles', {
-              state: { fromDashboard: true },
-            })
-          }
-          onIrEmprendimientos={() => {
-            navigate('/', {
-              state: {
-                fromDashboard: true,
-                seccionPublica: 'emprendimientos',
-              },
-            });
-          }}
-          onIrEventos={() => {
-            navigate('/', {
-              state: {
-                fromDashboard: true,
-                seccionPublica: 'eventos',
-              },
-            });
-          }}
-          onIrInscripciones={() =>
-            navigate('/admin/inscripciones', {
-              state: { fromDashboard: true },
-            })
-          }
-          onIrIncidencias={() =>
-            navigate('/admin/incidencias', {
-              state: { fromDashboard: true },
-            })
-          }
-        />
-      </section>
-    );
+  <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef]">
+    <DashboardPage
+      rolAutenticado={rolAutenticado}
+      onIrRoles={() =>
+        navigate('/admin/roles', {
+          state: { fromDashboard: true },
+        })
+      }
+      onIrEmprendimientos={() => {
+        navigate('/', {
+          state: {
+            fromDashboard: true,
+            seccionPublica: 'emprendimientos',
+          },
+        });
+      }}
+      onIrEventos={() => {
+        navigate('/', {
+          state: {
+            fromDashboard: true,
+            seccionPublica: 'eventos',
+          },
+        });
+      }}
+      onIrInscripciones={() =>
+        navigate('/admin/inscripciones', {
+          state: { fromDashboard: true },
+        })
+      }
+      onIrIncidencias={() =>
+        navigate('/admin/incidencias', {
+          state: { fromDashboard: true },
+        })
+      }
+      onIrReportes={() =>
+        navigate('/admin/reportes', {
+          state: { fromDashboard: true },
+        })
+      }
+    />
+  </section>
+);
   }
 
   if (rutaActual === '/admin/roles') {
@@ -719,6 +727,27 @@ function App() {
     );
   }
 
+  if (rutaActual === '/admin/reportes') {
+  if (rolAutenticado !== 'administrador') {
+    navigate('/');
+    return null;
+  }
+
+  return (
+    <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef] pt-20 sm:pt-24">
+      <BotonVolverInicio
+        texto={
+          vieneDelDashboard
+            ? 'Volver al Dashboard'
+            : 'Volver al inicio'
+        }
+        onClick={volverDesdeModuloAdministrativo}
+      />
+
+      <ReportesPage />
+    </section>
+  );
+}
   if (rutaActual === '/admin/incidencias') {
     if (rolAutenticado !== 'administrador') {
       navigate('/');

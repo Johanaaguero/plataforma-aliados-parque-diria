@@ -24,6 +24,12 @@ import dashboardRoutes from './modulos/Dashboard/dashboard.routes';
 import { AppDataSource } from './data-source';
 import { errorMiddleware } from './middlewares/registro.middleware';
 import incidenciaRoutes from './modulos/Gestión de Incidencias/Crear incidencias/IncidenciaRoutes';
+import reporteUsuarioRoute from './modulos/Administración de emprendimientos/ReporteEstadistica/ReportesEmprendimientosRoutes';
+import reportesUsuariosRoutes from './modulos/Autenticación y gestión de usuario/ReporteEstadistica/ReportesUsuariosRoutes';
+import reportesReservasRoutes from './modulos/Gestión de Eventos y Capacitaciones/Inscripción a Eventos y Capacitaciones/ReporteEstadistica/ReportesReservasRoutes';
+import reportesEventosRoutes from './modulos/Gestión de Eventos y Capacitaciones/ReporteEventosCapacitaciones/ReportesEvenCapRoutes';
+import reportesIncidenciasRoutes from './modulos/Gestión de Incidencias/ReporteIncidencia/ReportesIncidenciasRoute';
+
 
 dotenv.config();
 
@@ -49,7 +55,11 @@ app.use('/api/reservas', reservasRouter);
 app.use('/api/admin', bitacoraRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/incidencias', incidenciaRoutes);
-
+app.use('/api/reportes', reporteUsuarioRoute);
+app.use('/api/reportes/usuarios',reportesUsuariosRoutes,);
+app.use('/api/reportes/reservas', reportesReservasRoutes);
+app.use('/api/reportes/eventos', reportesEventosRoutes);
+app.use('/api/reportes/estadisticas/incidencias', reportesIncidenciasRoutes);
 app.use(errorMiddleware);
 
 const PORT = process.env.PORT || 3000;
