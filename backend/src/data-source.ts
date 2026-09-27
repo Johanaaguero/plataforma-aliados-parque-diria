@@ -19,6 +19,7 @@ import { EventoCapacitacionImagen } from './models/EventoCapacitacionImagen';
 import { Incidencia } from './models/Incidencia';
 import { IncidenciaEvidencia } from './models/IncidenciaEvidencia';
 import { IncidenciaHistorial } from './models/IncidenciaHistorial';
+import { Reporte } from './models/Reporte';
 
 dotenv.config();
 
@@ -62,6 +63,7 @@ export const AppDataSource = new DataSource({
           Incidencia,
   IncidenciaEvidencia,
   IncidenciaHistorial,
+  Reporte,
   ],
  
 
