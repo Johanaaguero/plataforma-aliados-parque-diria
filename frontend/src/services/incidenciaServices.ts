@@ -35,6 +35,7 @@ export type EstadoIncidencia =
 
 export interface Incidencia {
   id: number;
+  codigo: string;
   titulo: string;
   descripcion: string;
   categoria: CategoriaIncidencia;
@@ -42,10 +43,13 @@ export interface Incidencia {
   estado: EstadoIncidencia;
   ubicacion: string | null;
   fechaRegistro: string;
-  fechaActualizacion: string;
+  fechaActualizacion: string | null;
   usuarioReporta: { id: number; nombre: string } | null;
+  nombreContacto?: string | null;
+  telefonoContacto?: string | null;
   adminActualiza: { id: number; nombre: string } | null;
   observacionesAdmin: string | null;
+  esPublica?: boolean;
   evidencias: Evidencia[];
 }
 
@@ -63,6 +67,10 @@ export interface ActualizarIncidenciaAdministrativa {
   prioridad?: PrioridadIncidencia;
   observacionesAdmin?: string | null;
 }
+
+export type AccionCierreIncidencia =
+  | 'aceptar_resolucion'
+  | 'archivar';
 
 export interface Evidencia {
   id: number;
@@ -101,6 +109,16 @@ interface RespuestaActualizacion {
   mensaje: string;
   incidencia: Incidencia;
   incidenciaActualizada?: Incidencia;
+}
+
+interface RespuestaMisIncidencias {
+  mensaje: string;
+  incidencias: Incidencia[];
+}
+
+interface RespuestaCierreIncidencia {
+  mensaje: string;
+  incidencia: Incidencia;
 }
 
 // ============================================================
@@ -175,4 +193,47 @@ export async function actualizarIncidenciaAdministrativa(
   );
 
   return respuesta.incidenciaActualizada ?? respuesta.incidencia;
+}
+
+export async function actualizarVisibilidadIncidencia(
+  id: number,
+  esPublica: boolean,
+): Promise<Incidencia> {
+  return api.solicitar<Incidencia | { incidencia: Incidencia }>(
+    `/incidencias/${id}/visibilidad`,
+    { method: 'PATCH', body: JSON.stringify({ es_publica: esPublica }) },
+    { incluirAuth: true, desempaquetarData: false, mensajeError: 'No se pudo actualizar la visibilidad pública.' },
+  ).then((respuesta) => 'incidencia' in respuesta ? respuesta.incidencia : respuesta);
+}
+
+export async function obtenerMisIncidencias(): Promise<Incidencia[]> {
+  const respuesta = await api.solicitar<RespuestaMisIncidencias>(
+    '/incidencias/mis-incidencias',
+    { method: 'GET' },
+    {
+      desempaquetarData: false,
+      mensajeError: 'No se pudieron cargar tus incidencias.',
+    },
+  );
+
+  return respuesta.incidencias;
+}
+
+export async function cerrarMiIncidencia(
+  id: number,
+  accion: AccionCierreIncidencia,
+): Promise<Incidencia> {
+  const respuesta = await api.solicitar<RespuestaCierreIncidencia>(
+    `/incidencias/${id}/cerrar`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({ accion }),
+    },
+    {
+      desempaquetarData: false,
+      mensajeError: 'No se pudo cerrar la incidencia.',
+    },
+  );
+
+  return respuesta.incidencia;
 }

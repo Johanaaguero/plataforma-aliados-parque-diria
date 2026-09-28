@@ -17,6 +17,7 @@ interface DashboardAdministradorProps {
   onIrInscripciones: () => void;
   onIrIncidencias: () => void;
   onIrReportes: () => void;
+  onIrComunicados: () => void;
 }
 
 type EstadoCarga = 'cargando' | 'listo' | 'error';
@@ -44,7 +45,7 @@ const obtenerMensajeError = (error: unknown): string => {
   return 'No fue posible cargar el dashboard. Inténtalo nuevamente.';
 };
 
-export default function DashboardAdministrador({ onIrRoles, onIrEmprendimientos, onIrEventos, onIrInscripciones, onIrIncidencias, onIrReportes }: DashboardAdministradorProps) {
+export default function DashboardAdministrador({ onIrRoles, onIrEmprendimientos, onIrEventos, onIrInscripciones, onIrIncidencias, onIrReportes, onIrComunicados }: DashboardAdministradorProps) {
   const [sidebarAbierto, setSidebarAbierto] = useState(true);
   const [menuMovilAbierto, setMenuMovilAbierto] = useState(false);
   const [estado, setEstado] = useState<EstadoCarga>('cargando');
@@ -81,6 +82,7 @@ export default function DashboardAdministrador({ onIrRoles, onIrEmprendimientos,
     { etiqueta: 'Eventos y capacitaciones', icono: iconos.eventos, accion: onIrEventos },
     { etiqueta: 'Inscripciones', icono: iconos.inscripciones, accion: onIrInscripciones },
     { etiqueta: 'Incidencias', icono: iconos.incidencias, accion: onIrIncidencias },
+    { etiqueta: 'Comunicados', icono: iconos.reportes, accion: onIrComunicados },
     { etiqueta: 'Reportes y estadísticas', icono: iconos.reportes, accion: onIrReportes },
   ];
 

@@ -15,6 +15,7 @@ import type {
 
 import {
   actualizarIncidenciaAdministrativa,
+  actualizarVisibilidadIncidencia,
   urlArchivoEvidencia,
 } from '../../../services/incidenciaServices';
 
@@ -345,6 +346,9 @@ export default function EditarIncidencia({
   const [observacionesAdmin, setObservacionesAdmin] =
     useState(incidencia.observacionesAdmin ?? '');
 
+  const [esPublica, setEsPublica] =
+    useState(incidencia.esPublica ?? false);
+
   const [ultimaActualizacion, setUltimaActualizacion] =
     useState(incidencia.fechaActualizacion);
 
@@ -454,8 +458,10 @@ export default function EditarIncidencia({
   );
 
   const fechaActualizacion = useMemo(
-    () =>
-      new Intl.DateTimeFormat('es-CR', {
+    () => {
+      if (!ultimaActualizacion) return 'Sin actualizaciones';
+
+      return new Intl.DateTimeFormat('es-CR', {
         day: 'numeric',
         month: 'long',
         year: 'numeric',
@@ -463,7 +469,8 @@ export default function EditarIncidencia({
         minute: '2-digit',
         hour12: true,
         timeZone: 'America/Costa_Rica',
-      }).format(new Date(ultimaActualizacion)),
+      }).format(new Date(ultimaActualizacion));
+    },
     [ultimaActualizacion],
   );
 
@@ -545,6 +552,18 @@ export default function EditarIncidencia({
 
   const guardando =
     estadoGuardado === 'guardando';
+
+  const alternarVisibilidad = async () => {
+    const siguiente = !esPublica;
+    setMensajeError(null);
+    try {
+      const actualizada = await actualizarVisibilidadIncidencia(incidencia.id, siguiente);
+      setEsPublica(actualizada.esPublica ?? siguiente);
+      onGuardar({ ...incidencia, ...actualizada, esPublica: actualizada.esPublica ?? siguiente });
+    } catch (error) {
+      setMensajeError(error instanceof Error ? error.message : 'No se pudo actualizar la visibilidad pública.');
+    }
+  };
 
   /* =======================================================
      VISTA
@@ -1201,7 +1220,9 @@ export default function EditarIncidencia({
                     valor={
                       incidencia.usuarioReporta
                         ?.nombre ??
-                      'Reporte anónimo'
+                      (incidencia.nombreContacto
+                        ? `Reporte anónimo (Contacto: ${incidencia.nombreContacto} - Tel: ${incidencia.telefonoContacto ?? 'No indicado'})`
+                        : 'Reporte anónimo')
                     }
                   />
 
@@ -1270,6 +1291,12 @@ export default function EditarIncidencia({
                 </p>
 
                 <div className="mt-6 space-y-5">
+                  <div className="flex items-center justify-between gap-4 rounded-2xl border border-white/60 bg-white/40 p-4 shadow-sm backdrop-blur-md">
+                    <div><p className="text-sm font-bold text-[#174D3B]">Visibilidad Pública (Novedades)</p><p className="mt-1 text-xs text-[#60776C]">Disponible en Novedades y Noticias del Parque.</p></div>
+                    <button type="button" role="switch" aria-checked={esPublica} onClick={() => void alternarVisibilidad()} className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200 ease-in-out ${esPublica ? 'bg-emerald-700' : 'bg-slate-300'}`}>
+                      <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${esPublica ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                    </button>
+                  </div>
                   <SelectAdministrativo
                     etiqueta="Estado"
                     valor={estado}

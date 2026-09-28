@@ -20,6 +20,8 @@ import { Incidencia } from './models/Incidencia';
 import { IncidenciaEvidencia } from './models/IncidenciaEvidencia';
 import { IncidenciaHistorial } from './models/IncidenciaHistorial';
 import { Reporte } from './models/Reporte';
+import { Comunicado } from './models/Comunicado';
+import { Resena } from './models/Resena';
 
 dotenv.config();
 
@@ -64,6 +66,8 @@ export const AppDataSource = new DataSource({
   IncidenciaEvidencia,
   IncidenciaHistorial,
   Reporte,
+  Comunicado,
+  Resena,
   ],
  
 

@@ -3,8 +3,11 @@ import { Router } from 'express';
 import {
   registrarIncidencia,
   listarIncidencias,
+  listarMisIncidencias,
   obtenerDetalleIncidencia,
   actualizarIncidenciaAdmin,
+  actualizarVisibilidadPublica,
+  cerrarMiIncidencia,
 } from './IncidenciaController';
 
 import {
@@ -43,6 +46,20 @@ router.get(
 );
 
 router.get(
+  '/mis-incidencias',
+  verificarToken,
+  autorizarRoles('visitante', 'asociado'),
+  (req, res) => listarMisIncidencias(req, res),
+);
+
+router.patch(
+  '/:id/cerrar',
+  verificarToken,
+  autorizarRoles('visitante', 'asociado'),
+  (req, res) => cerrarMiIncidencia(req, res),
+);
+
+router.get(
   '/:id',
   (req, res) => obtenerDetalleIncidencia(req, res),
 );
@@ -52,6 +69,13 @@ router.patch(
   verificarToken,
   autorizarRoles('administrador'),
   (req, res) => actualizarIncidenciaAdmin(req, res),
+);
+
+router.patch(
+  '/:id/visibilidad',
+  verificarToken,
+  autorizarRoles('administrador', 'super_admin'),
+  (req, res) => actualizarVisibilidadPublica(req, res),
 );
 
 router.get(

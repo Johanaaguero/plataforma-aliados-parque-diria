@@ -1,13 +1,16 @@
 import { Request, Response } from 'express';
-import {crearIncidencia, obtenerIncidencias, obtenerIncidenciaPorId, actualizarIncidenciaAdministrativa, FiltrosIncidenciaDTO,
+import {crearIncidencia, obtenerIncidencias, obtenerIncidenciaPorId, actualizarIncidenciaAdministrativa, actualizarVisibilidadIncidencia, cerrarIncidenciaPorUsuario, obtenerMisIncidencias, FiltrosIncidenciaDTO,
 } from '../Crear incidencias/IncidenciaService';
 import {CategoriaIncidencia, PrioridadIncidencia, EstadoIncidencia, Incidencia,
 } from '../../../models/Incidencia';
 
 const serializarIncidencia = (incidencia: Incidencia) => ({
   ...incidencia,
+  codigo: incidencia.codigo || '00000000',
   fechaRegistro: incidencia.fechaRegistro.toISOString(),
-  fechaActualizacion: incidencia.fechaActualizacion.toISOString(),
+  fechaActualizacion: incidencia.adminActualiza
+    ? incidencia.fechaActualizacion.toISOString()
+    : null,
   fechaResolucion: incidencia.fechaResolucion?.toISOString() ?? null,
 });
 
@@ -37,6 +40,8 @@ export const registrarIncidencia = async (
       latitud,
       longitud,
       esAnonimo,
+      nombreContacto,
+      telefonoContacto,
     } = req.body;
 
     // ============================================================
@@ -59,6 +64,17 @@ export const registrarIncidencia = async (
       usuarioAutenticado !== null && esAnonimo !== true
         ? usuarioAutenticado
         : null;
+
+    if (usuarioReporta === null) {
+      if (typeof nombreContacto !== 'string' || !nombreContacto.trim()) {
+        res.status(400).json({ mensaje: 'El nombre completo es obligatorio para reportes anónimos.' });
+        return;
+      }
+      if (typeof telefonoContacto !== 'string' || !telefonoContacto.trim()) {
+        res.status(400).json({ mensaje: 'El número telefónico es obligatorio para reportes anónimos.' });
+        return;
+      }
+    }
 
     // ============================================================
     // VALIDAR TÍTULO
@@ -228,7 +244,10 @@ export const registrarIncidencia = async (
           ? Number(longitud)
           : null,
 
-usuarioReportaId: usuarioReporta,    });
+      usuarioReportaId: usuarioReporta,
+      nombreContacto: usuarioReporta === null ? nombreContacto.trim() : null,
+      telefonoContacto: usuarioReporta === null ? telefonoContacto.trim() : null,
+    });
 
     // ============================================================
     // RESPUESTA
@@ -495,5 +514,109 @@ export const actualizarIncidenciaAdmin = async (
     res.status(500).json({
       mensaje: 'No se pudo actualizar la incidencia.',
     });
+  }
+};
+
+export const actualizarVisibilidadPublica = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const id = Number(req.params.id);
+    const esPublica = req.body?.es_publica;
+
+    if (!Number.isInteger(id) || id <= 0) {
+      res.status(400).json({ mensaje: 'El ID de la incidencia no es válido.' });
+      return;
+    }
+    if (typeof esPublica !== 'boolean') {
+      res.status(400).json({ mensaje: 'es_publica debe ser booleano.' });
+      return;
+    }
+
+    const incidencia = await actualizarVisibilidadIncidencia(id, esPublica);
+    res.status(200).json({
+      mensaje: 'Visibilidad pública actualizada correctamente.',
+      incidencia: serializarIncidencia(incidencia),
+    });
+  } catch (error) {
+    const mensaje = error instanceof Error ? error.message : 'No se pudo actualizar la visibilidad pública.';
+    res.status(mensaje === 'Incidencia no encontrada.' ? 404 : 500).json({ mensaje });
+  }
+};
+
+export const listarMisIncidencias = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const usuarioId = req.usuario?.id;
+
+    if (!usuarioId) {
+      res.status(401).json({ mensaje: 'Usuario autenticado no encontrado.' });
+      return;
+    }
+
+    const incidencias = await obtenerMisIncidencias(usuarioId);
+
+    res.status(200).json({
+      mensaje: 'Incidencias del usuario obtenidas correctamente.',
+      incidencias: incidencias.map(serializarIncidencia),
+    });
+  } catch (error) {
+    console.error('Error al obtener las incidencias del usuario:', error);
+    res.status(500).json({ mensaje: 'No se pudieron obtener tus incidencias.' });
+  }
+};
+
+export const cerrarMiIncidencia = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const id = Number(req.params.id);
+    const usuarioId = req.usuario?.id;
+    const accion = req.body?.accion;
+
+    if (!Number.isInteger(id) || id <= 0) {
+      res.status(400).json({ mensaje: 'El ID de la incidencia no es válido.' });
+      return;
+    }
+
+    if (!usuarioId) {
+      res.status(401).json({ mensaje: 'Usuario autenticado no encontrado.' });
+      return;
+    }
+
+    if (accion !== 'aceptar_resolucion' && accion !== 'archivar') {
+      res.status(400).json({ mensaje: 'La acción de cierre no es válida.' });
+      return;
+    }
+
+    const incidenciaActualizada = await cerrarIncidenciaPorUsuario(
+      id,
+      usuarioId,
+      accion,
+    );
+
+    res.status(200).json({
+      mensaje: 'La incidencia fue archivada correctamente.',
+      incidencia: serializarIncidencia(incidenciaActualizada),
+    });
+  } catch (error) {
+    const mensaje = error instanceof Error ? error.message : 'No se pudo cerrar la incidencia.';
+
+    if (mensaje === 'Incidencia no encontrada.') {
+      res.status(404).json({ mensaje });
+      return;
+    }
+
+    if (mensaje === 'La incidencia no está disponible para cierre.') {
+      res.status(409).json({ mensaje });
+      return;
+    }
+
+    console.error('Error al cerrar la incidencia del usuario:', error);
+    res.status(500).json({ mensaje: 'No se pudo cerrar la incidencia.' });
   }
 };

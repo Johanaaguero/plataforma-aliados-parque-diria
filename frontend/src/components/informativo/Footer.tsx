@@ -11,72 +11,7 @@ function IconoRedSocial({ red }: { red: RedSocial }) {
 
 function Footer() {
   const claseEnlace = 'w-fit rounded text-sm text-white/75 transition-colors duration-200 hover:text-[#d9d823] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 focus-visible:ring-offset-[#004d3d]';
-
-  return (
-    <footer className="sigtad-footer relative mt-12 w-full overflow-x-clip pt-8 pb-4 text-white transition-colors duration-500 ease-in-out">
-      <svg className="pointer-events-none absolute inset-x-0 -top-12 block h-12 w-full leading-none transition-colors duration-500 ease-in-out" viewBox="0 0 1440 56" preserveAspectRatio="none" aria-hidden="true">
-        <path className="sigtad-footer-wave transition-colors duration-500 ease-in-out" d="M0 28C160 2 280 2 440 28s280 26 440 0 280-26 560 0v28H0Z" />
-        <path className="fill-none stroke-emerald-300/25 dark:stroke-emerald-400/30" d="M0 28C160 2 280 2 440 28s280 26 440 0 280-26 560 0" stroke="currentColor" strokeWidth="1" />
-      </svg>
-
-      <div className="pointer-events-none absolute -right-24 -top-20 h-56 w-56 rounded-full bg-[#8dc63f]/10 blur-3xl dark:bg-emerald-400/10" aria-hidden="true" />
-
-      <div className="sigtad-animate-in relative mx-auto max-w-7xl px-6 md:px-12">
-        <div className="mb-6 grid w-full grid-cols-1 gap-8 py-2 md:grid-cols-2 lg:grid-cols-4">
-          <div className="max-w-sm">
-            <div className="flex items-center gap-3">
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white p-1">
-                <img src={logo} alt="Aliados del Parque Nacional Diriá" className="h-full w-full object-contain" />
-              </span>
-              <div>
-                <p className="font-brand text-base font-bold text-white">Aliados del Parque</p>
-                <p className="text-[10px] uppercase tracking-[0.16em] text-[#8dc63f]">Parque Nacional Diriá</p>
-              </div>
-            </div>
-            <p className="mt-4 text-sm leading-6 text-white/70">Sistema de Gestión Turística y Administrativa que conecta el Parque Nacional Diriá con sus aliados y comunidades.</p>
-          </div>
-
-          <div>
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.17em] text-amber-400">Explora</h2>
-            <nav className="flex flex-col gap-2" aria-label="Enlaces del pie de página">
-              <a href="#inicio" className={claseEnlace}>Inicio</a>
-              <a href="#sobre-parque" className={claseEnlace} data-sigtad-about>Sobre el parque</a>
-              <a href="#atractivos" className={claseEnlace}>Experiencias</a>
-              <a href="#emprendimientos" className={claseEnlace}>Emprendimientos</a>
-              <a href="#eventos" className={claseEnlace}>Eventos y Capacitaciones</a>
-            </nav>
-          </div>
-
-          <div>
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.17em] text-amber-400">Territorio</h2>
-            <div className="space-y-2 text-sm leading-6 text-white/75">
-              <p>Parque Nacional Diriá</p>
-              <p>Guanacaste, Costa Rica</p>
-              <p>Aliados del Parque</p>
-            </div>
-          </div>
-
-          <div>
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.17em] text-amber-400">Comunidad</h2>
-            <div className="flex flex-wrap gap-2.5" aria-label="Redes sociales">
-              {(['Facebook', 'Instagram', 'WhatsApp', 'TikTok'] as const).map((red) => (
-                <a key={red} href="#" aria-label={red} title={red} className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/85 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#d9d823]/60 hover:bg-[#d9d823]/15 hover:text-[#d9d823] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f]">
-                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
-                    <IconoRedSocial red={red} />
-                  </svg>
-                </a>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-2 border-t border-white/10 pt-4 pb-2 text-xs text-emerald-100/70 opacity-75 sm:flex-row sm:items-center sm:justify-between">
-          <p>© 2026 Sistema SIGTAD. Todos los derechos reservados.</p>
-          <p>Parque, comunidad y turismo responsable.</p>
-        </div>
-      </div>
-    </footer>
-  );
+  return <footer className="sigtad-footer relative mt-12 w-full overflow-x-clip pt-8 pb-4 text-white transition-colors duration-500 ease-in-out"><svg className="pointer-events-none absolute inset-x-0 -top-12 block h-12 w-full leading-none transition-colors duration-500 ease-in-out" viewBox="0 0 1440 56" preserveAspectRatio="none" aria-hidden="true"><path className="sigtad-footer-wave transition-colors duration-500 ease-in-out" d="M0 28C160 2 280 2 440 28s280 26 440 0 280-26 560 0v28H0Z" /><path className="fill-none stroke-emerald-300/25 dark:stroke-emerald-400/30" d="M0 28C160 2 280 2 440 28s280 26 440 0 280-26 560 0" stroke="currentColor" strokeWidth="1" /></svg><div className="pointer-events-none absolute -right-24 -top-20 h-56 w-56 rounded-full bg-[#8dc63f]/10 blur-3xl dark:bg-emerald-400/10" aria-hidden="true" /><div className="sigtad-animate-in relative mx-auto max-w-7xl px-6 md:px-12"><div className="mb-6 grid w-full grid-cols-1 gap-8 py-2 md:grid-cols-2 lg:grid-cols-4"><div className="max-w-sm"><div className="flex items-center gap-3"><span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white p-1"><img src={logo} alt="Aliados del Parque Nacional Diriá" className="h-full w-full object-contain" /></span><div><p className="font-brand text-base font-bold text-white">Aliados del Parque</p><p className="text-[10px] uppercase tracking-[0.16em] text-[#8dc63f]">Parque Nacional Diriá</p></div></div><p className="mt-4 text-sm leading-6 text-white/70">Sistema de Gestión Turística y Administrativa que conecta el Parque Nacional Diriá con sus aliados y comunidades.</p></div><div><h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.17em] text-amber-400">Explora</h2><nav className="flex flex-col gap-2" aria-label="Enlaces del pie de página"><a href="#inicio" className={claseEnlace}>Inicio</a><a href="#sobre-parque" className={claseEnlace} data-sigtad-about>Sobre el parque</a><a href="#atractivos" className={claseEnlace}>Experiencias</a><a href="#emprendimientos" className={claseEnlace}>Emprendimientos</a><a href="#eventos" className={claseEnlace}>Eventos y Capacitaciones</a></nav></div><div><h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.17em] text-amber-400">Territorio</h2><div className="space-y-2 text-sm leading-6 text-white/75"><p>Parque Nacional Diriá</p><p>Guanacaste, Costa Rica</p><p>Aliados del Parque</p></div></div><div><h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.17em] text-amber-400">Comunidad</h2><div className="flex flex-wrap gap-2.5" aria-label="Redes sociales">{(['Facebook', 'Instagram', 'WhatsApp', 'TikTok'] as const).map((red) => <a key={red} href="#" aria-label={red} title={red} className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/85 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#d9d823]/60 hover:bg-[#d9d823]/15 hover:text-[#d9d823] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f]"><svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><IconoRedSocial red={red} /></svg></a>)}</div></div></div><div className="flex flex-col gap-2 border-t border-white/10 pt-4 pb-2 text-xs text-emerald-100/70 opacity-75 sm:flex-row sm:items-center sm:justify-between"><p>© 2026 Sistema SIGTAD. Todos los derechos reservados.</p><p>Parque, comunidad y turismo responsable.</p></div></div></footer>;
 }
 
 export default Footer;

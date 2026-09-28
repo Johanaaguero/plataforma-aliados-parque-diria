@@ -1,5 +1,6 @@
 import 'reflect-metadata';
 import express from 'express';
+import path from 'path';
 import cors from 'cors';
 import dotenv from 'dotenv';
 
@@ -22,6 +23,8 @@ import { iniciarLimpiezaTokensExpirados } from './modulos/Autenticación y gesti
 import { iniciarLimpiezaTokensBlacklist } from './modulos/Autenticación y gestión de usuario/inicio de sesion/limpieza-blacklist.service';
 import dashboardRoutes from './modulos/Dashboard/dashboard.routes';
 import { AppDataSource } from './data-source';
+import resenaRoutes from './modulos/Resenas/resena.routes';
+import comunicadoRoutes from './modulos/Comunicados/comunicado.routes';
 import { errorMiddleware } from './middlewares/registro.middleware';
 import incidenciaRoutes from './modulos/Gestión de Incidencias/Crear incidencias/IncidenciaRoutes';
 import reporteUsuarioRoute from './modulos/Administración de emprendimientos/ReporteEstadistica/ReportesEmprendimientosRoutes';
@@ -37,6 +40,7 @@ const app = express();
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/auth', loginRoutes);
@@ -54,6 +58,8 @@ app.use('/api/inscripciones', inscripcionesRoutes);
 app.use('/api/reservas', reservasRouter);
 app.use('/api/admin', bitacoraRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/resenas', resenaRoutes);
+app.use('/api/comunicados', comunicadoRoutes);
 app.use('/api/incidencias', incidenciaRoutes);
 app.use('/api/reportes', reporteUsuarioRoute);
 app.use('/api/reportes/usuarios',reportesUsuariosRoutes,);

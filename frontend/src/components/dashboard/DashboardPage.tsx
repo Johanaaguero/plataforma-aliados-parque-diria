@@ -24,6 +24,8 @@ interface DashboardPageProps {
 
   onIrReportes: () => void;
 
+  onIrComunicados: () => void;
+
   onIrBitacora?: () => void;
 
   onIrCuentasBloqueadas?: () => void;
@@ -47,6 +49,8 @@ export default function DashboardPage({
   onIrIncidencias,
 
   onIrReportes,
+
+  onIrComunicados,
 
   onIrBitacora,
 
@@ -76,6 +80,8 @@ export default function DashboardPage({
 
           onIrReportes={onIrReportes}
 
+          onIrComunicados={onIrComunicados}
+
         />
 
       );
@@ -91,6 +97,7 @@ export default function DashboardPage({
           onIrCuentasBloqueadas={onIrCuentasBloqueadas ?? (() => {})}
 
           onCerrarSesion={onCerrarSesion ?? (() => {})}
+          onIrComunicados={onIrComunicados}
 
         />
 

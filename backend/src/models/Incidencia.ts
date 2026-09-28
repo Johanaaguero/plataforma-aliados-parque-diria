@@ -45,6 +45,10 @@ export class Incidencia {
   @PrimaryGeneratedColumn()
   id!: number;
 
+  @Index('UQ_INCIDENCIAS_CODIGO', { unique: true })
+  @Column({ type: 'varchar', length: 8, unique: true })
+  codigo!: string;
+
   @Column({
     type: 'varchar',
     length: 150,
@@ -78,6 +82,9 @@ export class Incidencia {
   })
   estado!: EstadoIncidencia;
 
+  @Column({ name: 'es_publica', type: 'boolean', default: false })
+  esPublica!: boolean;
+
   // Usuario que reportó la incidencia.
   // Puede ser null cuando el reporte es anónimo.
   @Index('IDX_INCIDENCIAS_USUARIO_REPORTA')
@@ -87,6 +94,12 @@ export class Incidencia {
   })
   @JoinColumn({ name: 'usuario_reporta_id' })
   usuarioReporta?: Usuario | null;
+
+  @Column({ type: 'varchar', length: 150, nullable: true, name: 'nombre_contacto' })
+  nombreContacto?: string | null;
+
+  @Column({ type: 'varchar', length: 30, nullable: true, name: 'telefono_contacto' })
+  telefonoContacto?: string | null;
 
   // Administrador que realizó el último cambio de estado.
   @Index('IDX_INCIDENCIAS_ADMIN_ACTUALIZA')

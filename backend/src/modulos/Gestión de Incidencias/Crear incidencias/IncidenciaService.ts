@@ -57,7 +57,32 @@ export interface CrearIncidenciaDTO {
    * Si es null o undefined, el reporte es anónimo.
    */
   usuarioReportaId?: number | null;
+  nombreContacto?: string | null;
+  telefonoContacto?: string | null;
 }
+
+const obtenerSufijoCodigoActual = (): string => {
+  const partes = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Costa_Rica',
+    month: '2-digit',
+    year: '2-digit',
+  }).formatToParts(new Date());
+  const valor = (tipo: string) => partes.find((parte) => parte.type === tipo)?.value ?? '';
+  return `${valor('month')}${valor('year')}`;
+};
+
+const generarCodigoIncidencia = async (): Promise<string> => {
+  const sufijo = obtenerSufijoCodigoActual();
+  const resultado = await incidenciaRepository
+    .createQueryBuilder('incidencia')
+    .select('MAX(CAST(SUBSTRING(incidencia.codigo, 1, 4) AS UNSIGNED))', 'ultimo')
+    .where('incidencia.codigo LIKE :patron', { patron: `%${sufijo}` })
+    .getRawOne<{ ultimo: string | null }>();
+  const consecutivo = Number(resultado?.ultimo ?? 0) + 1;
+
+  if (consecutivo > 9999) throw new Error('Se alcanzó el límite mensual de incidencias.');
+  return `${String(consecutivo).padStart(4, '0')}${sufijo}`;
+};
 
 /**
  * Datos permitidos para actualizar una incidencia.
@@ -97,6 +122,23 @@ export interface ActualizarIncidenciaAdministrativaDTO {
   adminId: number;
 }
 
+export const actualizarVisibilidadIncidencia = async (
+  id: number,
+  esPublica: boolean,
+): Promise<Incidencia> => {
+  const incidencia = await incidenciaRepository.findOne({
+    where: { id },
+    relations: { usuarioReporta: true, adminActualiza: true, evidencias: true },
+  });
+
+  if (!incidencia) throw new Error('Incidencia no encontrada.');
+
+  incidencia.esPublica = esPublica;
+  return incidenciaRepository.save(incidencia);
+};
+
+export type AccionCierreIncidencia = 'aceptar_resolucion' | 'archivar';
+
 /**
  * Crear una nueva incidencia.
  */
@@ -121,12 +163,15 @@ export const crearIncidencia = async (
   
 
   const incidencia = incidenciaRepository.create({
+    codigo: await generarCodigoIncidencia(),
     titulo: datos.titulo.trim(),
     descripcion: datos.descripcion.trim(),
     categoria: datos.categoria,
     prioridad,
     estado: EstadoIncidencia.PENDIENTE,
     usuarioReporta,
+    nombreContacto: datos.nombreContacto?.trim() || null,
+    telefonoContacto: datos.telefonoContacto?.trim() || null,
     ubicacion: datos.ubicacion?.trim() || null,
     latitud: datos.latitud ?? null,
     longitud: datos.longitud ?? null,
@@ -190,6 +235,81 @@ export const obtenerIncidenciaPorId = async (
   }
 
   return incidencia;
+};
+
+/**
+ * Lista únicamente las incidencias reportadas por el usuario autenticado.
+ */
+export const obtenerMisIncidencias = async (
+  usuarioId: number,
+): Promise<Incidencia[]> => {
+  return await incidenciaRepository.find({
+    where: {
+      usuarioReporta: { id: usuarioId },
+    },
+    relations: {
+      usuarioReporta: true,
+      adminActualiza: true,
+      evidencias: true,
+    },
+    order: { fechaRegistro: 'DESC' },
+  });
+};
+
+/**
+ * Registra la conformidad del reportante y archiva una incidencia resuelta.
+ * La propiedad del reporte se verifica en la consulta para impedir cierres de
+ * incidencias de otros usuarios.
+ */
+export const cerrarIncidenciaPorUsuario = async (
+  id: number,
+  usuarioId: number,
+  accion: AccionCierreIncidencia,
+): Promise<Incidencia> => {
+  return await AppDataSource.transaction(async (manager) => {
+    const incidenciaRepo = manager.getRepository(Incidencia);
+    const historialRepo = manager.getRepository(IncidenciaHistorial);
+
+    const incidencia = await incidenciaRepo
+      .createQueryBuilder('incidencia')
+      .leftJoinAndSelect('incidencia.usuarioReporta', 'usuarioReporta')
+      .leftJoinAndSelect('incidencia.adminActualiza', 'adminActualiza')
+      .leftJoinAndSelect('incidencia.evidencias', 'evidencias')
+      .where('incidencia.id = :id', { id })
+      .andWhere('usuarioReporta.id = :usuarioId', { usuarioId })
+      .getOne();
+
+    if (!incidencia) {
+      throw new Error('Incidencia no encontrada.');
+    }
+
+    if (incidencia.estado !== EstadoIncidencia.RESUELTA) {
+      throw new Error('La incidencia no está disponible para cierre.');
+    }
+
+    const estadoAnterior = incidencia.estado;
+    incidencia.estado = EstadoIncidencia.CERRADA;
+    incidencia.fechaActualizacion = new Date();
+
+    const incidenciaActualizada = await incidenciaRepo.save(incidencia);
+
+    await historialRepo.save(
+      historialRepo.create({
+        incidencia: incidenciaActualizada,
+        incidenciaId: incidenciaActualizada.id,
+        usuario: incidencia.usuarioReporta!,
+        usuarioId,
+        campoModificado: 'conformidad_usuario',
+        valorAnterior: estadoAnterior,
+        valorNuevo:
+          accion === 'aceptar_resolucion'
+            ? 'resolucion_aceptada'
+            : 'incidencia_archivada',
+      }),
+    );
+
+    return incidenciaActualizada;
+  });
 };
 
 /**

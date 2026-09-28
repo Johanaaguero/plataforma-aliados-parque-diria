@@ -30,6 +30,8 @@ import RegistroIncidencia from './components/Gestión de incidencias/RegistroInc
 
 import IncidenciasAdmin from './components/Gestión de incidencias/admin/IncidenciasAdmin';
 
+import MisIncidencias from './components/Gestión de incidencias/MisIncidencias';
+
 import { api } from './services/api';
 
 import { useInactividad } from './services/useInactividad';
@@ -47,6 +49,8 @@ import DashboardPage from './components/dashboard/DashboardPage';
 import Navbar from './components/informativo/Navbar';
 
 import Hero from './components/informativo/Hero';
+import ModalNovedades from './components/informativo/ModalNovedades';
+import SeccionResenas from './components/informativo/SeccionResenas';
 
 import Footer from './components/informativo/Footer';
 
@@ -56,8 +60,8 @@ import MapaParque from './components/informativo/MapaParque';
 
 
 import type { Emprendimiento } from './services/emprendimientoService';
-import ListaIncidencias from './components/Gestión de incidencias/ListaIncidencias';
 import ReportesPage from './components/Reportes y Estatisticas/ReportesPage';
+import GestionComunicados from './components/GestionComunicados';
 
 type NombreRol =
   | 'administrador'
@@ -235,6 +239,9 @@ function App() {
     useState(() => new URLSearchParams(window.location.search).get('registro') === '1');
 
   const [mostrarLogin, setMostrarLogin] =
+    useState(false);
+
+  const [mostrarNovedades, setMostrarNovedades] =
     useState(false);
 
   const [mostrarGestionRoles, setMostrarGestionRoles] =
@@ -622,6 +629,7 @@ function App() {
       onIrInscripciones={() => {}}
       onIrIncidencias={() => {}}
       onIrReportes={() => navigate('/admin/reportes')}
+      onIrComunicados={() => navigate('/admin/comunicados')}
       onIrBitacora={() => navigate('/bitacora')}
       onIrCuentasBloqueadas={() => setMostrarCuentasBloqueadas(true)}
       onCerrarSesion={() => {
@@ -678,6 +686,7 @@ function App() {
           state: { fromDashboard: true },
         })
       }
+      onIrComunicados={() => navigate('/admin/comunicados')}
     />
   </section>
 );
@@ -793,6 +802,32 @@ function App() {
         <MisInscripciones />
       </section>
     );
+  }
+
+  if (rutaActual === '/admin/comunicados') {
+    if (rolAutenticado !== 'administrador' && rolAutenticado !== 'super_admin') {
+      navigate('/');
+      return null;
+    }
+
+    return (
+      <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef] pt-20 sm:pt-24">
+        <BotonVolverInicio texto="Volver al Dashboard" onClick={() => navigate(rolAutenticado === 'super_admin' ? '/super-admin/dashboard' : '/admin/dashboard')} />
+        <GestionComunicados />
+      </section>
+    );
+  }
+
+  if (rutaActual === '/mis-incidencias') {
+    if (
+      rolAutenticado !== 'visitante' &&
+      rolAutenticado !== 'asociado'
+    ) {
+      navigate('/');
+      return null;
+    }
+
+    return <MisIncidencias />;
   }
 
   /*
@@ -1543,11 +1578,20 @@ function App() {
           <main>
             <Hero />
             <Informativo />
-            <ListaIncidencias />
+            <section className="bg-[#f7fbe9] px-4 py-14 sm:px-6 dark:bg-[#0b241b]">
+              <div className="mx-auto max-w-5xl rounded-[2rem] border border-white/60 bg-white/65 p-7 text-center shadow-[0_20px_50px_rgba(5,84,64,.12)] backdrop-blur-md dark:border-white/10 dark:bg-white/10 sm:p-10">
+                <p className="text-xs font-bold uppercase tracking-[.22em] text-emerald-700 dark:text-emerald-300">Actualidad del Diriá</p>
+                <h2 className="mt-2 text-3xl font-bold tracking-tight text-emerald-950 dark:text-white">Novedades y Noticias del Parque</h2>
+                <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-emerald-900/75 dark:text-emerald-100/75">Consulta incidencias de afectación pública, emprendimientos, actividades y comunicados oficiales.</p>
+                <button type="button" onClick={() => setMostrarNovedades(true)} className="mt-6 rounded-full bg-emerald-700 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-900/20 transition hover:-translate-y-0.5 hover:bg-emerald-800">Ver novedades</button>
+              </div>
+            </section>
+            <SeccionResenas nombreUsuario={nombreUsuario} />
             <MapaParque />
           </main>
 
           <Footer />
+          <ModalNovedades abierto={mostrarNovedades} onCerrar={() => setMostrarNovedades(false)} />
 
           {mostrarErrorModal &&
             errorAutenticacion && (

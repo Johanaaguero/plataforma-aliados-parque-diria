@@ -177,16 +177,6 @@ function Icono({
   );
 }
 
-const iconoCalendario = (
-  <Icono>
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M6.75 3v2.25M17.25 3v2.25M3.75 9h16.5M5.25 5.25h13.5A1.5 1.5 0 0 1 20.25 6.75v12A1.5 1.5 0 0 1 18.75 20.25H5.25a1.5 1.5 0 0 1-1.5-1.5v-12a1.5 1.5 0 0 1 1.5-1.5Z"
-    />
-  </Icono>
-);
-
 const iconoIncidencia = (
   <Icono>
     <path

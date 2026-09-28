@@ -149,6 +149,12 @@ function Navbar({
     onMisInscripciones?.();
   };
 
+  const irMisIncidencias = () => {
+    setMenuAbierto(false);
+    setMenuUsuarioAbierto(false);
+    navigate('/mis-incidencias');
+  };
+
   const irMisEmprendimientos = () => {
     setMenuUsuarioAbierto(false);
     onIrEmprendimientos();
@@ -366,13 +372,22 @@ function Navbar({
                       </div>
 
                       {rolAutenticado === 'visitante' && (
-                        <button
-                          type="button"
-                          onClick={irMisInscripciones}
-                          className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10"
-                        >
-                          Mis reservas
-                        </button>
+                        <>
+                          <button
+                            type="button"
+                            onClick={irMisInscripciones}
+                            className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10"
+                          >
+                            Mis reservas
+                          </button>
+                          <button
+                            type="button"
+                            onClick={irMisIncidencias}
+                            className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10"
+                          >
+                            Mis incidencias
+                          </button>
+                        </>
                       )}
 
                       {rolAutenticado === 'asociado' && (
@@ -390,6 +405,13 @@ function Navbar({
                             className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10"
                           >
                             Mis emprendimientos
+                          </button>
+                          <button
+                            type="button"
+                            onClick={irMisIncidencias}
+                            className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10"
+                          >
+                            Mis incidencias
                           </button>
                         </>
                       )}
@@ -539,13 +561,22 @@ function Navbar({
               {/* MIS RESERVAS
                   SOLO VISITANTE Y ASOCIADO */}
               {rolAutenticado === 'visitante' && (
-                <button
-                  type="button"
-                  onClick={irMisInscripciones}
-                  className={claseNavegacionMovil}
-                >
-                  Mis reservas
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={irMisInscripciones}
+                    className={claseNavegacionMovil}
+                  >
+                    Mis reservas
+                  </button>
+                  <button
+                    type="button"
+                    onClick={irMisIncidencias}
+                    className={claseNavegacionMovil}
+                  >
+                    Mis incidencias
+                  </button>
+                </>
               )}
 
               {rolAutenticado === 'asociado' && (
@@ -563,6 +594,13 @@ function Navbar({
                     className={claseNavegacionMovil}
                   >
                     Mis emprendimientos
+                  </button>
+                  <button
+                    type="button"
+                    onClick={irMisIncidencias}
+                    className={claseNavegacionMovil}
+                  >
+                    Mis incidencias
                   </button>
                 </>
               )}

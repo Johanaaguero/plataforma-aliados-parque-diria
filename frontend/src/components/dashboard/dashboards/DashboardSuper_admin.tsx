@@ -10,6 +10,7 @@ interface DashboardSuperAdminProps {
   onIrBitacora: () => void;
   onIrCuentasBloqueadas: () => void;
   onCerrarSesion: () => void;
+  onIrComunicados: () => void;
 }
 
 interface RegistroBitacoraResumen {
@@ -81,6 +82,7 @@ export default function DashboardSuper_admin({
   onIrBitacora,
   onIrCuentasBloqueadas,
   onCerrarSesion,
+  onIrComunicados,
 }: DashboardSuperAdminProps) {
   const [sidebarAbierto, setSidebarAbierto] = useState(true);
   const [menuMovilAbierto, setMenuMovilAbierto] = useState(false);
@@ -163,6 +165,7 @@ export default function DashboardSuper_admin({
         sm:px-4 sm:py-4 md:px-5 md:py-5 lg:px-7 lg:py-6
       "
     >
+      <button type="button" onClick={onIrComunicados} className="absolute right-5 top-5 z-[70] rounded-full border border-white/50 bg-white/55 px-4 py-2 text-xs font-bold text-emerald-800 shadow-lg backdrop-blur-md transition hover:bg-white dark:border-white/10 dark:bg-white/10 dark:text-emerald-100">Comunicados</button>
       {/* =====================================================
           FONDO SUTIL — conserva la fotografía del proyecto,
           pero deja de dominar el dashboard.
