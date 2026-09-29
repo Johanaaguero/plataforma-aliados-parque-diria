@@ -24,6 +24,7 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "express-rate-limit": "^8.6.2",
+    "i": "^0.3.7",
     "jsonwebtoken": "^9.0.3",
     "libphonenumber-js": "^1.13.12",
     "multer": "^2.2.0",
