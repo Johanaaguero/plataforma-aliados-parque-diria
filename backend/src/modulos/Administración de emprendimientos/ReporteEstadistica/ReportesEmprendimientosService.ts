@@ -21,6 +21,8 @@ export class ReportesService {
     periodo: string,
     fechaInicio?: string,
     fechaFin?: string,
+    emprendimientoId?: number,
+    categoriaId?: number,
     usuarioGeneroId?: number,
   ) {
     const query =
@@ -31,10 +33,23 @@ export class ReportesService {
           'categoria',
         );
 
-    /*
-     * FILTRO POR FECHA
-     */
+    // FILTRO POR EMPRENDIMIENTO
+    if (emprendimientoId) {
+      query.andWhere(
+        'emprendimiento.id = :emprendimientoId',
+        { emprendimientoId },
+      );
+    }
 
+    // FILTRO POR CATEGORÍA
+    if (categoriaId) {
+      query.andWhere(
+        'categoria.id = :categoriaId',
+        { categoriaId },
+      );
+    }
+
+    // FILTRO POR FECHA
     if (periodo === 'hoy') {
       query.andWhere(
         'DATE(emprendimiento.fecha_creacion) = CURDATE()',
@@ -77,17 +92,10 @@ export class ReportesService {
       );
     }
 
-    /*
-     * OBTENER EMPRENDIMIENTOS
-     */
+    // OBTENER EMPRENDIMIENTOS
+    const emprendimientos = await query.getMany();
 
-    const emprendimientos =
-      await query.getMany();
-
-    /*
-     * ESTADÍSTICAS GENERALES
-     */
-
+    // ESTADÍSTICAS GENERALES
     const total = emprendimientos.length;
 
     const publicados =
@@ -118,14 +126,8 @@ export class ReportesService {
           EstadoPublicacion.BORRADOR,
       ).length;
 
-    /*
-     * CATEGORÍAS MÁS REGISTRADAS
-     */
-
-    const categoriasMap = new Map<
-      string,
-      number
-    >();
+    // CATEGORÍAS MÁS REGISTRADAS
+    const categoriasMap = new Map<string, number>();
 
     emprendimientos.forEach(
       (emprendimiento) => {
@@ -157,10 +159,7 @@ export class ReportesService {
           b.cantidad - a.cantidad,
       );
 
-    /*
-     * GUARDAR REPORTE GENERADO
-     */
-
+    // GUARDAR REPORTE GENERADO
     if (usuarioGeneroId) {
       const reportes =
         await this.reporteRepository.find({
@@ -193,10 +192,7 @@ export class ReportesService {
       );
     }
 
-    /*
-     * RESPUESTA
-     */
-
+    // RESPUESTA
     return {
       periodo,
 
@@ -221,10 +217,14 @@ export class ReportesService {
       emprendimientos:
         emprendimientos.map((e) => ({
           id: e.id,
+
           nombre: e.nombre,
+
           estado: e.estadoPublicacion,
+
           fechaCreacion:
             e.fechaCreacion,
+
           categoria:
             e.categoria?.nombre ??
             'Sin categoría',
