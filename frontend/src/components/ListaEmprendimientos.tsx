@@ -216,13 +216,15 @@ function ListaEmprendimientos({
         ? await obtenerDetalleCatalogoPublicado(emprendimiento.id)
         : await obtenerEmprendimientoPorId(emprendimiento.id);
 
-      try {
-        await registrarConsultaEmprendimiento(emprendimiento.id);
-      } catch (error) {
-        console.warn(
-          'No se pudo registrar la consulta del emprendimiento:',
-          error,
-        );
+      if (esCatalogoPublico) {
+        try {
+          await registrarConsultaEmprendimiento(emprendimiento.id);
+        } catch (error) {
+          console.warn(
+            'No se pudo registrar la consulta del emprendimiento:',
+            error,
+          );
+        }
       }
 
       setDetalleSeleccionado(detalle);
