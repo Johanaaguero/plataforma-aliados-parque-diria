@@ -29,6 +29,17 @@ function eliminarDuplicadosPorId<T extends { id: unknown }>(
   });
 }
 
+function calcularPorcentaje(
+  cantidad: number,
+  total: number,
+): number {
+  if (total === 0) {
+    return 0;
+  }
+
+  return Math.round((cantidad / total) * 100);
+}
+
 interface FiltrosIncidencias {
   fechaInicio?: string;
   fechaFin?: string;
@@ -201,6 +212,19 @@ export class ReportesIncidenciasService {
         ]++;
       }
     }
+
+    const porcentajesPorCategoria =
+      Object.fromEntries(
+        Object.entries(
+          incidenciasPorCategoria,
+        ).map(([categoria, cantidad]) => [
+          categoria,
+          calcularPorcentaje(
+            cantidad,
+            totalIncidencias,
+          ),
+        ]),
+      );
 
     /*
      * INCIDENCIAS POR PRIORIDAD
@@ -440,6 +464,30 @@ export class ReportesIncidenciasService {
      * RESPUESTA DEL REPORTE
      */
     return {
+      informacionGeneral: {
+        nombre:
+          'Reporte de incidencias',
+        tipo: TipoReporte.INCIDENCIAS,
+        periodo: {
+          fechaInicio:
+            filtros.fechaInicio ?? null,
+          fechaFin:
+            filtros.fechaFin ?? null,
+        },
+        filtros: {
+          categoria:
+            filtros.categoria ?? null,
+          prioridad:
+            filtros.prioridad ?? null,
+          estado:
+            filtros.estado ?? null,
+        },
+        fechaGeneracion:
+          nuevoReporte.fechaGeneracion,
+        numeroReporte:
+          nuevoReporte.numeroReporte,
+      },
+
       reporte: {
         id:
           nuevoReporte.id,
@@ -478,6 +526,8 @@ export class ReportesIncidenciasService {
       totalIncidencias,
 
       incidenciasPorCategoria,
+
+      porcentajesPorCategoria,
 
       incidenciasPorPrioridad,
 

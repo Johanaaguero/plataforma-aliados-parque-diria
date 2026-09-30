@@ -308,6 +308,27 @@ export class ReportesReservasService {
     );
 
     return {
+      informacionGeneral: {
+        nombre: 'Reporte de reservas',
+        tipo: TipoReporte.RESERVAS,
+        periodo: {
+          fechaInicio:
+            filtros.fechaInicio ?? null,
+          fechaFin:
+            filtros.fechaFin ?? null,
+        },
+        filtros: {
+          temporada:
+            filtros.temporada ?? null,
+          tipoActividad:
+            filtros.tipoActividad ?? null,
+        },
+        fechaGeneracion:
+          nuevoReporte.fechaGeneracion,
+        numeroReporte:
+          nuevoReporte.numeroReporte,
+      },
+
       reporte: {
         id: nuevoReporte.id,
         numeroReporte:

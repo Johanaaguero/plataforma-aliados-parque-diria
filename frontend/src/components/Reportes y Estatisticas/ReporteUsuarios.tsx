@@ -27,7 +27,22 @@ interface UsuarioReporte {
   fechaRegistro: string;
 }
 
+interface InformacionGeneralReporte {
+  nombre: string;
+  tipo: string;
+  periodo:
+    | string
+    | {
+        fechaInicio: string | null;
+        fechaFin: string | null;
+      };
+  filtros: Record<string, string | number | null>;
+  fechaGeneracion: string | null;
+  numeroReporte: string | null;
+}
+
 interface EstadisticasUsuarios {
+  informacionGeneral?: InformacionGeneralReporte;
   periodo: string;
   fechaInicio: string | null;
   fechaFin: string | null;
@@ -1549,6 +1564,31 @@ const contenedorFechasRef =
 
                 <p className="mt-0.5 font-bold text-slate-800 dark:text-slate-100">
                   {obtenerTextoPeriodo()}
+                </p>
+
+                <p className="mt-1 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                  {datos.informacionGeneral?.nombre ??
+                    'Reporte de usuarios'}
+                </p>
+
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  Tipo:{' '}
+                  {datos.informacionGeneral?.tipo ??
+                    'usuarios'}{' '}
+                  · Filtros:{' '}
+                  {periodo === 'personalizado'
+                    ? `${fechaInicio} / ${fechaFin}`
+                    : obtenerTextoPeriodo()}
+                </p>
+
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  Fecha de generaciÃ³n:{' '}
+                  {datos.informacionGeneral
+                    ?.fechaGeneracion
+                    ? new Date(
+                        datos.informacionGeneral.fechaGeneracion,
+                      ).toLocaleString('es-CR')
+                    : 'No aplica'}
                 </p>
               </div>
 

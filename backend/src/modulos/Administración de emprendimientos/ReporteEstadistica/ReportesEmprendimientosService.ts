@@ -27,6 +27,17 @@ function eliminarDuplicadosPorId<T extends { id: unknown }>(
   });
 }
 
+function calcularPorcentaje(
+  cantidad: number,
+  total: number,
+): number {
+  if (total === 0) {
+    return 0;
+  }
+
+  return Math.round((cantidad / total) * 100);
+}
+
 export class ReportesService {
   private emprendimientoRepository =
     AppDataSource.getRepository(Emprendimiento);
@@ -145,6 +156,25 @@ export class ReportesService {
           EstadoPublicacion.BORRADOR,
       ).length;
 
+    const porcentajesPorEstado = {
+      publicados: calcularPorcentaje(
+        publicados,
+        total,
+      ),
+      noPublicados: calcularPorcentaje(
+        noPublicados,
+        total,
+      ),
+      desactivados: calcularPorcentaje(
+        desactivados,
+        total,
+      ),
+      borradores: calcularPorcentaje(
+        borradores,
+        total,
+      ),
+    };
+
     // CATEGORÍAS MÁS REGISTRADAS
     const categoriasMap = new Map<string, number>();
 
@@ -179,6 +209,8 @@ export class ReportesService {
       );
 
     // GUARDAR REPORTE GENERADO
+    let reporteGenerado: Reporte | null = null;
+
     if (usuarioGeneroId) {
       const reportes =
         await this.reporteRepository.find({
@@ -209,10 +241,35 @@ export class ReportesService {
       await this.reporteRepository.save(
         reporte,
       );
+
+      reporteGenerado = reporte;
     }
 
     // RESPUESTA
     return {
+      informacionGeneral: {
+        nombre:
+          'Reporte de emprendimientos',
+        tipo: TipoReporte.EMPRENDIMIENTOS,
+        periodo,
+        filtros: {
+          fechaInicio:
+            fechaInicio ?? null,
+          fechaFin:
+            fechaFin ?? null,
+          emprendimientoId:
+            emprendimientoId ?? null,
+          categoriaId:
+            categoriaId ?? null,
+        },
+        fechaGeneracion:
+          reporteGenerado?.fechaGeneracion ??
+          null,
+        numeroReporte:
+          reporteGenerado?.numeroReporte ??
+          null,
+      },
+
       periodo,
 
       fechaInicio:
@@ -230,6 +287,8 @@ export class ReportesService {
       desactivados,
 
       borradores,
+
+      porcentajesPorEstado,
 
       categorias,
 
