@@ -8,6 +8,7 @@ import {
   eliminarEmprendimiento,
   obtenerEmprendimientoPorId,
   obtenerDetalleCatalogoPublicado,
+  registrarConsultaEmprendimiento,
   type Emprendimiento,
   type EstadoPublicacion,
   type EstadoPublicacionSolicitado,
@@ -176,6 +177,7 @@ function ListaEmprendimientos({
   const [idProcesando, setIdProcesando] = useState<number | null>(null);
 
   const operacionEnCurso = useRef(false);
+  const detalleEnCargaRef = useRef<number | null>(null);
   const botonQueAbrioModal = useRef<HTMLButtonElement | null>(null);
   const dialogoConfirmacion = useRef<HTMLDivElement | null>(null);
   const carruselEmprendimientos = useRef<HTMLDivElement | null>(null);
@@ -202,12 +204,27 @@ function ListaEmprendimientos({
     esAdministrador || esPropietario(emprendimiento);
 
   const abrirDetalle = async (emprendimiento: Emprendimiento) => {
+    if (detalleEnCargaRef.current === emprendimiento.id) {
+      return;
+    }
+
+    detalleEnCargaRef.current = emprendimiento.id;
     setCargandoDetalle(true);
     setImagenDetalle(0);
     try {
       const detalle = esCatalogoPublico
         ? await obtenerDetalleCatalogoPublicado(emprendimiento.id)
         : await obtenerEmprendimientoPorId(emprendimiento.id);
+
+      try {
+        await registrarConsultaEmprendimiento(emprendimiento.id);
+      } catch (error) {
+        console.warn(
+          'No se pudo registrar la consulta del emprendimiento:',
+          error,
+        );
+      }
+
       setDetalleSeleccionado(detalle);
     } catch (err: unknown) {
       setMensajeAccion({
@@ -215,6 +232,7 @@ function ListaEmprendimientos({
         texto: obtenerMensajeError(err, 'No se pudo cargar el detalle del emprendimiento.'),
       });
     } finally {
+      detalleEnCargaRef.current = null;
       setCargandoDetalle(false);
     }
   };

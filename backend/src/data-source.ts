@@ -22,6 +22,7 @@ import { IncidenciaHistorial } from './models/IncidenciaHistorial';
 import { Reporte } from './models/Reporte';
 import { Comunicado } from './models/Comunicado';
 import { Resena } from './models/Resena';
+import { ConsultaEmprendimiento } from './models/ConsultaEmprendimiento';
 
 dotenv.config();
 
@@ -68,6 +69,7 @@ export const AppDataSource = new DataSource({
   Reporte,
   Comunicado,
   Resena,
+  ConsultaEmprendimiento,
   ],
  
 

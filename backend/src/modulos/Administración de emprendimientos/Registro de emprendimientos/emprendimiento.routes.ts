@@ -4,6 +4,7 @@ import { emprendimientoController } from './emprendimiento.controller';
 
 import { upload } from '../../../middlewares/upload';
 import { verificarToken } from '../../../middlewares/auth.middleware';
+import { verificarTokenOpcional } from '../../../middlewares/verificarTokenOpcional';
 
 
 import { autorizarRoles } from '../../../middlewares/authorization.middleware';
@@ -43,6 +44,14 @@ router.get(
 router.get(
   '/catalogo/:id',
   emprendimientoController.obtenerDetalleCatalogoPublico.bind(
+    emprendimientoController,
+  ),
+);
+
+router.post(
+  '/:id/consulta',
+  verificarTokenOpcional,
+  emprendimientoController.registrarConsulta.bind(
     emprendimientoController,
   ),
 );

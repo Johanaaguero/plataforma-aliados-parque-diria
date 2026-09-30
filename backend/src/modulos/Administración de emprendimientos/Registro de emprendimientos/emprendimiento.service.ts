@@ -4,6 +4,7 @@ import {
   Emprendimiento,
   EstadoPublicacion,
 } from '../../../models/Emprendimiento';
+import { ConsultaEmprendimiento } from '../../../models/ConsultaEmprendimiento';
 
 import { CategoriaEmprendimiento } from '../../../models/CategoriaEmprendimiento';
 
@@ -12,6 +13,8 @@ import { EmprendimientoImagen } from '../../../models/EmprendimientoImagen';
 
 const emprendimientoRepository =
   AppDataSource.getRepository(Emprendimiento);
+const consultaEmprendimientoRepository =
+  AppDataSource.getRepository(ConsultaEmprendimiento);
 
 const categoriaRepository =
   AppDataSource.getRepository(CategoriaEmprendimiento);
@@ -693,6 +696,34 @@ async crear(
     }
 
     return emprendimiento;
+  }
+
+  async registrarConsulta(
+    id: number,
+    usuarioId?: number,
+  ): Promise<ConsultaEmprendimiento> {
+    const emprendimiento =
+      await this.buscarPorId(id);
+
+    if (
+      !emprendimiento ||
+      emprendimiento.estadoPublicacion !==
+        EstadoPublicacion.PUBLICADO
+    ) {
+      throw new Error(
+        'Emprendimiento no encontrado',
+      );
+    }
+
+    const consulta =
+      consultaEmprendimientoRepository.create({
+        emprendimientoId: emprendimiento.id,
+        usuarioId: usuarioId ?? null,
+      });
+
+    return consultaEmprendimientoRepository.save(
+      consulta,
+    );
   }
 
   // ============================================================

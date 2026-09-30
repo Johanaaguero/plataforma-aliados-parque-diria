@@ -573,6 +573,46 @@ distrito:
     }
   }
 
+  async registrarConsulta(
+    req: Request,
+    res: Response,
+  ): Promise<Response> {
+    try {
+      const id = Number(req.params.id);
+
+      if (
+        !Number.isInteger(id) ||
+        id <= 0
+      ) {
+        return res.status(400).json({
+          ok: false,
+          mensaje:
+            'El ID del emprendimiento no es vÃ¡lido',
+        });
+      }
+
+      await emprendimientoService.registrarConsulta(
+        id,
+        req.usuario?.id,
+      );
+
+      return res.status(201).json({
+        ok: true,
+      });
+    } catch (error: any) {
+      console.warn(
+        'No se pudo registrar la consulta del emprendimiento:',
+        error,
+      );
+
+      return res.status(404).json({
+        ok: false,
+        mensaje:
+          'Emprendimiento no encontrado',
+      });
+    }
+  }
+
   // ============================================================
   // CAMBIO DE ESTADO
   // ============================================================

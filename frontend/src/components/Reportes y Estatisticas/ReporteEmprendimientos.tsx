@@ -11,6 +11,12 @@ interface CategoriaReporte {
   cantidad: number;
 }
 
+interface EmprendimientoConsultadoReporte {
+  emprendimientoId: number;
+  nombre: string;
+  cantidadConsultas: number;
+}
+
 interface EmprendimientoReporte {
   id: number;
   nombre: string;
@@ -52,6 +58,8 @@ interface EstadisticasEmprendimientos {
   };
 
   categorias: CategoriaReporte[];
+  totalConsultas: number;
+  emprendimientosMasConsultados: EmprendimientoConsultadoReporte[];
   emprendimientos: EmprendimientoReporte[];
 }
 
@@ -772,6 +780,68 @@ function GraficaMontana({
           </span>
         ))}
       </div>
+    </div>
+  );
+}
+
+function GraficaBarrasConsultas({
+  datos,
+}: {
+  datos: EmprendimientoConsultadoReporte[];
+}) {
+  const maximo = Math.max(
+    ...datos.map(
+      (emprendimiento) =>
+        emprendimiento.cantidadConsultas,
+    ),
+    1,
+  );
+
+  return (
+    <div className="space-y-4">
+      {datos.map((emprendimiento, indice) => {
+        const porcentajeBarra =
+          (emprendimiento.cantidadConsultas /
+            maximo) *
+          100;
+
+        return (
+          <div
+            key={emprendimiento.emprendimientoId}
+            className="space-y-2"
+          >
+            <div className="flex items-center justify-between gap-3 text-sm">
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-xs font-extrabold text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300">
+                  {indice + 1}
+                </span>
+
+                <span
+                  className="truncate font-bold text-slate-700 dark:text-slate-200"
+                  title={emprendimiento.nombre}
+                >
+                  {emprendimiento.nombre}
+                </span>
+              </div>
+
+              <span className="shrink-0 font-extrabold text-emerald-600 dark:text-emerald-400">
+                {
+                  emprendimiento.cantidadConsultas
+                }
+              </span>
+            </div>
+
+            <div className="h-3 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+              <div
+                className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                style={{
+                  width: `${porcentajeBarra}%`,
+                }}
+              />
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -1748,7 +1818,7 @@ export default function ReporteEmprendimientos() {
 
             {/* TARJETAS DE MÉTRICAS */}
 
-            <div className="grid grid-cols-1 gap-4 min-[560px]:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 min-[560px]:grid-cols-2 xl:grid-cols-5">
 
               <article className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
 
@@ -1851,6 +1921,30 @@ export default function ReporteEmprendimientos() {
                     datos.desactivados,
                   )}
                   % del total
+                </p>
+
+              </article>
+
+              <article className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
+
+                <div className="flex items-center justify-between gap-4">
+
+                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-sky-500/10 text-sky-600 dark:bg-sky-500/20 dark:text-sky-400">
+                    {iconos.tendencia}
+                  </span>
+
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                    Consultas
+                  </span>
+
+                </div>
+
+                <p className="mt-5 text-3xl font-extrabold tracking-tight text-slate-800 dark:text-slate-100">
+                  {datos.totalConsultas}
+                </p>
+
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  Consultas registradas
                 </p>
 
               </article>
@@ -2064,6 +2158,46 @@ export default function ReporteEmprendimientos() {
             {/* =================================================
                 CATEGORÍA PRINCIPAL
                 ================================================= */}
+
+            <section className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
+
+              <div className="flex items-start justify-between gap-4">
+
+                <div>
+                  <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">
+                    Emprendimientos más consultados
+                  </h3>
+
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                    Ranking de consultas registradas para los filtros seleccionados.
+                  </p>
+                </div>
+
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
+                  {iconos.medalla}
+                </span>
+
+              </div>
+
+              <div className="mt-6">
+
+                {datos.totalConsultas === 0 ||
+                datos.emprendimientosMasConsultados
+                  .length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 px-4 py-10 text-center text-sm font-medium text-slate-500 dark:border-slate-700 dark:bg-slate-800/40 dark:text-slate-400">
+                    No hay consultas registradas para los filtros seleccionados.
+                  </div>
+                ) : (
+                  <GraficaBarrasConsultas
+                    datos={
+                      datos.emprendimientosMasConsultados
+                    }
+                  />
+                )}
+
+              </div>
+
+            </section>
 
             {categoriaPrincipal && (
               <section className="relative overflow-hidden rounded-3xl border border-emerald-500/20 bg-gradient-to-r from-emerald-600 to-teal-700 p-6 text-white shadow-lg dark:from-emerald-900/90 dark:to-slate-900">

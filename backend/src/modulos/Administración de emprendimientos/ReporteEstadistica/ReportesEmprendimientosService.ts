@@ -1,9 +1,11 @@
 import { AppDataSource } from '../../../data-source';
+import { SelectQueryBuilder } from 'typeorm';
 
 import {
   Emprendimiento,
   EstadoPublicacion,
 } from '../../../models/Emprendimiento';
+import { ConsultaEmprendimiento } from '../../../models/ConsultaEmprendimiento';
 
 import {
   Reporte,
@@ -42,8 +44,182 @@ export class ReportesService {
   private emprendimientoRepository =
     AppDataSource.getRepository(Emprendimiento);
 
+  private consultaEmprendimientoRepository =
+    AppDataSource.getRepository(ConsultaEmprendimiento);
+
   private reporteRepository =
     AppDataSource.getRepository(Reporte);
+
+  private aplicarFiltrosConsultas(
+    query: SelectQueryBuilder<ConsultaEmprendimiento>,
+    periodo: string,
+    fechaInicio?: string,
+    fechaFin?: string,
+    emprendimientoId?: number,
+    categoriaId?: number,
+  ) {
+    if (emprendimientoId) {
+      query.andWhere(
+        'emprendimiento.id = :emprendimientoId',
+        { emprendimientoId },
+      );
+    }
+
+    if (categoriaId) {
+      query.andWhere(
+        'categoria.id = :categoriaId',
+        { categoriaId },
+      );
+    }
+
+    if (periodo === 'hoy') {
+      query.andWhere(
+        'DATE(consulta.fecha_consulta) = CURDATE()',
+      );
+    }
+
+    if (periodo === '7dias') {
+      query.andWhere(
+        'consulta.fecha_consulta >= DATE_SUB(NOW(), INTERVAL 7 DAY)',
+      );
+    }
+
+    if (periodo === '30dias') {
+      query.andWhere(
+        'consulta.fecha_consulta >= DATE_SUB(NOW(), INTERVAL 30 DAY)',
+      );
+    }
+
+    if (periodo === 'mes') {
+      query.andWhere(
+        'YEAR(consulta.fecha_consulta) = YEAR(CURDATE())',
+      );
+
+      query.andWhere(
+        'MONTH(consulta.fecha_consulta) = MONTH(CURDATE())',
+      );
+    }
+
+    if (
+      periodo === 'personalizado' &&
+      fechaInicio &&
+      fechaFin
+    ) {
+      query.andWhere(
+        'DATE(consulta.fecha_consulta) BETWEEN :fechaInicio AND :fechaFin',
+        {
+          fechaInicio,
+          fechaFin,
+        },
+      );
+    }
+
+    return query;
+  }
+
+  private async obtenerEstadisticasConsultas(
+    periodo: string,
+    fechaInicio?: string,
+    fechaFin?: string,
+    emprendimientoId?: number,
+    categoriaId?: number,
+  ) {
+    const totalQuery =
+      this.consultaEmprendimientoRepository
+        .createQueryBuilder('consulta')
+        .innerJoin(
+          'consulta.emprendimiento',
+          'emprendimiento',
+        )
+        .leftJoin(
+          'emprendimiento.categoria',
+          'categoria',
+        )
+        .select(
+          'COUNT(consulta.id)',
+          'totalConsultas',
+        );
+
+    this.aplicarFiltrosConsultas(
+      totalQuery,
+      periodo,
+      fechaInicio,
+      fechaFin,
+      emprendimientoId,
+      categoriaId,
+    );
+
+    const totalResultado =
+      await totalQuery.getRawOne<{
+        totalConsultas: string | number | null;
+      }>();
+
+    const rankingQuery =
+      this.consultaEmprendimientoRepository
+        .createQueryBuilder('consulta')
+        .innerJoin(
+          'consulta.emprendimiento',
+          'emprendimiento',
+        )
+        .leftJoin(
+          'emprendimiento.categoria',
+          'categoria',
+        )
+        .select(
+          'emprendimiento.id',
+          'emprendimientoId',
+        )
+        .addSelect(
+          'emprendimiento.nombre',
+          'nombre',
+        )
+        .addSelect(
+          'COUNT(consulta.id)',
+          'cantidadConsultas',
+        )
+        .groupBy('emprendimiento.id')
+        .addGroupBy('emprendimiento.nombre')
+        .orderBy(
+          'cantidadConsultas',
+          'DESC',
+        )
+        .addOrderBy(
+          'emprendimiento.nombre',
+          'ASC',
+        );
+
+    this.aplicarFiltrosConsultas(
+      rankingQuery,
+      periodo,
+      fechaInicio,
+      fechaFin,
+      emprendimientoId,
+      categoriaId,
+    );
+
+    const ranking =
+      await rankingQuery.getRawMany<{
+        emprendimientoId: string | number;
+        nombre: string;
+        cantidadConsultas: string | number;
+      }>();
+
+    return {
+      totalConsultas: Number(
+        totalResultado?.totalConsultas ?? 0,
+      ),
+      emprendimientosMasConsultados:
+        ranking.map((item) => ({
+          emprendimientoId: Number(
+            item.emprendimientoId,
+          ),
+          nombre: item.nombre,
+          cantidadConsultas: Number(
+            item.cantidadConsultas,
+          ),
+        })),
+    };
+  }
 
   async obtenerEstadisticasEmprendimientos(
     periodo: string,
@@ -208,6 +384,15 @@ export class ReportesService {
           b.cantidad - a.cantidad,
       );
 
+    const estadisticasConsultas =
+      await this.obtenerEstadisticasConsultas(
+        periodo,
+        fechaInicio,
+        fechaFin,
+        emprendimientoId,
+        categoriaId,
+      );
+
     // GUARDAR REPORTE GENERADO
     let reporteGenerado: Reporte | null = null;
 
@@ -291,6 +476,12 @@ export class ReportesService {
       porcentajesPorEstado,
 
       categorias,
+
+      totalConsultas:
+        estadisticasConsultas.totalConsultas,
+
+      emprendimientosMasConsultados:
+        estadisticasConsultas.emprendimientosMasConsultados,
 
       emprendimientos:
         emprendimientos.map((e) => ({
