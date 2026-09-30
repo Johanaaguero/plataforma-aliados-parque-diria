@@ -1485,12 +1485,13 @@ export default function ReporteEmprendimientos() {
 
           {periodo ===
             'personalizado' && (
-            <>
-              <div
-                ref={
-                  contenedorFechasRef
-                }
-              >
+            <div
+              ref={
+                contenedorFechasRef
+              }
+              className="contents"
+            >
+              <div>
                 <CampoFecha
                   etiqueta="Fecha inicial"
                   valor={
@@ -1567,7 +1568,7 @@ export default function ReporteEmprendimientos() {
                   )}
                 </CampoFecha>
               </div>
-            </>
+            </div>
           )}
 
           {/* =================================================

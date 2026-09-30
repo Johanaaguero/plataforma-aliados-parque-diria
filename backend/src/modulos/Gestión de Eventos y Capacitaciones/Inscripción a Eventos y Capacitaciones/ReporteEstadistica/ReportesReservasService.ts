@@ -9,6 +9,23 @@ import {
 
 import { Reporte, TipoReporte } from '../../../../models/Reporte';
 
+function eliminarDuplicadosPorId<T extends { id: unknown }>(
+  registros: T[],
+): T[] {
+  const ids = new Set<string>();
+
+  return registros.filter((registro) => {
+    const id = String(registro.id);
+
+    if (ids.has(id)) {
+      return false;
+    }
+
+    ids.add(id);
+    return true;
+  });
+}
+
 interface FiltrosReservas {
   fechaInicio?: string;
   fechaFin?: string;
@@ -97,19 +114,21 @@ export class ReportesReservasService {
      * Obtenemos todas las reservas que cumplen
      * los filtros.
      */
-    const reservas = await query
-      .select([
-        'reserva.id AS id',
-        'reserva.estado AS estado',
-        'reserva.created_at AS createdAt',
-        'evento.id AS eventoId',
-        'evento.nombre AS eventoNombre',
-        'evento.tipo_actividad AS tipoActividad',
-        'evento.temporada AS temporada',
-        'evento.fecha AS fechaEvento',
-      ])
-      .orderBy('reserva.created_at', 'DESC')
-      .getRawMany();
+    const reservas = eliminarDuplicadosPorId(
+      await query
+        .select([
+          'reserva.id AS id',
+          'reserva.estado AS estado',
+          'reserva.created_at AS createdAt',
+          'evento.id AS eventoId',
+          'evento.nombre AS eventoNombre',
+          'evento.tipo_actividad AS tipoActividad',
+          'evento.temporada AS temporada',
+          'evento.fecha AS fechaEvento',
+        ])
+        .orderBy('reserva.created_at', 'DESC')
+        .getRawMany(),
+    );
 
     /*
      * TOTAL DE RESERVAS

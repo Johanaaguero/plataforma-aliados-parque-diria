@@ -10,6 +10,23 @@ import {
   TipoReporte,
 } from '../../../models/Reporte';
 
+function eliminarDuplicadosPorId<T extends { id: unknown }>(
+  registros: T[],
+): T[] {
+  const ids = new Set<string>();
+
+  return registros.filter((registro) => {
+    const id = String(registro.id);
+
+    if (ids.has(id)) {
+      return false;
+    }
+
+    ids.add(id);
+    return true;
+  });
+}
+
 export class ReportesService {
   private emprendimientoRepository =
     AppDataSource.getRepository(Emprendimiento);
@@ -93,7 +110,9 @@ export class ReportesService {
     }
 
     // OBTENER EMPRENDIMIENTOS
-    const emprendimientos = await query.getMany();
+    const emprendimientos = eliminarDuplicadosPorId(
+      await query.getMany(),
+    );
 
     // ESTADÍSTICAS GENERALES
     const total = emprendimientos.length;

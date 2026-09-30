@@ -7,6 +7,23 @@ import {
   TipoReporte,
 } from '../../../models/Reporte';
 
+function eliminarDuplicadosPorId<T extends { id: unknown }>(
+  registros: T[],
+): T[] {
+  const ids = new Set<string>();
+
+  return registros.filter((registro) => {
+    const id = String(registro.id);
+
+    if (ids.has(id)) {
+      return false;
+    }
+
+    ids.add(id);
+    return true;
+  });
+}
+
 export class ReportesUsuariosService {
   private usuarioRepository =
     AppDataSource.getRepository(Usuario);
@@ -79,7 +96,9 @@ export class ReportesUsuariosService {
      */
 
     const usuarios =
-      await query.getMany();
+      eliminarDuplicadosPorId(
+        await query.getMany(),
+      );
 
     /*
      * ESTADÍSTICAS GENERALES

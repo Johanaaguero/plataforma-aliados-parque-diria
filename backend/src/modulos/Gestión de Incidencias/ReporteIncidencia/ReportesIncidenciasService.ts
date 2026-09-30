@@ -12,6 +12,23 @@ import {
   TipoReporte,
 } from '../../../models/Reporte';
 
+function eliminarDuplicadosPorId<T extends { id: unknown }>(
+  registros: T[],
+): T[] {
+  const ids = new Set<string>();
+
+  return registros.filter((registro) => {
+    const id = String(registro.id);
+
+    if (ids.has(id)) {
+      return false;
+    }
+
+    ids.add(id);
+    return true;
+  });
+}
+
 interface FiltrosIncidencias {
   fechaInicio?: string;
   fechaFin?: string;
@@ -125,7 +142,8 @@ export class ReportesIncidenciasService {
      * OBTENER INCIDENCIAS
      */
     const incidencias =
-      await query
+      eliminarDuplicadosPorId(
+        await query
         .select([
           'incidencia.id AS id',
           'incidencia.titulo AS titulo',
@@ -145,7 +163,8 @@ export class ReportesIncidenciasService {
           'incidencia.fecha_registro',
           'DESC',
         )
-        .getRawMany();
+        .getRawMany(),
+      );
 
     /*
      * TOTAL DE INCIDENCIAS
