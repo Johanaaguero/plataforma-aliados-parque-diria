@@ -21,6 +21,7 @@ import bitacoraRoutes from './modulos/Autenticación y gestión de usuario/Super
 
 import { iniciarLimpiezaTokensExpirados } from './modulos/Autenticación y gestión de usuario/Recuperación de contraseña/limpieza.service';
 import { iniciarLimpiezaTokensBlacklist } from './modulos/Autenticación y gestión de usuario/inicio de sesion/limpieza-blacklist.service';
+import { iniciarLimpiezaIncidencias } from './modulos/Gestión de Incidencias/Crear incidencias/limpiezaIncidencias.service';
 import dashboardRoutes from './modulos/Dashboard/dashboard.routes';
 import { AppDataSource } from './data-source';
 import resenaRoutes from './modulos/Resenas/resena.routes';
@@ -76,6 +77,7 @@ AppDataSource.initialize()
 
     iniciarLimpiezaTokensExpirados();
     iniciarLimpiezaTokensBlacklist();
+    iniciarLimpiezaIncidencias();
 
     app.listen(PORT, () => {
       console.log(`Servidor corriendo en http://localhost:${PORT}`);

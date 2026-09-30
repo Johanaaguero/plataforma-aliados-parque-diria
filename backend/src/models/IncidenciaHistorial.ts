@@ -32,17 +32,18 @@ export class IncidenciaHistorial {
   @JoinColumn({ name: 'incidencia_id' })
   incidencia!: Incidencia;
 
-  @Column({
-    type: 'int',
-    name: 'usuario_id',
-  })
-  usuarioId!: number;
+ @Column({
+  type: 'int',
+  name: 'usuario_id',
+  nullable: true,
+})
+usuarioId!: number | null;
 
-  @ManyToOne(() => Usuario, {
-    nullable: false,
-  })
-  @JoinColumn({ name: 'usuario_id' })
-  usuario!: Usuario;
+@ManyToOne(() => Usuario, {
+  nullable: true,
+})
+@JoinColumn({ name: 'usuario_id' })
+usuario!: Usuario | null;
 
   @CreateDateColumn({
     type: 'datetime',

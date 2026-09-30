@@ -48,8 +48,24 @@ export interface Incidencia {
   nombreContacto?: string | null;
   telefonoContacto?: string | null;
   adminActualiza: { id: number; nombre: string } | null;
-  observacionesAdmin: string | null;
+    observacionesAdmin: string | null;
+
+  conformidadUsuario?:
+    | 'pendiente'
+    | 'satisfecho'
+    | 'no_satisfecho'
+    | 'sin_respuesta';
+
+  observacionesUsuario?: string | null;
+
+  fechaRespuestaUsuario?: string | null;
+
+  fechaLimiteRespuesta?: string | null;
+
+  fechaCierreProgramado?: string | null;
+
   esPublica?: boolean;
+
   evidencias: Evidencia[];
 }
 
@@ -69,8 +85,8 @@ export interface ActualizarIncidenciaAdministrativa {
 }
 
 export type AccionCierreIncidencia =
-  | 'aceptar_resolucion'
-  | 'archivar';
+  | 'satisfecho'
+  | 'no_satisfecho';
 
 export interface Evidencia {
   id: number;
@@ -222,16 +238,21 @@ export async function obtenerMisIncidencias(): Promise<Incidencia[]> {
 export async function cerrarMiIncidencia(
   id: number,
   accion: AccionCierreIncidencia,
+  observacionesUsuario?: string,
 ): Promise<Incidencia> {
   const respuesta = await api.solicitar<RespuestaCierreIncidencia>(
     `/incidencias/${id}/cerrar`,
     {
       method: 'PATCH',
-      body: JSON.stringify({ accion }),
+      body: JSON.stringify({
+        accion,
+        observacionesUsuario,
+      }),
     },
     {
       desempaquetarData: false,
-      mensajeError: 'No se pudo cerrar la incidencia.',
+      mensajeError:
+        'No se pudo registrar la respuesta de la incidencia.',
     },
   );
 

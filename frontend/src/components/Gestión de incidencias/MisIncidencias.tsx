@@ -11,7 +11,12 @@ import {
 import { formatearFechaHora } from '../../utils/fechas';
 import parqueHero from '../../assets/parque-hero.jpg';
 
-type FiltroEstado = 'todas' | 'pendientes' | 'resueltas' | 'archivadas';
+type FiltroEstado =
+  | 'todas'
+  | 'pendientes'
+  | 'en_proceso'
+  | 'resueltas'
+  | 'cerradas';
 
 const etiquetasEstado: Record<EstadoIncidencia, string> = {
   pendiente: 'Pendiente',
@@ -34,16 +39,30 @@ const clasesEstado: Record<EstadoIncidencia, string> = {
 const etiquetasFiltros: Record<FiltroEstado, string> = {
   todas: 'Todas',
   pendientes: 'Pendientes',
+  en_proceso: 'En proceso',
   resueltas: 'Resueltas',
-  archivadas: 'Archivadas',
+  cerradas: 'Cerradas',
 };
 
 function codigoIncidencia(incidencia: Incidencia): string { return `#INC-${incidencia.codigo || '00000000'}`; }
 
-function coincideFiltro(incidencia: Incidencia, filtro: FiltroEstado): boolean {
+function coincideFiltro(
+  incidencia: Incidencia,
+  filtro: FiltroEstado,
+): boolean {
   if (filtro === 'todas') return true;
-  if (filtro === 'resueltas') return incidencia.estado === 'resuelta';
-  if (filtro === 'archivadas') return incidencia.estado === 'cerrada';
+
+  if (filtro === 'resueltas') {
+    return incidencia.estado === 'resuelta';
+  }
+
+  if (filtro === 'cerradas') {
+    return incidencia.estado === 'cerrada';
+  }
+
+  if (filtro === 'en_proceso') {
+    return incidencia.estado === 'en_proceso';
+  }
 
   return !['resuelta', 'cerrada'].includes(incidencia.estado);
 }
@@ -57,6 +76,9 @@ export default function MisIncidencias() {
   const [error, setError] = useState<string | null>(null);
   const [accionEnCurso, setAccionEnCurso] = useState<number | null>(null);
   const [mensajeExito, setMensajeExito] = useState<string | null>(null);
+  const [observacionesUsuario, setObservacionesUsuario] =
+  useState<Record<number, string>>({});
+
 
   useEffect(() => {
     let activo = true;
@@ -112,37 +134,43 @@ export default function MisIncidencias() {
       );
   }, [busqueda, filtro, incidencias]);
 
-  const procesarCierre = async (
-    incidencia: Incidencia,
-    accion: AccionCierreIncidencia,
-  ) => {
-    setAccionEnCurso(incidencia.id);
-    setError(null);
-    setMensajeExito(null);
+  const procesarRespuesta = async (
+  incidencia: Incidencia,
+  accion: AccionCierreIncidencia,
+  observacionesUsuario?: string,
+) => {
+  setAccionEnCurso(incidencia.id);
+  setError(null);
+  setMensajeExito(null);
 
-    try {
-      const actualizada = await cerrarMiIncidencia(incidencia.id, accion);
+  try {
+    const actualizada = await cerrarMiIncidencia(
+      incidencia.id,
+      accion,
+      observacionesUsuario,
+    );
 
-      setIncidencias((actuales) =>
-        actuales.map((actual) =>
-          actual.id === actualizada.id ? actualizada : actual,
-        ),
-      );
-      setMensajeExito(
-        accion === 'aceptar_resolucion'
-          ? 'Confirmaste la resolución y la incidencia fue archivada.'
-          : 'La incidencia fue archivada correctamente.',
-      );
-    } catch (errorSolicitud) {
-      setError(
-        errorSolicitud instanceof Error
-          ? errorSolicitud.message
-          : 'No se pudo completar la acción.',
-      );
-    } finally {
-      setAccionEnCurso(null);
-    }
-  };
+    setIncidencias((actuales) =>
+      actuales.map((actual) =>
+        actual.id === actualizada.id ? actualizada : actual,
+      ),
+    );
+
+    setMensajeExito(
+      accion === 'satisfecho'
+        ? 'Confirmaste que estás satisfecho con la solución. La incidencia permanecerá como RESUELTA durante 7 días antes de cerrarse automáticamente.'
+        : 'Tu incidencia fue devuelta al administrador para que pueda revisarla nuevamente.',
+    );
+  } catch (errorSolicitud) {
+    setError(
+      errorSolicitud instanceof Error
+        ? errorSolicitud.message
+        : 'No se pudo registrar tu respuesta.',
+    );
+  } finally {
+    setAccionEnCurso(null);
+  }
+};
 
   return (
     <main className="relative isolate min-h-screen overflow-x-hidden bg-[#071c14] px-4 pb-14 pt-28 text-emerald-950 dark:text-white sm:px-6 lg:px-10">
@@ -178,19 +206,109 @@ export default function MisIncidencias() {
 
           {!cargando && incidenciasFiltradas.map((incidencia) => {
             const enAccion = accionEnCurso === incidencia.id;
-            const puedeCerrar = incidencia.estado === 'resuelta';
+            const puedeResponder =
+  incidencia.estado === 'en_revision' &&
+  incidencia.conformidadUsuario === 'pendiente';
+  console.log('INCIDENCIA:', {
+  id: incidencia.id,
+  estado: incidencia.estado,
+  conformidadUsuario: incidencia.conformidadUsuario,
+  puedeResponder,
+});
 
             return <article key={incidencia.id} className="rounded-3xl border border-white/55 bg-white/60 p-5 shadow-[0_12px_32px_rgba(11,58,39,0.06)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/55 sm:p-6">
-              <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2"><span className="rounded-full bg-emerald-700/10 px-3 py-1 text-xs font-black tracking-wide text-emerald-800 dark:bg-emerald-400/10 dark:text-emerald-200">{codigoIncidencia(incidencia)}</span><span className={`rounded-full px-3 py-1 text-xs font-bold ring-1 ${clasesEstado[incidencia.estado]}`}>{etiquetasEstado[incidencia.estado]}</span></div>
-                  <h2 className="mt-4 text-xl font-extrabold text-emerald-950 dark:text-white">{incidencia.titulo}</h2>
-                  <p className="mt-2 text-sm font-medium text-emerald-950/65 dark:text-white/65">{incidencia.categoria.replace('_', ' ')} · Registrada el {formatearFechaHora(incidencia.fechaRegistro)}</p>
-                  <div className="mt-4 rounded-2xl border border-white/55 bg-white/45 px-4 py-3 text-sm leading-6 text-emerald-950/75 backdrop-blur-lg dark:border-white/10 dark:bg-white/5 dark:text-white/75"><span className="font-bold">Observación administrativa: </span>{incidencia.observacionesAdmin ?? 'Aún no hay observaciones administrativas.'}</div>
-                </div>
+             <div className="flex flex-col gap-5">
+  <div className="min-w-0 w-full">
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="rounded-full bg-emerald-700/10 px-3 py-1 text-xs font-black tracking-wide text-emerald-800 dark:bg-emerald-400/10 dark:text-emerald-200">
+        {codigoIncidencia(incidencia)}
+      </span>
 
-                {puedeCerrar && <div className="flex shrink-0 flex-col gap-2 sm:flex-row lg:flex-col"><button type="button" disabled={enAccion} onClick={() => void procesarCierre(incidencia, 'aceptar_resolucion')} className="min-h-11 rounded-2xl bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white shadow-[0_10px_22px_rgba(5,84,64,0.22)] transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-60">{enAccion ? 'Guardando...' : 'Aceptar resolución'}</button><button type="button" disabled={enAccion} onClick={() => void procesarCierre(incidencia, 'archivar')} className="min-h-11 rounded-2xl border border-emerald-800/15 bg-white/65 px-4 py-2.5 text-sm font-bold text-emerald-900 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/15">Cerrar incidencia</button></div>}
-              </div>
+      <span
+        className={`rounded-full px-3 py-1 text-xs font-bold ring-1 ${clasesEstado[incidencia.estado]}`}
+      >
+        {etiquetasEstado[incidencia.estado]}
+      </span>
+    </div>
+
+    <h2 className="mt-4 text-xl font-extrabold text-emerald-950 dark:text-white">
+      {incidencia.titulo}
+    </h2>
+
+    <p className="mt-2 text-sm font-medium text-emerald-950/65 dark:text-white/65">
+      {incidencia.categoria.replace('_', ' ')} · Registrada el{' '}
+      {formatearFechaHora(incidencia.fechaRegistro)}
+    </p>
+
+    <div className="mt-4 w-full rounded-2xl border border-white/55 bg-white/45 px-4 py-3 text-sm leading-6 text-emerald-950/75 backdrop-blur-lg dark:border-white/10 dark:bg-white/5 dark:text-white/75">
+      <span className="font-bold">
+        Observación administrativa:{' '}
+      </span>
+
+      <span className="break-words">
+        {incidencia.observacionesAdmin ??
+          'Aún no hay observaciones administrativas.'}
+      </span>
+    </div>
+  </div>
+
+ {puedeResponder && (
+  <div className="flex w-full flex-col gap-3">
+
+    <textarea
+      value={observacionesUsuario[incidencia.id] ?? ''}
+      onChange={(event) => {
+        setObservacionesUsuario((actuales) => ({
+          ...actuales,
+          [incidencia.id]: event.target.value,
+        }));
+
+        setError(null);
+      }}
+      rows={3}
+      placeholder="Si no estás satisfecho, explica qué debe revisarse..."
+      className="w-full rounded-2xl border border-white/60 bg-white/70 px-4 py-3 text-sm text-emerald-950 shadow-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-500/10 dark:border-white/10 dark:bg-slate-950/45 dark:text-white"
+    />
+
+    <button
+      type="button"
+      disabled={enAccion}
+      onClick={() =>
+        void procesarRespuesta(incidencia, 'satisfecho')
+      }
+      className="min-h-11 w-full rounded-2xl bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white shadow-[0_10px_22px_rgba(5,84,64,0.22)] transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-60"
+    >
+      {enAccion ? 'Guardando...' : 'Estoy satisfecho'}
+    </button>
+
+    <button
+      type="button"
+      disabled={enAccion}
+      onClick={() => {
+        const observaciones =
+          observacionesUsuario[incidencia.id]?.trim() || '';
+
+        if (!observaciones) {
+          setError(
+            'Indica qué parte de la solución no te satisface antes de continuar.',
+          );
+          return;
+        }
+
+        void procesarRespuesta(
+          incidencia,
+          'no_satisfecho',
+          observaciones,
+        );
+      }}
+      className="min-h-11 w-full rounded-2xl border border-emerald-800/15 bg-white/65 px-4 py-2.5 text-sm font-bold text-emerald-900 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/15"
+    >
+      {enAccion ? 'Guardando...' : 'No estoy satisfecho'}
+    </button>
+
+  </div>
+)}
+</div>
             </article>;
           })}
 

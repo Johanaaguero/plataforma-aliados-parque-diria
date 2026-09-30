@@ -147,6 +147,43 @@ export class Incidencia {
   })
   fechaResolucion?: Date | null;
 
+  @Column({
+  type: 'enum',
+  enum: ['pendiente', 'satisfecho', 'no_satisfecho', 'sin_respuesta'],
+  default: 'pendiente',
+  name: 'conformidad_usuario',
+})
+conformidadUsuario!: 'pendiente' | 'satisfecho' | 'no_satisfecho' | 'sin_respuesta';
+
+@Column({
+  type: 'text',
+  nullable: true,
+  name: 'observaciones_usuario',
+})
+observacionesUsuario?: string | null;
+
+@Column({
+  type: 'datetime',
+  nullable: true,
+  name: 'fecha_respuesta_usuario',
+})
+fechaRespuestaUsuario?: Date | null;
+
+@Column({
+  type: 'datetime',
+  nullable: true,
+  name: 'fecha_limite_respuesta',
+})
+fechaLimiteRespuesta?: Date | null;
+
+@Column({
+  type: 'datetime',
+  nullable: true,
+  name: 'fecha_cierre_programado',
+})
+fechaCierreProgramado?: Date | null;
+
+
   @OneToMany(
     () => IncidenciaEvidencia,
     (evidencia) => evidencia.incidencia,
