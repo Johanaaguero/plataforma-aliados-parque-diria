@@ -514,6 +514,19 @@ export async function obtenerDetalleCatalogoPublicado(
     },
   );
 }
+
+export async function registrarConsultaEmprendimiento(
+  id: number,
+): Promise<void> {
+  await api.solicitar(
+    `/emprendimientos/${id}/consulta`,
+    { method: 'POST' },
+    {
+      desempaquetarData: false,
+      mensajeError: 'No se pudo registrar la consulta del emprendimiento',
+    },
+  );
+}
 export async function actualizarUbicacion(
   id: number,
   datos: ActualizarUbicacionDto,
