@@ -14,6 +14,7 @@ import { Usuario } from './Usuario';
 @Entity('consultas_emprendimientos')
 @Index('IDX_CONSULTAS_EMPRENDIMIENTOS_EMPRENDIMIENTO', ['emprendimientoId'])
 @Index('IDX_CONSULTAS_EMPRENDIMIENTOS_FECHA', ['fechaConsulta'])
+@Index('IDX_CONSULTAS_EMPRENDIMIENTOS_USUARIO', ['usuarioId'])
 export class ConsultaEmprendimiento {
   @PrimaryGeneratedColumn()
   id!: number;
