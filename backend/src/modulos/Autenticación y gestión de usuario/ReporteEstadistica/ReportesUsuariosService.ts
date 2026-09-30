@@ -192,6 +192,8 @@ export class ReportesUsuariosService {
      * GUARDAR REPORTE GENERADO
      */
 
+    let reporteGenerado: Reporte | null = null;
+
     if (usuarioGeneroId) {
       const reportes =
         await this.reporteRepository.find({
@@ -223,6 +225,8 @@ export class ReportesUsuariosService {
       await this.reporteRepository.save(
         reporte,
       );
+
+      reporteGenerado = reporte;
     }
 
     /*
@@ -230,6 +234,24 @@ export class ReportesUsuariosService {
      */
 
     return {
+      informacionGeneral: {
+        nombre: 'Reporte de usuarios',
+        tipo: TipoReporte.USUARIOS,
+        periodo,
+        filtros: {
+          fechaInicio:
+            fechaInicio ?? null,
+          fechaFin:
+            fechaFin ?? null,
+        },
+        fechaGeneracion:
+          reporteGenerado?.fechaGeneracion ??
+          null,
+        numeroReporte:
+          reporteGenerado?.numeroReporte ??
+          null,
+      },
+
       periodo,
 
       fechaInicio:

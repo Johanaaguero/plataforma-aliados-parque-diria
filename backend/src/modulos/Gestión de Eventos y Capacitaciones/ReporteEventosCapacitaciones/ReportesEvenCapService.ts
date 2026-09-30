@@ -364,6 +364,28 @@ export class ReportesEventosService {
     );
 
     return {
+      informacionGeneral: {
+        nombre:
+          'Reporte de eventos y capacitaciones',
+        tipo: TipoReporte.EVENTOS,
+        periodo: {
+          fechaInicio:
+            filtros.fechaInicio ?? null,
+          fechaFin:
+            filtros.fechaFin ?? null,
+        },
+        filtros: {
+          temporada:
+            filtros.temporada ?? null,
+          tipoActividad:
+            filtros.tipoActividad ?? null,
+        },
+        fechaGeneracion:
+          nuevoReporte.fechaGeneracion,
+        numeroReporte:
+          nuevoReporte.numeroReporte,
+      },
+
       reporte: {
         id: nuevoReporte.id,
         numeroReporte:

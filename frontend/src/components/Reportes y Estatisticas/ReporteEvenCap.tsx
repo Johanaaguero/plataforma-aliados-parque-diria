@@ -36,7 +36,22 @@ interface DetalleActividad {
   temporada: 'seca' | 'lluviosa' | null;
 }
 
+interface InformacionGeneralReporte {
+  nombre: string;
+  tipo: string;
+  periodo:
+    | string
+    | {
+        fechaInicio: string | null;
+        fechaFin: string | null;
+      };
+  filtros: Record<string, string | number | null>;
+  fechaGeneracion: string | null;
+  numeroReporte: string | null;
+}
+
 interface EstadisticasEventos {
+  informacionGeneral?: InformacionGeneralReporte;
   reporte: ReporteGenerado;
   periodo: {
     fechaInicio: string | null;
@@ -1353,6 +1368,32 @@ export default function ReporteEventos() {
                     : obtenerNombrePeriodo(
                         periodo,
                       )}
+                </p>
+
+                <p className="mt-1 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                  {datos.informacionGeneral?.nombre ??
+                    'Reporte de eventos y capacitaciones'}
+                </p>
+
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  Tipo:{' '}
+                  {datos.informacionGeneral?.tipo ??
+                    'eventos'}{' '}
+                  · Filtros:{' '}
+                  {temporada || 'todas las temporadas'}
+                  {' / '}
+                  {tipoActividad ||
+                    'todos los tipos'}
+                </p>
+
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  Fecha de generaciÃ³n:{' '}
+                  {datos.informacionGeneral
+                    ?.fechaGeneracion
+                    ? new Date(
+                        datos.informacionGeneral.fechaGeneracion,
+                      ).toLocaleString('es-CR')
+                    : 'No aplica'}
                 </p>
               </div>
 
