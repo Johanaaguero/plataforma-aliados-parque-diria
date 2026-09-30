@@ -7,6 +7,23 @@ import {
 } from '../../../models/EventosCapacitaciones';
 import { Reporte, TipoReporte } from '../../../models/Reporte';
 
+function eliminarDuplicadosPorId<T extends { id: unknown }>(
+  registros: T[],
+): T[] {
+  const ids = new Set<string>();
+
+  return registros.filter((registro) => {
+    const id = String(registro.id);
+
+    if (ids.has(id)) {
+      return false;
+    }
+
+    ids.add(id);
+    return true;
+  });
+}
+
 interface FiltrosEventos {
   fechaInicio?: string;
   fechaFin?: string;
@@ -87,24 +104,26 @@ export class ReportesEventosService {
       );
     }
 
-    const eventos = await query
-      .select([
-        'evento.id AS id',
-        'evento.nombre AS nombre',
-        'evento.fecha AS fecha',
-        'evento.hora AS hora',
-        'evento.lugar AS lugar',
-        'evento.tipo_actividad AS tipoActividad',
-        'evento.cupo_maximo AS cupoMaximo',
-        'evento.cupos_disponibles AS cuposDisponibles',
-        'evento.cupo_minimo AS cupoMinimo',
-        'evento.edad_minima AS edadMinima',
-        'evento.edad_maxima AS edadMaxima',
-        'evento.estado AS estado',
-        'evento.temporada AS temporada',
-      ])
-      .orderBy('evento.fecha', 'DESC')
-      .getRawMany();
+    const eventos = eliminarDuplicadosPorId(
+      await query
+        .select([
+          'evento.id AS id',
+          'evento.nombre AS nombre',
+          'evento.fecha AS fecha',
+          'evento.hora AS hora',
+          'evento.lugar AS lugar',
+          'evento.tipo_actividad AS tipoActividad',
+          'evento.cupo_maximo AS cupoMaximo',
+          'evento.cupos_disponibles AS cuposDisponibles',
+          'evento.cupo_minimo AS cupoMinimo',
+          'evento.edad_minima AS edadMinima',
+          'evento.edad_maxima AS edadMaxima',
+          'evento.estado AS estado',
+          'evento.temporada AS temporada',
+        ])
+        .orderBy('evento.fecha', 'DESC')
+        .getRawMany(),
+    );
 
     /*
      * TOTAL DE ACTIVIDADES
