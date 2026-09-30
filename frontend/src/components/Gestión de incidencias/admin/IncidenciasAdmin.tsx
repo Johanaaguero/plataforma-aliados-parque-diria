@@ -1149,44 +1149,58 @@ export default function IncidenciasAdmin({
 
                           {/* BOTÓN */}
 
-                          <div className="shrink-0 xl:w-[190px]">
+                         <div className="shrink-0 xl:w-[190px]">
 
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSeleccionada(incidencia);
-                              }}
-                              className="
-                                inline-flex
-                                w-full
-                                items-center
-                                justify-center
-                                gap-2
-                                rounded-full
-                                bg-[#095540]
-                                px-5
-                                py-3
-                                text-sm
-                                font-bold
-                                text-white
-                                shadow-[0_10px_25px_rgba(9,85,64,0.16)]
-                                transition-all
-                                duration-200
-                                hover:-translate-y-0.5
-                                hover:bg-[#009444]
-                                hover:shadow-[0_15px_30px_rgba(0,148,68,0.20)]
-                                active:scale-[0.98]
-                              "
-                            >
-                              <Icon className="h-4 w-4">
-                                <path d="M12 20h9" />
-                                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
-                              </Icon>
+  <button
+    type="button"
+    onClick={() => {
+      setSeleccionada(incidencia);
+    }}
+    className="
+      inline-flex
+      w-full
+      items-center
+      justify-center
+      gap-2
+      rounded-full
+      bg-[#095540]
+      px-5
+      py-3
+      text-sm
+      font-bold
+      text-white
+      shadow-[0_10px_25px_rgba(9,85,64,0.16)]
+      transition-all
+      duration-200
+      hover:-translate-y-0.5
+      hover:bg-[#009444]
+      hover:shadow-[0_15px_30px_rgba(0,148,68,0.20)]
+      active:scale-[0.98]
+    "
+  >
+    <Icon className="h-4 w-4">
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </Icon>
 
-                              Gestionar incidencia
-                            </button>
+    Gestionar incidencia
+  </button>
 
-                          </div>
+  {incidencia.conformidadUsuario === 'no_satisfecho' && (
+    <div className="mt-3 rounded-2xl border border-orange-300 bg-orange-50 px-4 py-3 text-orange-800 shadow-sm">
+      <p className="text-xs font-bold">
+        ⚠️  Usuario no satisfecho
+      </p>
+
+      {incidencia.observacionesUsuario && (
+        <p className="mt-1 text-[11px] leading-5">
+          {incidencia.observacionesUsuario}
+        </p>
+      )}
+    </div>
+  )}
+
+</div>
 
                         </div>
                       </div>

@@ -39,14 +39,14 @@ type EvidenciaIncidencia = Incidencia['evidencias'][number];
    OPCIONES
 ========================================================= */
 
-const opcionesEstado: EstadoIncidencia[] = [
+/*const opcionesEstado: EstadoIncidencia[] = [
   'pendiente',
   'en_revision',
   'en_proceso',
   'resuelta',
   'rechazada',
   'cerrada',
-];
+];*/
 
 const opcionesCategoria: CategoriaIncidencia[] = [
   'seguridad',
@@ -258,12 +258,14 @@ function SelectAdministrativo<T extends string>({
   opciones,
   etiquetas,
   onChange,
+  disabled = false,
 }: {
   etiqueta: string;
   valor: T;
   opciones: T[];
   etiquetas: Record<T, string>;
   onChange: (valor: T) => void;
+  disabled?: boolean;
 }) {
   return (
     <label className="block">
@@ -281,6 +283,7 @@ function SelectAdministrativo<T extends string>({
 
       <select
         value={valor}
+          disabled={disabled}
         onChange={(event) => {
           onChange(event.target.value as T);
         }}
@@ -330,8 +333,10 @@ export default function EditarIncidencia({
   onCancelar,
   onGuardar,
 }: EditarIncidenciaProps) {
-  const [estado, setEstado] =
-    useState<EstadoIncidencia>(incidencia.estado);
+
+    const incidenciaCerrada = incidencia.estado === 'cerrada';
+  //const [estado, setEstado] =
+    //useState<EstadoIncidencia>(incidencia.estado);
 
   const [categoria, setCategoria] =
     useState<CategoriaIncidencia>(
@@ -481,11 +486,10 @@ export default function EditarIncidencia({
   const guardarCambios = async () => {
     setMensajeError(null);
 
-    if (
-      !opcionesEstado.includes(estado) ||
-      !opcionesCategoria.includes(categoria) ||
-      !opcionesPrioridad.includes(prioridad)
-    ) {
+   if (
+  !opcionesCategoria.includes(categoria) ||
+  !opcionesPrioridad.includes(prioridad)
+) {
       setEstadoGuardado('error');
       setMensajeError(
         'Revisa los valores seleccionados antes de guardar.',
@@ -499,18 +503,17 @@ export default function EditarIncidencia({
       const incidenciaActualizada =
         await actualizarIncidenciaAdministrativa(
           incidencia.id,
-          {
-            estado,
-            categoria,
-            prioridad,
-            observacionesAdmin:
-              observacionesAdmin.trim() || null,
-          },
+         {
+  categoria,
+  prioridad,
+  observacionesAdmin:
+    observacionesAdmin.trim() || null,
+},
         );
 
-      setEstado(
-        incidenciaActualizada.estado,
-      );
+     // setEstado(
+       // incidenciaActualizada.estado,
+     // );
 
       setCategoria(
         incidenciaActualizada.categoria,
@@ -1278,6 +1281,32 @@ export default function EditarIncidencia({
                   Cambios administrativos
                 </h2>
 
+                {incidenciaCerrada && (
+  <div
+    className="
+      mt-5
+      rounded-[1.25rem]
+      border
+      border-[#D9E6D0]
+      bg-[#F1F7EC]
+      px-4
+      py-4
+      text-sm
+      leading-6
+      text-[#527A38]
+    "
+  >
+    <p className="font-bold">
+      🔒 Incidencia cerrada
+    </p>
+
+    <p className="mt-1">
+      Esta incidencia fue cerrada automáticamente después
+      del período establecido y ya no puede ser modificada.
+    </p>
+  </div>
+)}
+
                 <p
                   className="
                     mt-2
@@ -1289,6 +1318,22 @@ export default function EditarIncidencia({
                   Actualiza los valores que forman parte
                   del seguimiento administrativo.
                 </p>
+                {incidencia.conformidadUsuario === 'no_satisfecho' && (
+  <div className="mt-5 rounded-[1.25rem] border border-orange-300 bg-orange-50/90 p-4 shadow-sm">
+    <p className="font-bold text-orange-800">
+      ⚠️ El usuario no está satisfecho con la solución
+    </p>
+
+    {incidencia.observacionesUsuario && (
+      <p className="mt-2 text-sm leading-6 text-orange-700">
+        <span className="font-semibold">
+          Observación del usuario:
+        </span>{' '}
+        {incidencia.observacionesUsuario}
+      </p>
+    )}
+  </div>
+)}
 
                 <div className="mt-6 space-y-5">
                   <div className="flex items-center justify-between gap-4 rounded-2xl border border-white/60 bg-white/40 p-4 shadow-sm backdrop-blur-md">
@@ -1297,13 +1342,7 @@ export default function EditarIncidencia({
                       <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${esPublica ? 'translate-x-5' : 'translate-x-0.5'}`} />
                     </button>
                   </div>
-                  <SelectAdministrativo
-                    etiqueta="Estado"
-                    valor={estado}
-                    opciones={opcionesEstado}
-                    etiquetas={etiquetasEstado}
-                    onChange={setEstado}
-                  />
+               
 
                   <SelectAdministrativo
                     etiqueta="Categoría"
@@ -1311,6 +1350,7 @@ export default function EditarIncidencia({
                     opciones={opcionesCategoria}
                     etiquetas={etiquetasCategoria}
                     onChange={setCategoria}
+                    disabled={incidenciaCerrada}
                   />
 
                   <SelectAdministrativo
@@ -1319,6 +1359,7 @@ export default function EditarIncidencia({
                     opciones={opcionesPrioridad}
                     etiquetas={etiquetasPrioridad}
                     onChange={setPrioridad}
+                    disabled={incidenciaCerrada}
                   />
 
                   <label className="block">
@@ -1341,6 +1382,7 @@ export default function EditarIncidencia({
                           event.target.value,
                         )
                       }
+                      disabled={incidenciaCerrada}
                       rows={5}
                       placeholder="Describe el seguimiento administrativo..."
                       className="
@@ -1453,7 +1495,8 @@ export default function EditarIncidencia({
                   <button
                     type="button"
                     onClick={guardarCambios}
-                    disabled={guardando}
+                   disabled={guardando || incidenciaCerrada}
+                    
                     className="
                       inline-flex
                       items-center

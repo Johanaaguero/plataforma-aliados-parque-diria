@@ -577,46 +577,104 @@ export const cerrarMiIncidencia = async (
     const id = Number(req.params.id);
     const usuarioId = req.usuario?.id;
     const accion = req.body?.accion;
+    const observacionesUsuario = req.body?.observacionesUsuario;
 
     if (!Number.isInteger(id) || id <= 0) {
-      res.status(400).json({ mensaje: 'El ID de la incidencia no es válido.' });
+      res.status(400).json({
+        mensaje: 'El ID de la incidencia no es válido.',
+      });
       return;
     }
 
     if (!usuarioId) {
-      res.status(401).json({ mensaje: 'Usuario autenticado no encontrado.' });
+      res.status(401).json({
+        mensaje: 'Usuario autenticado no encontrado.',
+      });
       return;
     }
 
-    if (accion !== 'aceptar_resolucion' && accion !== 'archivar') {
-      res.status(400).json({ mensaje: 'La acción de cierre no es válida.' });
+    if (
+      accion !== 'satisfecho' &&
+      accion !== 'no_satisfecho'
+    ) {
+      res.status(400).json({
+        mensaje:
+          'La respuesta del usuario no es válida.',
+      });
       return;
     }
 
-    const incidenciaActualizada = await cerrarIncidenciaPorUsuario(
-      id,
-      usuarioId,
-      accion,
-    );
+    if (
+      accion === 'no_satisfecho' &&
+      (!observacionesUsuario ||
+        typeof observacionesUsuario !== 'string' ||
+        !observacionesUsuario.trim())
+    ) {
+      res.status(400).json({
+        mensaje:
+          'Debes indicar las observaciones cuando no estás satisfecho.',
+      });
+      return;
+    }
+
+    const incidenciaActualizada =
+      await cerrarIncidenciaPorUsuario(
+        id,
+        usuarioId,
+        accion,
+        observacionesUsuario,
+      );
 
     res.status(200).json({
-      mensaje: 'La incidencia fue archivada correctamente.',
+      mensaje:
+        accion === 'satisfecho'
+          ? 'La resolución fue aceptada. La incidencia permanecerá como RESUELTA durante 7 días.'
+          : 'La incidencia fue devuelta al administrador con tus observaciones.',
       incidencia: serializarIncidencia(incidenciaActualizada),
     });
   } catch (error) {
-    const mensaje = error instanceof Error ? error.message : 'No se pudo cerrar la incidencia.';
+    const mensaje =
+      error instanceof Error
+        ? error.message
+        : 'No se pudo registrar la respuesta de la incidencia.';
 
     if (mensaje === 'Incidencia no encontrada.') {
       res.status(404).json({ mensaje });
       return;
     }
 
-    if (mensaje === 'La incidencia no está disponible para cierre.') {
+    if (
+      mensaje ===
+      'La incidencia no está disponible para respuesta.'
+    ) {
       res.status(409).json({ mensaje });
       return;
     }
 
-    console.error('Error al cerrar la incidencia del usuario:', error);
-    res.status(500).json({ mensaje: 'No se pudo cerrar la incidencia.' });
+    if (
+      mensaje ===
+      'La incidencia ya tiene una respuesta registrada.'
+    ) {
+      res.status(409).json({ mensaje });
+      return;
+    }
+
+    if (
+      mensaje ===
+      'Debes indicar las observaciones cuando no estás satisfecho.'
+    ) {
+      res.status(400).json({ mensaje });
+      return;
+    }
+
+    console.error(
+      'Error al registrar la respuesta de la incidencia:',
+      error,
+    );
+
+    res.status(500).json({
+      mensaje:
+        'No se pudo registrar la respuesta de la incidencia.',
+    });
   }
 };
