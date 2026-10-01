@@ -1,19 +1,14 @@
 import { Router } from 'express';
 import { EventosCapacitacionesController } from './eventosCapacitaciones.controller';
 import { verificarToken } from '../../../middlewares/auth.middleware';
-  import { InscripcionController } from '../Inscripción a Eventos y Capacitaciones/inscripcion.controller';
-
+import { InscripcionController } from '../Inscripción a Eventos y Capacitaciones/inscripcion.controller';
 import { autorizarRoles } from '../../../middlewares/authorization.middleware';
 
 const router = Router();
 const controller = new EventosCapacitacionesController();
 const inscripcionController = new InscripcionController();
-/*
- * ============================================================
- * CREAR EVENTO / CAPACITACIÓN
- * Solo administrador
- * ============================================================
- */
+
+// CREAR
 router.post(
   '/',
   verificarToken,
@@ -21,17 +16,18 @@ router.post(
   (req, res) => controller.create(req, res),
 );
 
-/*
- * ============================================================
- * OBTENER EVENTOS Y CAPACITACIONES
- * Público / usuarios autenticados
- * ============================================================
- */
+// LISTADO ADMINISTRATIVO (todos los estados). Debe ir antes de cualquier '/:id'
 router.get(
-  '/',
-  (req, res) => controller.findAll(req, res),
+  '/admin',
+  verificarToken,
+  autorizarRoles('administrador'),
+  (req, res) => controller.findAllAdmin(req, res),
 );
 
+// LISTADO PÚBLICO (solo publicados)
+router.get('/', (req, res) => controller.findAll(req, res));
+
+// CAMBIAR ESTADO
 router.patch(
   '/:id/estado',
   verificarToken,
@@ -39,18 +35,14 @@ router.patch(
   (req, res) => controller.cambiarEstado(req, res),
 );
 
-/**
- * ============================================================
- * INSCRIPCIÓN A EVENTO / CAPACITACIÓN
- * Usuario autenticado
- * ============================================================
- */
+// INSCRIPCIÓN Y RESERVAS
 router.post(
   '/:id/inscripcion',
   verificarToken,
   autorizarRoles('visitante', 'asociado'),
   (req, res) => inscripcionController.inscribir(req, res),
 );
+
 router.put(
   '/:id/reserva',
   verificarToken,
@@ -72,12 +64,7 @@ router.get(
   (req, res) => inscripcionController.consultarReserva(req, res),
 );
 
-/*
- * ============================================================
- * ACTUALIZAR EVENTO / CAPACITACIÓN
- * Solo administrador
- * ============================================================
- */
+// ACTUALIZAR
 router.put(
   '/:id',
   verificarToken,
@@ -85,14 +72,7 @@ router.put(
   (req, res) => controller.update(req, res),
 );
 
-/*
- * ============================================================
- * DELETE /api/eventos-capacitaciones/:id
- * Solo administrador. Eliminación física; las imágenes relacionadas
- * se eliminan en MySQL mediante ON DELETE CASCADE.
- * Respuestas: 204, 400, 401, 403, 404 o 500.
- * ============================================================
- */
+// ELIMINAR
 router.delete(
   '/:id',
   verificarToken,
@@ -100,12 +80,7 @@ router.delete(
   (req, res) => controller.remove(req, res),
 );
 
-/*
- * ============================================================
- * SUBIR IMAGEN
- * Solo administrador
- * ============================================================
- */
+// IMÁGENES
 router.post(
   '/:id/imagenes',
   verificarToken,
@@ -113,47 +88,18 @@ router.post(
   (req, res) => controller.uploadImagen(req, res),
 );
 
-/*
- * ============================================================
- * OBTENER IMÁGENES
- * Público
- * ============================================================
- */
-router.get(
-  '/:id/imagenes',
-  (req, res) => controller.getImagenes(req, res),
+router.get('/:id/imagenes', (req, res) => controller.getImagenes(req, res));
+
+router.get('/imagenes/:imagenId', (req, res) => controller.getImagen(req, res));
+
+router.get('/imagenes/:imagenId/base64', (req, res) =>
+  controller.getImagenBase64(req, res),
 );
 
-/*
- * ============================================================
- * OBTENER IMAGEN
- * Público
- * ============================================================
- */
-router.get(
-  '/imagenes/:imagenId',
-  (req, res) => controller.getImagen(req, res),
-);
-
-/*
- * ============================================================
- * OBTENER IMAGEN EN BASE64
- * Público
- * ============================================================
- */
-router.get(
-  '/imagenes/:imagenId/base64',
-  (req, res) => controller.getImagenBase64(req, res),
-);
-
-/*
- * ============================================================
- * ELIMINAR IMAGEN
- * Solo administrador
- * ============================================================
- */
 router.delete(
-  '/:id/imagenes/:imagenId', verificarToken, autorizarRoles('administrador'),
+  '/:id/imagenes/:imagenId',
+  verificarToken,
+  autorizarRoles('administrador'),
   (req, res) => controller.removeImagen(req, res),
 );
 

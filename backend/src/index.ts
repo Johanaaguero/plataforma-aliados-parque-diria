@@ -33,7 +33,7 @@ import reportesUsuariosRoutes from './modulos/Autenticación y gestión de usuar
 import reportesReservasRoutes from './modulos/Gestión de Eventos y Capacitaciones/Inscripción a Eventos y Capacitaciones/ReporteEstadistica/ReportesReservasRoutes';
 import reportesEventosRoutes from './modulos/Gestión de Eventos y Capacitaciones/ReporteEventosCapacitaciones/ReportesEvenCapRoutes';
 import reportesIncidenciasRoutes from './modulos/Gestión de Incidencias/ReporteIncidencia/ReportesIncidenciasRoute';
-
+import notificacionRoutes from './modulos/Notificaciones/Crear notificaciones+/NotificacionRoutes';
 
 dotenv.config();
 
@@ -67,6 +67,7 @@ app.use('/api/reportes/usuarios',reportesUsuariosRoutes,);
 app.use('/api/reportes/reservas', reportesReservasRoutes);
 app.use('/api/reportes/eventos', reportesEventosRoutes);
 app.use('/api/reportes/estadisticas/incidencias', reportesIncidenciasRoutes);
+app.use('/api/notificaciones', notificacionRoutes);
 app.use(errorMiddleware);
 
 const PORT = process.env.PORT || 3000;
