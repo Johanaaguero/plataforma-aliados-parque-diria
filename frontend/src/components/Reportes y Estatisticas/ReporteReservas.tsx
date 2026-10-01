@@ -4,6 +4,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import AccionesReporteGuardado from './AccionesReporteGuardado';
 type Periodo = 'hoy' | '7dias' | '30dias' | 'mes' | 'personalizado';
 
 type TemporadaFiltro = '' | 'seca' | 'lluviosa';
@@ -1837,6 +1838,8 @@ const contenedorFechasRef =
                 {datos.totalReservas}{' '}
                 reservas encontradas
               </div>
+
+              <AccionesReporteGuardado tipoReporte="reservas" nombreReporte={datos.informacionGeneral?.nombre ?? 'Reporte de reservas'} contenido={datos as unknown as Record<string, unknown>} tieneDatos={datos.totalReservas > 0} />
 
             </div>
 

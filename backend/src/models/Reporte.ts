@@ -59,12 +59,16 @@ export class Reporte {
   })
   usuarioGeneroId!: number;
 
+  @Column({ type: 'json', nullable: true })
+  contenido?: Record<string, unknown> | null;
+
   constructor(params?: {
     id?: number;
     numeroReporte?: string;
     tipoReporte?: TipoReporte;
     usuarioGenero?: Usuario;
     usuarioGeneroId?: number;
+    contenido?: Record<string, unknown> | null;
   }) {
     if (!params) return;
 
@@ -86,6 +90,10 @@ export class Reporte {
 
     if (params.usuarioGeneroId !== undefined) {
       this.usuarioGeneroId = params.usuarioGeneroId;
+    }
+
+    if (params.contenido !== undefined) {
+      this.contenido = params.contenido;
     }
   }
 }

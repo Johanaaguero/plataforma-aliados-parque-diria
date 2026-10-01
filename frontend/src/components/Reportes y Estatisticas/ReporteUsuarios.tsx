@@ -4,6 +4,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { guardarReporte as guardarReporteApi, leerJsonSeguro, rutaApiReportes } from '../../services/reportesApi';
 
 type Periodo =
   | 'hoy'
@@ -899,8 +900,17 @@ const contenedorFechasRef =
   const [guardando, setGuardando] =
     useState(false);
 
-  const [mensajeGuardado, setMensajeGuardado] =
+  const [, setMensajeGuardado] =
     useState('');
+
+  const [reporteExportableId, setReporteExportableId] =
+    useState<number | null>(null);
+
+  const [exportandoFormato, setExportandoFormato] =
+    useState<'pdf' | 'excel' | null>(null);
+
+  const [exportadoFormato, setExportadoFormato] =
+    useState<'pdf' | 'excel' | null>(null);
 
   /* =======================================================
    * Obtener ID del usuario desde el JWT
@@ -970,6 +980,7 @@ const contenedorFechasRef =
     setConsultado(false);
     setError('');
     setMensajeGuardado('');
+    setReporteExportableId(null);
 
     try {
       const params =
@@ -1003,11 +1014,11 @@ const contenedorFechasRef =
         );
 
       const respuesta = await fetch(
-        `http://localhost:3000/api/reportes/usuarios?${params.toString()}`,
+        `${rutaApiReportes('/usuarios')}?${params.toString()}`,
         {
           method: 'GET',
           headers: {
-            Authorization: `Bearer ${token}`,
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
             'Content-Type':
               'application/json',
           },
@@ -1027,7 +1038,7 @@ const contenedorFechasRef =
       }
 
       const resultado =
-        (await respuesta.json()) as EstadisticasUsuarios;
+        await leerJsonSeguro<EstadisticasUsuarios>(respuesta);
 
       setDatos(resultado);
       setConsultado(true);
@@ -1208,38 +1219,21 @@ const contenedorFechasRef =
           datos.usuarios,
       };
 
-      const respuesta = await fetch(
-        'http://localhost:3000/api/reportes',
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type':
-              'application/json',
-          },
-          body: JSON.stringify({
-            tipoReporte: 'usuarios',
-            usuarioGeneroId,
-            contenido,
-          }),
-        },
-      );
-
-      const resultado =
-        await respuesta.json();
-
-      if (!respuesta.ok) {
-        throw new Error(
-          resultado?.mensaje ??
-            'No se pudo guardar el reporte.',
-        );
-      }
+      const reporteGuardado = await guardarReporteApi({
+        tipoReporte: 'usuarios',
+        usuarioGeneroId,
+        contenido,
+      });
 
       setMensajeGuardado(
         `Reporte ${
-          resultado.reporte?.numeroReporte ?? ''
+          reporteGuardado.numeroReporte
         } guardado correctamente.`,
       );
+      setReporteExportableId(reporteGuardado.id);
+      window.dispatchEvent(new CustomEvent('reporte-guardado', {
+        detail: { id: reporteGuardado.id, tipo: 'usuarios' },
+      }));
     } catch (err) {
       console.error(
         'Error al guardar reporte de usuarios:',
@@ -1253,6 +1247,42 @@ const contenedorFechasRef =
       );
     } finally {
       setGuardando(false);
+    }
+  };
+
+  const exportarReporte = async (formato: 'pdf' | 'excel') => {
+    if (!reporteExportableId) {
+      setError('Primero debe guardar el reporte para poder exportarlo.');
+      return;
+    }
+    if (exportandoFormato) return;
+
+    setExportandoFormato(formato);
+    setError('');
+    try {
+      const token = sessionStorage.getItem('token') ?? localStorage.getItem('token');
+      const respuesta = await fetch(
+        `${rutaApiReportes(`/${reporteExportableId}/exportar`)}?formato=${formato}`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      if (!respuesta.ok || (respuesta.headers.get('content-type') ?? '').includes('text/html')) {
+        const errorRespuesta = await respuesta.json().catch(() => null) as { mensaje?: string } | null;
+        throw new Error(errorRespuesta?.mensaje ?? 'No se pudo exportar el reporte.');
+      }
+      const archivo = await respuesta.blob();
+      const extension = formato === 'pdf' ? 'pdf' : 'xlsx';
+      const nombre = `Reporte_usuarios_${new Date().toISOString().slice(0, 10)}.${extension}`;
+      const enlace = document.createElement('a');
+      enlace.href = URL.createObjectURL(archivo);
+      enlace.download = nombre;
+      enlace.click();
+      URL.revokeObjectURL(enlace.href);
+      setExportadoFormato(formato);
+      window.setTimeout(() => setExportadoFormato(null), 2500);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo exportar el reporte.');
+    } finally {
+      setExportandoFormato(null);
     }
   };
 
@@ -1602,36 +1632,39 @@ const contenedorFechasRef =
                 <button
                   type="button"
                   onClick={guardarReporte}
-                  disabled={guardando}
-                  className="rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 hover:shadow-md active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-emerald-600 dark:hover:bg-emerald-500"
+                  disabled={guardando || reporteExportableId !== null}
+                  className="rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 hover:shadow-md active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600 disabled:opacity-100 dark:bg-emerald-600 dark:hover:bg-emerald-500 dark:disabled:bg-slate-700 dark:disabled:text-slate-300"
                 >
                   {guardando
                     ? 'Guardando...'
-                    : 'Guardar reporte'}
+                    : reporteExportableId ? 'Reporte guardado ✓' : 'Guardar reporte'}
                 </button>
+
+                {reporteExportableId && datos.total > 0 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => exportarReporte('pdf')}
+                      disabled={exportandoFormato !== null}
+                      className="rounded-xl border border-red-300 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-700 backdrop-blur-sm transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300"
+                    >
+                      {exportandoFormato === 'pdf' ? 'Exportando...' : exportadoFormato === 'pdf' ? 'Exportado ✓' : 'Exportar PDF'}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => exportarReporte('excel')}
+                      disabled={exportandoFormato !== null}
+                      className="rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700 backdrop-blur-sm transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300"
+                    >
+                      {exportandoFormato === 'excel' ? 'Exportando...' : exportadoFormato === 'excel' ? 'Exportado ✓' : 'Exportar Excel'}
+                    </button>
+                  </>
+                )}
 
               </div>
 
             </div>
-
-            {/* =================================================
-             * MENSAJE DE REPORTE GUARDADO
-             * ================================================= */}
-
-            {mensajeGuardado && (
-              <div
-                className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 text-emerald-800 shadow-sm dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-200"
-                role="status"
-              >
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
-                  {iconos.checkSmall}
-                </span>
-
-                <p className="text-sm font-semibold">
-                  {mensajeGuardado}
-                </p>
-              </div>
-            )}
 
             {/* =================================================
              * TARJETAS
