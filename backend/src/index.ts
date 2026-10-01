@@ -33,10 +33,9 @@ import reportesUsuariosRoutes from './modulos/Autenticación y gestión de usuar
 import reportesReservasRoutes from './modulos/Gestión de Eventos y Capacitaciones/Inscripción a Eventos y Capacitaciones/ReporteEstadistica/ReportesReservasRoutes';
 import reportesEventosRoutes from './modulos/Gestión de Eventos y Capacitaciones/ReporteEventosCapacitaciones/ReportesEvenCapRoutes';
 import reportesIncidenciasRoutes from './modulos/Gestión de Incidencias/ReporteIncidencia/ReportesIncidenciasRoute';
+import notificacionRoutes from './modulos/Notificaciones/Crear notificaciones+/NotificacionRoutes';
 import reporteExportRoutes from './modulos/Reportes y Estadisticas/Exportacion/ReporteExportRoutes';
 import reporteRoutes from './modulos/Reportes y Estadisticas/Generar reporte/reporteRoutes';
-
-
 dotenv.config();
 
 const app = express();
@@ -70,6 +69,10 @@ app.use('/api/reportes/usuarios',reportesUsuariosRoutes,);
 app.use('/api/reportes/reservas', reportesReservasRoutes);
 app.use('/api/reportes/eventos', reportesEventosRoutes);
 app.use('/api/reportes/estadisticas/incidencias', reportesIncidenciasRoutes);
+// Notificaciones
+app.use('/api/notificaciones', notificacionRoutes);
+
+// Reportes
 // Se monta al final: su parámetro /:id no debe interceptar rutas específicas
 // como /usuarios, /reservas o /eventos.
 app.use('/api/reportes', reporteRoutes);

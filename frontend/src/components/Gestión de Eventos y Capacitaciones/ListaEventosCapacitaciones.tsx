@@ -296,14 +296,10 @@ export default function ListaEventosCapacitaciones({
           `Bearer ${token}`;
       }
 
-      const respuesta = await fetch(
-        `${urlBaseApi}/api/eventos-capacitaciones`,
-        {
-          method: 'GET',
-          headers,
-          signal: controlador.signal,
-        },
-      );
+     const respuesta = await fetch(
+  `${urlBaseApi}/api/eventos-capacitaciones/admin`,
+  { method: 'GET', headers, signal: controlador.signal },
+);
 
       if (!respuesta.ok) {
         let mensaje =

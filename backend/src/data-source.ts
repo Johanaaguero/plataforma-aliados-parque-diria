@@ -23,6 +23,7 @@ import { Reporte } from './models/Reporte';
 import { Comunicado } from './models/Comunicado';
 import { Resena } from './models/Resena';
 import { ConsultaEmprendimiento } from './models/ConsultaEmprendimiento';
+import { Notificacion } from './models/Notificacion';
 
 dotenv.config();
 
@@ -70,6 +71,8 @@ export const AppDataSource = new DataSource({
   Comunicado,
   Resena,
   ConsultaEmprendimiento,
+    Notificacion,
+
   ],
  
 
