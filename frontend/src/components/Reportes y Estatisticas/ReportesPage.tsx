@@ -5,6 +5,7 @@ import ReporteReservas from './ReporteReservas';
 import ReporteEmprendimientos from './ReporteEmprendimientos';
 import ReporteEventos from './ReporteEvenCap';
 import ReporteIncidencias from './ReporteIncidencias';
+import BotonesExportarReporte from './BotonesExportarReporte';
 
 type TipoReporte =
   | 'usuarios'
@@ -152,7 +153,10 @@ const reportes: Array<{
  * Botones de exportar (por ahora solo visuales, sin lógica)
  * ========================================================= */
 
-function BotonesExportar({ compacto = false }: { compacto?: boolean }) {
+export function BotonesExportar({ compacto = false, reporteId = null, nombreReporte = 'Reporte' }: { compacto?: boolean; reporteId?: number | null; nombreReporte?: string }) {
+  return <div className="print:hidden"><BotonesExportarReporte reporteId={reporteId} nombreReporte={nombreReporte} tieneDatos={reporteId !== null} /></div>;
+
+  /* Legacy visual markup retained below for reference. */
   return (
     <div className="flex flex-wrap items-center gap-2 print:hidden">
       <button
@@ -439,7 +443,9 @@ export default function ReportesPage({
                   key={reporte.id}
                   type="button"
                   onClick={() =>
-                    setTipoReporte(reporte.id)
+                    {
+                      setTipoReporte(reporte.id);
+                    }
                   }
                   className={`
                     rounded-2xl
@@ -591,7 +597,6 @@ export default function ReportesPage({
               </div>
             </div>
 
-            <BotonesExportar />
           </div>
 
           {tipoReporte === 'usuarios' && (

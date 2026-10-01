@@ -28,6 +28,7 @@ export class ReporteService {
   async crear(
     tipoReporte: TipoReporte,
     usuarioGeneroId: number,
+    contenido?: Record<string, unknown>,
   ): Promise<Reporte> {
 
     const fecha = new Date();
@@ -51,6 +52,7 @@ export class ReporteService {
       numeroReporte,
       tipoReporte,
       usuarioGeneroId,
+      contenido: contenido ?? null,
     });
 
     return await reporteRepository.save(reporte);

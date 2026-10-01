@@ -33,6 +33,8 @@ import reportesUsuariosRoutes from './modulos/Autenticación y gestión de usuar
 import reportesReservasRoutes from './modulos/Gestión de Eventos y Capacitaciones/Inscripción a Eventos y Capacitaciones/ReporteEstadistica/ReportesReservasRoutes';
 import reportesEventosRoutes from './modulos/Gestión de Eventos y Capacitaciones/ReporteEventosCapacitaciones/ReportesEvenCapRoutes';
 import reportesIncidenciasRoutes from './modulos/Gestión de Incidencias/ReporteIncidencia/ReportesIncidenciasRoute';
+import reporteExportRoutes from './modulos/Reportes y Estadisticas/Exportacion/ReporteExportRoutes';
+import reporteRoutes from './modulos/Reportes y Estadisticas/Generar reporte/reporteRoutes';
 
 
 dotenv.config();
@@ -63,10 +65,14 @@ app.use('/api/resenas', resenaRoutes);
 app.use('/api/comunicados', comunicadoRoutes);
 app.use('/api/incidencias', incidenciaRoutes);
 app.use('/api/reportes', reporteUsuarioRoute);
+app.use('/api/reportes', reporteExportRoutes);
 app.use('/api/reportes/usuarios',reportesUsuariosRoutes,);
 app.use('/api/reportes/reservas', reportesReservasRoutes);
 app.use('/api/reportes/eventos', reportesEventosRoutes);
 app.use('/api/reportes/estadisticas/incidencias', reportesIncidenciasRoutes);
+// Se monta al final: su parámetro /:id no debe interceptar rutas específicas
+// como /usuarios, /reservas o /eventos.
+app.use('/api/reportes', reporteRoutes);
 app.use(errorMiddleware);
 
 const PORT = process.env.PORT || 3000;

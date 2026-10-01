@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import AccionesReporteGuardado from './AccionesReporteGuardado';
 
 type Periodo =
   | 'hoy'
@@ -2140,6 +2141,7 @@ export default function ReportesIncidencias() {
                     ? ''
                     : 's'}
                 </p>
+                <AccionesReporteGuardado tipoReporte="incidencias" nombreReporte={datos.informacionGeneral?.nombre ?? 'Reporte de incidencias'} contenido={datos as unknown as Record<string, unknown>} tieneDatos={datos.totalIncidencias > 0} />
               </div>
             </section>
 

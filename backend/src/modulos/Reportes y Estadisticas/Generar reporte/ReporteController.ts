@@ -60,7 +60,7 @@ export class ReporteController {
   async crear(req: Request, res: Response): Promise<void> {
     try {
 
-      const { tipoReporte, usuarioGeneroId } = req.body;
+      const { tipoReporte, usuarioGeneroId, contenido } = req.body;
 
       if (!tipoReporte) {
         res.status(400).json({
@@ -86,6 +86,7 @@ export class ReporteController {
       const reporte = await reporteService.crear(
         tipoReporte,
         Number(usuarioGeneroId),
+        contenido && typeof contenido === 'object' ? contenido : undefined,
       );
 
       res.status(201).json({
