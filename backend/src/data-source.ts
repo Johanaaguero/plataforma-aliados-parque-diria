@@ -46,8 +46,7 @@ export const AppDataSource = new DataSource({
   username: DB_USERNAME,
   password: DB_PASSWORD,
   database: DB_DATABASE,
-  timezone: 'Z',
-
+timezone: '-06:00',
   entities: [
     Usuario,
     Rol,

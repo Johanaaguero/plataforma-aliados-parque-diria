@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { NotificacionService } from '../../../modulos/Notificaciones/Crear notificaciones+/NotificacionService';
+import { NotificacionService } from './NotificacionReservaService';
 
 export class NotificacionController {
   private service: NotificacionService;

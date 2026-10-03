@@ -11,7 +11,12 @@ import {
 } from '../../../models/Reserva';
 
 import { EventosCapacitaciones } from '../../../models/EventosCapacitaciones';
-import { serializarFechaCalendario, serializarFechaUtc } from '../../../utils/fechas';
+import {
+  serializarFechaCalendario,
+  serializarFechaUtc,
+} from '../../../utils/fechas';
+
+import { NotificacionService } from '../../Notificaciones/Crear notificaciones Reservas/NotificacionReservaService';
 
 export interface InscripcionAdministrativaDTO {
   id: number;
@@ -77,8 +82,12 @@ export const listarInscripcionesAdministrativas = async (): Promise<
       ),
       nombreActividad: registro.nombreActividad,
       tipoActividad: registro.tipoActividad,
-      fechaActividad: serializarFechaCalendario(registro.fechaActividad),
-      fechaInscripcion: serializarFechaUtc(registro.fechaInscripcion),
+      fechaActividad: serializarFechaCalendario(
+        registro.fechaActividad,
+      ),
+      fechaInscripcion: serializarFechaUtc(
+        registro.fechaInscripcion,
+      ),
       estado: 'confirmada',
       origen: 'participante' as const,
     };
@@ -119,8 +128,11 @@ export const listarInscripcionesAdministrativas = async (): Promise<
       nombreUsuario: registro.nombreUsuario,
       correo: registro.correo,
       nombreCompleto: registro.nombreCompleto,
-      fechaNacimiento: serializarFechaCalendario(registro.fechaNacimiento),
-      tipoIdentificacion: registro.tipoIdentificacion ?? null,
+      fechaNacimiento: serializarFechaCalendario(
+        registro.fechaNacimiento,
+      ),
+      tipoIdentificacion:
+        registro.tipoIdentificacion ?? null,
       numeroIdentificacion:
         registro.numeroIdentificacion ?? null,
       telefono: registro.telefono ?? null,
@@ -129,8 +141,12 @@ export const listarInscripcionesAdministrativas = async (): Promise<
       ),
       nombreActividad: registro.nombreActividad,
       tipoActividad: registro.tipoActividad,
-      fechaActividad: serializarFechaCalendario(registro.fechaActividad),
-      fechaInscripcion: serializarFechaUtc(registro.fechaInscripcion),
+      fechaActividad: serializarFechaCalendario(
+        registro.fechaActividad,
+      ),
+      fechaInscripcion: serializarFechaUtc(
+        registro.fechaInscripcion,
+      ),
       estado: registro.estado,
       origen: 'reserva' as const,
     })),
@@ -147,9 +163,13 @@ export const actualizarEstadoReserva = async (
 ) => {
   return AppDataSource.transaction(async (manager) => {
     const reservasRepo = manager.getRepository(Reserva);
-    const participantesRepo = manager.getRepository(Participantes);
+    const participantesRepo =
+      manager.getRepository(Participantes);
     const eventosRepo =
       manager.getRepository(EventosCapacitaciones);
+
+    const notificacionService =
+      new NotificacionService();
 
     const reserva = await reservasRepo.findOneBy({
       id: reservaId,
@@ -214,6 +234,14 @@ export const actualizarEstadoReserva = async (
 
     const reservaActualizada =
       await reservasRepo.save(reserva);
+
+    // Crear una NUEVA notificación para el usuario
+    // sin modificar la notificación original.
+    await notificacionService.notificarCambioEstadoReserva(
+      manager,
+      reservaActualizada,
+      evento,
+    );
 
     if (
       estado === EstadoReserva.RECHAZADA &&

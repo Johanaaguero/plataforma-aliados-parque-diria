@@ -4,15 +4,20 @@ import {
   Emprendimiento,
   EstadoPublicacion,
 } from '../../../models/Emprendimiento';
+
 import { ConsultaEmprendimiento } from '../../../models/ConsultaEmprendimiento';
-
 import { CategoriaEmprendimiento } from '../../../models/CategoriaEmprendimiento';
-
 import { Usuario } from '../../../models/Usuario';
 import { EmprendimientoImagen } from '../../../models/EmprendimientoImagen';
 
+// ============================================================
+// NUEVO: SERVICIO DE NOTIFICACIONES DE EMPRENDIMIENTOS
+// ============================================================
+import { notificacionEmprendimientoService } from '../../Notificaciones/Crear notificaciones Emprendimientos/NotificacionEmprendimientoService';
+
 const emprendimientoRepository =
   AppDataSource.getRepository(Emprendimiento);
+
 const consultaEmprendimientoRepository =
   AppDataSource.getRepository(ConsultaEmprendimiento);
 
@@ -34,8 +39,8 @@ interface CrearEmprendimientoDto {
   descripcion?: string;
   categoriaId?: number;
   provincia?: string;
-canton?: string;
-distrito?: string;
+  canton?: string;
+  distrito?: string;
   direccion?: string;
   latitud?: number;
   longitud?: number;
@@ -60,7 +65,7 @@ interface ActualizarEmprendimientoDto {
   nombre?: string;
   descripcion?: string;
   categoriaId?: number;
-    provincia?: string;
+  provincia?: string;
   canton?: string;
   distrito?: string;
   direccion?: string;
@@ -82,8 +87,9 @@ interface ActualizarEmprendimientoDto {
 }
 
 // ============================================================
-// RESULTADO CAMBIO PUBLICACIÓN
+// DTO UBICACIÓN
 // ============================================================
+
 interface ActualizarUbicacionDto {
   provincia: string;
   canton: string;
@@ -93,7 +99,9 @@ interface ActualizarUbicacionDto {
   longitud: number;
 }
 
-
+// ============================================================
+// RESULTADO CAMBIO PUBLICACIÓN
+// ============================================================
 
 type ResultadoCambioPublicacion =
   | {
@@ -294,6 +302,7 @@ const TRANSICIONES: Record<
 // ============================================================
 
 export class EmprendimientoService {
+
   // ============================================================
   // BUSCAR POR ID
   // ============================================================
@@ -303,7 +312,6 @@ export class EmprendimientoService {
   ): Promise<Emprendimiento | null> {
     return emprendimientoRepository.findOne({
       where: { id },
-
       relations: {
         categoria: true,
         asociado: true,
@@ -316,180 +324,222 @@ export class EmprendimientoService {
   // CREAR
   // ============================================================
 
-  // ============================================================
-// CREAR
-// ============================================================
+  async crear(
+    dto: CrearEmprendimientoDto,
+    usuarioId: number,
+    rolUsuario: string,
+  ): Promise<Emprendimiento> {
 
-async crear(
-  dto: CrearEmprendimientoDto,
-): Promise<Emprendimiento> {
+    // ============================================================
+    // NUEVO: OBTENER USUARIO QUE REALMENTE ESTÁ CREANDO
+    // ============================================================
 
-  // ============================================================
-  // CATEGORÍA
-  // ============================================================
+    const usuarioCreador =
+      await usuarioRepository.findOne({
+        where: { id: Number(usuarioId) },
+        relations: {
+          rol: true,
+        },
+      });
 
-  let categoria:
-    | CategoriaEmprendimiento
-    | undefined;
-
-  if (dto.categoriaId !== undefined) {
-
-    categoria =
-      (await categoriaRepository.findOneBy({
-        id: dto.categoriaId,
-      })) ?? undefined;
-
-    if (!categoria) {
+    if (!usuarioCreador) {
       throw new Error(
-        'La categoría seleccionada no existe',
+        'No fue posible identificar al usuario que registra el emprendimiento',
       );
     }
-  }
 
-  // ============================================================
-  // VALIDAR NOMBRE DUPLICADO
-  // ============================================================
+    // ============================================================
+    // CATEGORÍA
+    // ============================================================
 
-  const existente =
-    await emprendimientoRepository.findOneBy({
+    let categoria:
+      | CategoriaEmprendimiento
+      | undefined;
+
+    if (dto.categoriaId !== undefined) {
+      categoria =
+        (await categoriaRepository.findOneBy({
+          id: dto.categoriaId,
+        })) ?? undefined;
+
+      if (!categoria) {
+        throw new Error(
+          'La categoría seleccionada no existe',
+        );
+      }
+    }
+
+    // ============================================================
+    // VALIDAR NOMBRE DUPLICADO
+    // ============================================================
+
+    const existente =
+      await emprendimientoRepository.findOneBy({
+        nombre: dto.nombre,
+      });
+
+    if (existente) {
+      throw new Error(
+        'Ya existe un emprendimiento registrado con ese nombre',
+      );
+    }
+
+    // ============================================================
+    // ASOCIADO
+    // ============================================================
+
+    let asociado: Usuario | undefined;
+
+    if (dto.asociadoId !== undefined) {
+      asociado =
+        (await usuarioRepository.findOneBy({
+          id: dto.asociadoId,
+        })) ?? undefined;
+
+      if (!asociado) {
+        throw new Error(
+          'El usuario asociado no existe',
+        );
+      }
+    }
+
+    // ============================================================
+    // DETERMINAR ESTADO INICIAL
+    // ============================================================
+
+    let estadoInicial: EstadoPublicacion;
+
+    if (dto.modo === 'borrador') {
+      estadoInicial =
+        EstadoPublicacion.BORRADOR;
+    } else if (dto.modo === 'cambios') {
+      estadoInicial =
+        EstadoPublicacion.NO_PUBLICADO;
+    } else if (dto.estadoPublicacion !== undefined) {
+      estadoInicial =
+        dto.estadoPublicacion;
+    } else {
+      // Por seguridad, si no se especifica nada
+      estadoInicial =
+        EstadoPublicacion.NO_PUBLICADO;
+    }
+
+    // ============================================================
+    // CREAR EMPRENDIMIENTO
+    // ============================================================
+
+    const emprendimiento = new Emprendimiento({
       nombre: dto.nombre,
+
+      ...(dto.descripcion !== undefined
+        ? { descripcion: dto.descripcion }
+        : {}),
+
+      ...(categoria !== undefined
+        ? { categoria }
+        : {}),
+
+      ...(asociado !== undefined
+        ? { asociado }
+        : {}),
+
+      ...(dto.provincia !== undefined
+        ? { provincia: dto.provincia }
+        : {}),
+
+      ...(dto.canton !== undefined
+        ? { canton: dto.canton }
+        : {}),
+
+      ...(dto.distrito !== undefined
+        ? { distrito: dto.distrito }
+        : {}),
+
+      ...(dto.direccion !== undefined
+        ? { direccion: dto.direccion }
+        : {}),
+
+      ...(dto.latitud !== undefined
+        ? { latitud: dto.latitud }
+        : {}),
+
+      ...(dto.longitud !== undefined
+        ? { longitud: dto.longitud }
+        : {}),
+
+      ...(dto.correoElectronico !== undefined
+        ? {
+            correoElectronico:
+              dto.correoElectronico,
+          }
+        : {}),
+
+      ...(dto.telefono !== undefined
+        ? { telefono: dto.telefono }
+        : {}),
+
+      ...(dto.imagen !== undefined
+        ? { imagen: dto.imagen }
+        : {}),
+
+      estadoPublicacion: estadoInicial,
     });
 
-  if (existente) {
-    throw new Error(
-      'Ya existe un emprendimiento registrado con ese nombre',
-    );
-  }
+    // ============================================================
+    // GUARDAR
+    // ============================================================
 
-  // ============================================================
-  // ASOCIADO
-  // ============================================================
+    const guardado =
+      await emprendimientoRepository.save(
+        emprendimiento,
+      );
 
-  let asociado: Usuario | undefined;
-
-  if (dto.asociadoId !== undefined) {
-
-    asociado =
-      (await usuarioRepository.findOneBy({
-        id: dto.asociadoId,
-      })) ?? undefined;
-
-    if (!asociado) {
-      throw new Error(
-        'El usuario asociado no existe',
+    if (dto.imagenes?.length) {
+      await imagenRepository.save(
+        dto.imagenes.map(
+          (imagen, indice) =>
+            imagenRepository.create({
+              emprendimiento: guardado,
+              imagen: imagen.buffer,
+              tipoMime: imagen.tipoMime,
+              esPortada: indice === 0,
+            }),
+        ),
       );
     }
+
+    // ============================================================
+    // NUEVO: NOTIFICAR AL ADMINISTRADOR SI LO CREÓ UN ASOCIADO
+    // ============================================================
+
+    if (
+      usuarioCreador.rol?.nombre ===
+      'asociado'
+    ) {
+      await notificacionEmprendimientoService
+        .notificarNuevoEmprendimientoAlAdministrador(
+          guardado,
+          usuarioCreador,
+        );
+    }
+
+    // ============================================================
+    // NUEVO: NOTIFICAR A VISITANTES SI NACE PUBLICADO
+    // ============================================================
+
+    if (
+      guardado.estadoPublicacion ===
+      EstadoPublicacion.PUBLICADO
+    ) {
+      await notificacionEmprendimientoService
+        .notificarNuevoEmprendimientoAVisitantes(
+          guardado,
+        );
+    }
+
+    return guardado;
   }
 
-  // ============================================================
-  // DETERMINAR ESTADO INICIAL
-  // ============================================================
-
-  let estadoInicial: EstadoPublicacion;
-
-  if (dto.modo === 'borrador') {
-
-    estadoInicial =
-      EstadoPublicacion.BORRADOR;
-
-  } else if (dto.modo === 'cambios') {
-
-    estadoInicial =
-      EstadoPublicacion.NO_PUBLICADO;
-
-  } else if (dto.estadoPublicacion !== undefined) {
-
-    estadoInicial =
-      dto.estadoPublicacion;
-
-  } else {
-
-    // Por seguridad, si no se especifica nada
-    estadoInicial =
-      EstadoPublicacion.NO_PUBLICADO;
-  }
-
-  // ============================================================
-  // CREAR EMPRENDIMIENTO
-  // ============================================================
-
- const emprendimiento = new Emprendimiento({
-  nombre: dto.nombre,
-
-  ...(dto.descripcion !== undefined
-    ? { descripcion: dto.descripcion }
-    : {}),
-
-  ...(categoria !== undefined
-    ? { categoria }
-    : {}),
-
-  ...(asociado !== undefined
-    ? { asociado }
-    : {}),
-
-  ...(dto.provincia !== undefined
-    ? { provincia: dto.provincia }
-    : {}),
-
-  ...(dto.canton !== undefined
-    ? { canton: dto.canton }
-    : {}),
-
-  ...(dto.distrito !== undefined
-    ? { distrito: dto.distrito }
-    : {}),
-
-  ...(dto.direccion !== undefined
-    ? { direccion: dto.direccion }
-    : {}),
-
-  ...(dto.latitud !== undefined
-    ? { latitud: dto.latitud }
-    : {}),
-
-  ...(dto.longitud !== undefined
-    ? { longitud: dto.longitud }
-    : {}),
-
-  ...(dto.correoElectronico !== undefined
-    ? { correoElectronico: dto.correoElectronico }
-    : {}),
-
-  ...(dto.telefono !== undefined
-    ? { telefono: dto.telefono }
-    : {}),
-
-  ...(dto.imagen !== undefined
-    ? { imagen: dto.imagen }
-    : {}),
-
-  estadoPublicacion: estadoInicial,
-});
-
-  // ============================================================
-  // GUARDAR
-  // ============================================================
-
-  const guardado = await emprendimientoRepository.save(
-    emprendimiento,
-  );
-
-  if (dto.imagenes?.length) {
-    await imagenRepository.save(
-      dto.imagenes.map((imagen, indice) =>
-        imagenRepository.create({
-          emprendimiento: guardado,
-          imagen: imagen.buffer,
-          tipoMime: imagen.tipoMime,
-          esPortada: indice === 0,
-        }),
-      ),
-    );
-  }
-
-  return guardado;
-}
   // ============================================================
   // OBTENER TODOS
   // ============================================================
@@ -502,7 +552,6 @@ async crear(
         categoria: true,
         asociado: true,
       },
-
       order: {
         fechaCreacion: 'DESC',
       },
@@ -518,6 +567,7 @@ async crear(
     rolUsuario: string,
     estado?: EstadoPublicacion,
   ): Promise<Emprendimiento[]> {
+
     console.log(
       '========== VISIBILIDAD ==========',
     );
@@ -626,6 +676,7 @@ async crear(
     usuarioId: number,
     rolUsuario: string,
   ): Promise<Emprendimiento | null> {
+
     const emprendimiento =
       await this.buscarPorId(id);
 
@@ -686,6 +737,7 @@ async crear(
   async obtenerPorId(
     id: number,
   ): Promise<Emprendimiento> {
+
     const emprendimiento =
       await this.buscarPorId(id);
 
@@ -698,10 +750,15 @@ async crear(
     return emprendimiento;
   }
 
+  // ============================================================
+  // REGISTRAR CONSULTA
+  // ============================================================
+
   async registrarConsulta(
     id: number,
     usuarioId?: number,
   ): Promise<ConsultaEmprendimiento> {
+
     const emprendimiento =
       await this.buscarPorId(id);
 
@@ -717,7 +774,8 @@ async crear(
 
     const consulta =
       consultaEmprendimientoRepository.create({
-        emprendimientoId: emprendimiento.id,
+        emprendimientoId:
+          emprendimiento.id,
         usuarioId: usuarioId ?? null,
       });
 
@@ -733,6 +791,7 @@ async crear(
   async obtenerPorEstado(
     estado: EstadoPublicacion,
   ): Promise<Emprendimiento[]> {
+
     return await emprendimientoRepository.find({
       where: {
         estadoPublicacion: estado,
@@ -756,6 +815,7 @@ async crear(
   async obtenerCatalogoPublico(): Promise<
     Emprendimiento[]
   > {
+
     return this.obtenerPorEstado(
       EstadoPublicacion.PUBLICADO,
     );
@@ -770,6 +830,7 @@ async crear(
     nuevoEstado: EstadoPublicacion,
     rolUsuario: string,
   ): Promise<ResultadoCambioPublicacion> {
+
     const emprendimiento =
       await this.buscarPorId(id);
 
@@ -863,6 +924,22 @@ async crear(
         emprendimiento,
       );
 
+    // ============================================================
+    // NUEVO: NOTIFICAR A VISITANTES AL PUBLICAR
+    // ============================================================
+
+    if (
+      estadoActual !==
+        EstadoPublicacion.PUBLICADO &&
+      nuevoEstado ===
+        EstadoPublicacion.PUBLICADO
+    ) {
+      await notificacionEmprendimientoService
+        .notificarNuevoEmprendimientoAVisitantes(
+          emprendimientoActualizado,
+        );
+    }
+
     return {
       ok: true,
       message: transicion.mensaje,
@@ -872,48 +949,91 @@ async crear(
   }
 
   // ============================================================
-  // ACTUALIZAR
+  // ACTUALIZAR UBICACIÓN
   // ============================================================
 
   async actualizarUbicacion(
     id: number,
     dto: ActualizarUbicacionDto,
   ): Promise<Emprendimiento> {
-    const emprendimiento = await this.obtenerPorId(id);
+
+    const emprendimiento =
+      await this.obtenerPorId(id);
 
     if (!tieneTexto(dto.provincia)) {
-      throw new Error('La provincia es obligatoria');
+      throw new Error(
+        'La provincia es obligatoria',
+      );
     }
 
     if (!tieneTexto(dto.canton)) {
-      throw new Error('El cantón es obligatorio');
+      throw new Error(
+        'El cantón es obligatorio',
+      );
     }
 
     if (!tieneTexto(dto.distrito)) {
-      throw new Error('El distrito es obligatorio');
+      throw new Error(
+        'El distrito es obligatorio',
+      );
     }
 
     if (!tieneTexto(dto.direccion)) {
-      throw new Error('La dirección es obligatoria');
+      throw new Error(
+        'La dirección es obligatoria',
+      );
     }
 
-    if (!coordenadaValida(dto.latitud, -90, 90)) {
-      throw new Error('La latitud debe estar entre -90 y 90');
+    if (
+      !coordenadaValida(
+        dto.latitud,
+        -90,
+        90,
+      )
+    ) {
+      throw new Error(
+        'La latitud debe estar entre -90 y 90',
+      );
     }
 
-    if (!coordenadaValida(dto.longitud, -180, 180)) {
-      throw new Error('La longitud debe estar entre -180 y 180');
+    if (
+      !coordenadaValida(
+        dto.longitud,
+        -180,
+        180,
+      )
+    ) {
+      throw new Error(
+        'La longitud debe estar entre -180 y 180',
+      );
     }
 
-    emprendimiento.provincia = dto.provincia.trim();
-    emprendimiento.canton = dto.canton.trim();
-    emprendimiento.distrito = dto.distrito.trim();
-    emprendimiento.direccion = dto.direccion.trim();
-    emprendimiento.latitud = dto.latitud;
-    emprendimiento.longitud = dto.longitud;
+    emprendimiento.provincia =
+      dto.provincia.trim();
 
-    return await emprendimientoRepository.save(emprendimiento);
+    emprendimiento.canton =
+      dto.canton.trim();
+
+    emprendimiento.distrito =
+      dto.distrito.trim();
+
+    emprendimiento.direccion =
+      dto.direccion.trim();
+
+    emprendimiento.latitud =
+      dto.latitud;
+
+    emprendimiento.longitud =
+      dto.longitud;
+
+    return await emprendimientoRepository.save(
+      emprendimiento,
+    );
   }
+
+  // ============================================================
+  // ACTUALIZAR
+  // ============================================================
 
   async actualizar(
     id: number,
@@ -921,8 +1041,16 @@ async crear(
     usuarioId: number,
     rolUsuario: string,
   ): Promise<Emprendimiento> {
+
     const emprendimiento =
       await this.obtenerPorId(id);
+
+    // ============================================================
+    // NUEVO: GUARDAR ESTADO ANTERIOR PARA NOTIFICACIONES
+    // ============================================================
+
+    const estadoAnterior =
+      emprendimiento.estadoPublicacion;
 
     // ========================================================
     // NORMALIZAR IDS
@@ -1026,31 +1154,31 @@ async crear(
     }
 
     // ========================================================
-// PROVINCIA
-// ========================================================
+    // PROVINCIA
+    // ========================================================
 
-if (dto.provincia !== undefined) {
-  emprendimiento.provincia =
-    dto.provincia.trim();
-}
+    if (dto.provincia !== undefined) {
+      emprendimiento.provincia =
+        dto.provincia.trim();
+    }
 
-// ========================================================
-// CANTÓN
-// ========================================================
+    // ========================================================
+    // CANTÓN
+    // ========================================================
 
-if (dto.canton !== undefined) {
-  emprendimiento.canton =
-    dto.canton.trim();
-}
+    if (dto.canton !== undefined) {
+      emprendimiento.canton =
+        dto.canton.trim();
+    }
 
-// ========================================================
-// DISTRITO
-// ========================================================
+    // ========================================================
+    // DISTRITO
+    // ========================================================
 
-if (dto.distrito !== undefined) {
-  emprendimiento.distrito =
-    dto.distrito.trim();
-}
+    if (dto.distrito !== undefined) {
+      emprendimiento.distrito =
+        dto.distrito.trim();
+    }
 
     // ========================================================
     // LATITUD
@@ -1104,28 +1232,41 @@ if (dto.distrito !== undefined) {
       delete emprendimiento.imagen;
     }
 
-    if (dto.imagenesConservadas !== undefined) {
-      const conservadas = new Set(dto.imagenesConservadas);
-      const imagenesActuales = emprendimiento.imagenes ?? [];
+    if (
+      dto.imagenesConservadas !==
+      undefined
+    ) {
+      const conservadas = new Set(
+        dto.imagenesConservadas,
+      );
+
+      const imagenesActuales =
+        emprendimiento.imagenes ?? [];
 
       await imagenRepository.remove(
-        imagenesActuales.filter((imagen) => !conservadas.has(imagen.id)),
+        imagenesActuales.filter(
+          (imagen) =>
+            !conservadas.has(imagen.id),
+        ),
       );
     }
 
-    let imagenesNuevas: EmprendimientoImagen[] = [];
+    let imagenesNuevas:
+      EmprendimientoImagen[] = [];
 
     if (dto.imagenes?.length) {
-      imagenesNuevas = await imagenRepository.save(
-        dto.imagenes.map((imagen) =>
-          imagenRepository.create({
-            emprendimiento,
-            imagen: imagen.buffer,
-            tipoMime: imagen.tipoMime,
-            esPortada: false,
-          }),
-        ),
-      );
+      imagenesNuevas =
+        await imagenRepository.save(
+          dto.imagenes.map(
+            (imagen) =>
+              imagenRepository.create({
+                emprendimiento,
+                imagen: imagen.buffer,
+                tipoMime: imagen.tipoMime,
+                esPortada: false,
+              }),
+          ),
+        );
     }
 
     // ========================================================
@@ -1181,38 +1322,64 @@ if (dto.distrito !== undefined) {
         emprendimiento,
       );
 
-    if (dto.portadaImagenId !== undefined) {
-      const imagenes = await imagenRepository.find({
-        where: { emprendimiento: { id: actualizado.id } },
-      });
+    if (
+      dto.portadaImagenId !== undefined
+    ) {
+      const imagenes =
+        await imagenRepository.find({
+          where: {
+            emprendimiento: {
+              id: actualizado.id,
+            },
+          },
+        });
 
       await imagenRepository.save(
         imagenes.map((imagen) => ({
           ...imagen,
-          esPortada: imagen.id === dto.portadaImagenId,
+          esPortada:
+            imagen.id ===
+            dto.portadaImagenId,
         })),
       );
 
-      const portada = imagenes.find(
-        (imagen) => imagen.id === dto.portadaImagenId,
-      );
+      const portada =
+        imagenes.find(
+          (imagen) =>
+            imagen.id ===
+            dto.portadaImagenId,
+        );
 
       if (portada) {
-        actualizado.imagen = portada.imagen;
+        actualizado.imagen =
+          portada.imagen;
       }
     }
 
-    if (dto.portadaNueva && imagenesNuevas.length > 0) {
-      const imagenes = await imagenRepository.find({
-        where: { emprendimiento: { id: actualizado.id } },
-      });
+    if (
+      dto.portadaNueva &&
+      imagenesNuevas.length > 0
+    ) {
+      const imagenes =
+        await imagenRepository.find({
+          where: {
+            emprendimiento: {
+              id: actualizado.id,
+            },
+          },
+        });
+
       await imagenRepository.save(
         imagenes.map((imagen) => ({
           ...imagen,
-          esPortada: imagen.id === imagenesNuevas[0]!.id,
+          esPortada:
+            imagen.id ===
+            imagenesNuevas[0]!.id,
         })),
       );
-      actualizado.imagen = imagenesNuevas[0]!.imagen;
+
+      actualizado.imagen =
+        imagenesNuevas[0]!.imagen;
     }
 
     // ========================================================
@@ -1230,6 +1397,22 @@ if (dto.distrito !== undefined) {
       );
     }
 
+    // ============================================================
+    // NUEVO: NOTIFICAR SI LA ACTUALIZACIÓN LO DEJÓ PUBLICADO
+    // ============================================================
+
+    if (
+      estadoAnterior !==
+        EstadoPublicacion.PUBLICADO &&
+      resultado.estadoPublicacion ===
+        EstadoPublicacion.PUBLICADO
+    ) {
+      await notificacionEmprendimientoService
+        .notificarNuevoEmprendimientoAVisitantes(
+          resultado,
+        );
+    }
+
     return resultado;
   }
 
@@ -1240,6 +1423,7 @@ if (dto.distrito !== undefined) {
   async eliminar(
     id: number,
   ): Promise<void> {
+
     const emprendimiento =
       await this.obtenerPorId(id);
 
