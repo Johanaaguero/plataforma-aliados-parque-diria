@@ -58,6 +58,8 @@ import Informativo from './components/informativo/general';
 
 import MapaParque from './components/informativo/MapaParque';
 
+import ListaNotificaciones from './components/Notificaciones/ListaNotificaciones';
+
 
 import type { Emprendimiento } from './services/emprendimientoService';
 import ReportesPage from './components/Reportes y Estatisticas/ReportesPage';
@@ -692,6 +694,29 @@ function App() {
 );
   }
 
+  if (rutaActual === '/notificaciones') {
+  if (!rolAutenticado) {
+    navigate('/');
+    return null;
+  }
+
+  const rutaVolver =
+    rolAutenticado === 'administrador'
+      ? '/admin/dashboard'
+      : rolAutenticado === 'super_admin'
+        ? '/super-admin/dashboard'
+        : '/';
+
+  return (
+    <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef]">
+      <BotonVolverInicio
+        texto="Volver"
+        onClick={() => navigate(rutaVolver)}
+      />
+
+<ListaNotificaciones esAdministrador={rolAutenticado === 'administrador'} />    </section>
+  );
+}
   if (rutaActual === '/admin/roles') {
     if (rolAutenticado !== 'administrador') {
       navigate('/');

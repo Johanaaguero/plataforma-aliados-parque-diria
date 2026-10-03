@@ -1,6 +1,6 @@
 import { Router } from 'express';
 
-import { NotificacionController } from './NotificacionController';
+import { NotificacionController } from './NotificacionReservaController';
 
 import { verificarToken } from '../../../middlewares/auth.middleware';
 

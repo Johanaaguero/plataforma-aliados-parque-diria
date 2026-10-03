@@ -8,8 +8,8 @@ import {
   actualizarIncidenciaAdmin,
   actualizarVisibilidadPublica,
   cerrarMiIncidencia,
+  compartirIncidencia,
 } from './IncidenciaController';
-
 import {
   registrarEvidencia,
   obtenerArchivoEvidencia,
@@ -70,7 +70,12 @@ router.patch(
   autorizarRoles('administrador'),
   (req, res) => actualizarIncidenciaAdmin(req, res),
 );
-
+router.post(
+  '/:id/compartir',
+  verificarToken,
+  autorizarRoles('administrador'),
+  (req, res) => compartirIncidencia(req, res),
+);
 router.patch(
   '/:id/visibilidad',
   verificarToken,

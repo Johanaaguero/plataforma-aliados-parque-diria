@@ -7,6 +7,11 @@ export interface Notificacion {
   leida: boolean;
   referenciaId: number | null;
   referenciaTipo: string | null;
+  /**
+   * Código de la incidencia (columna `codigo`).
+   * Solo viene en notificaciones de incidencias; en las demás es null.
+   */
+  referenciaCodigo?: string | null;
   createdAt: string;
 }
 
@@ -22,6 +27,7 @@ export interface DetalleReserva {
     telefono: string;
     createdAt: string;
   };
+
   evento: {
     id: number;
     nombre: string | null;
@@ -41,7 +47,11 @@ export interface DetalleNotificacion {
 
 function baseUrl(): string {
   const url = import.meta.env.VITE_API_URL?.trim();
-  if (!url) throw new Error('No se encontró VITE_API_URL.');
+
+  if (!url) {
+    throw new Error('No se encontró VITE_API_URL.');
+  }
+
   return url.replace(/\/+$/, '');
 }
 
@@ -67,33 +77,57 @@ async function solicitar<T>(
   });
 
   let cuerpo: any = null;
+
   try {
     cuerpo = await respuesta.json();
   } catch {
-    /* sin cuerpo */
+    // La respuesta puede no tener cuerpo.
   }
 
   if (!respuesta.ok) {
-    throw new Error(cuerpo?.mensaje ?? `Error del servidor. Código: ${respuesta.status}`);
+    throw new Error(
+      cuerpo?.mensaje ?? `Error del servidor. Código: ${respuesta.status}`,
+    );
   }
 
   return cuerpo as T;
 }
 
+/** Obtener todas las notificaciones del usuario autenticado. */
 export const obtenerMisNotificaciones = (signal?: AbortSignal) =>
   solicitar<Notificacion[]>('', {}, signal);
 
+/** Obtener la cantidad de notificaciones que todavía no han sido leídas. */
 export const contarNoLeidas = (signal?: AbortSignal) =>
   solicitar<{ cantidad: number }>('/no-leidas/count', {}, signal);
 
+/** Obtener el detalle de una notificación. */
 export const obtenerDetalleNotificacion = (id: number, signal?: AbortSignal) =>
   solicitar<DetalleNotificacion>(`/${id}/detalle`, {}, signal);
 
+/** Marcar una notificación general como leída. */
 export const marcarComoLeida = (id: number) =>
   solicitar<Notificacion>(`/${id}/leida`, { method: 'PATCH' });
 
+/** Marcar todas las notificaciones como leídas. */
 export const marcarTodasComoLeidas = () =>
   solicitar<{ mensaje: string }>('/marcar-todas-leidas', { method: 'PATCH' });
 
+/** Eliminar una notificación. */
 export const eliminarNotificacion = (id: number) =>
   solicitar<{ mensaje: string }>(`/${id}`, { method: 'DELETE' });
+
+/** Obtener las notificaciones relacionadas con incidencias. */
+export const obtenerNotificacionesIncidencias = (signal?: AbortSignal) =>
+  solicitar<{
+    ok: boolean;
+    notificaciones: Notificacion[];
+  }>('/incidencias', {}, signal);
+
+/** Marcar una notificación de incidencia como leída. */
+export const marcarNotificacionIncidenciaComoLeida = (id: number) =>
+  solicitar<{
+    ok: boolean;
+    mensaje: string;
+    notificacion: Notificacion;
+  }>(`/incidencias/${id}/leida`, { method: 'PATCH' });

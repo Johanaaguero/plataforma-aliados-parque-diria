@@ -163,188 +163,191 @@ const validarActualizacion = (
 
 export class EmprendimientoController {
 
-  async crear(
-    req: Request,
-    res: Response,
-  ): Promise<Response> {
 
-    try {
 
-      const rolUsuario = req.usuario?.rol;
 
-  
-      const modo = req.body.modo;
 
-      if (
-        modo !== undefined &&
-        modo !== 'borrador' &&
-        modo !== 'cambios'
-      ) {
+
+
+
+ async crear(
+  req: Request,
+  res: Response,
+): Promise<Response> {
+  try {
+    const rolUsuario = req.usuario?.rol;
+
+    const modo = req.body.modo;
+
+    if (
+      modo !== undefined &&
+      modo !== 'borrador' &&
+      modo !== 'cambios'
+    ) {
+      return res.status(400).json({
+        ok: false,
+        message:
+          'El modo de guardado debe ser "borrador" o "cambios"',
+      });
+    }
+
+    let estadoPublicacion:
+      | EstadoPublicacion
+      | undefined;
+
+    if (
+      req.body.estadoPublicacion !== undefined
+    ) {
+      const estadoConvertido =
+        convertirEstadoPublicacion(
+          req.body.estadoPublicacion,
+        );
+
+      if (!estadoConvertido) {
         return res.status(400).json({
           ok: false,
           message:
-            'El modo de guardado debe ser "borrador" o "cambios"',
+            'El estado de publicación no es válido',
         });
       }
 
- 
-      let estadoPublicacion:
-        | EstadoPublicacion
-        | undefined;
+      estadoPublicacion =
+        estadoConvertido;
+    }
 
-      if (
-        req.body.estadoPublicacion !== undefined
-      ) {
+    const archivos = req.files
+      ? obtenerArchivos(req.files)
+      : [];
 
-        const estadoConvertido =
-          convertirEstadoPublicacion(
-            req.body.estadoPublicacion,
-          );
+    const dto = {
+      nombre:
+        req.body.nombre,
 
-        if (!estadoConvertido) {
-          return res.status(400).json({
-            ok: false,
-            message:
-              'El estado de publicación no es válido',
-          });
-        }
+      descripcion:
+        req.body.descripcion ||
+        undefined,
 
-        estadoPublicacion =
-          estadoConvertido;
-      }
+      ...(req.body.categoriaId !== undefined &&
+      req.body.categoriaId !== ''
+        ? {
+            categoriaId: Number(
+              req.body.categoriaId,
+            ),
+          }
+        : {}),
 
-      const archivos = req.files
-        ? obtenerArchivos(req.files)
-        : [];
+      provincia:
+        req.body.provincia ||
+        undefined,
 
-      const dto = {
+      canton:
+        req.body.canton ||
+        undefined,
 
-        nombre:
-          req.body.nombre,
+      distrito:
+        req.body.distrito ||
+        undefined,
 
-        descripcion:
-          req.body.descripcion ||
-          undefined,
+      direccion:
+        req.body.direccion ||
+        undefined,
 
-        ...(req.body.categoriaId !== undefined &&
-        req.body.categoriaId !== ''
-          ? {
-              categoriaId: Number(
-                req.body.categoriaId,
-              ),
-            }
-          : {}),
+      ...(req.body.latitud !== undefined &&
+      req.body.latitud !== ''
+        ? {
+            latitud: Number(
+              req.body.latitud,
+            ),
+          }
+        : {}),
 
-          provincia:
-  req.body.provincia ||
-  undefined,
+      ...(req.body.longitud !== undefined &&
+      req.body.longitud !== ''
+        ? {
+            longitud: Number(
+              req.body.longitud,
+            ),
+          }
+        : {}),
 
-canton:
-  req.body.canton ||
-  undefined,
+      correoElectronico:
+        req.body.correoElectronico ||
+        undefined,
 
-distrito:
-  req.body.distrito ||
-  undefined,
+      telefono:
+        req.body.telefono ||
+        undefined,
 
+      ...(archivos.length > 0
+        ? {
+            imagen: archivos[0]!.buffer,
 
-        direccion:
-          req.body.direccion ||
-          undefined,
-
-
-        ...(req.body.latitud !== undefined &&
-        req.body.latitud !== ''
-          ? {
-              latitud: Number(
-                req.body.latitud,
-              ),
-            }
-          : {}),
-
-        ...(req.body.longitud !== undefined &&
-        req.body.longitud !== ''
-          ? {
-              longitud: Number(
-                req.body.longitud,
-              ),
-            }
-          : {}),
-
-        correoElectronico:
-          req.body.correoElectronico ||
-          undefined,
-
-        telefono:
-          req.body.telefono ||
-          undefined,
-
-          ...(archivos.length > 0
-          ? {
-              imagen: archivos[0]!.buffer,
-            imagenes: archivos.map((archivo) => ({
+            imagenes: archivos.map(
+              (archivo) => ({
                 buffer: archivo.buffer,
                 tipoMime: archivo.mimetype,
-              })),
-            }
-          : {}),
+              }),
+            ),
+          }
+        : {}),
 
-        // ======================================================
-        // MODO
-        // ======================================================
+      // ======================================================
+      // MODO
+      // ======================================================
 
-        ...(modo !== undefined
-          ? {
-              modo,
-            }
-          : {}),
+      ...(modo !== undefined
+        ? {
+            modo,
+          }
+        : {}),
 
-        // ======================================================
-        // ESTADO
-        // ======================================================
+      // ======================================================
+      // ESTADO
+      // ======================================================
 
-        ...(estadoPublicacion !== undefined
-          ? {
-              estadoPublicacion,
-            }
-          : {}),
+      ...(estadoPublicacion !== undefined
+        ? {
+            estadoPublicacion,
+          }
+        : {}),
 
-        // ======================================================
-        // DUEÑO
-        // ======================================================
+      // ======================================================
+      // DUEÑO
+      // ======================================================
 
-        ...(rolUsuario === 'asociado' &&
-        req.usuario?.id !== undefined
-          ? {
-              asociadoId:
-                req.usuario.id,
-            }
-          : {}),
-      };
+      ...(rolUsuario === 'asociado' &&
+      req.usuario?.id !== undefined
+        ? {
+            asociadoId:
+              req.usuario.id,
+          }
+        : {}),
+    };
 
-      // ========================================================
-      // CREAR
-      // ========================================================
+    // ========================================================
+    // CREAR
+    // ========================================================
 
-      const emprendimiento =
-        await emprendimientoService.crear(
-          dto,
-        );
+    const emprendimiento =
+      await emprendimientoService.crear(
+        dto,
+        req.usuario!.id,
+        rolUsuario!,
+      );
 
-      return res
-        .status(201)
-        .json(
-          emprendimiento.toPublic(),
-        );
+    return res
+      .status(201)
+      .json(
+        emprendimiento.toPublic(),
+      );
 
-    } catch (error: any) {
-
-      return res.status(400).json({
-        ok: false,
-        mensaje: error.message,
-      });
-    }
+  } catch (error: any) {
+    return res.status(400).json({
+      ok: false,
+      mensaje: error.message,
+    });
   }
+}
 
   // ============================================================
   // LISTADOS

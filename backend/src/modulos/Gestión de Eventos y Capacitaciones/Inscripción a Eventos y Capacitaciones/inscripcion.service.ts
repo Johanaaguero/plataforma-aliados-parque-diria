@@ -13,7 +13,7 @@ import {
 } from '../../../models/EventosCapacitaciones';
 import { In } from 'typeorm';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
-import { NotificacionService } from '../../Notificaciones/Crear notificaciones+/NotificacionService';
+import { NotificacionService } from '../../Notificaciones/Crear notificaciones Reservas/NotificacionReservaService';
 
 export interface DatosReserva {
   nombreCompleto: unknown;

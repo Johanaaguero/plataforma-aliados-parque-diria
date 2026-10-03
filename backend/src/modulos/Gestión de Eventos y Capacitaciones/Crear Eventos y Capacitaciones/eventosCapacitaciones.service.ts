@@ -8,22 +8,43 @@ import {
 } from '../../../models/EventosCapacitaciones';
 
 import { EventoCapacitacionImagen } from '../../../models/EventoCapacitacionImagen';
-import { EstadoReserva, Participantes } from '../../../models/Participantes';
+
+import {
+  EstadoReserva,
+  Participantes,
+} from '../../../models/Participantes';
+
 import { In, Repository } from 'typeorm';
+
 import { calcularCuposDisponibles } from '../cuposDisponibles';
+
+import {
+  notificacionEventoService,
+} from '../../Notificaciones/Crear notificaciones Eventos/notificacionEvento.service';
 
 export interface CreateEventoCapacitacionDTO {
   nombre?: string | null;
+
   descripcion?: string | null;
+
   fecha?: string | null;
+
   hora?: string | null;
+
   lugar?: string | null;
+
   tipoActividad: TipoActividad;
+
   cupoMinimo?: number | null;
+
   cupoMaximo?: number | null;
+
   edadMinima?: number | null;
+
   edadMaxima?: number | null;
+
   estado?: EstadoEventoCapacitacion;
+
   temporada?: Temporada | null;
 }
 
@@ -32,8 +53,11 @@ export type UpdateEventoCapacitacionDTO =
 
 export interface ImagenUploadDTO {
   buffer: Buffer;
+
   tipoMime: string;
+
   tamanoBytes: number;
+
   nombreArchivo?: string | null;
 }
 
@@ -48,18 +72,26 @@ const TAMANO_MAXIMO_BYTES = 5 * 1024 * 1024;
 
 export class EventosCapacitacionesService {
   private repo: Repository<EventosCapacitaciones>;
+
   private imagenesRepo: Repository<EventoCapacitacionImagen>;
+
   private participantesRepo: Repository<Participantes>;
 
   constructor() {
     this.repo =
-      AppDataSource.getRepository(EventosCapacitaciones);
+      AppDataSource.getRepository(
+        EventosCapacitaciones,
+      );
 
     this.imagenesRepo =
-      AppDataSource.getRepository(EventoCapacitacionImagen);
+      AppDataSource.getRepository(
+        EventoCapacitacionImagen,
+      );
 
     this.participantesRepo =
-      AppDataSource.getRepository(Participantes);
+      AppDataSource.getRepository(
+        Participantes,
+      );
   }
 
   private validar(
@@ -73,7 +105,8 @@ export class EventosCapacitacionesService {
       EstadoEventoCapacitacion.BORRADOR;
 
     const esBorrador =
-      estado === EstadoEventoCapacitacion.BORRADOR;
+      estado ===
+      EstadoEventoCapacitacion.BORRADOR;
 
     if (
       data.nombre !== undefined &&
@@ -257,6 +290,7 @@ export class EventosCapacitacionesService {
           );
         } else {
           const hoy = new Date();
+
           hoy.setHours(0, 0, 0, 0);
 
           if (fechaIngresada < hoy) {
@@ -419,7 +453,9 @@ export class EventosCapacitacionesService {
         'El cupo mínimo es obligatorio.',
       );
     } else if (
-      !Number.isInteger(registro.cupoMinimo) ||
+      !Number.isInteger(
+        registro.cupoMinimo,
+      ) ||
       registro.cupoMinimo <= 0
     ) {
       errores.push(
@@ -432,7 +468,9 @@ export class EventosCapacitacionesService {
         'El cupo máximo es obligatorio.',
       );
     } else if (
-      !Number.isInteger(registro.cupoMaximo) ||
+      !Number.isInteger(
+        registro.cupoMaximo,
+      ) ||
       registro.cupoMaximo <= 0
     ) {
       errores.push(
@@ -443,7 +481,8 @@ export class EventosCapacitacionesService {
     if (
       registro.cupoMinimo !== null &&
       registro.cupoMaximo !== null &&
-      registro.cupoMinimo > registro.cupoMaximo
+      registro.cupoMinimo >
+        registro.cupoMaximo
     ) {
       errores.push(
         'El cupo mínimo no puede ser mayor que el cupo máximo.',
@@ -455,7 +494,9 @@ export class EventosCapacitacionesService {
         'La edad mínima es obligatoria.',
       );
     } else if (
-      !Number.isInteger(registro.edadMinima) ||
+      !Number.isInteger(
+        registro.edadMinima,
+      ) ||
       registro.edadMinima < 0
     ) {
       errores.push(
@@ -468,7 +509,9 @@ export class EventosCapacitacionesService {
         'La edad máxima es obligatoria.',
       );
     } else if (
-      !Number.isInteger(registro.edadMaxima) ||
+      !Number.isInteger(
+        registro.edadMaxima,
+      ) ||
       registro.edadMaxima < 0
     ) {
       errores.push(
@@ -479,7 +522,8 @@ export class EventosCapacitacionesService {
     if (
       registro.edadMinima !== null &&
       registro.edadMaxima !== null &&
-      registro.edadMinima > registro.edadMaxima
+      registro.edadMinima >
+        registro.edadMaxima
     ) {
       errores.push(
         'La edad mínima no puede ser mayor que la edad máxima.',
@@ -509,6 +553,7 @@ export class EventosCapacitacionesService {
           );
         } else {
           const hoy = new Date();
+
           hoy.setHours(0, 0, 0, 0);
 
           if (fechaIngresada < hoy) {
@@ -551,7 +596,9 @@ export class EventosCapacitacionesService {
 
     if (errores.length > 0) {
       const err = new Error(
-        `El registro no está completo. ${errores.join(' ')}`,
+        `El registro no está completo. ${errores.join(
+          ' ',
+        )}`,
       );
 
       err.name = 'ValidationError';
@@ -659,7 +706,9 @@ export class EventosCapacitacionesService {
         .createQueryBuilder('participante')
         .where(
           'participante.eventoCapacitacionId = :eventoCapacitacionId',
-          { eventoCapacitacionId },
+          {
+            eventoCapacitacionId,
+          },
         )
         .andWhere(
           'participante.estado IN (:...estadosActivos)',
@@ -748,27 +797,39 @@ export class EventosCapacitacionesService {
     const nuevo =
       this.repo.create({
         nombre: data.nombre ?? null,
+
         descripcion:
           data.descripcion ?? null,
+
         fecha:
           data.fecha ?? null,
+
         hora:
           data.hora ?? null,
+
         lugar:
           data.lugar ?? null,
+
         tipoActividad:
           data.tipoActividad,
+
         cupoMinimo:
           data.cupoMinimo ?? null,
+
         cupoMaximo:
           data.cupoMaximo ?? null,
+
         cuposDisponibles:
           data.cupoMaximo ?? null,
+
         edadMinima:
           data.edadMinima ?? null,
+
         edadMaxima:
           data.edadMaxima ?? null,
+
         estado,
+
         temporada:
           data.temporada ?? null,
       });
@@ -780,7 +841,20 @@ export class EventosCapacitacionesService {
       guardado,
     );
 
-    return this.repo.save(guardado);
+    const eventoFinal =
+      await this.repo.save(guardado);
+
+   
+    if (
+      eventoFinal.estado ===
+      EstadoEventoCapacitacion.PUBLICADO
+    ) {
+      await notificacionEventoService.notificarNuevoEvento(
+        eventoFinal,
+      );
+    }
+
+    return eventoFinal;
   }
 
   async update(
@@ -789,6 +863,9 @@ export class EventosCapacitacionesService {
   ) {
     const registro =
       await this.obtenerOFallar(id);
+
+    const estadoAnterior =
+      registro.estado;
 
     if (data.estado !== undefined) {
       if (
@@ -808,7 +885,8 @@ export class EventosCapacitacionesService {
       }
 
       if (
-        data.estado !== registro.estado
+        data.estado !==
+        registro.estado
       ) {
         this.validarCambioEstado(
           registro.estado,
@@ -915,10 +993,13 @@ export class EventosCapacitacionesService {
         {
           cupoMinimo:
             datosFinales.cupoMinimo,
+
           cupoMaximo:
             datosFinales.cupoMaximo,
+
           edadMinima:
             datosFinales.edadMinima,
+
           edadMaxima:
             datosFinales.edadMaxima,
         },
@@ -1015,7 +1096,7 @@ export class EventosCapacitacionesService {
           : registro.temporada,
     });
 
-    const guardado =
+    let guardado =
       await this.repo.save(registro);
 
     if (cambioCupoMaximo) {
@@ -1023,7 +1104,26 @@ export class EventosCapacitacionesService {
         guardado,
       );
 
-      return this.repo.save(guardado);
+      guardado =
+        await this.repo.save(guardado);
+    }
+
+    /*
+     * Solo notificar cuando realmente cambia
+     * de un estado NO PUBLICADO a PUBLICADO.
+     *
+     * Si solamente se edita un evento que ya estaba
+     * publicado, no se genera otra notificación.
+     */
+    if (
+      estadoAnterior !==
+        EstadoEventoCapacitacion.PUBLICADO &&
+      guardado.estado ===
+        EstadoEventoCapacitacion.PUBLICADO
+    ) {
+      await notificacionEventoService.notificarNuevoEvento(
+        guardado,
+      );
     }
 
     return guardado;
@@ -1031,7 +1131,9 @@ export class EventosCapacitacionesService {
 
   async findAll(filtros?: {
     tipoActividad?: TipoActividad;
+
     estado?: EstadoEventoCapacitacion;
+
     temporada?: Temporada;
   }) {
     const where: Record<
@@ -1057,6 +1159,7 @@ export class EventosCapacitacionesService {
     const registros =
       await this.repo.find({
         where,
+
         order: {
           fecha: 'ASC',
           hora: 'ASC',
@@ -1103,6 +1206,7 @@ export class EventosCapacitacionesService {
           eventoCapacitacionId:
             | string
             | number;
+
           inscritos: string | number;
         }>();
 
@@ -1112,7 +1216,10 @@ export class EventosCapacitacionesService {
           Number(
             conteo.eventoCapacitacionId,
           ),
-          Number(conteo.inscritos),
+
+          Number(
+            conteo.inscritos,
+          ),
         ]),
       );
 
@@ -1120,6 +1227,7 @@ export class EventosCapacitacionesService {
       const cuposDisponibles =
         calcularCuposDisponibles(
           registro.cupoMaximo,
+
           inscritosPorEvento.get(
             registro.id,
           ) ?? 0,
@@ -1130,6 +1238,7 @@ export class EventosCapacitacionesService {
 
       return {
         ...registro.toPublic(),
+
         cuposDisponibles,
       };
     });
@@ -1146,6 +1255,7 @@ export class EventosCapacitacionesService {
 
   private validarCambioEstado(
     estadoActual: EstadoEventoCapacitacion,
+
     nuevoEstado: EstadoEventoCapacitacion,
   ) {
     const cambiosPermitidos: Record<
@@ -1158,11 +1268,13 @@ export class EventosCapacitacionesService {
 
       [EstadoEventoCapacitacion.NO_PUBLICADO]: [
         EstadoEventoCapacitacion.PUBLICADO,
+
         EstadoEventoCapacitacion.DESACTIVADO,
       ],
 
       [EstadoEventoCapacitacion.PUBLICADO]: [
         EstadoEventoCapacitacion.NO_PUBLICADO,
+
         EstadoEventoCapacitacion.DESACTIVADO,
       ],
 
@@ -1191,6 +1303,7 @@ export class EventosCapacitacionesService {
 
   async cambiarEstado(
     id: number,
+
     estado: EstadoEventoCapacitacion,
   ) {
     const registro =
@@ -1219,6 +1332,9 @@ export class EventosCapacitacionesService {
 
       return this.repo.save(registro);
     }
+
+    const estadoAnterior =
+      registro.estado;
 
     this.validarCambioEstado(
       registro.estado,
@@ -1251,11 +1367,30 @@ export class EventosCapacitacionesService {
       registro,
     );
 
-    return this.repo.save(registro);
+    const guardado =
+      await this.repo.save(registro);
+
+    /*
+     * La notificación solamente se crea cuando
+     * el evento cambia a PUBLICADO.
+     */
+    if (
+      estadoAnterior !==
+        EstadoEventoCapacitacion.PUBLICADO &&
+      guardado.estado ===
+        EstadoEventoCapacitacion.PUBLICADO
+    ) {
+      await notificacionEventoService.notificarNuevoEvento(
+        guardado,
+      );
+    }
+
+    return guardado;
   }
 
   async addImagen(
     eventoCapacitacionId: number,
+
     data: ImagenUploadDTO,
   ) {
     await this.obtenerOFallar(
@@ -1267,11 +1402,15 @@ export class EventosCapacitacionesService {
     const nuevaImagen =
       this.imagenesRepo.create({
         imagen: data.buffer,
+
         tipoMime: data.tipoMime,
+
         nombreArchivo:
           data.nombreArchivo ?? null,
+
         tamanoBytes:
           data.tamanoBytes,
+
         eventoCapacitacionId,
       });
 
@@ -1294,10 +1433,15 @@ export class EventosCapacitacionesService {
 
       select: {
         id: true,
+
         tipoMime: true,
+
         nombreArchivo: true,
+
         tamanoBytes: true,
+
         fechaCreacion: true,
+
         eventoCapacitacionId: true,
       },
 
@@ -1317,6 +1461,7 @@ export class EventosCapacitacionesService {
 
   async removeImagen(
     eventoCapacitacionId: number,
+
     imagenId: number,
   ) {
     const imagen =

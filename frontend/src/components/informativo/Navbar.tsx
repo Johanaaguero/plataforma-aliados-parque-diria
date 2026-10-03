@@ -8,6 +8,8 @@ import logoBlanco from '../../../logo-blanco.png';
 
 import TemaInterfaz from '../ui/TemaInterfaz';
 
+import { contarNoLeidas } from '../../services/notificacionesService';
+
 interface NavbarProps {
   onRegistro: () => void;
   onLogin: () => void;
@@ -20,10 +22,7 @@ interface NavbarProps {
   onIrInicio: () => void;
   onIrEmprendimientos: () => void;
   onIrEventos: () => void;
-
-  // Abrir sección de incidencias
   onRegistrarIncidencia?: () => void;
-
   seccionActiva?: 'inicio' | 'emprendimientos' | 'eventos' | 'incidencias';
   modoAdministracion?: boolean;
 }
@@ -48,12 +47,12 @@ function Navbar({
 
   const [scrolled, setScrolled] = useState(false);
   const [menuAbierto, setMenuAbierto] = useState(false);
-  const [menuUsuarioAbierto, setMenuUsuarioAbierto] =
-    useState(false);
+  const [menuUsuarioAbierto, setMenuUsuarioAbierto] = useState(false);
   const [navbarVisible, setNavbarVisible] = useState(true);
 
-  const ultimoScrollY = useRef(0);
+  const [noLeidas, setNoLeidas] = useState(0);
 
+  const ultimoScrollY = useRef(0);
   const menuUsuarioRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -83,9 +82,7 @@ function Navbar({
     const cerrarMenuUsuario = (evento: MouseEvent) => {
       if (
         menuUsuarioRef.current &&
-        !menuUsuarioRef.current.contains(
-          evento.target as Node,
-        )
+        !menuUsuarioRef.current.contains(evento.target as Node)
       ) {
         setMenuUsuarioAbierto(false);
       }
@@ -97,28 +94,46 @@ function Navbar({
       }
     };
 
-    document.addEventListener(
-      'mousedown',
-      cerrarMenuUsuario
-    );
-
-    document.addEventListener(
-      'keydown',
-      cerrarConEscape
-    );
+    document.addEventListener('mousedown', cerrarMenuUsuario);
+    document.addEventListener('keydown', cerrarConEscape);
 
     return () => {
-      document.removeEventListener(
-        'mousedown',
-        cerrarMenuUsuario
-      );
-
-      document.removeEventListener(
-        'keydown',
-        cerrarConEscape
-      );
+      document.removeEventListener('mousedown', cerrarMenuUsuario);
+      document.removeEventListener('keydown', cerrarConEscape);
     };
   }, []);
+
+  // Las notificaciones del administrador se muestran en su dashboard.
+  // Visitante, asociado y super_admin mantienen las notificaciones en el Navbar.
+  useEffect(() => {
+    if (!rolAutenticado || rolAutenticado === 'administrador') {
+      setNoLeidas(0);
+      return;
+    }
+
+    const controlador = new AbortController();
+
+    const actualizar = () => {
+      contarNoLeidas(controlador.signal)
+        .then((respuesta) => {
+          if (!controlador.signal.aborted) {
+            setNoLeidas(respuesta.cantidad);
+          }
+        })
+        .catch(() => {
+          // Se conserva el valor anterior si ocurre un error.
+        });
+    };
+
+    actualizar();
+
+    const intervalo = window.setInterval(actualizar, 60_000);
+
+    return () => {
+      controlador.abort();
+      window.clearInterval(intervalo);
+    };
+  }, [rolAutenticado]);
 
   const irInicio = () => {
     setMenuAbierto(false);
@@ -158,6 +173,12 @@ function Navbar({
   const irMisEmprendimientos = () => {
     setMenuUsuarioAbierto(false);
     onIrEmprendimientos();
+  };
+
+  const irNotificaciones = () => {
+    setMenuAbierto(false);
+    setMenuUsuarioAbierto(false);
+    navigate('/notificaciones');
   };
 
   const cerrarSesionDesdeMenu = () => {
@@ -200,7 +221,6 @@ function Navbar({
         }`}
       >
         <div className="flex min-h-[82px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-7">
-
           {/* LOGO */}
           <button
             type="button"
@@ -225,7 +245,6 @@ function Navbar({
 
           {/* NAVEGACIÓN PRINCIPAL */}
           <div className="hidden items-center gap-2 xl:flex xl:gap-4">
-
             <button
               type="button"
               onClick={irInicio}
@@ -235,9 +254,7 @@ function Navbar({
                   : ''
               }`}
               aria-current={
-                seccionActiva === 'inicio'
-                  ? 'page'
-                  : undefined
+                seccionActiva === 'inicio' ? 'page' : undefined
               }
             >
               Inicio
@@ -277,7 +294,6 @@ function Navbar({
               Eventos y Capacitaciones
             </button>
 
-            {/* INCIDENCIAS - VISIBLE SIEMPRE */}
             {onRegistrarIncidencia && (
               <button
                 type="button"
@@ -300,11 +316,8 @@ function Navbar({
 
           {/* PERFIL, TEMA Y MENÚ */}
           <div className="flex shrink-0 items-center gap-1.5">
-
             {/* ACCIONES DE ESCRITORIO */}
             <div className="hidden items-center gap-1 xl:flex">
-
-              {/* USUARIO NO AUTENTICADO */}
               {!rolAutenticado && (
                 <button
                   type="button"
@@ -315,18 +328,52 @@ function Navbar({
                 </button>
               )}
 
+              {/* NOTIFICACIONES:
+                  Visitante, asociado y super_admin: SÍ
+                  Administrador: NO
+              */}
+              {rolAutenticado && rolAutenticado !== 'administrador' && (
+                <button
+                  type="button"
+                  onClick={irNotificaciones}
+                  className="relative flex h-10 w-10 items-center justify-center rounded-full text-[#095540] transition hover:bg-[#eef7e7]/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8DC63F] focus-visible:ring-offset-2"
+                  aria-label={
+                    noLeidas > 0
+                      ? `Notificaciones, ${noLeidas} sin leer`
+                      : 'Notificaciones'
+                  }
+                  title="Notificaciones"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-5 w-5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8M13.7 20a2 2 0 0 1-3.4 0"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+
+                  {noLeidas > 0 && (
+                    <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
+                      {noLeidas > 99 ? '99+' : noLeidas}
+                    </span>
+                  )}
+                </button>
+              )}
+
               {/* USUARIO AUTENTICADO */}
               {rolAutenticado && (
-                <div
-                  ref={menuUsuarioRef}
-                  className="relative"
-                >
+                <div ref={menuUsuarioRef} className="relative">
                   <button
                     type="button"
                     onClick={() =>
-                      setMenuUsuarioAbierto(
-                        (abierto) => !abierto
-                      )
+                      setMenuUsuarioAbierto((abierto) => !abierto)
                     }
                     className="flex min-h-10 max-w-52 items-center gap-2 rounded-full border border-[#8DC63F]/45 bg-[#8DC63F]/15 px-4 py-2 text-sm font-bold text-[#095540] transition hover:bg-[#8DC63F]/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8DC63F] focus-visible:ring-offset-2"
                     aria-expanded={menuUsuarioAbierto}
@@ -342,9 +389,7 @@ function Navbar({
                     <svg
                       viewBox="0 0 24 24"
                       className={`h-4 w-4 shrink-0 transition-transform duration-200 ${
-                        menuUsuarioAbierto
-                          ? 'rotate-180'
-                          : ''
+                        menuUsuarioAbierto ? 'rotate-180' : ''
                       }`}
                       fill="none"
                       stroke="currentColor"
@@ -365,10 +410,7 @@ function Navbar({
                       className="sigtad-menu-reveal absolute right-0 top-full z-50 mt-2 w-56 origin-top-right rounded-2xl border border-white/25 bg-[#073f31]/90 p-2 text-white shadow-[0_18px_45px_rgba(7,63,49,0.32)] backdrop-blur-md"
                     >
                       <div className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-emerald-100/60">
-                        {rolAutenticado.replace(
-                          '_',
-                          ' '
-                        )}
+                        {rolAutenticado.replace('_', ' ')}
                       </div>
 
                       {rolAutenticado === 'visitante' && (
@@ -380,6 +422,7 @@ function Navbar({
                           >
                             Mis reservas
                           </button>
+
                           <button
                             type="button"
                             onClick={irMisIncidencias}
@@ -399,6 +442,7 @@ function Navbar({
                           >
                             Mis eventos y capacitaciones
                           </button>
+
                           <button
                             type="button"
                             onClick={irMisEmprendimientos}
@@ -406,6 +450,7 @@ function Navbar({
                           >
                             Mis emprendimientos
                           </button>
+
                           <button
                             type="button"
                             onClick={irMisIncidencias}
@@ -418,19 +463,17 @@ function Navbar({
 
                       {(rolAutenticado === 'administrador' ||
                         rolAutenticado === 'super_admin') && (
-                        <>
-                          <button
-                            type="button"
-                            onClick={
-                              rolAutenticado === 'super_admin'
-                                ? irDashboardSuperAdmin
-                                : irDashboard
-                            }
-                            className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10"
-                          >
-                            Panel de control
-                          </button>
-                        </>
+                        <button
+                          type="button"
+                          onClick={
+                            rolAutenticado === 'super_admin'
+                              ? irDashboardSuperAdmin
+                              : irDashboard
+                          }
+                          className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10"
+                        >
+                          Panel de control
+                        </button>
                       )}
 
                       <div className="my-2 border-t border-white/15" />
@@ -454,14 +497,10 @@ function Navbar({
 
               <button
                 type="button"
-                onClick={() =>
-                  setMenuAbierto(!menuAbierto)
-                }
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#095540] text-white shadow-sm motion-safe:transition motion-safe:duration-200 hover:bg-[#009444] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8DC63F] focus-visible:ring-offset-2 xl:hidden"
+                onClick={() => setMenuAbierto(!menuAbierto)}
+                className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#095540] text-white shadow-sm motion-safe:transition motion-safe:duration-200 hover:bg-[#009444] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8DC63F] focus-visible:ring-offset-2 xl:hidden"
                 aria-label={
-                  menuAbierto
-                    ? 'Cerrar menú'
-                    : 'Abrir menú'
+                  menuAbierto ? 'Cerrar menú' : 'Abrir menú'
                 }
                 aria-expanded={menuAbierto}
                 aria-controls="menu-principal-movil"
@@ -489,21 +528,29 @@ function Navbar({
                     <path d="M4 7h16M4 12h16M4 17h16" />
                   </svg>
                 )}
+
+                {/* Indicador móvil:
+                    no aparece para administrador */}
+                {!menuAbierto &&
+                  rolAutenticado !== 'administrador' &&
+                  noLeidas > 0 && (
+                    <span
+                      className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-white bg-red-600"
+                      aria-hidden="true"
+                    />
+                  )}
               </button>
             </div>
           </div>
         </div>
 
-        {/* =========================
-            MENÚ MÓVIL
-           ========================= */}
+        {/* MENÚ MÓVIL */}
         {menuAbierto && (
           <div
             id="menu-principal-movil"
             className="sigtad-menu-reveal border-t border-[#e2ebe5] px-3 pb-4 pt-3 xl:hidden"
           >
             <div className="flex flex-col gap-1">
-
               <button
                 type="button"
                 onClick={irInicio}
@@ -513,9 +560,7 @@ function Navbar({
                     : ''
                 }`}
                 aria-current={
-                  seccionActiva === 'inicio'
-                    ? 'page'
-                    : undefined
+                  seccionActiva === 'inicio' ? 'page' : undefined
                 }
               >
                 Inicio
@@ -550,16 +595,33 @@ function Navbar({
                     : ''
                 }`}
                 aria-current={
-                  seccionActiva === 'eventos'
-                    ? 'page'
-                    : undefined
+                  seccionActiva === 'eventos' ? 'page' : undefined
                 }
               >
                 Eventos y Capacitaciones
               </button>
 
-              {/* MIS RESERVAS
-                  SOLO VISITANTE Y ASOCIADO */}
+              {/* NOTIFICACIONES MÓVIL
+                  Visitante, asociado y super_admin: SÍ
+                  Administrador: NO */}
+              {rolAutenticado &&
+                rolAutenticado !== 'administrador' && (
+                  <button
+                    type="button"
+                    onClick={irNotificaciones}
+                    className={`${claseNavegacionMovil} flex items-center justify-between`}
+                  >
+                    <span>Notificaciones</span>
+
+                    {noLeidas > 0 && (
+                      <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 text-[10px] font-bold text-white">
+                        {noLeidas > 99 ? '99+' : noLeidas}
+                      </span>
+                    )}
+                  </button>
+                )}
+
+              {/* VISITANTE */}
               {rolAutenticado === 'visitante' && (
                 <>
                   <button
@@ -569,6 +631,7 @@ function Navbar({
                   >
                     Mis reservas
                   </button>
+
                   <button
                     type="button"
                     onClick={irMisIncidencias}
@@ -579,6 +642,7 @@ function Navbar({
                 </>
               )}
 
+              {/* ASOCIADO */}
               {rolAutenticado === 'asociado' && (
                 <>
                   <button
@@ -588,6 +652,7 @@ function Navbar({
                   >
                     Mis eventos y capacitaciones
                   </button>
+
                   <button
                     type="button"
                     onClick={irMisEmprendimientos}
@@ -595,6 +660,7 @@ function Navbar({
                   >
                     Mis emprendimientos
                   </button>
+
                   <button
                     type="button"
                     onClick={irMisIncidencias}
@@ -605,7 +671,6 @@ function Navbar({
                 </>
               )}
 
-              {/* INCIDENCIAS - VISIBLE SIEMPRE */}
               {onRegistrarIncidencia && (
                 <button
                   type="button"
@@ -648,7 +713,6 @@ function Navbar({
             {/* USUARIO AUTENTICADO */}
             {rolAutenticado && (
               <div className="mt-3 grid min-w-0 gap-2 border-t border-[#e2ebe5] pt-3 sm:grid-cols-2">
-
                 {nombreUsuario && (
                   <span
                     className="min-w-0 truncate rounded-full border border-[#8DC63F]/45 bg-[#8DC63F]/15 px-4 py-3 text-center text-sm font-bold text-[#095540]"
@@ -671,7 +735,7 @@ function Navbar({
               </div>
             )}
 
-            {/* ADMINISTRADOR - DASHBOARD */}
+            {/* ADMINISTRADOR */}
             {rolAutenticado === 'administrador' && (
               <div className="mt-3 border-t border-[#e2ebe5] pt-3">
                 <button
@@ -684,7 +748,7 @@ function Navbar({
               </div>
             )}
 
-            {/* SUPER ADMIN - DASHBOARD */}
+            {/* SUPER ADMIN */}
             {rolAutenticado === 'super_admin' && (
               <div className="mt-3 border-t border-[#e2ebe5] pt-3">
                 <button
@@ -696,7 +760,6 @@ function Navbar({
                 </button>
               </div>
             )}
-
           </div>
         )}
       </div>

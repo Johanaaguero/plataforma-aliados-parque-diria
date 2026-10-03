@@ -1,20 +1,34 @@
+// Mostrar todas las notificaciones del usuario
+
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import DetalleNotificacion from './DetallesNotificacion/DetalleNotificacion';
+
+import DetalleNotificacion from './DetalleNotificacion';
+
 import {
   eliminarNotificacion,
   marcarComoLeida,
   marcarTodasComoLeidas,
   obtenerMisNotificaciones,
+  obtenerNotificacionesIncidencias,
   type Notificacion,
 } from '../../services/notificacionesService';
 
 type Filtro = 'todas' | 'no_leidas';
 
+interface ListaNotificacionesProps {
+  /** true si quien ve la lista es administrador */
+  esAdministrador: boolean;
+}
+
 function tiempoRelativo(valor: string): string {
   const f = new Date(valor);
-  if (Number.isNaN(f.getTime())) return '';
+
+  if (Number.isNaN(f.getTime())) {
+    return '';
+  }
 
   const minutos = Math.floor((Date.now() - f.getTime()) / 60000);
+
   if (minutos < 1) return 'Ahora mismo';
   if (minutos < 60) return `Hace ${minutos} min`;
 
@@ -24,65 +38,133 @@ function tiempoRelativo(valor: string): string {
   const dias = Math.floor(horas / 24);
   if (dias < 7) return `Hace ${dias} ${dias === 1 ? 'día' : 'días'}`;
 
-  return f.toLocaleDateString('es-CR', { day: '2-digit', month: 'short', year: 'numeric' });
+  return f.toLocaleDateString('es-CR', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
 }
 
-export default function ListaNotificaciones() {
+export default function ListaNotificaciones({
+  esAdministrador,
+}: ListaNotificacionesProps) {
   const [notificaciones, setNotificaciones] = useState<Notificacion[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filtro, setFiltro] = useState<Filtro>('todas');
   const [abiertaId, setAbiertaId] = useState<number | null>(null);
+
+  // Notificación seleccionada para mostrar el detalle
+  const [notificacionAbierta, setNotificacionAbierta] =
+    useState<Notificacion | null>(null);
+
   const [procesando, setProcesando] = useState(false);
 
   const cargar = useCallback(async (signal?: AbortSignal) => {
     try {
       setCargando(true);
       setError(null);
-      const datos = await obtenerMisNotificaciones(signal);
-      if (!signal?.aborted) setNotificaciones(datos);
+
+      const [datos, incidencias] = await Promise.all([
+        obtenerMisNotificaciones(signal),
+        // Si falla, la lista se muestra igual, solo sin códigos.
+        obtenerNotificacionesIncidencias(signal).catch(() => null),
+      ]);
+
+      // id de notificación -> código de la incidencia
+      const codigos = new Map(
+        (incidencias?.notificaciones ?? []).map((n) => [
+          n.id,
+          n.referenciaCodigo ?? null,
+        ]),
+      );
+
+      if (!signal?.aborted) {
+        setNotificaciones(
+          datos.map((n) => ({
+            ...n,
+            referenciaCodigo:
+              n.referenciaCodigo ?? codigos.get(n.id) ?? null,
+          })),
+        );
+      }
     } catch (e) {
       if (signal?.aborted) return;
-      setError(e instanceof Error ? e.message : 'No se pudieron cargar las notificaciones.');
+
+      setError(
+        e instanceof Error
+          ? e.message
+          : 'No se pudieron cargar las notificaciones.',
+      );
     } finally {
-      if (!signal?.aborted) setCargando(false);
+      if (!signal?.aborted) {
+        setCargando(false);
+      }
     }
   }, []);
 
   useEffect(() => {
     const controlador = new AbortController();
+
     void cargar(controlador.signal);
-    return () => controlador.abort();
+
+    return () => {
+      controlador.abort();
+    };
   }, [cargar]);
 
-  const noLeidas = useMemo(() => notificaciones.filter((n) => !n.leida).length, [notificaciones]);
+  const noLeidas = useMemo(
+    () => notificaciones.filter((n) => !n.leida).length,
+    [notificaciones],
+  );
 
   const visibles = useMemo(
-    () => (filtro === 'no_leidas' ? notificaciones.filter((n) => !n.leida) : notificaciones),
+    () =>
+      filtro === 'no_leidas'
+        ? notificaciones.filter((n) => !n.leida)
+        : notificaciones,
     [notificaciones, filtro],
   );
 
+  const cerrarDetalle = () => {
+    setAbiertaId(null);
+    setNotificacionAbierta(null);
+  };
+
   async function abrir(n: Notificacion) {
     setAbiertaId(n.id);
+    setNotificacionAbierta(n);
 
     if (!n.leida) {
-      setNotificaciones((prev) => prev.map((x) => (x.id === n.id ? { ...x, leida: true } : x)));
+      // Actualización optimista
+      setNotificaciones((prev) =>
+        prev.map((x) => (x.id === n.id ? { ...x, leida: true } : x)),
+      );
+
       try {
         await marcarComoLeida(n.id);
       } catch {
-        setNotificaciones((prev) => prev.map((x) => (x.id === n.id ? { ...x, leida: false } : x)));
+        // Si falla, devolverla a estado no leído
+        setNotificaciones((prev) =>
+          prev.map((x) => (x.id === n.id ? { ...x, leida: false } : x)),
+        );
       }
     }
   }
 
   async function marcarTodas() {
     if (procesando || noLeidas === 0) return;
+
     setProcesando(true);
+
     try {
       await marcarTodasComoLeidas();
+
       setNotificaciones((prev) => prev.map((n) => ({ ...n, leida: true })));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'No se pudo completar la acción.');
+      setError(
+        e instanceof Error ? e.message : 'No se pudo completar la acción.',
+      );
     } finally {
       setProcesando(false);
     }
@@ -90,12 +172,24 @@ export default function ListaNotificaciones() {
 
   async function eliminar(id: number) {
     const anteriores = notificaciones;
+
     setNotificaciones((prev) => prev.filter((n) => n.id !== id));
+
     try {
       await eliminarNotificacion(id);
+
+      // Si se elimina la notificación abierta, también se cierra el detalle.
+      if (abiertaId === id) {
+        cerrarDetalle();
+      }
     } catch (e) {
       setNotificaciones(anteriores);
-      setError(e instanceof Error ? e.message : 'No se pudo eliminar la notificación.');
+
+      setError(
+        e instanceof Error
+          ? e.message
+          : 'No se pudo eliminar la notificación.',
+      );
     }
   }
 
@@ -107,9 +201,14 @@ export default function ListaNotificaciones() {
             <h1 className="font-brand text-3xl font-bold tracking-tight text-[#095540]">
               Notificaciones
             </h1>
+
             <p className="mt-1.5 text-sm text-slate-600">
               {noLeidas > 0
-                ? `Tiene ${noLeidas} ${noLeidas === 1 ? 'notificación sin leer' : 'notificaciones sin leer'}.`
+                ? `Tiene ${noLeidas} ${
+                    noLeidas === 1
+                      ? 'notificación sin leer'
+                      : 'notificaciones sin leer'
+                  }.`
                 : 'Está al día con sus notificaciones.'}
             </p>
           </div>
@@ -152,6 +251,7 @@ export default function ListaNotificaciones() {
             role="alert"
           >
             <span>{error}</span>
+
             <button
               type="button"
               onClick={() => void cargar()}
@@ -163,9 +263,16 @@ export default function ListaNotificaciones() {
         )}
 
         {cargando && (
-          <div className="space-y-3" role="status" aria-label="Cargando notificaciones">
+          <div
+            className="space-y-3"
+            role="status"
+            aria-label="Cargando notificaciones"
+          >
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-24 animate-pulse rounded-2xl bg-white shadow-sm" />
+              <div
+                key={i}
+                className="h-24 animate-pulse rounded-2xl bg-white shadow-sm"
+              />
             ))}
           </div>
         )}
@@ -173,8 +280,11 @@ export default function ListaNotificaciones() {
         {!cargando && !error && visibles.length === 0 && (
           <div className="rounded-2xl border border-slate-200 bg-white px-6 py-14 text-center shadow-sm">
             <h2 className="text-lg font-bold text-[#095540]">
-              {filtro === 'no_leidas' ? 'No tiene notificaciones sin leer' : 'No tiene notificaciones'}
+              {filtro === 'no_leidas'
+                ? 'No tiene notificaciones sin leer'
+                : 'No tiene notificaciones'}
             </h2>
+
             <p className="mt-2 text-sm text-slate-500">
               Cuando haya novedades, aparecerán aquí.
             </p>
@@ -203,13 +313,22 @@ export default function ListaNotificaciones() {
                   className="min-w-0 flex-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444] focus-visible:ring-offset-2"
                 >
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
-                    <p className={`text-sm text-[#095540] ${n.leida ? 'font-semibold' : 'font-bold'}`}>
+                    <p
+                      className={`text-sm text-[#095540] ${
+                        n.leida ? 'font-semibold' : 'font-bold'
+                      }`}
+                    >
                       {n.titulo}
                     </p>
-                    <span className="text-xs text-slate-400">{tiempoRelativo(n.createdAt)}</span>
+
+                    <span className="text-xs text-slate-400">
+                      {tiempoRelativo(n.createdAt)}
+                    </span>
                   </div>
 
-                  <p className="mt-1 line-clamp-2 text-sm leading-6 text-slate-600">{n.mensaje}</p>
+                  <p className="mt-1 line-clamp-2 text-sm leading-6 text-slate-600">
+                    {n.mensaje}
+                  </p>
 
                   {n.referenciaTipo && (
                     <span className="mt-2 inline-block text-xs font-bold text-[#009444]">
@@ -224,7 +343,12 @@ export default function ListaNotificaciones() {
                   aria-label={`Eliminar notificación: ${n.titulo}`}
                   className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-300 transition hover:bg-red-50 hover:text-red-600"
                 >
-                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <svg
+                    className="h-4 w-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    aria-hidden="true"
+                  >
                     <path
                       d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"
                       stroke="currentColor"
@@ -240,8 +364,13 @@ export default function ListaNotificaciones() {
         )}
       </div>
 
-      {abiertaId !== null && (
-        <DetalleNotificacion notificacionId={abiertaId} onClose={() => setAbiertaId(null)} />
+      {abiertaId !== null && notificacionAbierta && (
+        <DetalleNotificacion
+          notificacionId={abiertaId}
+          notificacion={notificacionAbierta}
+          esAdministrador={esAdministrador}
+          onClose={cerrarDetalle}
+        />
       )}
     </section>
   );

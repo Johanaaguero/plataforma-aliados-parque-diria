@@ -13,10 +13,17 @@ export enum TipoNotificacion {
   NUEVO_EVENTO = 'nuevo_evento',
   NUEVA_CAPACITACION = 'nueva_capacitacion',
   NUEVO_EMPRENDIMIENTO = 'nuevo_emprendimiento',
+
+  // Notificaciones de reservas
   RESERVA_REALIZADA = 'reserva_realizada',
   NUEVA_RESERVA_ADMIN = 'nueva_reserva_admin',
+  RESERVA_APROBADA = 'reserva_aprobada',
+  RESERVA_RECHAZADA = 'reserva_rechazada',
+
+  // Notificaciones de incidencias
   NUEVA_INCIDENCIA = 'nueva_incidencia',
   SEGUIMIENTO_INCIDENCIA = 'seguimiento_incidencia',
+  INCIDENCIA_COMPARTIDA = 'incidencia_compartida',
 }
 
 @Entity('notificaciones')
