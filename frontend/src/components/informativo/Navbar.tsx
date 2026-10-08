@@ -8,7 +8,12 @@ import logoBlanco from '../../../logo-blanco.png';
 
 import TemaInterfaz from '../ui/TemaInterfaz';
 
-import { contarNoLeidas } from '../../services/notificacionesService';
+import {
+  contarNoLeidas,
+  obtenerMisNotificaciones,
+} from '../../services/notificacionesService';
+import useNotificacionToast from '../../hooks/useNotificacionToast';
+import NotificacionToast from '../Notificaciones/NotificacionToast';
 
 interface NavbarProps {
   onRegistro: () => void;
@@ -51,6 +56,8 @@ function Navbar({
   const [navbarVisible, setNavbarVisible] = useState(true);
 
   const [noLeidas, setNoLeidas] = useState(0);
+  const { notificacionActual, procesarNotificaciones, cerrarActual } =
+    useNotificacionToast();
 
   const ultimoScrollY = useRef(0);
   const menuUsuarioRef = useRef<HTMLDivElement>(null);
@@ -123,6 +130,12 @@ function Navbar({
         .catch(() => {
           // Se conserva el valor anterior si ocurre un error.
         });
+
+      obtenerMisNotificaciones(controlador.signal)
+        .then(procesarNotificaciones)
+        .catch(() => {
+          // Un error al consultar la lista no afecta el contador existente.
+        });
     };
 
     actualizar();
@@ -133,7 +146,7 @@ function Navbar({
       controlador.abort();
       window.clearInterval(intervalo);
     };
-  }, [rolAutenticado]);
+  }, [rolAutenticado, procesarNotificaciones]);
 
   const irInicio = () => {
     setMenuAbierto(false);
@@ -763,6 +776,10 @@ function Navbar({
           </div>
         )}
       </div>
+      <NotificacionToast
+        notificacion={notificacionActual}
+        onClose={cerrarActual}
+      />
     </nav>
   );
 }

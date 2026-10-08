@@ -6,7 +6,12 @@ import imagenParque from '../../../assets/parque-hero.jpg';
 import { useConteoEmprendimientos } from '../../../hook/useConteoEmprendimientos';
 import { useConteoEventos } from '../../../hook/useConteoEventos';
 import { obtenerDashboardAdministrador } from '../../../services/dashboardService';
-import { contarNoLeidas } from '../../../services/notificacionesService';
+import {
+  contarNoLeidas,
+  obtenerMisNotificaciones,
+} from '../../../services/notificacionesService';
+import useNotificacionToast from '../../../hooks/useNotificacionToast';
+import NotificacionToast from '../../Notificaciones/NotificacionToast';
 
 interface DashboardAdministradorProps {
   onIrRoles: () => void;
@@ -282,6 +287,8 @@ export default function DashboardAdministrador({
   const [mensajeError, setMensajeError] = useState('');
   const [intento, setIntento] = useState(0);
   const [noLeidas, setNoLeidas] = useState(0);
+  const { notificacionActual, procesarNotificaciones, cerrarActual } =
+    useNotificacionToast();
 
   const { conteo } = useConteoEmprendimientos();
   const { conteo: conteoEventos } = useConteoEventos();
@@ -323,6 +330,12 @@ export default function DashboardAdministrador({
         .catch(() => {
           /* Si falla, se conserva el valor anterior. */
         });
+
+      obtenerMisNotificaciones(controlador.signal)
+        .then(procesarNotificaciones)
+        .catch(() => {
+          /* La consulta del Toast no altera el contador del dashboard. */
+        });
     };
 
     actualizar();
@@ -332,7 +345,7 @@ export default function DashboardAdministrador({
       controlador.abort();
       window.clearInterval(intervalo);
     };
-  }, []);
+  }, [procesarNotificaciones]);
 
   const opciones = [
     { etiqueta: 'Gestión de roles', icono: iconos.roles, accion: onIrRoles },
@@ -698,6 +711,10 @@ export default function DashboardAdministrador({
           </div>
         </section>
       </div>
+      <NotificacionToast
+        notificacion={notificacionActual}
+        onClose={cerrarActual}
+      />
     </main>
   );
 }

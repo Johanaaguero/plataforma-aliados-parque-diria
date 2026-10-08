@@ -535,6 +535,7 @@ function App() {
   const estadoNavegacion = location.state as {
     fromDashboard?: boolean;
     seccionPublica?: 'emprendimientos' | 'eventos';
+    abrirNovedades?: boolean;
   } | null;
 
   const seccionPublicaSolicitada =
@@ -546,6 +547,10 @@ function App() {
         seccionPublicaSolicitada ?? 'inicio'
       );
 
+      if (estadoNavegacion?.abrirNovedades) {
+        setMostrarNovedades(true);
+      }
+
       window.scrollTo({
         top: 0,
         left: 0,
@@ -555,6 +560,7 @@ function App() {
   }, [
     rutaActual,
     seccionPublicaSolicitada,
+    estadoNavegacion?.abrirNovedades,
   ]);
 
   const vieneDelDashboard =
