@@ -6,6 +6,7 @@ import {
 import { Usuario } from '../../../models/Usuario';
 import {
   Notificacion,
+  EstadoNotificacion,
   TipoNotificacion,
 } from '../../../models/Notificacion';
 
@@ -119,6 +120,7 @@ export class NotificacionEmprendimientoService {
       where: {
         usuarioId,
         tipo: TipoNotificacion.NUEVO_EMPRENDIMIENTO,
+        estado: EstadoNotificacion.ACTIVA,
       },
       order: {
         createdAt: 'DESC',
@@ -139,6 +141,7 @@ export class NotificacionEmprendimientoService {
           id,
           usuarioId,
           tipo: TipoNotificacion.NUEVO_EMPRENDIMIENTO,
+          estado: EstadoNotificacion.ACTIVA,
         },
       });
 
