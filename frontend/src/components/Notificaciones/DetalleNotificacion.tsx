@@ -123,6 +123,16 @@ export default function DetalleNotificacion({
   const irAIncidencias = () => {
     onClose();
 
+    if (
+      !esAdministrador &&
+      notificacion?.tipo === 'incidencia_compartida'
+    ) {
+      navigate('/', {
+        state: { fromNotification: true, abrirNovedades: true },
+      });
+      return;
+    }
+
     if (esAdministrador) {
       navigate('/admin/incidencias', {
         state: { fromNotification: true },
