@@ -108,8 +108,11 @@ export default function ListaNotificaciones({
   const [notificaciones, setNotificaciones] = useState<Notificacion[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [exito, setExito] = useState<string | null>(null);
   const [filtro, setFiltro] = useState<Filtro>('todas');
   const [abiertaId, setAbiertaId] = useState<number | null>(null);
+  const [notificacionPendienteEliminar, setNotificacionPendienteEliminar] =
+    useState<number | null>(null);
 
   // Notificación seleccionada para mostrar el detalle
   const [notificacionAbierta, setNotificacionAbierta] =
@@ -246,13 +249,30 @@ export default function ListaNotificaciones({
     }
   }
 
-  async function eliminar(id: number) {
-    const anteriores = notificaciones;
+  function abrirConfirmacionEliminacion(id: number) {
+    setNotificacionPendienteEliminar(id);
+  }
 
+  function cancelarEliminacion() {
+    setNotificacionPendienteEliminar(null);
+  }
+
+  async function confirmarEliminacion() {
+    const id = notificacionPendienteEliminar;
+
+    if (id === null) return;
+
+    setNotificacionPendienteEliminar(null);
+
+    const anteriores = [...notificaciones];
+
+    setExito(null);
     setNotificaciones((prev) => prev.filter((n) => n.id !== id));
 
     try {
       await eliminarNotificacion(id);
+
+      setExito('Notificación eliminada correctamente');
 
       // Si se elimina la notificación abierta, también se cierra el detalle.
       if (abiertaId === id) {
@@ -260,6 +280,7 @@ export default function ListaNotificaciones({
       }
     } catch (e) {
       setNotificaciones(anteriores);
+      setExito(null);
 
       setError(
         e instanceof Error
@@ -329,6 +350,15 @@ export default function ListaNotificaciones({
             </button>
           ))}
         </div>
+
+        {exito && (
+          <div
+            className="mb-4 rounded-xl border border-green-200 bg-white p-4 text-sm text-green-700"
+            role="status"
+          >
+            {exito}
+          </div>
+        )}
 
         {error && (
           <div
@@ -448,7 +478,7 @@ export default function ListaNotificaciones({
 
                 <button
                   type="button"
-                  onClick={() => void eliminar(n.id)}
+                  onClick={() => abrirConfirmacionEliminacion(n.id)}
                   aria-label={`Eliminar notificación: ${n.titulo}`}
                   className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition hover:bg-red-50 hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 dark:text-slate-500 dark:hover:bg-red-950/40 dark:hover:text-red-300"
                 >
@@ -480,6 +510,85 @@ export default function ListaNotificaciones({
           esAdministrador={esAdministrador}
           onClose={cerrarDetalle}
         />
+      )}
+
+      {notificacionPendienteEliminar !== null && (
+        <div
+          className="fixed inset-0 z-[10000] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"
+          role="presentation"
+          onMouseDown={(evento) => {
+            if (evento.target === evento.currentTarget) {
+              cancelarEliminacion();
+            }
+          }}
+          onKeyDown={(evento) => {
+            if (evento.key === 'Escape') {
+              cancelarEliminacion();
+            }
+          }}
+        >
+          <div
+            className="w-full max-w-md rounded-3xl border border-slate-100 bg-white p-6 shadow-2xl sm:p-7"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="titulo-confirmar-eliminacion"
+            aria-describedby="mensaje-confirmar-eliminacion"
+          >
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-red-600">
+              <svg
+                className="h-6 w-6"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                aria-hidden="true"
+              >
+                <path
+                  d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </div>
+
+            <h2
+              id="titulo-confirmar-eliminacion"
+              className="text-xl font-bold tracking-tight text-[#095540]"
+            >
+              Eliminar notificación
+            </h2>
+
+            <p
+              id="mensaje-confirmar-eliminacion"
+              className="mt-2 text-sm leading-relaxed text-slate-600"
+            >
+              ¿Estás seguro de que deseas eliminar esta notificación?
+            </p>
+
+            <p className="mt-1 text-xs text-slate-500">
+              Esta acción quitará la notificación de tu lista.
+            </p>
+
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                autoFocus
+                onClick={cancelarEliminacion}
+                className="rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8DC63F] focus-visible:ring-offset-2"
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                onClick={() => void confirmarEliminacion()}
+                className="rounded-2xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </section>
   );

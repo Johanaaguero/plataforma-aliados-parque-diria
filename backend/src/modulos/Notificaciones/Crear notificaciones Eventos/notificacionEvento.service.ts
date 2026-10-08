@@ -9,6 +9,7 @@ import {
 
 import {
   Notificacion,
+  EstadoNotificacion,
   TipoNotificacion,
 } from '../../../models/Notificacion';
 
@@ -81,6 +82,7 @@ export class NotificacionEventoService {
     return this.notificacionRepo.find({
       where: {
         usuarioId,
+        estado: EstadoNotificacion.ACTIVA,
       },
       order: {
         createdAt: 'DESC',
@@ -100,6 +102,7 @@ export class NotificacionEventoService {
         where: {
           id,
           usuarioId,
+          estado: EstadoNotificacion.ACTIVA,
         },
       });
 

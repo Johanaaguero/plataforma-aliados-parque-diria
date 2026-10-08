@@ -13,6 +13,7 @@ import { EventosCapacitaciones } from '../../../models/EventosCapacitaciones';
 
 import {
   Notificacion,
+  EstadoNotificacion,
   TipoNotificacion,
 } from '../../../models/Notificacion';
 
@@ -35,6 +36,7 @@ export class NotificacionService {
     return await this.repositorio.find({
       where: {
         usuarioId,
+        estado: EstadoNotificacion.ACTIVA,
       },
       order: {
         createdAt: 'DESC',
@@ -51,6 +53,7 @@ export class NotificacionService {
       where: {
         usuarioId,
         leida: false,
+        estado: EstadoNotificacion.ACTIVA,
       },
       order: {
         createdAt: 'DESC',
@@ -67,6 +70,7 @@ export class NotificacionService {
       where: {
         usuarioId,
         leida: false,
+        estado: EstadoNotificacion.ACTIVA,
       },
     });
   }
@@ -109,6 +113,7 @@ export class NotificacionService {
         where: {
           id,
           usuarioId,
+          estado: EstadoNotificacion.ACTIVA,
         },
       });
 
@@ -487,6 +492,7 @@ export class NotificacionService {
         where: {
           id,
           usuarioId,
+          estado: EstadoNotificacion.ACTIVA,
         },
       });
 
@@ -514,6 +520,7 @@ export class NotificacionService {
       {
         usuarioId,
         leida: false,
+        estado: EstadoNotificacion.ACTIVA,
       },
       {
         leida: true,
@@ -539,6 +546,7 @@ export class NotificacionService {
         where: {
           id,
           usuarioId,
+          estado: EstadoNotificacion.ACTIVA,
         },
       });
 
@@ -548,9 +556,9 @@ export class NotificacionService {
       );
     }
 
-    await this.repositorio.remove(
-      notificacion,
-    );
+    notificacion.estado = EstadoNotificacion.ELIMINADA;
+
+    await this.repositorio.save(notificacion);
 
     return {
       mensaje:

@@ -4,6 +4,7 @@ import { Incidencia } from '../../../models/Incidencia';
 import { Usuario } from '../../../models/Usuario';
 import {
   Notificacion,
+  EstadoNotificacion,
   TipoNotificacion,
 } from '../../../models/Notificacion';
 import { incidenciaCorreoService } from './Correo/Incidencia.correo.service';
@@ -325,6 +326,7 @@ export class NotificacionIncidenciaService {
             TipoNotificacion.SEGUIMIENTO_INCIDENCIA,
             TipoNotificacion.INCIDENCIA_COMPARTIDA,
           ]),
+          estado: EstadoNotificacion.ACTIVA,
         },
         order: {
           createdAt: 'DESC',
@@ -352,6 +354,7 @@ export class NotificacionIncidenciaService {
             TipoNotificacion.SEGUIMIENTO_INCIDENCIA,
             TipoNotificacion.INCIDENCIA_COMPARTIDA,
           ]),
+          estado: EstadoNotificacion.ACTIVA,
         },
       });
 

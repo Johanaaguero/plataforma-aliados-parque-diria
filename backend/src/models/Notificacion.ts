@@ -26,6 +26,11 @@ export enum TipoNotificacion {
   INCIDENCIA_COMPARTIDA = 'incidencia_compartida',
 }
 
+export enum EstadoNotificacion {
+  ACTIVA = 'activa',
+  ELIMINADA = 'eliminada',
+}
+
 @Entity('notificaciones')
 export class Notificacion {
   @PrimaryGeneratedColumn()
@@ -68,6 +73,13 @@ export class Notificacion {
   leida!: boolean;
 
   @Column({
+    type: 'enum',
+    enum: EstadoNotificacion,
+    default: EstadoNotificacion.ACTIVA,
+  })
+  estado!: EstadoNotificacion;
+
+  @Column({
     type: 'int',
     nullable: true,
     name: 'referencia_id',
@@ -94,6 +106,7 @@ export class Notificacion {
     titulo?: string;
     mensaje?: string;
     leida?: boolean;
+    estado?: EstadoNotificacion;
     referenciaId?: number | null;
     referenciaTipo?: string | null;
   }) {
@@ -123,6 +136,10 @@ export class Notificacion {
       this.leida = params.leida;
     }
 
+    if (params.estado !== undefined) {
+      this.estado = params.estado;
+    }
+
     if (params.referenciaId !== undefined) {
       this.referenciaId = params.referenciaId;
     }
@@ -140,6 +157,7 @@ export class Notificacion {
       titulo: this.titulo,
       mensaje: this.mensaje,
       leida: this.leida,
+      estado: this.estado,
       referenciaId: this.referenciaId,
       referenciaTipo: this.referenciaTipo,
       createdAt: this.createdAt,
