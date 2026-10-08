@@ -24,6 +24,7 @@ import { Comunicado } from './models/Comunicado';
 import { Resena } from './models/Resena';
 import { ConsultaEmprendimiento } from './models/ConsultaEmprendimiento';
 import { Notificacion } from './models/Notificacion';
+import { ConversacionChatbot } from './models/ConversacionChatbot';
 
 dotenv.config();
 
@@ -60,17 +61,18 @@ timezone: '-06:00',
     Emprendimiento,
     EmprendimientoImagen,
     EventoCapacitacionImagen,
-      EventosCapacitaciones,
-      Participantes,
-        Reserva,
-          Incidencia,
-  IncidenciaEvidencia,
-  IncidenciaHistorial,
-  Reporte,
-  Comunicado,
-  Resena,
-  ConsultaEmprendimiento,
+    EventosCapacitaciones,
+    Participantes,
+    Reserva,
+    Incidencia,
+    IncidenciaEvidencia,
+    IncidenciaHistorial,
+    Reporte,
+    Comunicado,
+    Resena,
+    ConsultaEmprendimiento,
     Notificacion,
+    ConversacionChatbot,
 
   ],
  

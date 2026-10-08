@@ -60,6 +60,7 @@ import MapaParque from './components/informativo/MapaParque';
 
 import ListaNotificaciones from './components/Notificaciones/ListaNotificaciones';
 
+import Chatbot from './components/Chatbot/Chatbot';
 
 import type { Emprendimiento } from './services/emprendimientoService';
 import ReportesPage from './components/Reportes y Estatisticas/ReportesPage';
@@ -1623,6 +1624,8 @@ function App() {
 
           <Footer />
           <ModalNovedades abierto={mostrarNovedades} onCerrar={() => setMostrarNovedades(false)} />
+          
+          <Chatbot />
 
           {mostrarErrorModal &&
             errorAutenticacion && (
@@ -1662,8 +1665,12 @@ function App() {
                 </div>
               </div>
             )}
+
+            
         </>
       )}
+
+
     </>
   );
 }
