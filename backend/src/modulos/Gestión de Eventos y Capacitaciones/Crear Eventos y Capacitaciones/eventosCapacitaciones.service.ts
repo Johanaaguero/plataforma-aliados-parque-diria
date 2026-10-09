@@ -46,6 +46,12 @@ export interface CreateEventoCapacitacionDTO {
   estado?: EstadoEventoCapacitacion;
 
   temporada?: Temporada | null;
+
+  esPago?: boolean;
+
+  precio?: number;
+
+  politicasCancelacion?: string | null;
 }
 
 export type UpdateEventoCapacitacionDTO =
@@ -107,6 +113,16 @@ export class EventosCapacitacionesService {
     const esBorrador =
       estado ===
       EstadoEventoCapacitacion.BORRADOR;
+
+    if (data.esPago !== undefined && typeof data.esPago !== 'boolean') {
+      errores.push('El campo esPago debe ser booleano.');
+    }
+    if (data.precio !== undefined && (!Number.isInteger(data.precio) || data.precio < 0)) {
+      errores.push('El precio debe ser un número entero mayor o igual a 0.');
+    }
+    if (data.esPago === true && (!data.precio || data.precio <= 0)) {
+      errores.push('Las actividades de pago deben indicar un precio mayor que 0.');
+    }
 
     if (
       data.nombre !== undefined &&

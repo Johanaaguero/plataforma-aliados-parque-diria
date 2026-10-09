@@ -3,12 +3,17 @@ import { Router } from 'express';
 import { verificarToken } from '../../../../middlewares/auth.middleware';
 
 import { InscripcionesController } from './inscripciones.controller';
+import { InscripcionController } from '../inscripcion.controller';
+import { upload } from '../../../../middlewares/upload';
 
 const router = Router();
 
 const controller = new InscripcionesController();
+const inscripcionController = new InscripcionController();
 
 export const reservasRouter = Router();
+
+reservasRouter.post('/:id/comprobante', verificarToken, upload.single('comprobante'), (req, res) => inscripcionController.subirComprobante(req, res));
 
 reservasRouter.patch(
   '/:id/cancelar',

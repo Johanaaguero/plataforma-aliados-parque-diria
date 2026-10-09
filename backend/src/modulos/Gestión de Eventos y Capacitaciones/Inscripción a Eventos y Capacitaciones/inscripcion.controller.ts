@@ -1,4 +1,8 @@
 import { Request, Response } from 'express';
+import { AppDataSource } from '../../../data-source';
+import { Reserva } from '../../../models/Reserva';
+import { mkdir, writeFile } from 'fs/promises';
+import path from 'path';
 import { DatosReserva, InscripcionService } from './inscripcion.service';
 import { serializarFechaCalendario, serializarFechaUtc } from '../../../utils/fechas';
 
@@ -93,6 +97,30 @@ function manejarError(res: Response, error: unknown) {
 }
 
 export class InscripcionController {
+  async subirComprobante(req: Request, res: Response) {
+    try {
+      const reservaId = Number(req.params.id);
+      if (!req.usuario?.id || !Number.isSafeInteger(reservaId) || !req.file) {
+        return res.status(400).json({ ok: false, message: 'Reserva o comprobante inválido.' });
+      }
+      const repo = AppDataSource.getRepository(Reserva);
+      const reserva = await repo.findOne({ where: { id: reservaId }, relations: { eventoCapacitacion: true } });
+      if (!reserva || reserva.usuarioId !== req.usuario.id) return res.status(404).json({ ok: false, message: 'Reserva no encontrada.' });
+      if (!reserva.eventoCapacitacion.esPago) return res.status(409).json({ ok: false, message: 'Esta actividad no requiere comprobante de pago.' });
+      if (reserva.fechaExpiracionPreReserva && reserva.fechaExpiracionPreReserva < new Date()) return res.status(409).json({ ok: false, message: 'La pre-reserva ha expirado.' });
+      const extension = req.file.mimetype === 'image/png' ? 'png' : req.file.mimetype === 'image/webp' ? 'webp' : 'jpg';
+      const directorio = path.join(process.cwd(), 'uploads', 'comprobantes');
+      await mkdir(directorio, { recursive: true });
+      const nombre = `reserva-${reserva.id}-${Date.now()}.${extension}`;
+      await writeFile(path.join(directorio, nombre), req.file.buffer);
+      reserva.comprobanteUrl = `/uploads/comprobantes/${nombre}`;
+      reserva.fechaExpiracionPreReserva = null;
+      await repo.save(reserva);
+      return res.status(200).json({ ok: true, data: { comprobanteUrl: reserva.comprobanteUrl } });
+    } catch {
+      return res.status(500).json({ ok: false, message: 'No se pudo subir el comprobante.' });
+    }
+  }
   async consultarReserva(req: Request, res: Response) {
     try {
       if (!req.usuario?.id) {
@@ -188,6 +216,8 @@ export class InscripcionController {
           correo: resultado.reserva.correo,
           telefono: resultado.reserva.telefono,
           estado: resultado.reserva.estado,
+          comprobanteUrl: resultado.reserva.comprobanteUrl,
+          fechaExpiracionPreReserva: serializarFechaUtc(resultado.reserva.fechaExpiracionPreReserva),
           createdAt: serializarFechaUtc(resultado.reserva.createdAt),
           updatedAt: serializarFechaUtc(resultado.reserva.updatedAt),
           cuposDisponibles: resultado.cuposDisponibles,
@@ -270,6 +300,8 @@ export class InscripcionController {
             resultado.reserva.telefono,
           estado:
             resultado.reserva.estado,
+          comprobanteUrl: resultado.reserva.comprobanteUrl,
+          fechaExpiracionPreReserva: serializarFechaUtc(resultado.reserva.fechaExpiracionPreReserva),
           createdAt: serializarFechaUtc(resultado.reserva.createdAt),
           updatedAt: serializarFechaUtc(resultado.reserva.updatedAt),
           cuposDisponibles:

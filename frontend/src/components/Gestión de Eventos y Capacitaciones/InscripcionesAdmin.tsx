@@ -754,6 +754,9 @@ const registrosFiltrados = useMemo(() => {
                           </div>
 
                           <div className="flex flex-col gap-2 sm:flex-row">
+                            {inscripcion.esPago && inscripcion.comprobanteUrl && (
+                              <a href={`${(import.meta.env.VITE_API_URL?.trim() || 'http://localhost:3000').replace(/\/+$/, '')}${inscripcion.comprobanteUrl}`} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center rounded-xl border border-sky-200 bg-white px-4 py-2.5 text-sm font-semibold text-sky-700 hover:bg-sky-50">Ver comprobante</a>
+                            )}
                             <button
                               type="button"
                               onClick={() => void cambiarEstadoReserva(inscripcion.id, 'rechazada')}

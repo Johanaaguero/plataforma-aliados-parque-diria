@@ -31,6 +31,8 @@ export interface ReservaResponse extends DatosReserva {
   createdAt: string;
   updatedAt: string;
   cuposDisponibles: number | null;
+  comprobanteUrl?: string | null;
+  fechaExpiracionPreReserva?: string | null;
 }
 
 export interface ConsultaReservaResponse {
@@ -110,4 +112,15 @@ export async function editarReserva(
       mensajeError: 'No se pudo actualizar la reserva.',
     },
   );
+}
+
+export async function subirComprobanteReserva(reservaId: number, comprobante: File): Promise<{ comprobanteUrl: string }> {
+  const datos = new FormData();
+  datos.append('comprobante', comprobante);
+  return api.solicitar<{ comprobanteUrl: string }>(`/reservas/${reservaId}/comprobante`, { method: 'POST', body: datos }, {
+    incluirAuth: true,
+    incluirContentType: false,
+    desempaquetarData: true,
+    mensajeError: 'No se pudo subir el comprobante de pago.',
+  });
 }

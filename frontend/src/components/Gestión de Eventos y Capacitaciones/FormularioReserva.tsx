@@ -6,6 +6,7 @@ import type { EventoCapacitacion } from '../../services/eventosCapacitacionesSer
 import {
   crearReserva,
   editarReserva,
+  subirComprobanteReserva,
   type DatosReserva,
 } from '../../services/inscripcionService';
 import CountrySelectPersonalizado from '../CountrySelectPersonalizado';
@@ -106,6 +107,7 @@ export default function FormularioReserva({
 
   const [enviado, setEnviado] =
     useState(false);
+  const [comprobante, setComprobante] = useState<File | null>(null);
 
   const primerCampoRef =
     useRef<HTMLInputElement>(null);
@@ -229,6 +231,11 @@ export default function FormularioReserva({
       return;
     }
 
+    if (evento.esPago && !reservaInicial && !comprobante) {
+      setMensajeError('Adjunta el comprobante de pago para completar la pre-reserva.');
+      return;
+    }
+
     setEnviando(true);
     setMensajeError(null);
 
@@ -242,6 +249,10 @@ export default function FormularioReserva({
             evento.id,
             formulario,
           );
+
+      if (evento.esPago && !reservaInicial && comprobante) {
+        await subirComprobanteReserva(resultado.id, comprobante);
+      }
 
       setEnviado(true);
 
@@ -521,6 +532,16 @@ export default function FormularioReserva({
                 {mensajeCampo('telefono')}
               </label>
             </div>
+
+            {evento.esPago && !reservaInicial && (
+              <div className="mt-5 rounded-xl border border-sky-200 bg-sky-50 p-4">
+                <p className="text-sm font-bold text-sky-900">
+                  Actividad de pago — ₡{(evento.precio ?? 0).toLocaleString('es-CR')}
+                </p>
+                <p className="mt-1 text-xs text-sky-800">Adjunta una imagen JPG, PNG o WEBP de tu comprobante de transferencia/SINPE. La pre-reserva vence en 24 horas si no se adjunta.</p>
+                <input type="file" accept="image/jpeg,image/png,image/webp" className="mt-3 block w-full text-sm" disabled={enviando} onChange={(event) => setComprobante(event.target.files?.[0] ?? null)} />
+              </div>
+            )}
 
             <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <button

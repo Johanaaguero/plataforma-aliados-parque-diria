@@ -488,7 +488,7 @@ function App() {
     );
 
     await new Promise((resolver) =>
-      window.setTimeout(resolver, 500)
+      window.setTimeout(resolver, 1800)
     );
 
     try {

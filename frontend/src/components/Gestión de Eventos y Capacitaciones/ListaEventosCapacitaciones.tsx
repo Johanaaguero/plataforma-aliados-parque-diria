@@ -968,6 +968,12 @@ export default function ListaEventosCapacitaciones({
             </span>
           </div>
 
+          <div className="absolute bottom-4 left-4">
+            <span className={`inline-flex rounded-lg px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.1em] shadow-md ${item.esPago ? 'bg-sky-600 text-white' : 'bg-emerald-600 text-white'}`}>
+              {item.esPago ? `De pago · ₡${(item.precio ?? 0).toLocaleString('es-CR')}` : 'Gratuito'}
+            </span>
+          </div>
+
           {esAdministrador && (
             <div className="absolute right-4 top-4">
               <button

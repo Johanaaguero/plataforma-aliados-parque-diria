@@ -20,6 +20,8 @@ export interface InscripcionAdministrativa {
   fechaInscripcion: string | null;
   estado: 'pendiente' | 'aprobada' | 'rechazada' | 'cancelada' | string;
   origen: 'participante' | 'reserva';
+  esPago?: boolean;
+  comprobanteUrl?: string | null;
 }
 
 export const obtenerInscripcionesAdministrativas = async (): Promise<InscripcionAdministrativa[]> => {

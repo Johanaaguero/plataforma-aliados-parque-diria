@@ -35,6 +35,8 @@ export interface InscripcionAdministrativaDTO {
   fechaInscripcion: Date | string | null;
   estado: string;
   origen: 'participante' | 'reserva';
+  esPago?: boolean;
+  comprobanteUrl?: string | null;
 }
 
 export const listarInscripcionesAdministrativas = async (): Promise<
@@ -57,6 +59,7 @@ export const listarInscripcionesAdministrativas = async (): Promise<
       'participante.eventoCapacitacionId AS eventoCapacitacionId',
       'evento.nombre AS nombreActividad',
       'evento.tipoActividad AS tipoActividad',
+      'evento.esPago AS esPago',
       "DATE_FORMAT(evento.fecha, '%Y-%m-%d') AS fechaActividad",
       'participante.createdAt AS fechaInscripcion',
     ])
@@ -90,6 +93,8 @@ export const listarInscripcionesAdministrativas = async (): Promise<
       ),
       estado: 'confirmada',
       origen: 'participante' as const,
+      esPago: Boolean(registro.esPago),
+      comprobanteUrl: null,
     };
   });
 
@@ -113,6 +118,8 @@ export const listarInscripcionesAdministrativas = async (): Promise<
       'reserva.eventoCapacitacionId AS eventoCapacitacionId',
       'evento.nombre AS nombreActividad',
       'evento.tipoActividad AS tipoActividad',
+      'evento.esPago AS esPago',
+      'reserva.comprobanteUrl AS comprobanteUrl',
       "DATE_FORMAT(evento.fecha, '%Y-%m-%d') AS fechaActividad",
       'reserva.createdAt AS fechaInscripcion',
       'reserva.estado AS estado',
@@ -149,6 +156,8 @@ export const listarInscripcionesAdministrativas = async (): Promise<
       ),
       estado: registro.estado,
       origen: 'reserva' as const,
+      esPago: Boolean(registro.esPago),
+      comprobanteUrl: registro.comprobanteUrl ?? null,
     })),
   ].sort(
     (a, b) =>

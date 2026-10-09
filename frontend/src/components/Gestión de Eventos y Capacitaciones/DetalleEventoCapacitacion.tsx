@@ -429,6 +429,13 @@ export default function DetalleEventoCapacitacion({
                 'Sin descripción disponible.'}
             </p>
 
+            <div className={`mt-4 inline-flex rounded-full px-3 py-1 text-sm font-bold ${evento.esPago ? 'bg-sky-100 text-sky-800' : 'bg-emerald-100 text-emerald-800'}`}>
+              {evento.esPago ? `De pago - ₡${(evento.precio ?? 0).toLocaleString('es-CR')}` : 'Gratuito'}
+            </div>
+            {evento.esPago && evento.politicasCancelacion && (
+              <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"><strong>Políticas de cancelación:</strong> {evento.politicasCancelacion}</p>
+            )}
+
             <dl className="mt-4 grid grid-cols-2 gap-3 sm:gap-4">
               <div>
                 <dt className="text-xs font-bold uppercase tracking-wider text-slate-400">

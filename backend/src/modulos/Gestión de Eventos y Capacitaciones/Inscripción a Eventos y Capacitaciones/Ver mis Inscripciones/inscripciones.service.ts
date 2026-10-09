@@ -115,6 +115,9 @@ export const listarMisInscripciones = async (
       nombreActividad: reserva.eventoCapacitacion.nombre ?? '',
       tipoActividad: reserva.eventoCapacitacion.tipoActividad,
       descripcion: reserva.eventoCapacitacion.descripcion ?? null,
+      esPago: reserva.eventoCapacitacion.esPago,
+      precio: reserva.eventoCapacitacion.precio,
+      politicasCancelacion: reserva.eventoCapacitacion.politicasCancelacion,
       ubicacion: reserva.eventoCapacitacion.lugar ?? null,
       horaInicio: reserva.eventoCapacitacion.hora ?? null,
       horaFin: null,
@@ -173,6 +176,15 @@ export const cancelarInscripcion = async (
       throw error;
     }
 
+    if (evento.esPago) {
+      const fechaEvento = new Date(`${evento.fecha ?? ''}T${evento.hora ?? '00:00'}:00`);
+      if (Number.isNaN(fechaEvento.getTime()) || fechaEvento.getTime() - Date.now() < 48 * 60 * 60 * 1000) {
+        const error = new Error('Las actividades de pago solo pueden cancelarse con al menos 48 horas de anticipación.');
+        error.name = 'PaymentCancellationWindowError';
+        throw error;
+      }
+    }
+
     const fechaCancelacion = new Date();
     participante.estado = EstadoReserva.CANCELADA;
     participante.fechaCancelacion = fechaCancelacion;
@@ -220,6 +232,15 @@ export const cancelarReserva = async (
       const error = new Error('La actividad asociada a la reserva no existe.');
       error.name = 'NotFoundError';
       throw error;
+    }
+
+    if (evento.esPago) {
+      const fechaEvento = new Date(`${evento.fecha ?? ''}T${evento.hora ?? '00:00'}:00`);
+      if (Number.isNaN(fechaEvento.getTime()) || fechaEvento.getTime() - Date.now() < 48 * 60 * 60 * 1000) {
+        const error = new Error('Las actividades de pago solo pueden cancelarse con al menos 48 horas de anticipación.');
+        error.name = 'PaymentCancellationWindowError';
+        throw error;
+      }
     }
 
     if (reserva.estado === EstadoReservaNueva.APROBADA) {

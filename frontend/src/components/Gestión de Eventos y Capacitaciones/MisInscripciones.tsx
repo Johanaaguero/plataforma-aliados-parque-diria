@@ -1169,6 +1169,9 @@ export default function MisInscripciones() {
                 reserva permanecerá en su historial como
                 cancelada.
               </p>
+              {reservaACancelar.esPago && (
+                <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">{reservaACancelar.politicasCancelacion || 'Las actividades de pago solo pueden cancelarse con al menos 48 horas de anticipación.'}</p>
+              )}
 
               <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                 <button

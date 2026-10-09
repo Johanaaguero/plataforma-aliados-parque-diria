@@ -37,6 +37,9 @@ export interface EventoCapacitacionActual {
   edadMinima: number | null;
   edadMaxima: number | null;
   estado: EstadoEventoCapacitacion;
+  esPago?: boolean;
+  precio?: number;
+  politicasCancelacion?: string | null;
   temporada: Temporada | null;
 }
 
@@ -149,6 +152,9 @@ export default function EdicionEventoCapacitacion({
   const [edadMinima, setEdadMinima] = useState('');
   const [edadMaxima, setEdadMaxima] = useState('');
   const [imagenesNuevas, setImagenesNuevas] = useState<File[]>([]);
+  const [esPago, setEsPago] = useState(false);
+  const [precio, setPrecio] = useState('');
+  const [politicasCancelacion, setPoliticasCancelacion] = useState('');
   const [imagenesExistentes, setImagenesExistentes] = useState<ImagenExistente[]>([]);
   const [cargandoImagenes, setCargandoImagenes] = useState(false);
   const [imagenesEliminando, setImagenesEliminando] = useState<number[]>([]);
@@ -178,6 +184,9 @@ export default function EdicionEventoCapacitacion({
     setCupoMaximo(evento.cupoMaximo != null ? String(evento.cupoMaximo) : '');
     setEdadMinima(evento.edadMinima != null ? String(evento.edadMinima) : '');
     setEdadMaxima(evento.edadMaxima != null ? String(evento.edadMaxima) : '');
+    setEsPago(evento.esPago ?? false);
+    setPrecio(evento.precio != null ? String(evento.precio) : '');
+    setPoliticasCancelacion(evento.politicasCancelacion ?? '');
     setImagenesNuevas([]);
     setErrores({});
     setMensaje('');
@@ -414,6 +423,9 @@ export default function EdicionEventoCapacitacion({
         edadMinima: edadMinima.trim() ? Number(edadMinima) : null,
         edadMaxima: edadMaxima.trim() ? Number(edadMaxima) : null,
         temporada: temporada || null,
+        esPago,
+        precio: esPago ? Number(precio) : 0,
+        politicasCancelacion: esPago ? politicasCancelacion.trim() || null : null,
       };
 
       // Solo mandamos tipoActividad si el usuario lo pudo cambiar
@@ -689,6 +701,11 @@ export default function EdicionEventoCapacitacion({
                 />
                 {errores.lugar && <span className={ERROR_CLASS} role="alert">{errores.lugar}</span>}
               </div>
+            </div>
+
+            <div className="mt-5 rounded-2xl border border-[#095540]/15 bg-emerald-50/50 p-4">
+              <label className="flex items-center gap-3 text-sm font-semibold text-[#095540]"><input type="checkbox" checked={esPago} onChange={(e) => setEsPago(e.target.checked)} disabled={estado === 'cargando' || segundosRestantes !== null} /> Es actividad de pago</label>
+              {esPago && <div className="mt-3 grid gap-3 sm:grid-cols-2"><label className={LABEL_CLASS}>Precio (₡)<input type="number" min={1} className={`${INPUT_BASE_CLASS} ${INPUT_DEFAULT_CLASS}`} value={precio} onChange={(e) => setPrecio(e.target.value)} /></label><label className={LABEL_CLASS}>Políticas de cancelación<textarea className={`${INPUT_BASE_CLASS} ${INPUT_DEFAULT_CLASS}`} value={politicasCancelacion} onChange={(e) => setPoliticasCancelacion(e.target.value)} /></label></div>}
             </div>
 
             <div className="mt-4 sm:mt-5">

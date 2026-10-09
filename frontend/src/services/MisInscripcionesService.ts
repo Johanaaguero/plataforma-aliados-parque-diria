@@ -45,6 +45,9 @@ export interface MiInscripcion {
   fechaActividad: string | null;
   fechaInscripcion: string | null;
   origen?: 'participante' | 'reserva';
+  esPago?: boolean;
+  precio?: number;
+  politicasCancelacion?: string | null;
 }
 
 // NOTA: ruta asumida. Cambia '/inscripciones/mias' por la ruta real del backend

@@ -302,7 +302,7 @@ export class InscripcionService {
       }
 
       const reserva = reservaExistente
-        ? Object.assign(reservaExistente, {
+          ? Object.assign(reservaExistente, {
             nombreCompleto: datosValidados.nombreCompleto,
             fechaNacimiento: datosValidados.fechaNacimiento,
             tipoIdentificacion: datosValidados.tipoIdentificacion,
@@ -310,6 +310,8 @@ export class InscripcionService {
             correo: datosValidados.correo,
             telefono: datosValidados.telefono,
             estado: EstadoReservaNueva.PENDIENTE,
+            comprobanteUrl: null,
+            fechaExpiracionPreReserva: evento.esPago ? new Date(Date.now() + 24 * 60 * 60 * 1000) : null,
           })
         : reservasRepo.create({
             usuarioId,
@@ -321,6 +323,7 @@ export class InscripcionService {
             correo: datosValidados.correo,
             telefono: datosValidados.telefono,
             estado: EstadoReservaNueva.PENDIENTE,
+            fechaExpiracionPreReserva: evento.esPago ? new Date(Date.now() + 24 * 60 * 60 * 1000) : null,
           });
 
       // Corrección 2: una sola resta (antes estaba duplicada)

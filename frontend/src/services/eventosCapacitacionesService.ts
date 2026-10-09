@@ -15,6 +15,9 @@ export interface EventoCapacitacion {
   cuposDisponibles?: number | null;
   estado: 'borrador' | 'publicado' | 'no_publicado' | 'desactivado';
   temporada: TemporadaEvento | null;
+  esPago: boolean;
+  precio: number;
+  politicasCancelacion: string | null;
   createdAt?: string;
   updatedAt?: string;
 }

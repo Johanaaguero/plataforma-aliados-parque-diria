@@ -104,6 +104,12 @@ export class Reserva {
   })
   estado!: EstadoReserva;
 
+  @Column({ type: 'varchar', length: 500, name: 'comprobante_url', nullable: true })
+  comprobanteUrl!: string | null;
+
+  @Column({ type: 'datetime', name: 'fecha_expiracion_pre_reserva', nullable: true })
+  fechaExpiracionPreReserva!: Date | null;
+
   @CreateDateColumn({
     name: 'created_at',
   })

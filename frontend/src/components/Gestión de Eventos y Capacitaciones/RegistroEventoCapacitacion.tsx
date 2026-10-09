@@ -154,6 +154,9 @@ export default function RegistroEventoCapacitacion({
   const [edadMinima, setEdadMinima] = useState('');
   const [edadMaxima, setEdadMaxima] = useState('');
   const [imagenes, setImagenes] = useState<File[]>([]);
+  const [esPago, setEsPago] = useState(false);
+  const [precio, setPrecio] = useState('');
+  const [politicasCancelacion, setPoliticasCancelacion] = useState('');
 
   const [mensaje, setMensaje] = useState('');
   const [estado, setEstado] = useState<Estado>('idle');
@@ -456,6 +459,9 @@ export default function RegistroEventoCapacitacion({
               : null,
             estado: estadoRegistro,
             temporada: temporada || null,
+            esPago,
+            precio: esPago ? Number(precio) : 0,
+            politicasCancelacion: esPago ? politicasCancelacion.trim() || null : null,
           }),
         },
       );
@@ -1139,6 +1145,23 @@ export default function RegistroEventoCapacitacion({
                 </span>
               )}
             </div>
+          </div>
+
+          <div className="mt-4 sm:mt-5">
+            <label className="flex items-center gap-3 rounded-2xl border border-[#095540]/15 bg-emerald-50/50 p-4 text-sm font-semibold text-[#095540]">
+              <input type="checkbox" checked={esPago} onChange={(e) => setEsPago(e.target.checked)} disabled={estado === 'cargando' || segundosRestantes !== null} />
+              Es actividad de pago
+            </label>
+            {esPago && (
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <label className={LABEL_CLASS}>Precio (₡)
+                  <input type="number" min={1} step={1} required className={`${INPUT_BASE_CLASS} ${INPUT_DEFAULT_CLASS}`} value={precio} onChange={(e) => setPrecio(e.target.value)} disabled={estado === 'cargando' || segundosRestantes !== null} />
+                </label>
+                <label className={LABEL_CLASS}>Políticas de cancelación
+                  <textarea className={`${INPUT_BASE_CLASS} ${INPUT_DEFAULT_CLASS}`} value={politicasCancelacion} onChange={(e) => setPoliticasCancelacion(e.target.value)} disabled={estado === 'cargando' || segundosRestantes !== null} placeholder="Ej. Cancelaciones con 48 horas de anticipación." />
+                </label>
+              </div>
+            )}
           </div>
 
           <div className="mt-4 sm:mt-5">

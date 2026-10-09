@@ -120,6 +120,15 @@ export class EventosCapacitaciones {
   })
   temporada!: Temporada | null;
 
+  @Column({ type: 'boolean', name: 'es_pago', default: false })
+  esPago!: boolean;
+
+  @Column({ type: 'int', default: 0 })
+  precio!: number;
+
+  @Column({ type: 'text', name: 'politicas_cancelacion', nullable: true })
+  politicasCancelacion!: string | null;
+
   @OneToMany(
     () => EventoCapacitacionImagen,
     (imagen) => imagen.eventoCapacitacion,
@@ -151,6 +160,9 @@ export class EventosCapacitaciones {
     edadMaxima?: number | null;
     estado?: EstadoEventoCapacitacion;
     temporada?: Temporada | null;
+    esPago?: boolean;
+    precio?: number;
+    politicasCancelacion?: string | null;
   }) {
     if (!params) return;
 
@@ -217,6 +229,9 @@ export class EventosCapacitaciones {
     if (params.temporada !== undefined) {
       this.temporada = params.temporada;
     }
+    if (params.esPago !== undefined) this.esPago = params.esPago;
+    if (params.precio !== undefined) this.precio = params.precio;
+    if (params.politicasCancelacion !== undefined) this.politicasCancelacion = params.politicasCancelacion;
   }
 
   toPublic() {
@@ -237,6 +252,9 @@ export class EventosCapacitaciones {
       edadMaxima: this.edadMaxima,
       estado: this.estado,
       temporada: this.temporada,
+      esPago: this.esPago,
+      precio: this.precio,
+      politicasCancelacion: this.politicasCancelacion,
       createdAt: serializarFechaUtc(this.createdAt),
       updatedAt: serializarFechaUtc(this.updatedAt),
     };
