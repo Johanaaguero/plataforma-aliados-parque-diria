@@ -68,7 +68,7 @@ const serializarIncidencia = (incidencia: Incidencia) => {
 
     tieneCorreoUsuario: Boolean(usuarioReporta?.correo),
 
-    codigo: incidencia.codigo || '00000000',
+    codigo: incidencia.codigo || '#INC-00000000',
 
     fechaRegistro: formatearFechaIncidencia(
       incidencia.fechaRegistro,
@@ -113,30 +113,6 @@ export const registrarIncidencia = async (
       usuarioAutenticado !== null && esAnonimo !== true
         ? usuarioAutenticado
         : null;
-
-    if (usuarioReporta === null) {
-      if (
-        typeof nombreContacto !== 'string' ||
-        !nombreContacto.trim()
-      ) {
-        res.status(400).json({
-          mensaje:
-            'El nombre completo es obligatorio para reportes anónimos.',
-        });
-        return;
-      }
-
-      if (
-        typeof telefonoContacto !== 'string' ||
-        !telefonoContacto.trim()
-      ) {
-        res.status(400).json({
-          mensaje:
-            'El número telefónico es obligatorio para reportes anónimos.',
-        });
-        return;
-      }
-    }
 
     // ============================================================
     // VALIDAR TÍTULO
@@ -307,11 +283,15 @@ export const registrarIncidencia = async (
       usuarioReportaId: usuarioReporta,
       nombreContacto:
         usuarioReporta === null
-          ? nombreContacto.trim()
+          ? typeof nombreContacto === 'string'
+            ? nombreContacto.trim() || null
+            : null
           : null,
       telefonoContacto:
         usuarioReporta === null
-          ? telefonoContacto.trim()
+          ? typeof telefonoContacto === 'string'
+            ? telefonoContacto.trim() || null
+            : null
           : null,
     });
 

@@ -19,7 +19,8 @@ type Filtro =
   | 'incidencias'
   | 'eventos'
   | 'reservas'
-  | 'emprendimientos';
+  | 'emprendimientos'
+  | 'comunicados';
 
 const filtros: { id: Filtro; etiqueta: string }[] = [
   { id: 'todas', etiqueta: 'Todas' },
@@ -28,6 +29,7 @@ const filtros: { id: Filtro; etiqueta: string }[] = [
   { id: 'eventos', etiqueta: 'Eventos y capacitaciones' },
   { id: 'reservas', etiqueta: 'Reservas' },
   { id: 'emprendimientos', etiqueta: 'Emprendimientos' },
+  { id: 'comunicados', etiqueta: 'Comunicados' },
 ];
 
 function categoriaNotificacion(
@@ -49,6 +51,7 @@ function categoriaNotificacion(
   ) return 'reservas';
 
   if (tipo === 'nuevo_emprendimiento') return 'emprendimientos';
+  if (tipo === 'nuevo_comunicado') return 'comunicados';
   return null;
 }
 
@@ -59,6 +62,7 @@ function IconoTipoNotificacion({ tipo }: { tipo: string }) {
     eventos: 'M4 6h16v14H4zM8 3v6m8-6v6M4 10h16',
     reservas: 'M5 4h14v16H5zM8 8h8M8 12h8M8 16h5',
     emprendimientos: 'M4 20h16M6 20V9l6-5 6 5v11M9 20v-5h6v5',
+    comunicados: 'M4 11v2h3l5 4V7L7 11H4Zm11-2c1.2 1 1.2 5 0 6',
     general: 'M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4',
   };
 
@@ -195,6 +199,7 @@ export default function ListaNotificaciones({
       eventos: 0,
       reservas: 0,
       emprendimientos: 0,
+      comunicados: 0,
     };
 
     notificaciones.forEach((notificacion) => {

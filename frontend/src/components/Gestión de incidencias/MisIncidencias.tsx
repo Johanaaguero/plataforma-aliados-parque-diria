@@ -44,7 +44,10 @@ const etiquetasFiltros: Record<FiltroEstado, string> = {
   cerradas: 'Cerradas',
 };
 
-function codigoIncidencia(incidencia: Incidencia): string { return `#INC-${incidencia.codigo || '00000000'}`; }
+function codigoIncidencia(incidencia: Incidencia): string {
+  const codigo = incidencia.codigo || '#INC-00000000';
+  return codigo.startsWith('#INC-') ? codigo : `#INC-${codigo}`;
+}
 
 function coincideFiltro(
   incidencia: Incidencia,
@@ -177,7 +180,7 @@ export default function MisIncidencias() {
       <img src={parqueHero} alt="" aria-hidden="true" className="pointer-events-none fixed inset-0 -z-20 h-full w-full object-cover" />
       <div className="pointer-events-none fixed inset-0 -z-10 bg-emerald-950/65 backdrop-blur-[3px]" />
       <section className="mx-auto w-full max-w-6xl rounded-[2rem] border border-white/55 bg-white/55 p-5 shadow-[0_24px_70px_rgba(11,58,39,0.12)] backdrop-blur-2xl dark:border-white/10 dark:bg-slate-900/55 sm:p-8">
-        <button type="button" onClick={() => navigate('/')} className="mb-6 inline-flex items-center gap-2 rounded-2xl border border-white/55 bg-white/55 px-4 py-2.5 text-sm font-bold text-emerald-900 shadow-sm backdrop-blur-xl transition hover:bg-white/80 dark:border-white/10 dark:bg-white/10 dark:text-white dark:hover:bg-white/15"><svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>Volver atrás</button>
+        <button type="button" onClick={() => navigate('/')} aria-label="Volver atrás" title="Volver atrás" className="mb-6 inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/50 bg-white/35 text-emerald-900 shadow-[0_8px_24px_rgba(11,58,39,0.12)] backdrop-blur-md transition hover:scale-105 hover:bg-white/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/20"><svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg></button>
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-600">Seguimiento personal</p>

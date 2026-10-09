@@ -26,6 +26,8 @@ import { mostrarFeedback } from './components/ui/FeedbackToast';
 
 import { mostrarBienvenidaLogin } from './components/ui/LoginWelcomeOverlay';
 
+import { mostrarDespedidaLogout } from './components/ui/LogoutWelcomeOverlay';
+
 import RegistroIncidencia from './components/Gestión de incidencias/RegistroIncidencia';
 
 import IncidenciasAdmin from './components/Gestión de incidencias/admin/IncidenciasAdmin';
@@ -476,13 +478,17 @@ function App() {
   ]);
 
   const cerrarSesion = async () => {
+    const nombre = nombreUsuario ?? obtenerNombreUsuarioDesdeToken();
+
+    mostrarDespedidaLogout(nombre);
+
     mostrarFeedback(
       'despedida',
       '¡Gracias por visitarnos! Vuelve pronto a Aliados Diriá.'
     );
 
     await new Promise((resolver) =>
-      window.setTimeout(resolver, 2000)
+      window.setTimeout(resolver, 500)
     );
 
     try {
@@ -715,7 +721,7 @@ function App() {
         : '/';
 
   return (
-    <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef]">
+    <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef] pt-16 sm:pt-20">
       <BotonVolverInicio
         texto="Volver"
         onClick={() => navigate(rutaVolver)}

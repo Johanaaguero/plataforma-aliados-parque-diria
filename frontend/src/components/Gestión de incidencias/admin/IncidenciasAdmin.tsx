@@ -10,6 +10,7 @@ import type {
 } from '../../../services/incidenciaServices';
 
 import {
+  actualizarVisibilidadIncidencia,
   compartirIncidencia,
   listarIncidencias,
 } from '../../../services/incidenciaServices';
@@ -305,6 +306,8 @@ export default function IncidenciasAdmin({
 
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [actualizandoVisibilidad, setActualizandoVisibilidad] =
+    useState<number | null>(null);
 
   const [filtroEstado, setFiltroEstado] =
     useState<EstadoIncidencia | ''>('');
@@ -446,6 +449,31 @@ export default function IncidenciasAdmin({
     );
 
     setSeleccionada(actualizada);
+  };
+
+  const cambiarVisibilidad = async (incidencia: Incidencia) => {
+    setActualizandoVisibilidad(incidencia.id);
+    setError(null);
+
+    try {
+      const actualizada = await actualizarVisibilidadIncidencia(
+        incidencia.id,
+        incidencia.esPublica !== true,
+      );
+      setIncidencias((actuales) =>
+        actuales.map((actual) =>
+          actual.id === actualizada.id ? actualizada : actual,
+        ),
+      );
+    } catch (errorCapturado) {
+      setError(
+        errorCapturado instanceof Error
+          ? errorCapturado.message
+          : 'No se pudo actualizar la visibilidad pública.',
+      );
+    } finally {
+      setActualizandoVisibilidad(null);
+    }
   };
 
   /* =======================================================
@@ -1096,6 +1124,20 @@ export default function IncidenciasAdmin({
                               {/* BOTONES */}
 
                               <div className="shrink-0 space-y-3 xl:w-[190px]">
+
+                                <button
+                                  type="button"
+                                  role="switch"
+                                  aria-checked={incidencia.esPublica === true}
+                                  disabled={actualizandoVisibilidad === incidencia.id}
+                                  onClick={() => void cambiarVisibilidad(incidencia)}
+                                  className="inline-flex w-full items-center justify-between rounded-full border border-[#095540]/20 bg-white/60 px-3 py-2 text-xs font-bold text-[#095540] shadow-sm backdrop-blur-md transition hover:bg-white/90 disabled:cursor-wait disabled:opacity-60 dark:border-slate-600 dark:bg-slate-800/70 dark:text-[#A8D66D]"
+                                >
+                                  <span>Visible públicamente</span>
+                                  <span className={`relative h-5 w-9 rounded-full transition ${incidencia.esPublica === true ? 'bg-[#009444]' : 'bg-slate-300 dark:bg-slate-600'}`}>
+                                    <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition ${incidencia.esPublica === true ? 'left-[18px]' : 'left-0.5'}`} />
+                                  </span>
+                                </button>
 
                                 <button
                                   type="button"

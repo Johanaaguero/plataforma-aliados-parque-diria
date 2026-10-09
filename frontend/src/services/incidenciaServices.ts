@@ -365,3 +365,23 @@ export async function cerrarMiIncidencia(
 
   return respuesta.incidencia;
 }
+
+export async function actualizarVisibilidadIncidencia(
+  id: number,
+  esPublica: boolean,
+): Promise<Incidencia> {
+  const respuesta = await api.solicitar<RespuestaDetalle>(
+    `/incidencias/${id}/visibilidad`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({ es_publica: esPublica }),
+    },
+    {
+      incluirAuth: true,
+      desempaquetarData: false,
+      mensajeError: 'No se pudo actualizar la visibilidad pública.',
+    },
+  );
+
+  return respuesta.incidencia;
+}

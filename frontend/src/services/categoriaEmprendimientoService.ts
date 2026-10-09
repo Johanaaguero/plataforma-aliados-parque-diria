@@ -18,9 +18,13 @@ export async function obtenerCategorias(): Promise<CategoriaEmprendimiento[]> {
 }
 
 export async function crearCategoria(dto: CrearCategoriaDto): Promise<CategoriaEmprendimiento> {
+  const token = sessionStorage.getItem('token') ?? localStorage.getItem('token');
   const res = await fetch(BASE_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     body: JSON.stringify(dto),
   });
   if (!res.ok) {

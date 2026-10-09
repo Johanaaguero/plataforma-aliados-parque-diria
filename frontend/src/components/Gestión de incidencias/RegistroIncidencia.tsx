@@ -544,11 +544,6 @@ export default function RegistroIncidencia({
         return;
       }
 
-      if ((reporteAnonimo) && (!nombreContacto.trim() || !telefonoContacto.trim())) {
-        setError('Ingrese su nombre completo y número telefónico.');
-        return;
-      }
-
       setCargando(true);
 
       try {
@@ -580,8 +575,8 @@ export default function RegistroIncidencia({
                 longitud,
                 esAnonimo:
                   reporteAnonimo,
-                nombreContacto: usuarioAutenticado ? undefined : nombreContacto.trim(),
-                telefonoContacto: usuarioAutenticado ? undefined : telefonoContacto.trim(),
+                nombreContacto: usuarioAutenticado ? undefined : nombreContacto.trim() || undefined,
+                telefonoContacto: usuarioAutenticado ? undefined : telefonoContacto.trim() || undefined,
               }),
             },
           );
@@ -709,7 +704,7 @@ export default function RegistroIncidencia({
 
   return (
     <section className="w-full px-4 py-8 sm:px-6 lg:px-8">
-      {exito && <div role="dialog" aria-modal="true" className="fixed inset-0 z-[100] flex items-center justify-center bg-emerald-950/55 p-4 backdrop-blur-md"><div className="w-full max-w-sm rounded-3xl border border-white/30 bg-white/85 p-7 text-center shadow-2xl backdrop-blur-2xl dark:bg-slate-900/85"><span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500 text-2xl text-white">✓</span><h3 className="mt-4 text-2xl font-black text-emerald-950 dark:text-white">¡Registro exitoso!</h3><p className="mt-3 text-sm text-emerald-950/70 dark:text-white/70">Su incidencia ha sido registrada correctamente con el código <strong>#{codigoRegistrado}</strong>.</p><button type="button" onClick={() => { setExito(''); setCodigoRegistrado(''); onClose?.(); }} className="mt-6 w-full rounded-2xl bg-emerald-700 px-5 py-3 font-bold text-white">Aceptar</button></div></div>}
+      {exito && <div role="dialog" aria-modal="true" className="fixed inset-0 z-[100] flex items-center justify-center bg-emerald-950/55 p-4 backdrop-blur-md"><div className="w-full max-w-sm rounded-3xl border border-white/30 bg-white/85 p-7 text-center shadow-2xl backdrop-blur-2xl dark:bg-slate-900/85"><span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500 text-2xl text-white">✓</span><h3 className="mt-4 text-2xl font-black text-emerald-950 dark:text-white">¡Registro exitoso!</h3><p className="mt-3 text-sm text-emerald-950/70 dark:text-white/70">Su incidencia ha sido registrada correctamente con el código <strong>{codigoRegistrado}</strong>.</p><button type="button" onClick={() => { setExito(''); setCodigoRegistrado(''); onClose?.(); }} className="mt-6 w-full rounded-2xl bg-emerald-700 px-5 py-3 font-bold text-white">Aceptar</button></div></div>}
       <div className="mx-auto flex max-w-4xl flex-col overflow-hidden rounded-3xl bg-white shadow-xl ring-1 ring-slate-900/10 dark:bg-slate-900 dark:ring-white/10">
 
         <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 px-6 py-5 dark:border-slate-800/80 dark:bg-slate-900/50 sm:px-8">

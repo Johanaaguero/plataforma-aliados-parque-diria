@@ -63,6 +63,7 @@ const MODULOS = [
 
 function Informativo() {
   const [imagenActual, setImagenActual] = useState(0);
+  const [moduloSeleccionado, setModuloSeleccionado] = useState<(typeof MODULOS)[number] | null>(null);
 
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -214,7 +215,11 @@ function Informativo() {
               <article
                 id={modulo.id}
                 key={modulo.id}
-                className="sigtad-image-reveal group relative isolate min-h-[390px] scroll-mt-28 overflow-hidden rounded-[1.75rem] bg-[#095540] shadow-[0_14px_35px_rgba(9,85,64,0.12)] motion-safe:transition motion-safe:duration-500 motion-safe:ease-out hover:shadow-[0_22px_50px_rgba(9,85,64,0.2)] motion-safe:hover:-translate-y-1 motion-reduce:transform-none"
+                role="button"
+                tabIndex={0}
+                onClick={() => setModuloSeleccionado(modulo)}
+                onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setModuloSeleccionado(modulo); } }}
+                className="sigtad-image-reveal group relative isolate min-h-[390px] cursor-pointer scroll-mt-28 overflow-hidden rounded-[1.75rem] bg-[#095540] shadow-[0_14px_35px_rgba(9,85,64,0.12)] motion-safe:transition motion-safe:duration-500 motion-safe:ease-out hover:shadow-[0_22px_50px_rgba(9,85,64,0.2)] motion-safe:hover:-translate-y-1 focus:outline-none focus-visible:ring-4 focus-visible:ring-[#8dc63f]/60 motion-reduce:transform-none"
               >
                 <img
                   src={modulo.imagen}
@@ -246,6 +251,19 @@ function Informativo() {
             ))}
           </ScrollReveal>
         </div>
+
+        {moduloSeleccionado && (
+          <div className="fixed inset-0 z-[80] flex items-end bg-emerald-950/50 p-4 backdrop-blur-md sm:items-center sm:justify-center" role="dialog" aria-modal="true" aria-labelledby="detalle-territorio" onMouseDown={() => setModuloSeleccionado(null)}>
+            <section className="w-full max-w-lg rounded-[2rem] border border-white/40 bg-white/85 p-6 shadow-2xl backdrop-blur-2xl dark:bg-slate-900/85" onMouseDown={(event) => event.stopPropagation()}>
+              <div className="flex items-start justify-between gap-4">
+                <div><p className="text-xs font-bold uppercase tracking-[0.16em] text-[#009444]">{moduloSeleccionado.categoria}</p><h3 id="detalle-territorio" className="mt-2 text-2xl font-bold text-[#095540] dark:text-white">{moduloSeleccionado.titulo}</h3></div>
+                <button type="button" onClick={() => setModuloSeleccionado(null)} className="grid h-10 w-10 place-items-center rounded-full border border-[#095540]/15 bg-white/50 text-xl text-[#095540] backdrop-blur-md dark:bg-white/10 dark:text-white" aria-label="Cerrar detalle">×</button>
+              </div>
+              <img src={moduloSeleccionado.imagen} alt={moduloSeleccionado.alt} className="mt-5 h-48 w-full rounded-2xl object-cover" />
+              <p className="mt-5 text-base leading-7 text-slate-700 dark:text-slate-200">{moduloSeleccionado.descripcion}</p>
+            </section>
+          </div>
+        )}
       </div>
     </section>
   );

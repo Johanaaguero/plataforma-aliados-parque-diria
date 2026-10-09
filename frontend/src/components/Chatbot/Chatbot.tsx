@@ -75,12 +75,6 @@ const IconoBot = ({ className }: { className?: string }) => (
     <path d="M9.5 17h5" />
   </Icono>
 );
-const IconoHoja = ({ className }: { className?: string }) => (
-  <Icono className={className}>
-    <path d="M11 20A7 7 0 0 1 4 13c0-6 6-9 16-9 0 10-3 16-9 16Z" />
-    <path d="M4 20c2-5 5-8 9-10" />
-  </Icono>
-);
 const IconoCerrar = ({ className }: { className?: string }) => (
   <Icono className={className}>
     <path d="M18 6 6 18M6 6l12 12" />
@@ -102,12 +96,6 @@ const IconoUbicacion = ({ className }: { className?: string }) => (
   <Icono className={className}>
     <path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z" />
     <circle cx="12" cy="10" r="3" />
-  </Icono>
-);
-const IconoReloj = ({ className }: { className?: string }) => (
-  <Icono className={className}>
-    <circle cx="12" cy="12" r="9" />
-    <path d="M12 7v5l3 2" />
   </Icono>
 );
 const IconoServicios = ({ className }: { className?: string }) => (
@@ -229,8 +217,6 @@ const Chatbot = () => {
   const controlador = useRef<AbortController | null>(null);
   const finMensajes = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  const nuevoId = () => ++contadorId.current;
 
   const hayConversacion = mensajes.some((m) => m.tipo === 'usuario');
 
@@ -392,11 +378,11 @@ const Chatbot = () => {
         aria-label="Asistente virtual del Parque Nacional Diriá"
         aria-hidden={!abierto}
         className={`
-          fixed z-50 flex flex-col overflow-hidden bg-white
+          fixed z-50 flex flex-col overflow-hidden rounded-2xl border border-emerald-800/20 bg-white/65 shadow-2xl shadow-emerald-950/15 backdrop-blur-2xl
           transition-all duration-300 ease-out origin-bottom-right
           inset-0 sm:inset-auto sm:bottom-5 sm:right-5
           sm:h-[500px] sm:max-h-[calc(100vh-40px)] sm:w-[340px]
-          sm:rounded-2xl sm:shadow-2xl sm:shadow-stone-900/20 sm:ring-1 sm:ring-stone-200
+          sm:rounded-2xl sm:ring-1 sm:ring-white/60
           ${
             abierto
               ? 'translate-y-0 scale-100 opacity-100'
@@ -405,10 +391,10 @@ const Chatbot = () => {
         `}
       >
         {/* Encabezado */}
-        <header className="flex items-center justify-between bg-emerald-900 px-5 py-4 text-white">
+        <header className="flex items-center justify-between border-b border-white/15 bg-emerald-900/80 px-5 py-4 text-white backdrop-blur-xl">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-800 ring-1 ring-emerald-600">
-              <IconoBot className="h-5 w-5 text-emerald-100" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-800 ring-1 ring-emerald-600">
+              <IconoBot className="h-7 w-7 text-emerald-100" />
             </div>
             <div className="leading-tight">
               <h2 className="text-[15px] font-semibold">Asistente Diriá</h2>
@@ -443,7 +429,7 @@ const Chatbot = () => {
         <div
           role="log"
           aria-live="polite"
-          className="flex-1 space-y-4 overflow-y-auto bg-stone-50 px-4 py-5"
+          className="flex-1 space-y-4 overflow-y-auto bg-stone-50/70 px-4 py-5 backdrop-blur-md"
         >
           {mensajes.map((m) => {
             const esUsuario = m.tipo === 'usuario';
@@ -453,8 +439,8 @@ const Chatbot = () => {
                 className={`flex items-end gap-2 ${esUsuario ? 'justify-end' : 'justify-start'}`}
               >
                 {!esUsuario && (
-                  <div className="mb-5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-800">
-                    <IconoBot className="h-4 w-4" />
+                  <div className="mb-5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-800">
+                    <IconoBot className="h-7 w-7" />
                   </div>
                 )}
 
@@ -467,7 +453,7 @@ const Chatbot = () => {
                           ? 'rounded-br-sm bg-emerald-700 text-white'
                           : m.error
                           ? 'rounded-bl-sm border border-red-200 bg-red-50 text-red-800'
-                          : 'rounded-bl-sm border border-stone-200 bg-white text-stone-800'
+                          : 'rounded-bl-sm border border-white/70 bg-white/65 text-stone-800 shadow-sm backdrop-blur-md'
                       }
                     `}
                   >
@@ -497,8 +483,8 @@ const Chatbot = () => {
           {/* Indicador de escritura */}
           {cargando && (
             <div className="flex items-end gap-2" aria-label="El asistente está escribiendo">
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-800">
-                <IconoBot className="h-4 w-4" />
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-800">
+                <IconoBot className="h-7 w-7" />
               </div>
               <div className="rounded-2xl rounded-bl-sm border border-stone-200 bg-white px-4 py-3.5">
                 <div className="flex gap-1">
@@ -526,9 +512,9 @@ const Chatbot = () => {
                   onClick={() => enviarMensaje(pregunta)}
                   className="
                     group flex w-full items-center gap-3 rounded-xl
-                    border border-stone-200 bg-white px-3.5 py-3 text-left
+                    border border-white/70 bg-white/60 px-3.5 py-3 text-left shadow-sm backdrop-blur-md
                     transition
-                    hover:border-emerald-400 hover:bg-emerald-50/60
+                    hover:border-emerald-400/60 hover:bg-emerald-50/70
                     focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400
                   "
                 >
@@ -552,10 +538,10 @@ const Chatbot = () => {
         </div>
 
         {/* Entrada de texto */}
-        <div className="border-t border-stone-200 bg-white p-3">
+        <div className="border-t border-white/60 bg-white/55 p-3 backdrop-blur-xl">
           <div
             className="
-              flex items-center gap-2 rounded-xl border border-stone-300 bg-white
+              flex items-center gap-2 rounded-xl border border-white/70 bg-white/65 backdrop-blur-md
               py-1.5 pl-3.5 pr-1.5 transition
               focus-within:border-emerald-600 focus-within:ring-2 focus-within:ring-emerald-100
             "

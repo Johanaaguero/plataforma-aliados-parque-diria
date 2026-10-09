@@ -88,7 +88,7 @@ const generarCodigoIncidencia = async (): Promise<string> => {
   const resultado = await incidenciaRepository
     .createQueryBuilder('incidencia')
     .select(
-      'MAX(CAST(SUBSTRING(incidencia.codigo, 1, 4) AS UNSIGNED))',
+      'MAX(CAST(SUBSTRING(incidencia.codigo, 6, 4) AS UNSIGNED))',
       'ultimo',
     )
     .where('incidencia.codigo LIKE :patron', {
@@ -105,7 +105,7 @@ const generarCodigoIncidencia = async (): Promise<string> => {
     );
   }
 
-  return `${String(consecutivo).padStart(4, '0')}${sufijo}`;
+  return `#INC-${String(consecutivo).padStart(4, '0')}${sufijo}`;
 };
 
 /**

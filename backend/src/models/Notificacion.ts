@@ -13,6 +13,7 @@ export enum TipoNotificacion {
   NUEVO_EVENTO = 'nuevo_evento',
   NUEVA_CAPACITACION = 'nueva_capacitacion',
   NUEVO_EMPRENDIMIENTO = 'nuevo_emprendimiento',
+  NUEVO_COMUNICADO = 'nuevo_comunicado',
 
   // Notificaciones de reservas
   RESERVA_REALIZADA = 'reserva_realizada',
