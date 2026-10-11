@@ -84,6 +84,7 @@ describe('GeminiFaqClassifier con SDK simulado', () => {
       ['¿Qué ofrece la plataforma?', 'servicios'],
       ['Busco negocios y artesanías locales', 'emprendimientos'],
       ['¿Tienen talleres o charlas?', 'eventos'],
+      ['¿Hay capacitaciones programadas próximamente?', 'eventos'],
       ['Quiero apartar un cupo', 'reservas'],
       ['¿Dónde reporto la basura?', 'incidencias'],
       ['¿Cómo los contacto por teléfono?', 'contacto'],
