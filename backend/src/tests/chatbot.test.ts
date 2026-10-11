@@ -20,6 +20,7 @@ type Conversacion = InstanceType<
 
 const crearServicio = async (
   classify: (message: string) => Promise<FaqId | null> = async () => null,
+  deps: Record<string, unknown> = {},
 ) => {
   const { ChatbotService } = await import(
     '../modulos/Chatbot/Atencion Automatica Visitantes/chatbot.service'
@@ -34,7 +35,24 @@ const crearServicio = async (
     },
   } as Repository<Conversacion>;
 
-  return { servicio: new ChatbotService(repositorio, { classify }), guardadas };
+  const dependencias = {
+    emprendimientos: {
+      obtenerCatalogoPublico: async () => [],
+    },
+    eventos: {
+      listar: async () => ({
+        data: [],
+        paginacion: { pagina: 1, totalPaginas: 0 },
+      }),
+    },
+    obtenerFechaActual: () => new Date('2099-01-01T00:00:00.000Z'),
+    ...deps,
+  };
+
+  return {
+    servicio: new ChatbotService(repositorio, { classify }, dependencias as any),
+    guardadas,
+  };
 };
 
 describe('ChatbotService: intenciones estáticas y persistencia', () => {
@@ -45,9 +63,7 @@ describe('ChatbotService: intenciones estáticas y persistencia', () => {
   }> = [
     { id: 'ubicacion', consulta: '¿En qué provincia queda?', respuestaIncluye: /Guanacaste/ },
     { id: 'servicios', consulta: '¿Qué opciones ofrece el sistema?', respuestaIncluye: /publicación de eventos/ },
-    { id: 'emprendimientos', consulta: '¿Dónde veo los negocios locales?', respuestaIncluye: /dar visibilidad/ },
-    { id: 'eventos', consulta: '¿Hay talleres o actividades?', respuestaIncluye: /publicar eventos/ },
-    { id: 'reservas', consulta: '¿Puedo apartar una actividad?', respuestaIncluye: /realizar reservas/ },
+    { id: 'reservas', consulta: '¿Puedo apartar una actividad?', respuestaIncluye: /no hay actividades proximas/i },
     { id: 'incidencias', consulta: 'Quiero reportar un problema ambiental', respuestaIncluye: /reportar incidencias/ },
     { id: 'contacto', consulta: '¿Cómo los localizo?', respuestaIncluye: /\+506 8722 3373/ },
     { id: 'informacion_parque', consulta: 'Cuéntame sobre la fauna del parque', respuestaIncluye: /silvestre protegida/ },
@@ -87,6 +103,416 @@ describe('ChatbotService: intenciones estáticas y persistencia', () => {
     assert.equal(guardadas[0]?.respuestaChatbot, resultado.respuesta);
   });
 
+  test('responde emprendimientos con datos reales del servicio reutilizado', async () => {
+    const { servicio, guardadas } = await crearServicio(
+      async () => 'emprendimientos',
+      {
+        emprendimientos: {
+          obtenerCatalogoPublico: async () => [
+            {
+              toPublic: () => ({
+                nombre: 'Cafeteria Diria',
+                descripcion: 'Cafe y productos locales preparados por la comunidad.',
+                distrito: 'Arado',
+                canton: 'Santa Cruz',
+                provincia: 'Guanacaste',
+                direccion: 'Entrada principal',
+                telefono: '+50681112222',
+              }),
+            },
+          ],
+        },
+      },
+    );
+
+    const resultado = await servicio.procesarPregunta('Que emprendimientos hay?');
+
+    assert.match(resultado.respuesta, /Cafeteria Diria/);
+    assert.match(resultado.respuesta, /Arado, Santa Cruz, Guanacaste/);
+    assert.match(resultado.respuesta, /\+50681112222/);
+    assert.equal(guardadas[0]?.respuestaChatbot, resultado.respuesta);
+  });
+
+  test('responde mensaje especifico cuando no hay emprendimientos publicados', async () => {
+    const { servicio } = await crearServicio(async () => 'emprendimientos');
+
+    const resultado = await servicio.procesarPregunta('Negocios locales');
+
+    assert.match(resultado.respuesta, /no hay emprendimientos publicados/i);
+  });
+
+  test('responde eventos proximos publicados y omite eventos pasados', async () => {
+    const paginasConsultadas: number[] = [];
+    const { servicio } = await crearServicio(
+      async () => 'eventos',
+      {
+        obtenerFechaActual: () => new Date('2099-01-10T00:00:00.000Z'),
+        eventos: {
+          listar: async ({ pagina = 1 }: { pagina?: number } = {}) => {
+            paginasConsultadas.push(pagina);
+            return {
+              data: pagina === 1
+                ? [
+                    {
+                      nombre: 'Actividad pasada',
+                      descripcion: 'No debe mostrarse.',
+                      fecha: '2099-01-09',
+                      hora: '08:00:00',
+                      lugar: 'Sendero',
+                      tipoActividad: 'evento',
+                      cuposDisponibles: 3,
+                    },
+                    {
+                      nombre: 'Taller de guias',
+                      descripcion: 'Capacitacion comunitaria.',
+                      fecha: '2099-01-12',
+                      hora: '10:00:00',
+                      lugar: 'Centro de visitantes',
+                      tipoActividad: 'capacitacion',
+                      cuposDisponibles: 12,
+                      esPago: false,
+                    },
+                  ]
+                : [],
+              paginacion: { pagina, totalPaginas: 1 },
+            };
+          },
+        },
+      },
+    );
+
+    const resultado = await servicio.procesarPregunta('Hay eventos proximos?');
+
+    assert.match(resultado.respuesta, /Taller de guias/);
+    assert.match(resultado.respuesta, /2099-01-12/);
+    assert.match(resultado.respuesta, /Cupos disponibles: 12/);
+    assert.doesNotMatch(resultado.respuesta, /Costo|Gratuito|precio|pago/i);
+    assert.doesNotMatch(resultado.respuesta, /Actividad pasada/);
+    assert.deepEqual(paginasConsultadas, [1]);
+  });
+
+  test('busca mas paginas de eventos hasta encontrar proximos', async () => {
+    const paginasConsultadas: number[] = [];
+    const { servicio } = await crearServicio(
+      async () => 'eventos',
+      {
+        obtenerFechaActual: () => new Date('2099-01-10T00:00:00.000Z'),
+        eventos: {
+          listar: async ({ pagina = 1 }: { pagina?: number } = {}) => {
+            paginasConsultadas.push(pagina);
+            return {
+              data: pagina === 1
+                ? [{ nombre: 'Pasado', fecha: '2099-01-01' }]
+                : [{ nombre: 'Feria ambiental', fecha: '2099-01-20' }],
+              paginacion: { pagina, totalPaginas: 2 },
+            };
+          },
+        },
+      },
+    );
+
+    const resultado = await servicio.procesarPregunta('Actividades publicadas');
+
+    assert.match(resultado.respuesta, /Feria ambiental/);
+    assert.doesNotMatch(resultado.respuesta, /Pasado/);
+    assert.deepEqual(paginasConsultadas, [1, 2]);
+  });
+
+  test('excluye actividades de hoy cuya hora ya paso', async () => {
+    const { servicio } = await crearServicio(
+      async () => 'eventos',
+      {
+        obtenerFechaActual: () => new Date('2026-10-11T16:00:00.000Z'),
+        eventos: {
+          listar: async () => ({
+            data: [
+              {
+                nombre: 'Caminata vencida',
+                fecha: '2026-10-11',
+                hora: '09:00:00',
+                tipoActividad: 'evento',
+                cuposDisponibles: 10,
+              },
+              {
+                nombre: 'Caminata futura',
+                fecha: '2026-10-11',
+                hora: '11:00:00',
+                tipoActividad: 'evento',
+                cuposDisponibles: 8,
+              },
+            ],
+            paginacion: { pagina: 1, totalPaginas: 1 },
+          }),
+        },
+      },
+    );
+
+    const resultado = await servicio.procesarPregunta('Hay eventos proximos?');
+
+    assert.match(resultado.respuesta, /Caminata futura/);
+    assert.doesNotMatch(resultado.respuesta, /Caminata vencida/);
+  });
+
+  test('responde mensaje especifico cuando no hay eventos proximos', async () => {
+    const { servicio } = await crearServicio(async () => 'eventos');
+
+    const resultado = await servicio.procesarPregunta('Eventos');
+
+    assert.match(resultado.respuesta, /no hay eventos o capacitaciones proximas/i);
+  });
+
+  test('no comunica costos aunque la consulta pregunte por el costo de una actividad', async () => {
+    const { servicio } = await crearServicio(
+      async () => 'eventos',
+      {
+        obtenerFechaActual: () => new Date('2099-01-10T00:00:00.000Z'),
+        eventos: {
+          listar: async () => ({
+            data: [
+              {
+                nombre: 'Caminata guiada',
+                fecha: '2099-01-11',
+                hora: '07:30:00',
+                lugar: 'Sector Arado',
+                tipoActividad: 'evento',
+                cuposDisponibles: 4,
+                esPago: true,
+                precio: 7500,
+              },
+            ],
+            paginacion: { pagina: 1, totalPaginas: 1 },
+          }),
+        },
+      },
+    );
+
+    const resultado = await servicio.procesarPregunta(
+      'Cuanto cuesta la caminata guiada?',
+    );
+
+    assert.match(resultado.respuesta, /Caminata guiada/);
+    assert.match(resultado.respuesta, /2099-01-11/);
+    assert.match(resultado.respuesta, /Cupos disponibles: 4/);
+    assert.doesNotMatch(resultado.respuesta, /Costo|7500|precio|pago|Gratuito/i);
+  });
+
+  test('responde disponibilidad de actividades con cupos existentes', async () => {
+    const { servicio, guardadas } = await crearServicio(
+      async () => 'reservas',
+      {
+        obtenerFechaActual: () => new Date('2099-01-10T00:00:00.000Z'),
+        eventos: {
+          listar: async () => ({
+            data: [
+              {
+                nombre: 'Caminata guiada',
+                fecha: '2099-01-11',
+                hora: '07:30:00',
+                lugar: 'Sector Arado',
+                cuposDisponibles: 4,
+                esPago: true,
+                precio: 5000,
+              },
+              {
+                nombre: 'Taller lleno',
+                fecha: '2099-01-12',
+                cuposDisponibles: 0,
+              },
+            ],
+            paginacion: { pagina: 1, totalPaginas: 1 },
+          }),
+        },
+      },
+    );
+
+    const resultado = await servicio.procesarPregunta('Hay cupos disponibles?');
+
+    assert.match(resultado.respuesta, /Caminata guiada/);
+    assert.match(resultado.respuesta, /4 cupo\(s\) disponible\(s\)/);
+    assert.doesNotMatch(resultado.respuesta, /Costo|5000|precio|pago/i);
+    assert.doesNotMatch(resultado.respuesta, /Taller lleno/);
+    assert.equal(guardadas[0]?.respuestaChatbot, resultado.respuesta);
+  });
+
+  test('mantiene actividades futuras con cupos disponibles', async () => {
+    const { servicio } = await crearServicio(
+      async () => 'reservas',
+      {
+        obtenerFechaActual: () => new Date('2026-10-11T16:00:00.000Z'),
+        eventos: {
+          listar: async () => ({
+            data: [
+              {
+                nombre: 'Caminata vencida',
+                fecha: '2026-10-11',
+                hora: '09:00:00',
+                cuposDisponibles: 6,
+              },
+              {
+                nombre: 'Caminata con cupos',
+                fecha: '2026-10-11',
+                hora: '11:00:00',
+                cuposDisponibles: 5,
+              },
+            ],
+            paginacion: { pagina: 1, totalPaginas: 1 },
+          }),
+        },
+      },
+    );
+
+    const resultado = await servicio.procesarPregunta('Hay cupos disponibles?');
+
+    assert.match(resultado.respuesta, /Caminata con cupos/);
+    assert.match(resultado.respuesta, /5 cupo\(s\) disponible\(s\)/);
+    assert.doesNotMatch(resultado.respuesta, /Caminata vencida/);
+  });
+
+  test('responde ausencia cuando no hay actividades con cupos disponibles', async () => {
+    const { servicio } = await crearServicio(
+      async () => 'reservas',
+      {
+        obtenerFechaActual: () => new Date('2099-01-10T00:00:00.000Z'),
+        eventos: {
+          listar: async () => ({
+            data: [
+              {
+                nombre: 'Actividad agotada',
+                fecha: '2099-01-11',
+                cuposDisponibles: 0,
+              },
+            ],
+            paginacion: { pagina: 1, totalPaginas: 1 },
+          }),
+        },
+      },
+    );
+
+    const resultado = await servicio.procesarPregunta('Disponibilidad');
+
+    assert.match(resultado.respuesta, /no hay actividades proximas con cupos disponibles/i);
+  });
+
+  test('filtra capacitaciones cuando la consulta pide capacitaciones', async () => {
+    const { servicio } = await crearServicio(
+      async () => 'eventos',
+      {
+        obtenerFechaActual: () => new Date('2026-10-11T16:00:00.000Z'),
+        eventos: {
+          listar: async () => ({
+            data: [
+              {
+                nombre: 'Caminata guiada',
+                fecha: '2026-10-12',
+                hora: '08:00:00',
+                tipoActividad: 'evento',
+                cuposDisponibles: 12,
+              },
+              {
+                nombre: 'Capacitacion ambiental',
+                fecha: '2026-10-12',
+                hora: '10:00:00',
+                tipoActividad: 'capacitacion',
+                cuposDisponibles: 20,
+                esPago: true,
+              },
+            ],
+            paginacion: { pagina: 1, totalPaginas: 1 },
+          }),
+        },
+      },
+    );
+
+    const resultado = await servicio.procesarPregunta(
+      'Hay capacitaciones programadas proximamente?',
+    );
+
+    assert.match(resultado.respuesta, /capacitaciones proximas publicadas/i);
+    assert.match(resultado.respuesta, /Capacitacion ambiental/);
+    assert.doesNotMatch(resultado.respuesta, /Costo|precio|pago|consultarse/i);
+    assert.doesNotMatch(resultado.respuesta, /Caminata guiada/);
+  });
+
+  test('responde mensaje especifico cuando no hay capacitaciones futuras', async () => {
+    const { servicio } = await crearServicio(
+      async () => 'eventos',
+      {
+        obtenerFechaActual: () => new Date('2026-10-11T16:00:00.000Z'),
+        eventos: {
+          listar: async () => ({
+            data: [
+              {
+                nombre: 'Caminata guiada',
+                fecha: '2026-10-12',
+                hora: '08:00:00',
+                tipoActividad: 'evento',
+                cuposDisponibles: 12,
+              },
+            ],
+            paginacion: { pagina: 1, totalPaginas: 1 },
+          }),
+        },
+      },
+    );
+
+    const resultado = await servicio.procesarPregunta(
+      'Hay capacitaciones programadas proximamente?',
+    );
+
+    assert.match(resultado.respuesta, /no hay capacitaciones proximas/i);
+    assert.doesNotMatch(resultado.respuesta, /Caminata guiada/);
+  });
+
+  test('maneja errores al consultar disponibilidad sin exponer detalles internos', async () => {
+    const { servicio, guardadas } = await crearServicio(
+      async () => 'reservas',
+      {
+        eventos: {
+          listar: async () => {
+            throw new Error('correo privado de reserva');
+          },
+        },
+      },
+    );
+    const original = console.error;
+    console.error = () => undefined;
+
+    try {
+      const resultado = await servicio.procesarPregunta('Quiero reservar');
+
+      assert.match(resultado.respuesta, /No pude consultar la disponibilidad/i);
+      assert.doesNotMatch(resultado.respuesta, /correo privado/);
+      assert.equal(guardadas[0]?.respuestaChatbot, resultado.respuesta);
+    } finally {
+      console.error = original;
+    }
+  });
+
+  test('maneja errores al consultar datos dinamicos sin romper la persistencia', async () => {
+    const { servicio, guardadas } = await crearServicio(
+      async () => 'eventos',
+      {
+        eventos: {
+          listar: async () => {
+            throw new Error('detalle privado de base de datos');
+          },
+        },
+      },
+    );
+    const original = console.error;
+    console.error = () => undefined;
+
+    try {
+      const resultado = await servicio.procesarPregunta('Eventos publicados');
+
+      assert.match(resultado.respuesta, /No pude consultar los eventos/i);
+      assert.doesNotMatch(resultado.respuesta, /detalle privado/);
+      assert.equal(guardadas[0]?.respuestaChatbot, resultado.respuesta);
+    } finally {
+      console.error = original;
+    }
+  });
+
   test('usa el clasificador local cuando Gemini alcanza la cuota', async () => {
     let llamadasGemini = 0;
     const { servicio } = await crearServicio(async () => {
@@ -112,7 +538,7 @@ describe('ChatbotService: intenciones estáticas y persistencia', () => {
       console.warn = consoleWarnOriginal;
     }
 
-    assert.match(resultado.respuesta, /dar visibilidad/);
+    assert.match(resultado.respuesta, /no hay emprendimientos publicados/i);
     assert.equal(llamadasGemini, 1);
     assert.doesNotMatch(resultado.respuesta, /detalle privado/);
     assert.deepEqual(registros, [
