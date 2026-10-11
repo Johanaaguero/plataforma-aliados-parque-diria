@@ -132,7 +132,7 @@ const OPCIONES = [
     pregunta: '¿Dónde está ubicado el Parque Nacional Diriá?',
     Icono: IconoUbicacion,
   },
- 
+
   {
     texto: 'Servicios y actividades',
     detalle: 'Qué puedes hacer en tu visita',
