@@ -71,6 +71,7 @@ import reporteRoutes from './modulos/Reportes y Estadisticas/Generar reporte/rep
 import notificacionIncidenciaRoutes from './modulos/Notificaciones/Crear notificaciones Incidencias/NotificacionIncidenciaRoutes';
 
 import chatbotRoutes from './modulos/Chatbot/Atencion Automatica Visitantes/chatbot.routes';
+import preguntasFrecuentesRoutes from './modulos/PreguntasFrecuentes/preguntasFrecuentes.routes';
 dotenv.config();
 
 const app = express();
@@ -178,6 +179,8 @@ app.use(
 app.use('/api/reportes', reporteRoutes);
 
 app.use('/api/chatbot', chatbotRoutes);
+
+app.use('/api/preguntas-frecuentes', preguntasFrecuentesRoutes);
 
 app.use(errorMiddleware);
 

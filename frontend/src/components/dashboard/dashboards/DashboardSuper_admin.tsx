@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { api } from '../../../services/api';
+import GestionPreguntasFrecuentes from '../../GestionPreguntasFrecuentes';
 
 import logo from '../../../assets/logo.png';
 import imagenParque from '../../../assets/parque-hero.jpg';
@@ -11,6 +12,7 @@ interface DashboardSuperAdminProps {
   onIrCuentasBloqueadas: () => void;
   onCerrarSesion: () => void;
   onIrComunicados: () => void;
+  onIrPreguntasFrecuentes: () => void;
 }
 
 interface RegistroBitacoraResumen {
@@ -90,6 +92,7 @@ export default function DashboardSuper_admin({
   const [cuentasBloqueadas, setCuentasBloqueadas] = useState<number | null>(null);
   const [cargandoActividad, setCargandoActividad] = useState(true);
   const [errorActividad, setErrorActividad] = useState<string | null>(null);
+  const [vistaPreguntasFrecuentes, setVistaPreguntasFrecuentes] = useState(false);
 
   useEffect(() => {
     let componenteActivo = true;
@@ -165,7 +168,10 @@ export default function DashboardSuper_admin({
         sm:px-4 sm:py-4 md:px-5 md:py-5 lg:px-7 lg:py-6
       "
     >
-      <button type="button" onClick={onIrComunicados} className="absolute right-5 top-5 z-[70] rounded-full border border-white/50 bg-white/55 px-4 py-2 text-xs font-bold text-emerald-800 shadow-lg backdrop-blur-md transition hover:bg-white dark:border-white/10 dark:bg-white/10 dark:text-emerald-100">Comunicados</button>
+      <div className="absolute right-5 top-5 z-[70] flex gap-2">
+        <button type="button" onClick={onIrComunicados} className="rounded-full border border-white/50 bg-white/55 px-4 py-2 text-xs font-bold text-emerald-800 shadow-lg backdrop-blur-md transition hover:bg-white dark:border-white/10 dark:bg-white/10 dark:text-emerald-100">Comunicados</button>
+        <button type="button" onClick={() => setVistaPreguntasFrecuentes(true)} className="rounded-full border border-white/50 bg-white/55 px-4 py-2 text-xs font-bold text-emerald-800 shadow-lg backdrop-blur-md transition hover:bg-white dark:border-white/10 dark:bg-white/10 dark:text-emerald-100">Preguntas frecuentes</button>
+      </div>
       {/* =====================================================
           FONDO SUTIL — conserva la fotografía del proyecto,
           pero deja de dominar el dashboard.
@@ -587,6 +593,18 @@ export default function DashboardSuper_admin({
           {/* reflejo superior */}
           <div className="pointer-events-none absolute left-1/2 top-0 h-px w-[65%] -translate-x-1/2 bg-gradient-to-r from-transparent via-white to-transparent opacity-80" />
 
+          {vistaPreguntasFrecuentes ? (
+            <div className="flex h-full min-h-0 flex-col overflow-y-auto p-4 sm:p-6 lg:p-8">
+              <button
+                type="button"
+                onClick={() => setVistaPreguntasFrecuentes(false)}
+                className="mb-5 w-fit rounded-full border border-[#0b6849]/15 bg-white/60 px-4 py-2 font-brand text-sm font-semibold text-[#0b6849] transition-colors hover:bg-white dark:border-white/10 dark:bg-white/[0.06] dark:text-[#c9ead8] dark:hover:bg-white/10"
+              >
+                ← Volver al dashboard
+              </button>
+              <GestionPreguntasFrecuentes />
+            </div>
+          ) : (
           <div className="flex min-h-[calc(100dvh-7rem)] flex-col p-3.5 min-[360px]:p-4 sm:min-h-[calc(100dvh-7.5rem)] sm:p-6 md:p-7 lg:min-h-0 lg:p-[clamp(2rem,3vw,3.5rem)] lg:pt-[clamp(3.75rem,7vh,6rem)]">
             {/* CABECERA */}
             <div className="flex flex-col gap-4 sm:gap-5 lg:flex-row lg:items-start lg:justify-between lg:gap-[clamp(1.5rem,3vw,3rem)]">
@@ -731,6 +749,7 @@ export default function DashboardSuper_admin({
             </div>
           </footer>
           </div>
+          )}
         </section>
       </div>
     </main>

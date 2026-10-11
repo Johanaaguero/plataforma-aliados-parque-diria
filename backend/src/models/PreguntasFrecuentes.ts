@@ -14,6 +14,9 @@ export class PreguntasFrecuentes {
   @Column({ type: 'json', name: 'palabras_clave' })
   palabrasClave!: string[];
 
+  @Column({ type: 'boolean', default: false })
+  publicada!: boolean;
+
   @CreateDateColumn({
     name: 'created_at',
     type: 'datetime',

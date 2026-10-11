@@ -67,6 +67,8 @@ import Chatbot from './components/Chatbot/Chatbot';
 import type { Emprendimiento } from './services/emprendimientoService';
 import ReportesPage from './components/Reportes y Estatisticas/ReportesPage';
 import GestionComunicados from './components/GestionComunicados';
+import GestionPreguntasFrecuentes from './components/GestionPreguntasFrecuentes';
+import SeccionPreguntasFrecuentes from './components/informativo/SeccionPreguntasFrecuentes';
 
 type NombreRol =
   | 'administrador'
@@ -645,6 +647,7 @@ function App() {
       onIrIncidencias={() => {}}
       onIrReportes={() => navigate('/admin/reportes')}
       onIrComunicados={() => navigate('/admin/comunicados')}
+      onIrPreguntasFrecuentes={() => navigate('/admin/preguntas-frecuentes')}
       onIrBitacora={() => navigate('/bitacora')}
       onIrCuentasBloqueadas={() => setMostrarCuentasBloqueadas(true)}
       onCerrarSesion={() => {
@@ -702,6 +705,7 @@ function App() {
         })
       }
       onIrComunicados={() => navigate('/admin/comunicados')}
+      onIrPreguntasFrecuentes={() => navigate('/admin/preguntas-frecuentes')}
     />
   </section>
 );
@@ -852,6 +856,20 @@ function App() {
       <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef] pt-20 sm:pt-24">
         <BotonVolverInicio texto="Volver al Dashboard" onClick={() => navigate(rolAutenticado === 'super_admin' ? '/super-admin/dashboard' : '/admin/dashboard')} />
         <GestionComunicados />
+      </section>
+    );
+  }
+
+  if (rutaActual === '/admin/preguntas-frecuentes') {
+    if (rolAutenticado !== 'administrador' && rolAutenticado !== 'super_admin') {
+      navigate('/');
+      return null;
+    }
+
+    return (
+      <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef] pt-20 sm:pt-24">
+        <BotonVolverInicio texto="Volver al Dashboard" onClick={() => navigate(rolAutenticado === 'super_admin' ? '/super-admin/dashboard' : '/admin/dashboard')} />
+        <GestionPreguntasFrecuentes />
       </section>
     );
   }
@@ -1626,6 +1644,7 @@ function App() {
             </section>
             <SeccionResenas nombreUsuario={nombreUsuario} />
             <MapaParque />
+            <SeccionPreguntasFrecuentes />
           </main>
 
           <Footer />
