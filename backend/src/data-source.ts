@@ -25,6 +25,7 @@ import { Resena } from './models/Resena';
 import { ConsultaEmprendimiento } from './models/ConsultaEmprendimiento';
 import { Notificacion } from './models/Notificacion';
 import { ConversacionChatbot } from './models/ConversacionChatbot';
+import { PreguntasFrecuentes } from './models/PreguntasFrecuentes';
 
 dotenv.config();
 
@@ -73,6 +74,7 @@ timezone: '-06:00',
     ConsultaEmprendimiento,
     Notificacion,
     ConversacionChatbot,
+    PreguntasFrecuentes,
 
   ],
  
