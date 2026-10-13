@@ -37,6 +37,13 @@ const formatearTipoActividad = (tipo: string): string => {
   return tipo;
 };
 
+const obtenerUrlComprobante = (ruta: string): string => {
+  if (/^https?:\/\//i.test(ruta)) return ruta;
+
+  const apiUrl = import.meta.env.VITE_API_URL?.trim() || 'http://localhost:3000';
+  return `${apiUrl.replace(/\/+$/, '')}${ruta}`;
+};
+
 const acentoPorTipo: Record<
   string,
   {
@@ -1042,6 +1049,20 @@ export default function MisInscripciones() {
                                   inscripcion.fechaCancelacion,
                                 )}
                               </p>
+                            )}
+
+                            {inscripcion.esPago && inscripcion.comprobanteUrl && (
+                              <a
+                                href={obtenerUrlComprobante(inscripcion.comprobanteUrl)}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="mt-3 inline-flex items-center gap-2 rounded-xl border border-sky-500/25 bg-sky-500/10 px-3 py-2 text-xs font-bold text-sky-800 transition hover:bg-sky-500/20 dark:text-sky-200"
+                              >
+                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5v-9m0 0-3.5 3.5M12 7.5l3.5 3.5M5.25 15.75v2.5A1.75 1.75 0 0 0 7 20h10a1.75 1.75 0 0 0 1.75-1.75v-2.5" />
+                                </svg>
+                                Ver comprobante de pago
+                              </a>
                             )}
 
                             {estadoInscripcion === 'rechazada' && inscripcion.motivoRechazo && (

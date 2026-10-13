@@ -320,7 +320,6 @@ export default function login({
                   'identificador'
                 );
               }}
-              placeholder="correo@ejemplo.com o usuario123"
               disabled={
                 estado === 'cargando'
               }
@@ -381,7 +380,6 @@ export default function login({
                     'password'
                   );
                 }}
-                placeholder="Tu contraseña"
                 disabled={
                   estado === 'cargando'
                 }

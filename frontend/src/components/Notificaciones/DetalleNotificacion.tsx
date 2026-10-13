@@ -147,6 +147,9 @@ export default function DetalleNotificacion({
 
   const esNuevaReservaAdministrador =
     detalle?.notificacion.tipo === 'nueva_reserva_admin';
+  const esNotificacionComunicado =
+    notificacion?.tipo === 'nuevo_comunicado' ||
+    detalle?.notificacion.tipo === 'nuevo_comunicado';
 
   return (
     <div
@@ -229,7 +232,7 @@ export default function DetalleNotificacion({
               />
             ) : detalle ? (
               <>
-                <p className="text-sm leading-6 text-slate-600">
+                <p className="text-base font-medium leading-relaxed text-slate-700 sm:text-lg dark:text-slate-200">
                   {detalle.notificacion.mensaje}
                 </p>
 
@@ -244,11 +247,11 @@ export default function DetalleNotificacion({
                   <DetalleReservaNotificacion
                     datos={detalle.datos as DetalleReserva}
                   />
-                ) : (
+                ) : !esNotificacionComunicado ? (
                   <p className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-500">
                     Esta notificación no tiene información adicional.
                   </p>
-                )}
+                ) : null}
               </>
             ) : (
               <p className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-500">

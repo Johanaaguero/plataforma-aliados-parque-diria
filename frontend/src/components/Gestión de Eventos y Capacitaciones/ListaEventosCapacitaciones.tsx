@@ -1253,45 +1253,37 @@ export default function ListaEventosCapacitaciones({
                 </div>
               </div>
 
-              <div className="flex min-w-0 items-center justify-between gap-2 rounded-xl bg-slate-50 px-3 py-2.5">
-                <div className="flex min-w-0 items-center gap-2">
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white text-[#095540] shadow-sm">
-                    <svg
-                      className="h-3.5 w-3.5"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      aria-hidden="true"
-                    >
-                      <circle
-                        cx="9"
-                        cy="8"
-                        r="3"
-                        stroke="currentColor"
-                        strokeWidth="1.7"
-                      />
+              <div className="flex items-center gap-2 self-start rounded-full border border-[#8DC63F]/30 bg-[#8DC63F]/10 px-3 py-1.5 text-xs font-semibold text-[#095540]">
+                <svg
+                  className="h-4 w-4 shrink-0"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <circle
+                    cx="9"
+                    cy="8"
+                    r="3"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                  />
 
-                      <path
-                        d="M3.5 19a5.5 5.5 0 0111 0"
-                        stroke="currentColor"
-                        strokeWidth="1.7"
-                        strokeLinecap="round"
-                      />
+                  <path
+                    d="M3.5 19a5.5 5.5 0 0111 0"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinecap="round"
+                  />
 
-                      <path
-                        d="M16 6.5a3 3 0 010 5.8M17 15a5.2 5.2 0 013.5 4"
-                        stroke="currentColor"
-                        strokeWidth="1.7"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                  </div>
+                  <path
+                    d="M16 6.5a3 3 0 010 5.8M17 15a5.2 5.2 0 013.5 4"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinecap="round"
+                  />
+                </svg>
 
-                  <span className="truncate text-xs font-medium text-slate-500">
-                    Disponibilidad
-                  </span>
-                </div>
-
-                <span className="shrink-0 rounded-lg border border-[#8DC63F]/30 bg-[#8DC63F]/10 px-2.5 py-1 text-xs font-bold text-[#095540]">
+                <span className="whitespace-nowrap">
                   {formatearCupos(
                     item,
                   )}

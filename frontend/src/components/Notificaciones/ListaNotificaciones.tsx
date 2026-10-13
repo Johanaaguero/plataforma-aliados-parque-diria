@@ -118,6 +118,8 @@ export default function ListaNotificaciones({
   const [abiertaId, setAbiertaId] = useState<number | null>(null);
   const [notificacionPendienteEliminar, setNotificacionPendienteEliminar] =
     useState<number | null>(null);
+  const [confirmacionVaciadoAbierta, setConfirmacionVaciadoAbierta] =
+    useState(false);
 
   // Notificación seleccionada para mostrar el detalle
   const [notificacionAbierta, setNotificacionAbierta] =
@@ -296,14 +298,15 @@ export default function ListaNotificaciones({
     }
   }
 
+  function abrirConfirmacionVaciado() {
+    if (procesando || notificaciones.length === 0) return;
+    setConfirmacionVaciadoAbierta(true);
+  }
+
   async function vaciarNotificaciones() {
     if (procesando || notificaciones.length === 0) return;
 
-    const confirmado = window.confirm(
-      '¿Desea eliminar todas sus notificaciones? Esta acción no se puede deshacer.',
-    );
-
-    if (!confirmado) return;
+    setConfirmacionVaciadoAbierta(false);
 
     const anteriores = [...notificaciones];
     setProcesando(true);
@@ -368,7 +371,7 @@ export default function ListaNotificaciones({
           </button>
           <button
             type="button"
-            onClick={() => void vaciarNotificaciones()}
+            onClick={abrirConfirmacionVaciado}
             disabled={procesando || notificaciones.length === 0}
             className="inline-flex items-center justify-center gap-2 rounded-xl border border-rose-500/25 bg-rose-50/80 px-4 py-3 text-xs font-bold text-rose-700 shadow-sm transition hover:bg-rose-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-rose-400/25 dark:bg-rose-500/10 dark:text-rose-200 dark:hover:bg-rose-500/20 dark:focus-visible:ring-offset-[#0b241b]"
           >
@@ -564,6 +567,59 @@ export default function ListaNotificaciones({
           esAdministrador={esAdministrador}
           onClose={cerrarDetalle}
         />
+      )}
+
+      {confirmacionVaciadoAbierta && (
+        <div
+          className="fixed inset-0 z-[10000] flex items-center justify-center bg-emerald-950/55 p-4 backdrop-blur-md"
+          role="presentation"
+          onMouseDown={(evento) => {
+            if (evento.target === evento.currentTarget && !procesando) {
+              setConfirmacionVaciadoAbierta(false);
+            }
+          }}
+        >
+          <div
+            className="w-full max-w-md rounded-3xl border border-white/60 bg-white/80 p-6 shadow-[0_24px_70px_rgba(5,84,64,.28)] backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/85 sm:p-7"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="titulo-confirmar-vaciado"
+            aria-describedby="mensaje-confirmar-vaciado"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-rose-500/20 bg-rose-500/10 text-rose-600 dark:text-rose-300">
+              <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+
+            <h2 id="titulo-confirmar-vaciado" className="mt-5 text-xl font-bold tracking-tight text-[#095540] dark:text-white">
+              Vaciar notificaciones
+            </h2>
+            <p id="mensaje-confirmar-vaciado" className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+              Se eliminarán todas las notificaciones de tu lista. Esta acción no se puede deshacer.
+            </p>
+
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                autoFocus
+                onClick={() => setConfirmacionVaciadoAbierta(false)}
+                disabled={procesando}
+                className="rounded-2xl border border-[#095540]/20 bg-white/70 px-4 py-2.5 text-sm font-bold text-[#095540] transition hover:bg-white disabled:opacity-50 dark:border-white/15 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => void vaciarNotificaciones()}
+                disabled={procesando}
+                className="rounded-2xl bg-rose-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-rose-900/20 transition hover:bg-rose-700 disabled:opacity-50"
+              >
+                {procesando ? 'Eliminando…' : 'Eliminar todas'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {notificacionPendienteEliminar !== null && (

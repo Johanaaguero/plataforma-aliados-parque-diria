@@ -59,7 +59,7 @@ export default function LogoutWelcomeOverlay() {
           </svg>
         </span>
         <h2 className="mt-6 text-2xl font-semibold tracking-tight sm:text-3xl">
-          ¡Hasta luego{nombre ? `, ${nombre}` : ''}! 👋
+          ¡Hasta luego{nombre ? `, ${nombre}` : ''}!
         </h2>
         <p className="mt-3 text-sm leading-6 text-emerald-50/80 sm:text-base">
           Gracias por formar parte de Aliados del Parque Nacional Diriá.

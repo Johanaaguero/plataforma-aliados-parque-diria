@@ -10,6 +10,7 @@ import {
   type DatosReserva,
 } from '../../services/inscripcionService';
 import CountrySelectPersonalizado from '../CountrySelectPersonalizado';
+import DatePickerCampo from '../ui/DatePickerCampo';
 
 interface FormularioReservaProps {
   evento: EventoCapacitacion;
@@ -108,13 +109,39 @@ export default function FormularioReserva({
   const [enviado, setEnviado] =
     useState(false);
   const [comprobante, setComprobante] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const primerCampoRef =
     useRef<HTMLInputElement>(null);
+  const comprobanteRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     primerCampoRef.current?.focus();
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
+
+  function seleccionarComprobante(archivo: File | null) {
+    setComprobante(archivo);
+    setPreviewUrl(
+      archivo?.type.startsWith('image/')
+        ? URL.createObjectURL(archivo)
+        : null,
+    );
+  }
+
+  function quitarComprobante() {
+    setComprobante(null);
+    setPreviewUrl(null);
+
+    if (comprobanteRef.current) {
+      comprobanteRef.current.value = '';
+    }
+  }
 
   function actualizarCampo(
     campo: CampoReserva,
@@ -400,16 +427,15 @@ export default function FormularioReserva({
                   Fecha de nacimiento
                 </span>
 
-                <input
-                  type="date"
+                <DatePickerCampo
                   className={INPUT_CLASS}
                   value={
                     formulario.fechaNacimiento
                   }
-                  onChange={(event) =>
+                  onChange={(valor) =>
                     actualizarCampo(
                       'fechaNacimiento',
-                      event.target.value,
+                      valor,
                     )
                   }
                   disabled={enviando}
@@ -543,8 +569,50 @@ export default function FormularioReserva({
                 </p>
                 <label className="mt-3 block text-sm font-semibold text-sky-900 dark:text-sky-100">
                   Comprobante de pago <span aria-hidden="true">*</span>
-                  <input type="file" required accept="image/jpeg,image/png,image/webp,application/pdf" className="mt-1 block w-full text-sm" disabled={enviando} onChange={(event) => setComprobante(event.target.files?.[0] ?? null)} />
+                  <input
+                    ref={comprobanteRef}
+                    type="file"
+                    required
+                    accept="image/jpeg,image/png,image/webp,application/pdf"
+                    className="mt-1 block w-full text-sm"
+                    disabled={enviando}
+                    onChange={(event) =>
+                      seleccionarComprobante(event.target.files?.[0] ?? null)
+                    }
+                  />
                 </label>
+
+                {previewUrl && comprobante && (
+                  <div className="mt-3 rounded-xl border border-emerald-500/30 bg-white/60 p-3 dark:bg-slate-950/20">
+                    <img
+                      src={previewUrl}
+                      alt="Vista previa del comprobante de pago"
+                      className="mx-auto max-h-48 rounded-xl border border-emerald-500/30 object-contain"
+                    />
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                      <span className="min-w-0 truncate text-xs font-medium text-slate-600 dark:text-slate-300">
+                        {comprobante.name}
+                      </span>
+                      <div className="flex gap-2">
+                        <button type="button" onClick={() => comprobanteRef.current?.click()} disabled={enviando} className="rounded-lg border border-sky-500/30 px-3 py-1.5 text-xs font-bold text-sky-800 transition hover:bg-sky-500/10 disabled:opacity-50 dark:text-sky-200">Cambiar imagen</button>
+                        <button type="button" onClick={quitarComprobante} disabled={enviando} className="rounded-lg border border-rose-500/30 px-3 py-1.5 text-xs font-bold text-rose-700 transition hover:bg-rose-500/10 disabled:opacity-50 dark:text-rose-200">Quitar</button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {comprobante?.type === 'application/pdf' && (
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose-500/25 bg-white/60 p-3 dark:bg-slate-950/20">
+                    <div className="flex min-w-0 items-center gap-2 text-rose-700 dark:text-rose-200">
+                      <svg className="h-8 w-8 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M14.25 2.75H6.5A1.75 1.75 0 0 0 4.75 4.5v15A1.75 1.75 0 0 0 6.5 21.25h11A1.75 1.75 0 0 0 19.25 19.5V7.75l-5-5Z" /><path strokeLinecap="round" strokeLinejoin="round" d="M14 2.75v5h5M8 16.5h8M8 13.5h5" /></svg>
+                      <span className="truncate text-xs font-bold">{comprobante.name}</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <button type="button" onClick={() => comprobanteRef.current?.click()} disabled={enviando} className="rounded-lg border border-sky-500/30 px-3 py-1.5 text-xs font-bold text-sky-800 transition hover:bg-sky-500/10 disabled:opacity-50 dark:text-sky-200">Cambiar archivo</button>
+                      <button type="button" onClick={quitarComprobante} disabled={enviando} className="rounded-lg border border-rose-500/30 px-3 py-1.5 text-xs font-bold text-rose-700 transition hover:bg-rose-500/10 disabled:opacity-50 dark:text-rose-200">Quitar</button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
