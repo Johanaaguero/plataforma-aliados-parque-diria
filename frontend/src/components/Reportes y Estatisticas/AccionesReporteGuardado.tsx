@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { guardarReporte } from '../../services/reportesApi';
+import { mostrarFeedback } from '../ui/FeedbackToast';
 import BotonesExportarReporte from './BotonesExportarReporte';
 
 type TipoReporte = 'usuarios' | 'reservas' | 'emprendimientos' | 'eventos' | 'incidencias';
@@ -36,12 +37,12 @@ export default function AccionesReporteGuardado({ tipoReporte, nombreReporte, co
 
   const guardar = async (): Promise<void> => {
     if (!tieneDatos) {
-      window.alert('Debe consultar un reporte con datos válidos antes de guardar.');
+      mostrarFeedback('error', 'Debe consultar un reporte con datos válidos antes de guardar.');
       return;
     }
     const usuarioGeneroId = obtenerUsuarioId();
     if (!usuarioGeneroId) {
-      window.alert('No se pudo identificar al administrador que genera el reporte.');
+      mostrarFeedback('error', 'No se pudo identificar al administrador que genera el reporte.');
       return;
     }
     setGuardando(true);
@@ -51,7 +52,7 @@ export default function AccionesReporteGuardado({ tipoReporte, nombreReporte, co
       setGuardado(true);
     } catch (error) {
       console.error(`Error al guardar reporte de ${tipoReporte}:`, error);
-      window.alert(error instanceof Error ? error.message : 'No se pudo guardar el reporte.');
+      mostrarFeedback('error', error instanceof Error ? error.message : 'No se pudo guardar el reporte.');
       setGuardado(false);
     } finally {
       setGuardando(false);

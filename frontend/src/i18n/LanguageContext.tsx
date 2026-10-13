@@ -16,7 +16,7 @@ const translations = {
     'nav.home': 'Inicio',
     'nav.businesses': 'Emprendimientos',
     'nav.events': 'Eventos y capacitaciones',
-    'nav.reportIncident': 'Reportar incidencia',
+    'nav.reportIncident': 'Incidentes',
     'nav.notifications': 'Notificaciones',
     'nav.login': 'Iniciar sesión',
     'nav.logout': 'Cerrar sesión',

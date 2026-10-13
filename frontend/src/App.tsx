@@ -29,6 +29,7 @@ import { mostrarBienvenidaLogin } from './components/ui/LoginWelcomeOverlay';
 import { mostrarDespedidaLogout } from './components/ui/LogoutWelcomeOverlay';
 
 import RegistroIncidencia from './components/Gestión de incidencias/RegistroIncidencia';
+import ListaIncidencias from './components/Gestión de incidencias/ListaIncidencias';
 
 import IncidenciasAdmin from './components/Gestión de incidencias/admin/IncidenciasAdmin';
 
@@ -51,7 +52,6 @@ import DashboardPage from './components/dashboard/DashboardPage';
 import Navbar from './components/informativo/Navbar';
 
 import Hero from './components/informativo/Hero';
-import ModalNovedades from './components/informativo/ModalNovedades';
 import SeccionResenas from './components/informativo/SeccionResenas';
 
 import Footer from './components/informativo/Footer';
@@ -247,9 +247,9 @@ function App() {
 
   const [mostrarLogin, setMostrarLogin] =
     useState(false);
-
-  const [mostrarNovedades, setMostrarNovedades] =
+  const [mostrarRegistroIncidencia, setMostrarRegistroIncidencia] =
     useState(false);
+
 
   const [mostrarGestionRoles, setMostrarGestionRoles] =
     useState(false);
@@ -556,10 +556,6 @@ function App() {
         seccionPublicaSolicitada ?? 'inicio'
       );
 
-      if (estadoNavegacion?.abrirNovedades) {
-        setMostrarNovedades(true);
-      }
-
       window.scrollTo({
         top: 0,
         left: 0,
@@ -569,7 +565,6 @@ function App() {
   }, [
     rutaActual,
     seccionPublicaSolicitada,
-    estadoNavegacion?.abrirNovedades,
   ]);
 
   const vieneDelDashboard =
@@ -1219,14 +1214,17 @@ function App() {
           }
         />
 
-<main className="min-h-[80vh] overflow-x-hidden bg-[#f5f7ef] pt-24 sm:pt-28 dark:bg-[#0b241b]">
-
-  <RegistroIncidencia
-    onClose={() =>
-      setSeccionActual('inicio')
-    }
-  />
-
+<main className="min-h-[80vh] overflow-x-hidden bg-transparent pt-24 sm:pt-28">
+  {mostrarRegistroIncidencia ? (
+    <RegistroIncidencia onClose={() => setMostrarRegistroIncidencia(false)} />
+  ) : (
+    <div className="px-4 pb-12 sm:px-6">
+      <div className="mx-auto flex max-w-7xl justify-end pt-4">
+        <button type="button" onClick={() => setMostrarRegistroIncidencia(true)} className="rounded-2xl border border-emerald-500/20 bg-white/70 px-5 py-3 text-sm font-bold text-emerald-900 shadow-lg backdrop-blur-md transition hover:bg-emerald-500/10 dark:bg-slate-900/70 dark:text-emerald-100">+ Registrar nueva incidencia</button>
+      </div>
+      <ListaIncidencias />
+    </div>
+  )}
 </main>
 
         <Footer />
@@ -1640,21 +1638,12 @@ function App() {
           <main>
             <Hero />
             <Informativo />
-            <section className="bg-[#f7fbe9] px-4 py-14 sm:px-6 dark:bg-[#0b241b]">
-              <div className="mx-auto max-w-5xl rounded-[2rem] border border-white/60 bg-white/65 p-7 text-center shadow-[0_20px_50px_rgba(5,84,64,.12)] backdrop-blur-md dark:border-white/10 dark:bg-white/10 sm:p-10">
-                <p className="text-xs font-bold uppercase tracking-[.22em] text-emerald-700 dark:text-emerald-300">Actualidad del Diriá</p>
-                <h2 className="mt-2 text-3xl font-bold tracking-tight text-emerald-950 dark:text-white">Novedades y Noticias del Parque</h2>
-                <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-emerald-900/75 dark:text-emerald-100/75">Consulta incidencias de afectación pública, emprendimientos, actividades y comunicados oficiales.</p>
-                <button type="button" onClick={() => setMostrarNovedades(true)} className="mt-6 rounded-full bg-emerald-700 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-900/20 transition hover:-translate-y-0.5 hover:bg-emerald-800">Ver novedades</button>
-              </div>
-            </section>
             <SeccionResenas nombreUsuario={nombreUsuario} />
             <MapaParque />
             <SeccionPreguntasFrecuentes />
           </main>
 
           <Footer />
-          <ModalNovedades abierto={mostrarNovedades} onCerrar={() => setMostrarNovedades(false)} />
           
           <Chatbot />
 
