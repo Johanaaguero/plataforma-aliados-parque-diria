@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 
 import { api } from '../../../services/api';
 import GestionPreguntasFrecuentes from '../../GestionPreguntasFrecuentes';
+import GestionContenidoVisual from '../../Super_admin/GestionContenidoVisual';
 
 import logo from '../../../assets/logo.png';
 import imagenParque from '../../../assets/parque-hero.jpg';
@@ -93,6 +94,7 @@ export default function DashboardSuper_admin({
   const [cargandoActividad, setCargandoActividad] = useState(true);
   const [errorActividad, setErrorActividad] = useState<string | null>(null);
   const [vistaPreguntasFrecuentes, setVistaPreguntasFrecuentes] = useState(false);
+  const [vistaContenidoVisual, setVistaContenidoVisual] = useState(false);
 
   useEffect(() => {
     let componenteActivo = true;
@@ -171,6 +173,7 @@ export default function DashboardSuper_admin({
       <div className="absolute right-5 top-5 z-[70] flex gap-2">
         <button type="button" onClick={onIrComunicados} className="rounded-full border border-white/50 bg-white/55 px-4 py-2 text-xs font-bold text-emerald-800 shadow-lg backdrop-blur-md transition hover:bg-white dark:border-white/10 dark:bg-white/10 dark:text-emerald-100">Comunicados</button>
         <button type="button" onClick={() => setVistaPreguntasFrecuentes(true)} className="rounded-full border border-white/50 bg-white/55 px-4 py-2 text-xs font-bold text-emerald-800 shadow-lg backdrop-blur-md transition hover:bg-white dark:border-white/10 dark:bg-white/10 dark:text-emerald-100">Preguntas frecuentes</button>
+        <button type="button" onClick={() => setVistaContenidoVisual(true)} className="rounded-full border border-white/50 bg-white/55 px-4 py-2 text-xs font-bold text-emerald-800 shadow-lg backdrop-blur-md transition hover:bg-white dark:border-white/10 dark:bg-white/10 dark:text-emerald-100">Contenido visual</button>
       </div>
       {/* =====================================================
           FONDO SUTIL — conserva la fotografía del proyecto,
@@ -593,7 +596,9 @@ export default function DashboardSuper_admin({
           {/* reflejo superior */}
           <div className="pointer-events-none absolute left-1/2 top-0 h-px w-[65%] -translate-x-1/2 bg-gradient-to-r from-transparent via-white to-transparent opacity-80" />
 
-          {vistaPreguntasFrecuentes ? (
+          {vistaContenidoVisual ? (
+            <div className="flex h-full min-h-0 flex-col overflow-y-auto"><GestionContenidoVisual /></div>
+          ) : vistaPreguntasFrecuentes ? (
             <div className="flex h-full min-h-0 flex-col overflow-y-auto p-4 sm:p-6 lg:p-8">
               <button
                 type="button"

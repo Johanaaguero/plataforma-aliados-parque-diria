@@ -136,14 +136,14 @@ export default function DetalleEventoCapacitacion({
     try {
       const reserva = await consultarReservaEvento(evento.id);
 
-      if (reserva.estado === 'pendiente') {
+      if (reserva?.existe && reserva.estado === 'pendiente') {
         setMensajeInscripcion(
           'Ya tienes una solicitud de inscripción para este evento. Estado: Pendiente.',
         );
         return;
       }
 
-      if (reserva.estado === 'aprobada') {
+      if (reserva?.existe && reserva.estado === 'aprobada') {
         setMensajeInscripcion(
           'Ya estás inscrito en este evento.',
         );
@@ -151,12 +151,10 @@ export default function DetalleEventoCapacitacion({
       }
 
       setMostrarFormularioReserva(true);
-    } catch (error) {
-      setErrorInscripcion(
-        error instanceof Error
-          ? error.message
-          : 'No se pudo consultar tu solicitud de inscripción.',
-      );
+    } catch {
+      // Una consulta fallida no debe impedir iniciar una solicitud nueva. El
+      // endpoint vuelve a validar duplicados y cupos al crear la reserva.
+      setMostrarFormularioReserva(true);
     } finally {
       setConsultandoReserva(false);
       setInscribiendo(false);

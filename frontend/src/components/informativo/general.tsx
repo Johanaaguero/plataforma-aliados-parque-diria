@@ -6,6 +6,7 @@ import parque3 from '../../assets/diria-paisaje-3.jpg';
 import parque4 from '../../assets/diria-paisaje-4.jpg';
 import { CONTENIDO_PARQUE } from './contenidoParque';
 import ScrollReveal from '../ui/ScrollReveal';
+import { obtenerConfiguracionVisual, urlVisual, type ConfiguracionVisual } from '../../services/configuracionVisualService';
 
 const IMAGENES_PARQUE = [
   {
@@ -64,6 +65,32 @@ const MODULOS = [
 function Informativo() {
   const [imagenActual, setImagenActual] = useState(0);
   const [moduloSeleccionado, setModuloSeleccionado] = useState<(typeof MODULOS)[number] | null>(null);
+  const [configuracionVisual, setConfiguracionVisual] = useState<ConfiguracionVisual | null>(null);
+  const imagenesParque = configuracionVisual?.sobreImagen
+    ? [
+      { src: urlVisual(configuracionVisual.sobreImagen), alt: 'Imagen institucional del Parque Nacional Diriá' },
+      ...(configuracionVisual.galeriaImagenes ?? []).map((src, indice) => ({ src: urlVisual(src), alt: `Imagen secundaria ${indice + 1} del Parque Nacional Diriá` })),
+    ]
+    : configuracionVisual?.galeriaImagenes?.length
+      ? configuracionVisual.galeriaImagenes.map((src, indice) => ({ src: urlVisual(src), alt: `Imagen secundaria ${indice + 1} del Parque Nacional Diriá` }))
+      : IMAGENES_PARQUE;
+  const modulos = MODULOS.map((modulo, indice) => ({
+    ...modulo,
+    imagen: configuracionVisual?.galeriaImagenes?.[indice]
+      ? urlVisual(configuracionVisual.galeriaImagenes[indice])
+      : modulo.imagen,
+  }));
+
+  useEffect(() => { obtenerConfiguracionVisual().then(setConfiguracionVisual).catch(() => undefined); }, []);
+
+  useEffect(() => {
+    const actualizar = (evento: Event) => {
+      const configuracion = (evento as CustomEvent<ConfiguracionVisual>).detail;
+      if (configuracion) setConfiguracionVisual(configuracion);
+    };
+    window.addEventListener('configuracion-visual:actualizada', actualizar);
+    return () => window.removeEventListener('configuracion-visual:actualizada', actualizar);
+  }, []);
 
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -71,11 +98,11 @@ function Informativo() {
     }
 
     const intervalo = window.setInterval(() => {
-      setImagenActual((actual) => (actual + 1) % IMAGENES_PARQUE.length);
+      setImagenActual((actual) => (actual + 1) % imagenesParque.length);
     }, 4000);
 
     return () => window.clearInterval(intervalo);
-  }, []);
+  }, [imagenesParque.length]);
 
   return (
     <section
@@ -90,7 +117,7 @@ function Informativo() {
       <div className="relative mx-auto max-w-7xl">
         <ScrollReveal className="grid grid-cols-1 items-center gap-10 px-6 py-12 md:grid-cols-2">
             <div className="sigtad-image-reveal relative h-[400px] w-full overflow-hidden rounded-3xl bg-[#095540] shadow-xl md:h-[480px]">
-            {IMAGENES_PARQUE.map((imagen, index) => (
+            {imagenesParque.map((imagen, index) => (
               <img
                 key={imagen.src}
                 src={imagen.src}
@@ -126,7 +153,7 @@ function Informativo() {
                 role="group"
                 aria-label="Seleccionar imagen del parque"
               >
-                {IMAGENES_PARQUE.map((imagen, index) => (
+                {imagenesParque.map((imagen, index) => (
                   <button
                     key={imagen.src}
                     type="button"
@@ -211,7 +238,7 @@ function Informativo() {
           </ScrollReveal>
 
           <ScrollReveal stagger className="mt-10 grid gap-5 sm:grid-cols-2 lg:mt-12 lg:grid-cols-4">
-            {MODULOS.map((modulo) => (
+            {modulos.map((modulo) => (
               <article
                 id={modulo.id}
                 key={modulo.id}

@@ -8,6 +8,34 @@ import { serializarFechaCalendario, serializarFechaUtc } from '../../../utils/fe
 
 const service = new InscripcionService();
 
+const serializarReservaConsulta = (reserva: Reserva | null) => {
+  if (!reserva) return null;
+
+  return {
+    id: reserva.id,
+    usuarioId: reserva.usuarioId,
+    eventoCapacitacionId: reserva.eventoCapacitacionId,
+    nombreCompleto: reserva.nombreCompleto,
+    fechaNacimiento: serializarFechaCalendario(reserva.fechaNacimiento),
+    tipoIdentificacion: reserva.tipoIdentificacion,
+    numeroIdentificacion: reserva.numeroIdentificacion,
+    correo: reserva.correo,
+    telefono: reserva.telefono,
+    estado: reserva.estado,
+    numeroTicket: reserva.numeroTicket,
+    comprobanteUrl: reserva.comprobanteUrl,
+    metodoPago: reserva.metodoPago ?? reserva.eventoCapacitacion?.tipoPago ?? null,
+    datosDevolucion: reserva.datosDevolucion ?? null,
+    motivoRechazo: reserva.motivoRechazo ?? null,
+    fechaExpiracionPreReserva: serializarFechaUtc(reserva.fechaExpiracionPreReserva),
+    esPago: reserva.eventoCapacitacion?.esPago ?? false,
+    precio: reserva.eventoCapacitacion?.precio ?? null,
+    politicasCancelacion: reserva.eventoCapacitacion?.politicasCancelacion ?? null,
+    createdAt: serializarFechaUtc(reserva.createdAt),
+    updatedAt: serializarFechaUtc(reserva.updatedAt),
+  };
+};
+
 function manejarError(res: Response, error: unknown) {
   if (error instanceof Error) {
     if (error.name === 'ValidationError') {
@@ -157,7 +185,12 @@ export class InscripcionController {
       return res.status(200).json({
         ok: true,
         message: 'Reserva consultada correctamente.',
-        data: resultado,
+        data: {
+          existe: resultado.existe,
+          inscrito: resultado.existe,
+          estado: resultado.estado,
+          reserva: serializarReservaConsulta(resultado.reserva),
+        },
       });
     } catch {
       return res.status(500).json({

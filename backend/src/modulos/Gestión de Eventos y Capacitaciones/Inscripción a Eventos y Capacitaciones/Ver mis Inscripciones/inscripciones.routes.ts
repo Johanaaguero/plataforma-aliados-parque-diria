@@ -21,6 +21,12 @@ reservasRouter.patch(
   (req, res) => controller.cancelarReserva(req, res),
 );
 
+reservasRouter.patch(
+  '/:id/datos-devolucion',
+  verificarToken,
+  (req, res) => controller.guardarDatosDevolucion(req, res),
+);
+
 router.get(
   '/mias',
   verificarToken,

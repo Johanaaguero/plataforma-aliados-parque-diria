@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import DetalleNotificacion from './DetalleNotificacion';
 
 import {
+  eliminarTodasLasNotificaciones,
   eliminarNotificacion,
   marcarComoLeida,
   marcarTodasComoLeidas,
@@ -295,6 +296,41 @@ export default function ListaNotificaciones({
     }
   }
 
+  async function vaciarNotificaciones() {
+    if (procesando || notificaciones.length === 0) return;
+
+    const confirmado = window.confirm(
+      '¿Desea eliminar todas sus notificaciones? Esta acción no se puede deshacer.',
+    );
+
+    if (!confirmado) return;
+
+    const anteriores = [...notificaciones];
+    setProcesando(true);
+    setError(null);
+    setExito(null);
+    setNotificaciones([]);
+    cerrarDetalle();
+
+    try {
+      const resultado = await eliminarTodasLasNotificaciones();
+      setExito(
+        resultado.cantidad > 0
+          ? `${resultado.cantidad} notificaciones eliminadas correctamente.`
+          : 'No había notificaciones para eliminar.',
+      );
+    } catch (e) {
+      setNotificaciones(anteriores);
+      setError(
+        e instanceof Error
+          ? e.message
+          : 'No se pudieron eliminar las notificaciones.',
+      );
+    } finally {
+      setProcesando(false);
+    }
+  }
+
   return (
     <section className="sigtad-notificaciones min-h-screen bg-gradient-to-b from-[#f5f8f6] via-[#f5f8f6] to-[#eaf2ed] px-4 py-12 text-[#17372c] transition-colors dark:from-[#071c14] dark:via-[#0b241b] dark:to-[#0d2b20] dark:text-[#edf8f1] sm:px-6 lg:px-8">
       <div className="mx-auto w-full max-w-none">
@@ -318,6 +354,7 @@ export default function ListaNotificaciones({
             </p>
           </div>
 
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <button
             type="button"
             onClick={() => void marcarTodas()}
@@ -329,6 +366,18 @@ export default function ListaNotificaciones({
             </svg>
             {procesando ? 'Actualizando…' : 'Marcar todas como leídas'}
           </button>
+          <button
+            type="button"
+            onClick={() => void vaciarNotificaciones()}
+            disabled={procesando || notificaciones.length === 0}
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-rose-500/25 bg-rose-50/80 px-4 py-3 text-xs font-bold text-rose-700 shadow-sm transition hover:bg-rose-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-rose-400/25 dark:bg-rose-500/10 dark:text-rose-200 dark:hover:bg-rose-500/20 dark:focus-visible:ring-offset-[#0b241b]"
+          >
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M3 6h18M8 6V4h8v2m-7 4v7m4-7v7M6 6l1 15h10l1-15" />
+            </svg>
+            {procesando ? 'Actualizando…' : 'Vaciar notificaciones'}
+          </button>
+          </div>
         </header>
 
         <div

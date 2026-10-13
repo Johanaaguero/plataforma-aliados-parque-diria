@@ -111,6 +111,12 @@ export class Reserva {
   @Column({ type: 'varchar', length: 500, name: 'comprobante_url', nullable: true })
   comprobanteUrl!: string | null;
 
+  @Column({ type: 'varchar', length: 40, name: 'metodo_pago', nullable: true })
+  metodoPago!: string | null;
+
+  @Column({ type: 'json', name: 'datos_devolucion', nullable: true })
+  datosDevolucion!: { tipo: 'sinpe_movil' | 'transferencia_bancaria'; telefono?: string; iban?: string; banco?: string } | null;
+
   @Column({ type: 'text', name: 'motivo_rechazo', nullable: true })
   motivoRechazo!: string | null;
 

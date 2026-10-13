@@ -50,7 +50,12 @@ export interface MiInscripcion {
   politicasCancelacion?: string | null;
   motivoRechazo?: string | null;
   numeroTicket?: string | null;
+  comprobanteUrl?: string | null;
+  metodoPago?: 'sinpe_movil' | 'transferencia_bancaria' | null;
+  datosDevolucion?: DatosDevolucion | null;
 }
+
+export type DatosDevolucion = { tipo: 'sinpe_movil'; telefono: string } | { tipo: 'transferencia_bancaria'; iban: string; banco: string };
 
 // NOTA: ruta asumida. Cambia '/inscripciones/mias' por la ruta real del backend
 // cuando esté disponible; el resto del código no depende de este valor.
@@ -85,13 +90,25 @@ export async function cancelarInscripcion(inscripcionId: number): Promise<Cancel
   );
 }
 
-export async function cancelarReserva(reservaId: number): Promise<CancelacionInscripcionResponse> {
+export async function cancelarReserva(reservaId: number, datosDevolucion?: DatosDevolucion): Promise<CancelacionInscripcionResponse> {
   return api.solicitar<CancelacionInscripcionResponse>(
     `/reservas/${reservaId}/cancelar`,
-    { method: 'PATCH' },
+    { method: 'PATCH', body: datosDevolucion ? JSON.stringify({ datosDevolucion }) : undefined },
     {
       incluirAuth: true,
       mensajeError: 'No se pudo cancelar la reserva.',
+    },
+  );
+}
+
+export async function guardarDatosDevolucion(reservaId: number, datosDevolucion: DatosDevolucion): Promise<{ id: number; datosDevolucion: DatosDevolucion }> {
+  return api.solicitar<{ id: number; datosDevolucion: DatosDevolucion }>(
+    `/reservas/${reservaId}/datos-devolucion`,
+    { method: 'PATCH', body: JSON.stringify({ datosDevolucion }) },
+    {
+      incluirAuth: true,
+      incluirContentType: true,
+      mensajeError: 'No se pudieron guardar los datos de devolución.',
     },
   );
 }

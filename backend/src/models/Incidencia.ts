@@ -46,7 +46,7 @@ export class Incidencia {
   id!: number;
 
   @Index('UQ_INCIDENCIAS_CODIGO', { unique: true })
-  @Column({ type: 'varchar', length: 8, unique: true })
+  @Column({ type: 'varchar', length: 20, unique: true })
   codigo!: string;
 
   @Column({

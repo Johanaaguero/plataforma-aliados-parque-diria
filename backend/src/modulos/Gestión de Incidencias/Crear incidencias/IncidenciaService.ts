@@ -262,10 +262,16 @@ export const crearIncidencia = async (
    * Esto también funciona para incidencias
    * anónimas.
    */
-  await notificacionIncidenciaService
-    .notificarNuevaIncidenciaAAdministradores(
-      incidenciaGuardada,
-    );
+  try {
+    await notificacionIncidenciaService
+      .notificarNuevaIncidenciaAAdministradores(
+        incidenciaGuardada,
+      );
+  } catch (error) {
+    // La incidencia ya fue persistida: una notificación secundaria no debe
+    // transformar un registro exitoso en un error para la persona reportante.
+    console.error('No se pudo notificar la nueva incidencia:', error);
+  }
 
   return incidenciaGuardada;
 };

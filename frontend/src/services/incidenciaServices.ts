@@ -102,7 +102,6 @@ export interface ActualizarIncidenciaAdministrativa {
   estado?: EstadoIncidencia;
   categoria?: CategoriaIncidencia;
   prioridad?: PrioridadIncidencia;
-  observacionesAdmin?: string | null;
 }
 
 export type AccionCierreIncidencia =
@@ -115,6 +114,17 @@ export interface Evidencia {
   nombreArchivo: string | null;
   tamanoBytes: number | null;
   tipo: 'foto' | 'video';
+}
+
+export interface ComentarioIncidencia {
+  id: number;
+  incidenciaId: number;
+  autorId: number | null;
+  nombreAutor: string;
+  texto: string;
+  fechaHora: string;
+  esNotaPrivada: boolean;
+  esDatoSensible: boolean;
 }
 
 // ============================================================
@@ -184,6 +194,10 @@ interface RespuestaMisIncidencias {
 interface RespuestaCierreIncidencia {
   mensaje: string;
   incidencia: Incidencia;
+}
+
+interface RespuestaComentariosIncidencia {
+  comentarios: ComentarioIncidencia[];
 }
 
 // ============================================================
@@ -371,6 +385,28 @@ export async function cerrarMiIncidencia(
     );
 
   return respuesta.incidencia;
+}
+
+export async function obtenerComentariosIncidencia(id: number): Promise<ComentarioIncidencia[]> {
+  const respuesta = await api.solicitar<RespuestaComentariosIncidencia>(
+    `/incidencias/${id}/comentarios`,
+    { method: 'GET' },
+    { desempaquetarData: false, mensajeError: 'No se pudo cargar el historial de seguimiento.' },
+  );
+  return respuesta.comentarios;
+}
+
+export async function agregarComentarioIncidencia(
+  id: number,
+  texto: string,
+  esNotaPrivada: boolean,
+): Promise<ComentarioIncidencia> {
+  const respuesta = await api.solicitar<{ comentario: ComentarioIncidencia }>(
+    `/incidencias/${id}/comentarios`,
+    { method: 'POST', body: JSON.stringify({ texto, esNotaPrivada }) },
+    { desempaquetarData: false, mensajeError: 'No se pudo registrar el comentario.' },
+  );
+  return respuesta.comentario;
 }
 
 export async function actualizarVisibilidadIncidencia(

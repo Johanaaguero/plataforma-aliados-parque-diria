@@ -42,8 +42,6 @@ export class ReportesEventosService {
     filtros: FiltrosEventos,
     usuarioGeneroId: number,
   ) {
-    const hoy = new Date();
-
     let fechaInicio: Date;
     let fechaFin: Date;
 
@@ -63,7 +61,9 @@ export class ReportesEventosService {
         `${filtros.fechaFin}T23:59:59`,
       );
     } else {
-      fechaFin = hoy;
+      // Sin un rango explícito, el reporte debe incluir también las actividades
+      // programadas a futuro, no solo las registradas hasta el día de hoy.
+      fechaFin = new Date('2100-12-31T23:59:59');
     }
 
     /*

@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 
 import {
   cerrarMiIncidencia,
+  obtenerComentariosIncidencia,
   obtenerMisIncidencias,
   type AccionCierreIncidencia,
+  type ComentarioIncidencia,
   type EstadoIncidencia,
   type Incidencia,
 } from '../../services/incidenciaServices';
@@ -70,6 +72,12 @@ function coincideFiltro(
   return !['resuelta', 'cerrada'].includes(incidencia.estado);
 }
 
+function formatearFechaComentario(fecha: string): string {
+  return new Intl.DateTimeFormat('es-CR', {
+    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true,
+  }).format(new Date(fecha));
+}
+
 export default function MisIncidencias() {
   const navigate = useNavigate();
   const [incidencias, setIncidencias] = useState<Incidencia[]>([]);
@@ -81,6 +89,8 @@ export default function MisIncidencias() {
   const [mensajeExito, setMensajeExito] = useState<string | null>(null);
   const [observacionesUsuario, setObservacionesUsuario] =
   useState<Record<number, string>>({});
+  const [historiales, setHistoriales] = useState<Record<number, ComentarioIncidencia[]>>({});
+  const [cargandoHistoriales, setCargandoHistoriales] = useState(false);
 
 
   useEffect(() => {
@@ -116,6 +126,26 @@ export default function MisIncidencias() {
       activo = false;
     };
   }, []);
+
+  useEffect(() => {
+    let activo = true;
+    if (!incidencias.length) {
+      setHistoriales({});
+      return () => { activo = false; };
+    }
+
+    setCargandoHistoriales(true);
+    Promise.all(incidencias.map(async (incidencia) => [incidencia.id, await obtenerComentariosIncidencia(incidencia.id)] as const))
+      .then((resultados) => {
+        if (activo) setHistoriales(Object.fromEntries(resultados));
+      })
+      .catch(() => {
+        if (activo) setHistoriales({});
+      })
+      .finally(() => { if (activo) setCargandoHistoriales(false); });
+
+    return () => { activo = false; };
+  }, [incidencias]);
 
   const incidenciasFiltradas = useMemo(() => {
     const termino = busqueda.trim().toLowerCase();
@@ -253,6 +283,15 @@ export default function MisIncidencias() {
           'Aún no hay observaciones administrativas.'}
       </span>
     </div>
+
+    <section className="mt-4 rounded-2xl border border-emerald-500/15 bg-emerald-500/[0.05] p-4 backdrop-blur-xl dark:border-emerald-400/15 dark:bg-emerald-400/[0.05]">
+      <h3 className="text-sm font-extrabold text-emerald-900 dark:text-emerald-100">Historial de Seguimiento</h3>
+      <div className="mt-3 space-y-3">
+        {cargandoHistoriales && <p className="text-sm text-emerald-900/60 dark:text-white/60">Cargando seguimiento…</p>}
+        {!cargandoHistoriales && !(historiales[incidencia.id]?.length) && <p className="text-sm text-emerald-900/60 dark:text-white/60">Aún no hay actualizaciones públicas.</p>}
+        {historiales[incidencia.id]?.filter((comentario) => !comentario.esNotaPrivada && !comentario.esDatoSensible).map((comentario) => <article key={comentario.id} className="rounded-xl border border-white/50 bg-white/45 p-3 dark:border-white/10 dark:bg-slate-950/25"><div className="flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-bold text-emerald-950 dark:text-white">{comentario.nombreAutor}</p><time className="text-xs font-semibold text-emerald-900/55 dark:text-white/60" dateTime={comentario.fechaHora}>{formatearFechaComentario(comentario.fechaHora)}</time></div><p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-emerald-950/75 dark:text-white/75">{comentario.texto}</p></article>)}
+      </div>
+    </section>
   </div>
 
  {puedeResponder && (
