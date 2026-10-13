@@ -497,33 +497,33 @@ useEffect(() => {
     switch (estado) {
       case 'publicado':
         return {
-          fondo: 'bg-white/85',
-          texto: 'text-[#095540]',
-          borde: 'border-white/70',
+          fondo: 'bg-emerald-500/10 dark:bg-emerald-400/15',
+          texto: 'text-emerald-800 dark:text-emerald-200',
+          borde: 'border-emerald-500/25 dark:border-emerald-300/20',
           punto: 'bg-[#009444]',
           etiqueta: 'Publicado',
         };
       case 'no_publicado':
         return {
-          fondo: 'bg-amber-50',
-          texto: 'text-amber-700',
-          borde: 'border-amber-200',
+          fondo: 'bg-amber-500/10 dark:bg-amber-400/15',
+          texto: 'text-amber-800 dark:text-amber-200',
+          borde: 'border-amber-500/25 dark:border-amber-300/20',
           punto: 'bg-amber-500',
           etiqueta: 'No Publicado',
         };
       case 'borrador':
         return {
-          fondo: 'bg-slate-100',
-          texto: 'text-slate-700',
-          borde: 'border-slate-300',
+          fondo: 'bg-slate-500/10 dark:bg-slate-400/15',
+          texto: 'text-slate-700 dark:text-slate-200',
+          borde: 'border-slate-500/20 dark:border-slate-300/20',
           punto: 'bg-slate-500',
           etiqueta: 'Borrador',
         };
       case 'desactivado':
         return {
-          fondo: 'bg-rose-50',
-          texto: 'text-rose-700',
-          borde: 'border-rose-200',
+          fondo: 'bg-rose-500/10 dark:bg-rose-400/15',
+          texto: 'text-rose-800 dark:text-rose-200',
+          borde: 'border-rose-500/25 dark:border-rose-300/20',
           punto: 'bg-rose-500',
           etiqueta: 'Desactivado',
         };

@@ -17,6 +17,7 @@ export interface EventoCapacitacion {
   temporada: TemporadaEvento | null;
   esPago: boolean;
   precio: number;
+  tipoPago: 'sinpe_movil' | 'transferencia_bancaria' | null;
   politicasCancelacion: string | null;
   createdAt?: string;
   updatedAt?: string;

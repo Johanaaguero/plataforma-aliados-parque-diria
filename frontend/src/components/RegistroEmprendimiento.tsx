@@ -1010,7 +1010,13 @@ function RegistroEmprendimiento({ onExito }: Props) {
       );
 
       setExito(true);
-      setForm(INITIAL_FORM);
+      // Al guardar un borrador se conserva la categoría elegida para que el
+      // usuario pueda seguir completándolo sin tener que seleccionarla otra vez.
+      setForm((formularioActual) =>
+        esBorrador
+          ? { ...INITIAL_FORM, categoriaId: formularioActual.categoriaId }
+          : INITIAL_FORM,
+      );
       setErrores({});
       setCategoriaAbierta(false);
 

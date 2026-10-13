@@ -33,6 +33,7 @@ export interface ReservaResponse extends DatosReserva {
   cuposDisponibles: number | null;
   comprobanteUrl?: string | null;
   fechaExpiracionPreReserva?: string | null;
+  numeroTicket?: string | null;
 }
 
 export interface ConsultaReservaResponse {

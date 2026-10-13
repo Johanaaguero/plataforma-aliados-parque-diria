@@ -22,6 +22,8 @@ export interface InscripcionAdministrativa {
   origen: 'participante' | 'reserva';
   esPago?: boolean;
   comprobanteUrl?: string | null;
+  motivoRechazo?: string | null;
+  numeroTicket?: string | null;
 }
 
 export const obtenerInscripcionesAdministrativas = async (): Promise<InscripcionAdministrativa[]> => {
@@ -37,10 +39,12 @@ export const obtenerInscripcionesAdministrativas = async (): Promise<Inscripcion
 export const actualizarEstadoReserva = async (
   reservaId: number,
   estado: 'aprobada' | 'rechazada',
+  motivoRechazo?: string,
 ): Promise<{ id: number; estado: string }> => api.solicitar(
   `/admin/inscripciones/${reservaId}/${estado === 'aprobada' ? 'aprobar' : 'rechazar'}`,
-  { method: 'PATCH' },
+  { method: 'PATCH', body: estado === 'rechazada' ? JSON.stringify({ motivoRechazo }) : undefined },
   {
+    incluirContentType: estado === 'rechazada',
     mensajeError: `No se pudo ${estado === 'aprobada' ? 'aprobar' : 'rechazar'} la reserva.`,
   },
 );

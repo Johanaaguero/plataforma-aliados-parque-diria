@@ -10,7 +10,6 @@ import {
 import { Usuario } from '../../../models/Usuario';
 import { IncidenciaHistorial } from '../../../models/IncidenciaHistorial';
 
-import { Between, LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
 
 import { notificacionIncidenciaService } from '../../Notificaciones/Crear notificaciones Incidencias/NotificacionIncidenciaService';
 
@@ -132,6 +131,7 @@ export interface CambiarEstadoIncidenciaDTO {
 }
 
 export interface FiltrosIncidenciaDTO {
+  buscar?: string;
   categoria?: CategoriaIncidencia;
   prioridad?: PrioridadIncidencia;
   estado?: EstadoIncidencia;
@@ -276,54 +276,42 @@ export const crearIncidencia = async (
 export const obtenerIncidencias = async (
   filtros?: FiltrosIncidenciaDTO,
 ): Promise<Incidencia[]> => {
-  const where: Record<
-    string,
-    unknown
-  > = {};
+  const consulta = incidenciaRepository
+    .createQueryBuilder('incidencia')
+    .leftJoinAndSelect('incidencia.usuarioReporta', 'usuarioReporta')
+    .leftJoinAndSelect('incidencia.adminActualiza', 'adminActualiza')
+    .leftJoinAndSelect('incidencia.evidencias', 'evidencias')
+    .orderBy('incidencia.fechaRegistro', 'DESC');
 
   if (filtros?.categoria) {
-    where.categoria = filtros.categoria;
+    consulta.andWhere('incidencia.categoria = :categoria', { categoria: filtros.categoria });
   }
 
   if (filtros?.prioridad) {
-    where.prioridad = filtros.prioridad;
+    consulta.andWhere('incidencia.prioridad = :prioridad', { prioridad: filtros.prioridad });
   }
 
   if (filtros?.estado) {
-    where.estado = filtros.estado;
+    consulta.andWhere('incidencia.estado = :estado', { estado: filtros.estado });
   }
 
-  if (
-    filtros?.fechaDesde &&
-    filtros?.fechaHasta
-  ) {
-    where.fechaRegistro = Between(
-      filtros.fechaDesde,
-      filtros.fechaHasta,
+  if (filtros?.fechaDesde) {
+    consulta.andWhere('incidencia.fechaRegistro >= :fechaDesde', { fechaDesde: filtros.fechaDesde });
+  }
+
+  if (filtros?.fechaHasta) {
+    consulta.andWhere('incidencia.fechaRegistro <= :fechaHasta', { fechaHasta: filtros.fechaHasta });
+  }
+
+  if (filtros?.buscar?.trim()) {
+    const termino = `%${filtros.buscar.trim()}%`;
+    consulta.andWhere(
+      '(incidencia.codigo LIKE :termino OR CAST(incidencia.id AS CHAR) LIKE :termino)',
+      { termino },
     );
-  } else if (filtros?.fechaDesde) {
-    where.fechaRegistro =
-      MoreThanOrEqual(
-        filtros.fechaDesde,
-      );
-  } else if (filtros?.fechaHasta) {
-    where.fechaRegistro =
-      LessThanOrEqual(
-        filtros.fechaHasta,
-      );
   }
 
-  return await incidenciaRepository.find({
-    where,
-    relations: {
-      usuarioReporta: true,
-      adminActualiza: true,
-      evidencias: true,
-    },
-    order: {
-      fechaRegistro: 'DESC',
-    },
-  });
+  return consulta.getMany();
 };
 
 /**

@@ -48,6 +48,8 @@ export interface MiInscripcion {
   esPago?: boolean;
   precio?: number;
   politicasCancelacion?: string | null;
+  motivoRechazo?: string | null;
+  numeroTicket?: string | null;
 }
 
 // NOTA: ruta asumida. Cambia '/inscripciones/mias' por la ruta real del backend

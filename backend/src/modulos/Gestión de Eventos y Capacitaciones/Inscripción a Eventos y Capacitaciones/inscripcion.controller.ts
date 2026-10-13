@@ -108,7 +108,7 @@ export class InscripcionController {
       if (!reserva || reserva.usuarioId !== req.usuario.id) return res.status(404).json({ ok: false, message: 'Reserva no encontrada.' });
       if (!reserva.eventoCapacitacion.esPago) return res.status(409).json({ ok: false, message: 'Esta actividad no requiere comprobante de pago.' });
       if (reserva.fechaExpiracionPreReserva && reserva.fechaExpiracionPreReserva < new Date()) return res.status(409).json({ ok: false, message: 'La pre-reserva ha expirado.' });
-      const extension = req.file.mimetype === 'image/png' ? 'png' : req.file.mimetype === 'image/webp' ? 'webp' : 'jpg';
+      const extension = req.file.mimetype === 'application/pdf' ? 'pdf' : req.file.mimetype === 'image/png' ? 'png' : req.file.mimetype === 'image/webp' ? 'webp' : 'jpg';
       const directorio = path.join(process.cwd(), 'uploads', 'comprobantes');
       await mkdir(directorio, { recursive: true });
       const nombre = `reserva-${reserva.id}-${Date.now()}.${extension}`;
@@ -216,6 +216,7 @@ export class InscripcionController {
           correo: resultado.reserva.correo,
           telefono: resultado.reserva.telefono,
           estado: resultado.reserva.estado,
+          numeroTicket: resultado.reserva.numeroTicket,
           comprobanteUrl: resultado.reserva.comprobanteUrl,
           fechaExpiracionPreReserva: serializarFechaUtc(resultado.reserva.fechaExpiracionPreReserva),
           createdAt: serializarFechaUtc(resultado.reserva.createdAt),
@@ -300,6 +301,7 @@ export class InscripcionController {
             resultado.reserva.telefono,
           estado:
             resultado.reserva.estado,
+          numeroTicket: resultado.reserva.numeroTicket,
           comprobanteUrl: resultado.reserva.comprobanteUrl,
           fechaExpiracionPreReserva: serializarFechaUtc(resultado.reserva.fechaExpiracionPreReserva),
           createdAt: serializarFechaUtc(resultado.reserva.createdAt),
@@ -373,6 +375,7 @@ export class InscripcionController {
           usuarioId: resultado.participante.usuarioId,
           eventoCapacitacionId:
             resultado.participante.eventoCapacitacionId,
+          numeroTicket: resultado.participante.numeroTicket,
           createdAt: serializarFechaUtc(resultado.participante.createdAt),
           cuposDisponibles: resultado.cuposDisponibles,
         },

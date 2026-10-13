@@ -50,6 +50,8 @@ export interface Incidencia {
   prioridad: PrioridadIncidencia;
   estado: EstadoIncidencia;
   ubicacion: string | null;
+  latitud?: number | null;
+  longitud?: number | null;
   fechaRegistro: string;
   fechaActualizacion: string | null;
 
@@ -88,6 +90,7 @@ export interface Incidencia {
 }
 
 export interface FiltrosIncidencia {
+  buscar?: string;
   categoria?: CategoriaIncidencia;
   prioridad?: PrioridadIncidencia;
   estado?: EstadoIncidencia;
@@ -191,6 +194,10 @@ export async function listarIncidencias(
   filtros?: FiltrosIncidencia,
 ): Promise<Incidencia[]> {
   const params = new URLSearchParams();
+
+  if (filtros?.buscar?.trim()) {
+    params.append('buscar', filtros.buscar.trim());
+  }
 
   if (filtros?.categoria) {
     params.append('categoria', filtros.categoria);

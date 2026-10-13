@@ -51,6 +51,8 @@ export interface CreateEventoCapacitacionDTO {
 
   precio?: number;
 
+  tipoPago?: string | null;
+
   politicasCancelacion?: string | null;
 }
 
@@ -122,6 +124,9 @@ export class EventosCapacitacionesService {
     }
     if (data.esPago === true && (!data.precio || data.precio <= 0)) {
       errores.push('Las actividades de pago deben indicar un precio mayor que 0.');
+    }
+    if (data.tipoPago !== undefined && data.tipoPago !== null && !['sinpe_movil', 'transferencia_bancaria'].includes(data.tipoPago)) {
+      errores.push('El tipo de pago debe ser SINPE Móvil o transferencia bancaria.');
     }
 
     if (
@@ -797,6 +802,7 @@ export class EventosCapacitacionesService {
       edadMinima: data.edadMinima ?? null,
       edadMaxima: data.edadMaxima ?? null,
       temporada: data.temporada ?? null,
+
     };
 
     if (
@@ -848,6 +854,14 @@ export class EventosCapacitacionesService {
 
         temporada:
           data.temporada ?? null,
+
+        esPago: data.esPago ?? false,
+
+        precio: data.esPago ? data.precio ?? 0 : 0,
+
+        tipoPago: data.esPago ? data.tipoPago ?? 'sinpe_movil' : null,
+
+        politicasCancelacion: data.esPago ? data.politicasCancelacion ?? null : null,
       });
 
     const guardado =

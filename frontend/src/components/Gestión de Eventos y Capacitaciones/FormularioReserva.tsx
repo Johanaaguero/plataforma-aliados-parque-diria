@@ -301,7 +301,7 @@ export default function FormularioReserva({
       }}
     >
       <form
-        className="custom-scrollbar max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-[#095540]/10 bg-white p-5 shadow-2xl sm:p-7"
+        className="custom-scrollbar max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-white/20 bg-white/70 p-5 shadow-xl backdrop-blur-md dark:border-white/10 dark:bg-slate-900/70 sm:p-7"
         noValidate
         onSubmit={manejarEnvio}
         aria-busy={enviando}
@@ -534,12 +534,17 @@ export default function FormularioReserva({
             </div>
 
             {evento.esPago && !reservaInicial && (
-              <div className="mt-5 rounded-xl border border-sky-200 bg-sky-50 p-4">
+              <div className="mt-5 rounded-xl border border-sky-200 bg-sky-50/80 p-4 dark:border-sky-400/20 dark:bg-sky-950/30">
                 <p className="text-sm font-bold text-sky-900">
                   Actividad de pago — ₡{(evento.precio ?? 0).toLocaleString('es-CR')}
                 </p>
-                <p className="mt-1 text-xs text-sky-800">Adjunta una imagen JPG, PNG o WEBP de tu comprobante de transferencia/SINPE. La pre-reserva vence en 24 horas si no se adjunta.</p>
-                <input type="file" accept="image/jpeg,image/png,image/webp" className="mt-3 block w-full text-sm" disabled={enviando} onChange={(event) => setComprobante(event.target.files?.[0] ?? null)} />
+                <p className="mt-1 text-xs text-sky-800 dark:text-sky-200">
+                  Realiza el pago mediante {evento.tipoPago === 'sinpe_movil' ? 'SINPE Móvil' : 'transferencia bancaria'} y adjunta el comprobante para revisión administrativa.
+                </p>
+                <label className="mt-3 block text-sm font-semibold text-sky-900 dark:text-sky-100">
+                  Comprobante de pago <span aria-hidden="true">*</span>
+                  <input type="file" required accept="image/jpeg,image/png,image/webp,application/pdf" className="mt-1 block w-full text-sm" disabled={enviando} onChange={(event) => setComprobante(event.target.files?.[0] ?? null)} />
+                </label>
               </div>
             )}
 

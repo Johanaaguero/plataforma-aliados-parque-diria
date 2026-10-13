@@ -5,6 +5,7 @@ interface PlantillaReservaParams {
   hora: string;
   estado: 'aprobada' | 'rechazada';
   lugar?: string | null | undefined;
+  motivoRechazo?: string | null | undefined;
 }
 
 interface PlantillaReserva {
@@ -90,6 +91,7 @@ export function crearPlantillaReserva({
   hora,
   estado,
   lugar,
+  motivoRechazo,
 }: PlantillaReservaParams): PlantillaReserva {
   const nombreSeguro = escaparHtml(nombre);
   const eventoSeguro = escaparHtml(nombreEvento);
@@ -97,6 +99,7 @@ export function crearPlantillaReserva({
   const horaSegura = escaparHtml(hora);
 
   const lugarLimpio = lugar?.trim() || '';
+  const motivoLimpio = motivoRechazo?.trim() || '';
   const lugarSeguro = lugarLimpio
     ? escaparHtml(lugarLimpio)
     : '';
@@ -169,6 +172,9 @@ export function crearPlantillaReserva({
             true,
           ),
         ]
+      : []),
+    ...(!aprobada && motivoLimpio
+      ? [filaDetalle('Motivo del rechazo', escaparHtml(motivoLimpio), true)]
       : []),
   ].join('');
 
@@ -679,6 +685,9 @@ export function crearPlantillaReserva({
     `Hora: ${hora}`,
     ...(lugarLimpio
       ? [`Lugar: ${lugarLimpio}`]
+      : []),
+    ...(!aprobada && motivoLimpio
+      ? [`Motivo del rechazo: ${motivoLimpio}`]
       : []),
     '',
     notaFinal,

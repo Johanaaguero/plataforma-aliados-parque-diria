@@ -15,11 +15,44 @@ type Fila = Record<string, unknown>;
 
 const texto = (valor: unknown): string => {
   if (valor === null || valor === undefined || valor === '') return 'No aplica';
-  if (typeof valor === 'object') return JSON.stringify(valor);
+  if (typeof valor === 'object') {
+    if (Array.isArray(valor)) return `${valor.length} registros`;
+    return Object.entries(valor as Record<string, unknown>)
+      .map(([clave, dato]) => `${clave}: ${texto(dato)}`)
+      .join(' · ');
+  }
   return String(valor);
 };
 
-const tituloTipo = (tipo: string): string => `Reporte de ${tipo}`;
+const tituloTipo = (tipo: string): string => ({
+  usuarios: 'Reporte de usuarios',
+  reservas: 'Reporte de reservas',
+  emprendimientos: 'Reporte de emprendimientos',
+  eventos_capacitaciones: 'Reporte de eventos y capacitaciones',
+  incidencias: 'Reporte de incidencias',
+}[tipo] ?? `Reporte de ${tipo}`);
+
+const metricasPorTipo: Record<string, Array<[string, string[]]>> = {
+  usuarios: [['TOTAL USUARIOS', ['total']], ['ADMINISTRADORES', ['administradores']], ['ASOCIADOS', ['asociados']], ['VISITANTES', ['visitantes']]],
+  reservas: [['TOTAL RESERVAS', ['total', 'totalReservas']], ['PENDIENTES', ['pendientes']], ['APROBADAS', ['aprobadas', 'confirmadas']], ['RECHAZADAS', ['rechazadas']]],
+  emprendimientos: [['TOTAL EMPRENDIMIENTOS', ['total', 'totalEmprendimientos']], ['PUBLICADOS', ['publicados']], ['BORRADORES', ['borradores']], ['NO PUBLICADOS', ['noPublicados']]],
+  eventos_capacitaciones: [['TOTAL ACTIVIDADES', ['total', 'totalActividades']], ['EVENTOS', ['eventos']], ['CAPACITACIONES', ['capacitaciones']], ['PUBLICADAS', ['publicados']]],
+  incidencias: [['TOTAL INCIDENCIAS', ['total', 'totalIncidencias']], ['PENDIENTES', ['pendientes']], ['EN PROCESO', ['enProceso']], ['RESUELTAS', ['resueltas']]],
+};
+
+const metricasDelReporte = (tipo: string, contenido: Record<string, unknown>): Array<[string, unknown]> =>
+  (metricasPorTipo[tipo] ?? []).map(([etiqueta, claves]) => [
+    etiqueta,
+    claves.map((clave) => contenido[clave]).find((valor) => valor !== undefined) ?? 0,
+  ]);
+
+const periodoLegible = (contenido: Record<string, unknown>): string => {
+  if (typeof contenido.periodoTexto === 'string') return contenido.periodoTexto;
+  const inicio = contenido.fechaInicio;
+  const fin = contenido.fechaFin;
+  if (typeof inicio === 'string' && typeof fin === 'string') return `${inicio} al ${fin}`;
+  return typeof contenido.periodo === 'string' ? contenido.periodo : 'Sin rango especificado';
+};
 
 const filasDeContenido = (contenido: Record<string, unknown>): Fila[] => {
   const coleccion = Object.values(contenido).find((valor): valor is Fila[] =>
@@ -61,18 +94,13 @@ export class ReporteExportService {
       documento.font('Helvetica-Bold').fontSize(12).fillColor('#ffffff')
         .text(contenido.nombre ? texto(contenido.nombre) : tituloTipo(reporte.tipoReporte), 42, 82);
       documento.font('Helvetica').fontSize(8).fillColor('#d1fae5')
-        .text(`EMISIÓN  ${reporte.fechaGeneracion.toLocaleString('es-CR')}`, 370, 38, { width: 184, align: 'right' })
+        .text(`Fecha de generación  ${reporte.fechaGeneracion.toLocaleString('es-CR')}`, 330, 38, { width: 224, align: 'right' })
         .text(`TIPO  ${reporte.tipoReporte.toUpperCase()}`, 370, 53, { width: 184, align: 'right' })
-        .text(`RANGO  ${texto(contenido.periodoTexto ?? contenido.periodo)}`, 370, 68, { width: 184, align: 'right' });
+        .text(`RANGO  ${periodoLegible(contenido)}`, 370, 68, { width: 184, align: 'right' });
 
       documento.y = 146;
       documento.font('Helvetica-Bold').fontSize(11).fillColor('#064e3b').text('Resumen del reporte');
-      const metricas: Array<[string, unknown]> = [
-        ['TOTAL USUARIOS', contenido.total],
-        ['ADMINISTRADORES', contenido.administradores],
-        ['ASOCIADOS', contenido.asociados],
-        ['VISITANTES', contenido.visitantes],
-      ];
+      const metricas = metricasDelReporte(reporte.tipoReporte, contenido);
       metricas.forEach(([etiqueta, valor], indice) => {
         const x = 42 + indice * 128;
         documento.roundedRect(x, 169, 116, 66, 9).fill('#ecfdf5');

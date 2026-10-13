@@ -19,6 +19,57 @@ import {
 } from '../../../models/Incidencia';
 
 import { notificacionIncidenciaService } from '../../Notificaciones/Crear notificaciones Incidencias/NotificacionIncidenciaService';
+import { AppDataSource } from '../../../data-source';
+import { ComentarioIncidencia } from '../../../models/ComentarioIncidencia';
+
+export const agregarComentarioIncidencia = async (req: Request, res: Response): Promise<void> => {
+  const incidenciaId = Number(req.params.id);
+  const texto = typeof req.body?.texto === 'string' ? req.body.texto.trim() : '';
+  if (!Number.isSafeInteger(incidenciaId) || incidenciaId <= 0 || !texto) { res.status(400).json({ mensaje: 'El comentario es obligatorio.' }); return; }
+  const esNotaPrivada = req.body?.esNotaPrivada === true;
+  const esDatoSensible = req.body?.esDatoSensible === true;
+  try {
+    const comentario = await AppDataSource.getRepository(ComentarioIncidencia).save({ incidenciaId, autorId: req.usuario?.id ?? null, texto, esNotaPrivada, esDatoSensible });
+    res.status(201).json({ comentario });
+  } catch { res.status(500).json({ mensaje: 'No se pudo registrar el comentario.' }); }
+};
+
+export const obtenerComentariosIncidencia = async (req: Request, res: Response): Promise<void> => {
+  const incidenciaId = Number(req.params.id);
+  const usuarioId = req.usuario?.id;
+  if (!Number.isSafeInteger(incidenciaId) || incidenciaId <= 0 || !usuarioId) {
+    res.status(400).json({ mensaje: 'Solicitud de historial inválida.' });
+    return;
+  }
+
+  try {
+    const incidencias = AppDataSource.getRepository(Incidencia);
+    const incidencia = await incidencias.findOne({
+      where: { id: incidenciaId },
+      relations: { usuarioReporta: true },
+    });
+    if (!incidencia) {
+      res.status(404).json({ mensaje: 'Incidencia no encontrada.' });
+      return;
+    }
+
+    const esAdministrador = req.usuario?.rol === 'administrador' || req.usuario?.rol === 'super_admin';
+    if (!esAdministrador && incidencia.usuarioReporta?.id !== usuarioId) {
+      res.status(403).json({ mensaje: 'No tienes acceso al historial de esta incidencia.' });
+      return;
+    }
+
+    const comentarios = await AppDataSource.getRepository(ComentarioIncidencia).find({
+      where: esAdministrador
+        ? { incidenciaId }
+        : { incidenciaId, esNotaPrivada: false, esDatoSensible: false },
+      order: { fechaHora: 'ASC' },
+    });
+    res.status(200).json({ comentarios });
+  } catch {
+    res.status(500).json({ mensaje: 'No se pudo obtener el historial de comentarios.' });
+  }
+};
 
 
 const formatearFechaIncidencia = (
@@ -437,9 +488,14 @@ export const listarIncidencias = async (
       estado,
       fechaDesde,
       fechaHasta,
+      buscar,
     } = req.query;
 
     const filtros: FiltrosIncidenciaDTO = {};
+
+    if (typeof buscar === 'string' && buscar.trim()) {
+      filtros.buscar = buscar.trim();
+    }
 
     if (
       categoria !== undefined &&

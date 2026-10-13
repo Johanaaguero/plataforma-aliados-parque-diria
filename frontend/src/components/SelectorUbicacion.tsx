@@ -3,10 +3,12 @@ import {
   Marker,
   Popup,
   TileLayer,
+  CircleMarker,
+  ZoomControl,
   useMap,
   useMapEvents,
 } from 'react-leaflet';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -81,6 +83,7 @@ export function SelectorUbicacion({
   onChange,
   disabled = false,
 }: SelectorUbicacionProps) {
+  const [mostrarCalor, setMostrarCalor] = useState(false);
   const posicionValida =
     latitud !== null &&
     longitud !== null &&
@@ -107,22 +110,49 @@ export function SelectorUbicacion({
   });
 
   return (
-    <div className="space-y-4">
-      <div className="overflow-hidden rounded-2xl border border-white/30 shadow-xl shadow-emerald-950/10">
+    <div className="space-y-3">
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={() => setMostrarCalor((actual) => !actual)}
+          aria-pressed={mostrarCalor}
+          className="rounded-xl border border-white/20 bg-white/80 px-3 py-2 text-xs font-bold text-emerald-800 shadow-lg backdrop-blur-md transition hover:bg-white dark:bg-slate-900/80 dark:text-emerald-200 dark:hover:bg-slate-900"
+        >
+          {mostrarCalor ? 'Ocultar mapa de calor' : 'Ver mapa de calor'}
+        </button>
+      </div>
+      <div className="relative isolate overflow-hidden rounded-2xl border border-white/20 bg-slate-100 shadow-xl shadow-emerald-950/10 dark:bg-slate-900">
         <MapContainer
           center={posicion}
           zoom={DEFAULT_ZOOM}
           scrollWheelZoom={!disabled}
-          className="h-[350px] w-full"
+          zoomControl={false}
+          className="relative z-0 h-[280px] w-full sm:h-[350px]"
         >
+          <ZoomControl position="topright" />
           <TileLayer
             attribution="Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community"
             url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
           />
-          <TileLayer
-            attribution="&copy; OpenStreetMap contributors &copy; CARTO"
-            url="https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{y}/{x}{r}.png"
-          />
+          {mostrarCalor &&
+            [
+              [10.148, -85.452],
+              [10.149, -85.451],
+              [10.1475, -85.453],
+              [10.15, -85.45],
+            ].map(([puntoLat, puntoLng], indice) => (
+              <CircleMarker
+                key={`${puntoLat}-${puntoLng}`}
+                center={[puntoLat, puntoLng]}
+                radius={28 - indice * 3}
+                pathOptions={{
+                  color: indice < 2 ? '#ef4444' : '#f59e0b',
+                  fillColor: indice < 2 ? '#ef4444' : '#22c55e',
+                  fillOpacity: 0.25,
+                  weight: 1,
+                }}
+              />
+            ))}
 
           <CentrarMapa
             latitud={latitud}
@@ -250,10 +280,7 @@ export function SelectorUbicacion({
         </div>
       </div> */}
 
-      <p className="text-sm text-slate-500">
-        Puedes hacer clic en el mapa, mover el marcador o
-        ingresar manualmente las coordenadas.
-      </p>
+      <p className="text-sm text-slate-500">Haz clic en el mapa o arrastra el marcador para seleccionar la ubicación.</p>
     </div>
   );
 }

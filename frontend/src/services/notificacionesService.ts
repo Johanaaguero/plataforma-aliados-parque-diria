@@ -117,6 +117,11 @@ export const marcarTodasComoLeidas = () =>
 export const eliminarNotificacion = (id: number) =>
   solicitar<{ mensaje: string }>(`/${id}`, { method: 'DELETE' });
 
+export const eliminarTodasLasNotificaciones = () =>
+  solicitar<{ mensaje: string; cantidad: number }>('/eliminar-todas', {
+    method: 'DELETE',
+  });
+
 /** Obtener las notificaciones relacionadas con incidencias. */
 export const obtenerNotificacionesIncidencias = (signal?: AbortSignal) =>
   solicitar<{

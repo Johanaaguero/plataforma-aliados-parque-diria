@@ -39,6 +39,7 @@ export interface EventoCapacitacionActual {
   estado: EstadoEventoCapacitacion;
   esPago?: boolean;
   precio?: number;
+  tipoPago?: 'sinpe_movil' | 'transferencia_bancaria' | null;
   politicasCancelacion?: string | null;
   temporada: Temporada | null;
 }
@@ -154,6 +155,7 @@ export default function EdicionEventoCapacitacion({
   const [imagenesNuevas, setImagenesNuevas] = useState<File[]>([]);
   const [esPago, setEsPago] = useState(false);
   const [precio, setPrecio] = useState('');
+  const [tipoPago, setTipoPago] = useState<'sinpe_movil' | 'transferencia_bancaria'>('sinpe_movil');
   const [politicasCancelacion, setPoliticasCancelacion] = useState('');
   const [imagenesExistentes, setImagenesExistentes] = useState<ImagenExistente[]>([]);
   const [cargandoImagenes, setCargandoImagenes] = useState(false);
@@ -186,6 +188,7 @@ export default function EdicionEventoCapacitacion({
     setEdadMaxima(evento.edadMaxima != null ? String(evento.edadMaxima) : '');
     setEsPago(evento.esPago ?? false);
     setPrecio(evento.precio != null ? String(evento.precio) : '');
+    setTipoPago(evento.tipoPago ?? 'sinpe_movil');
     setPoliticasCancelacion(evento.politicasCancelacion ?? '');
     setImagenesNuevas([]);
     setErrores({});
@@ -425,6 +428,7 @@ export default function EdicionEventoCapacitacion({
         temporada: temporada || null,
         esPago,
         precio: esPago ? Number(precio) : 0,
+        tipoPago: esPago ? tipoPago : null,
         politicasCancelacion: esPago ? politicasCancelacion.trim() || null : null,
       };
 
@@ -500,7 +504,7 @@ export default function EdicionEventoCapacitacion({
     >
       <div className="flex min-h-0 w-full items-center justify-center">
         <form
-          className="relative flex max-h-[85dvh] min-h-0 w-full max-w-xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/95 p-6 shadow-2xl backdrop-blur-2xl"
+          className="relative flex max-h-[85dvh] min-h-0 w-full max-w-xl flex-col overflow-hidden rounded-3xl border border-white/20 bg-white/70 p-6 shadow-xl backdrop-blur-md dark:border-white/10 dark:bg-slate-900/70"
           noValidate
           onSubmit={handleSubmit}
           aria-busy={estado === 'cargando'}
@@ -864,7 +868,7 @@ export default function EdicionEventoCapacitacion({
 
           </div>
 
-          <div className="sticky bottom-0 z-10 -mx-6 shrink-0 border-t border-white/10 bg-white/95 p-4">
+          <div className="sticky bottom-0 z-10 -mx-6 shrink-0 border-t border-white/20 bg-white/70 p-4 backdrop-blur-md dark:border-white/10 dark:bg-slate-900/70">
             <div className="grid gap-3 sm:grid-cols-2">
               <button
                 type="button"

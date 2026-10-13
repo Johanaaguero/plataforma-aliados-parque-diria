@@ -1,5 +1,7 @@
 import { useRef, useState } from 'react';
 import SelectorUbicacion from '../SelectorUbicacion';
+import { useLanguage } from '../../i18n/LanguageContext';
+import paisajeParque from '../../assets/parque-hero.jpg';
 
 import type {
   ChangeEvent,
@@ -253,6 +255,7 @@ export default function RegistroIncidencia({
   onClose,
   onRegistrada,
 }: RegistroIncidenciaProps) {
+  const { t } = useLanguage();
   const [titulo, setTitulo] = useState('');
   const [descripcion, setDescripcion] =
     useState('');
@@ -383,12 +386,11 @@ export default function RegistroIncidencia({
       const esImagen =
         archivo.type.startsWith('image/');
 
-      const esVideo =
-        archivo.type.startsWith('video/');
+      const esPdf = archivo.type === 'application/pdf';
 
-      if (!esImagen && !esVideo) {
+      if (!esImagen && !esPdf) {
         setError(
-          'Solo se permiten imágenes y videos.',
+          'Solo se permiten imágenes JPG, JPEG, PNG y documentos PDF.',
         );
         continue;
       }
@@ -647,11 +649,7 @@ export default function RegistroIncidencia({
                     archivo.file.name,
                   tamanoBytes:
                     archivo.file.size,
-                  tipo: archivo.file.type.startsWith(
-                    'video/',
-                  )
-                    ? 'video'
-                    : 'foto',
+                  tipo: 'foto',
                 }),
               },
             );
@@ -703,9 +701,12 @@ export default function RegistroIncidencia({
     };
 
   return (
-    <section className="w-full px-4 py-8 sm:px-6 lg:px-8">
+    <section
+      className="sigtad-incidencia-form relative isolate w-full overflow-hidden px-4 py-8 sm:px-6 lg:px-8"
+      style={{ backgroundImage: `url(${paisajeParque})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+    >
       {exito && <div role="dialog" aria-modal="true" className="fixed inset-0 z-[100] flex items-center justify-center bg-emerald-950/55 p-4 backdrop-blur-md"><div className="w-full max-w-sm rounded-3xl border border-white/30 bg-white/85 p-7 text-center shadow-2xl backdrop-blur-2xl dark:bg-slate-900/85"><span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500 text-2xl text-white">✓</span><h3 className="mt-4 text-2xl font-black text-emerald-950 dark:text-white">¡Registro exitoso!</h3><p className="mt-3 text-sm text-emerald-950/70 dark:text-white/70">Su incidencia ha sido registrada correctamente con el código <strong>{codigoRegistrado}</strong>.</p><button type="button" onClick={() => { setExito(''); setCodigoRegistrado(''); onClose?.(); }} className="mt-6 w-full rounded-2xl bg-emerald-700 px-5 py-3 font-bold text-white">Aceptar</button></div></div>}
-      <div className="mx-auto flex max-w-4xl flex-col overflow-hidden rounded-3xl bg-white shadow-xl ring-1 ring-slate-900/10 dark:bg-slate-900 dark:ring-white/10">
+      <div className="relative mx-auto flex max-w-4xl flex-col overflow-hidden rounded-3xl border border-white/40 bg-white/60 shadow-xl ring-1 ring-slate-900/10 backdrop-blur-xl dark:border-slate-700/70 dark:bg-slate-900/75 dark:ring-white/10 sm:bg-white/50">
 
         <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 px-6 py-5 dark:border-slate-800/80 dark:bg-slate-900/50 sm:px-8">
           <div className="flex items-center gap-3">
@@ -717,13 +718,11 @@ export default function RegistroIncidencia({
 
             <div>
               <h2 className="text-lg font-bold tracking-tight text-slate-900 dark:text-white sm:text-xl">
-                Registrar Incidencia
+                {t('incident.title')}
               </h2>
 
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Complete el formulario para
-                notificar un evento en el
-                parque.
+                {t('incident.description')}
               </p>
             </div>
           </div>
@@ -733,7 +732,7 @@ export default function RegistroIncidencia({
               type="button"
               onClick={onClose}
               className="rounded-full p-2 text-slate-400 transition-colors hover:bg-slate-200/60 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-              aria-label="Cerrar formulario"
+              aria-label={t('incident.close')}
             >
               <Icon className="h-5 w-5">
                 <path d="M6 18L18 6M6 6l12 12" />
@@ -743,6 +742,11 @@ export default function RegistroIncidencia({
         </div>
 
         <div className="space-y-8 px-6 py-6 sm:px-8">
+
+          <div className="rounded-2xl border border-amber-400/35 bg-amber-50/80 p-4 text-sm text-amber-900 shadow-sm backdrop-blur-md dark:bg-amber-950/30 dark:text-amber-100">
+            <p><strong>Nota aclaratoria:</strong> Esta sección está destinada exclusivamente al reporte y seguimiento comunitario o de infraestructura del parque, sus emprendimientos, eventos y capacitaciones.</p>
+            <p className="mt-2 font-semibold">¡ATENCIÓN! : Este canal NO es un servicio de atención de emergencias. En caso de riesgo o emergencia real, llame directamente al 911.</p>
+          </div>
 
           {error && (
             <div
@@ -1038,8 +1042,7 @@ export default function RegistroIncidencia({
           <section className="space-y-4">
             <div className="border-b border-slate-100 pb-2 dark:border-slate-800">
               <h3 className="text-sm font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
-                4. Evidencia Fotográfica /
-                Video
+                4. Evidencia fotográfica o documento PDF
               </h3>
             </div>
 
@@ -1074,8 +1077,7 @@ export default function RegistroIncidencia({
               </div>
 
               <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">
-                Arrastre fotografías o
-                videos aquí, o{' '}
+                Arrastre fotografías o documentos PDF aquí, o{' '}
                 <span className="text-emerald-600 underline decoration-emerald-500/30 underline-offset-2 dark:text-emerald-400">
                   examine sus archivos
                 </span>
@@ -1083,14 +1085,13 @@ export default function RegistroIncidencia({
 
               <p className="mt-1 text-[11px] text-slate-400">
                 Máximo 20 MB por archivo
-                (Formatos de imagen o
-                video)
+                (PNG, JPG, JPEG o PDF)
               </p>
 
               <input
                 ref={inputArchivoRef}
                 type="file"
-                accept="image/*,video/*"
+                accept="image/png,image/jpeg,application/pdf"
                 multiple
                 hidden
                 onChange={

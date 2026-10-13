@@ -7,6 +7,7 @@ import {
 } from '../../services/eventosCapacitacionesService';
 
 import { consultarReservaEvento } from '../../services/inscripcionService';
+import { formatearFechaActividad } from '../../utils/fechas';
 
 import PortadaEventoCapacitacion from './Portadaeventocapacitacion';
 import FormularioReserva from './FormularioReserva';
@@ -443,15 +444,7 @@ export default function DetalleEventoCapacitacion({
                 </dt>
 
                 <dd className="mt-1 text-sm font-semibold text-slate-700">
-                  {evento.fecha
-                    ? new Date(
-                        `${evento.fecha}T00:00:00`,
-                      ).toLocaleDateString('es-CR', {
-                        day: '2-digit',
-                        month: 'long',
-                        year: 'numeric',
-                      })
-                    : 'Fecha pendiente'}
+                  {formatearFechaActividad(evento.fecha)}
                 </dd>
               </div>
 

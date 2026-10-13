@@ -37,6 +37,8 @@ export interface InscripcionAdministrativaDTO {
   origen: 'participante' | 'reserva';
   esPago?: boolean;
   comprobanteUrl?: string | null;
+  motivoRechazo?: string | null;
+  numeroTicket?: string | null;
 }
 
 export const listarInscripcionesAdministrativas = async (): Promise<
@@ -62,6 +64,7 @@ export const listarInscripcionesAdministrativas = async (): Promise<
       'evento.esPago AS esPago',
       "DATE_FORMAT(evento.fecha, '%Y-%m-%d') AS fechaActividad",
       'participante.createdAt AS fechaInscripcion',
+      'participante.numeroTicket AS numeroTicket',
     ])
     .orderBy('participante.createdAt', 'DESC')
     .getRawMany();
@@ -95,6 +98,7 @@ export const listarInscripcionesAdministrativas = async (): Promise<
       origen: 'participante' as const,
       esPago: Boolean(registro.esPago),
       comprobanteUrl: null,
+      numeroTicket: registro.numeroTicket ?? null,
     };
   });
 
@@ -120,9 +124,11 @@ export const listarInscripcionesAdministrativas = async (): Promise<
       'evento.tipoActividad AS tipoActividad',
       'evento.esPago AS esPago',
       'reserva.comprobanteUrl AS comprobanteUrl',
+      'reserva.motivoRechazo AS motivoRechazo',
       "DATE_FORMAT(evento.fecha, '%Y-%m-%d') AS fechaActividad",
       'reserva.createdAt AS fechaInscripcion',
       'reserva.estado AS estado',
+      'reserva.numeroTicket AS numeroTicket',
     ])
     .orderBy('reserva.createdAt', 'DESC')
     .getRawMany();
@@ -158,6 +164,8 @@ export const listarInscripcionesAdministrativas = async (): Promise<
       origen: 'reserva' as const,
       esPago: Boolean(registro.esPago),
       comprobanteUrl: registro.comprobanteUrl ?? null,
+      motivoRechazo: registro.motivoRechazo ?? null,
+      numeroTicket: registro.numeroTicket ?? null,
     })),
   ].sort(
     (a, b) =>
@@ -169,6 +177,7 @@ export const listarInscripcionesAdministrativas = async (): Promise<
 export const actualizarEstadoReserva = async (
   reservaId: number,
   estado: EstadoReserva.APROBADA | EstadoReserva.RECHAZADA,
+  motivoRechazo: string | null = null,
 ) => {
   return AppDataSource.transaction(async (manager) => {
     const reservasRepo = manager.getRepository(Reserva);
@@ -240,6 +249,9 @@ export const actualizarEstadoReserva = async (
     }
 
     reserva.estado = estado;
+    reserva.motivoRechazo = estado === EstadoReserva.RECHAZADA
+      ? motivoRechazo
+      : null;
 
     const reservaActualizada =
       await reservasRepo.save(reserva);

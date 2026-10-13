@@ -60,6 +60,10 @@ export class Participantes {
   @Column({ type: 'enum', enum: EstadoReserva, default: EstadoReserva.CONFIRMADA })
   estado!: EstadoReserva;
 
+  @Index('UQ_participantes_numero_ticket', { unique: true })
+  @Column({ type: 'varchar', length: 20, name: 'numero_ticket', nullable: true })
+  numeroTicket!: string | null;
+
   @Column({ type: 'datetime', name: 'fecha_cancelacion', nullable: true })
   fechaCancelacion!: Date | null;
 

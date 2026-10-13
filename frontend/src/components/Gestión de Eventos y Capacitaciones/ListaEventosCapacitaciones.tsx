@@ -4,6 +4,7 @@ import RegistroEventoCapacitacion from './RegistroEventoCapacitacion';
 import PortadaEventoCapacitacion from './Portadaeventocapacitacion';
 import EdicionEventoCapacitacion from './EdicionEventoCapacitacion';
 import DetalleEventoCapacitacion from './DetalleEventoCapacitacion';
+import LiquidFilterSelect from '../ui/LiquidFilterSelect';
 
 import {
   formatearCupos,
@@ -11,6 +12,7 @@ import {
   type EventoCapacitacion,
   type TemporadaEvento,
 } from '../../services/eventosCapacitacionesService';
+import { formatearFechaActividad } from '../../utils/fechas';
 
 type NombreRol =
   | 'administrador'
@@ -115,6 +117,17 @@ export default function ListaEventosCapacitaciones({
 
   const carruselEventosRef =
     useRef<HTMLDivElement | null>(null);
+
+  const desplazarCarrusel = (direccion: -1 | 1) => {
+    const carrusel = carruselEventosRef.current;
+
+    if (!carrusel) return;
+
+    carrusel.scrollBy({
+      left: direccion * Math.max(carrusel.clientWidth * 0.85, 320),
+      behavior: 'smooth',
+    });
+  };
 
   const [estadoAbierto, setEstadoAbierto] =
     useState<number | null>(null);
@@ -372,24 +385,6 @@ export default function ListaEventosCapacitaciones({
     setBusqueda('');
     setBusquedaAplicada('');
     setTemporada('');
-  }
-
-  function formatearFecha(
-    fecha: string | null,
-  ) {
-    if (!fecha) return 'Fecha pendiente';
-
-    const fechaLocal =
-      new Date(`${fecha}T00:00:00`);
-
-    return fechaLocal.toLocaleDateString(
-      'es-CR',
-      {
-        day: '2-digit',
-        month: 'long',
-        year: 'numeric',
-      },
-    );
   }
 
   function formatearHora(
@@ -1170,7 +1165,7 @@ export default function ListaEventosCapacitaciones({
                   </p>
 
                   <p className="mt-0.5 truncate text-xs font-semibold leading-5 text-slate-700">
-                    {formatearFecha(
+                    {formatearFechaActividad(
                       item.fecha,
                     )}
                   </p>
@@ -1459,16 +1454,8 @@ export default function ListaEventosCapacitaciones({
           <div className="mb-3 flex items-center justify-end gap-2 sm:mb-4">
             <button
               type="button"
-              onClick={() =>
-                carruselEventosRef.current?.scrollBy(
-                  {
-                    left: -520,
-                    behavior:
-                      'smooth',
-                  },
-                )
-              }
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-emerald-950/60 text-white shadow-lg backdrop-blur-md transition-all duration-200 hover:bg-emerald-600/30 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] dark:bg-slate-900/80"
+              onClick={() => desplazarCarrusel(-1)}
+              className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/15 bg-emerald-950/60 text-white shadow-lg backdrop-blur-md transition-all duration-200 hover:bg-emerald-600/30 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] dark:bg-slate-900/80"
               aria-label="Ver actividades anteriores"
             >
               <svg
@@ -1489,16 +1476,8 @@ export default function ListaEventosCapacitaciones({
 
             <button
               type="button"
-              onClick={() =>
-                carruselEventosRef.current?.scrollBy(
-                  {
-                    left: 520,
-                    behavior:
-                      'smooth',
-                  },
-                )
-              }
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-emerald-950/60 text-white shadow-lg backdrop-blur-md transition-all duration-200 hover:bg-emerald-600/30 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] dark:bg-slate-900/80"
+              onClick={() => desplazarCarrusel(1)}
+              className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/15 bg-emerald-950/60 text-white shadow-lg backdrop-blur-md transition-all duration-200 hover:bg-emerald-600/30 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] dark:bg-slate-900/80"
               aria-label="Ver más actividades"
             >
               <svg
@@ -1701,7 +1680,7 @@ export default function ListaEventosCapacitaciones({
           )}
         </div>
 
-        <div className="mb-8 space-y-4 rounded-3xl border border-[#095540]/10 bg-white p-4 shadow-[0_12px_35px_rgba(9,85,64,0.07)] sm:p-5">
+        <div className="relative z-30 mb-8 space-y-4 rounded-3xl border border-[#095540]/10 bg-white p-4 shadow-[0_12px_35px_rgba(9,85,64,0.07)] sm:p-5">
           <div className="flex flex-col gap-4 md:flex-row md:items-end">
             <div className="min-w-0 flex-1">
               <label
@@ -1752,33 +1731,19 @@ export default function ListaEventosCapacitaciones({
                 Temporada
               </label>
 
-              <select
-                id="temporada-eventos"
+              <LiquidFilterSelect
+                ariaLabel="Temporada"
                 value={temporada}
-                onChange={(evento) => {
-                  setTemporada(
-                    evento.target
-                      .value as
-                      | TemporadaEvento
-                      | '',
-                  );
-
+                placeholder="Todas las temporadas"
+                onChange={(nextValue) => {
+                  setTemporada(nextValue as TemporadaEvento | '');
                   setEstadoAbierto(null);
                 }}
-                className="w-full rounded-2xl border border-[#095540]/15 bg-[#f7faf5] px-4 py-3 text-sm font-medium text-slate-800 outline-none transition-[border-color,background-color,box-shadow] duration-200 focus-visible:border-[#009444] focus-visible:bg-white focus-visible:ring-4 focus-visible:ring-[#009444]/15"
-              >
-                <option value="">
-                  Todas las temporadas
-                </option>
-
-                <option value="seca">
-                  Temporada seca
-                </option>
-
-                <option value="lluviosa">
-                  Temporada lluviosa
-                </option>
-              </select>
+                options={[
+                  { value: 'seca', label: 'Temporada seca' },
+                  { value: 'lluviosa', label: 'Temporada lluviosa' },
+                ]}
+              />
             </div>
           </div>
 

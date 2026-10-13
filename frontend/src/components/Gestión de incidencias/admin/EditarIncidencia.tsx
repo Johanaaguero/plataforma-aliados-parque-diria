@@ -36,6 +36,12 @@ type EstadoGuardado =
 type EvidenciaIncidencia =
   Incidencia['evidencias'][number];
 
+function formatearCodigoIncidencia(codigo?: string | null): string {
+  const valor = codigo?.trim();
+  if (!valor) return '#INC-00000000';
+  return valor.startsWith('#INC-') ? valor : `#INC-${valor}`;
+}
+
 /* =========================================================
    OPCIONES
 ========================================================= */
@@ -574,11 +580,11 @@ export default function EditarIncidencia({
               <div className="w-fit rounded-[1.35rem] bg-white/35 px-5 py-4 shadow-[0_8px_24px_rgba(9,85,64,0.035)] backdrop-blur-xl dark:border dark:border-white/10 dark:bg-white/5 lg:min-w-[150px]">
 
                 <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-[#7A8C83] dark:text-[#91A59D]">
-                  ID de incidencia
+                  Código de incidencia
                 </p>
 
                 <p className="mt-1 text-2xl font-bold tracking-[-0.02em] text-[#095540] dark:text-[#8DC63F]">
-                  #{incidencia.id}
+                  {formatearCodigoIncidencia(incidencia.codigo)}
                 </p>
 
               </div>

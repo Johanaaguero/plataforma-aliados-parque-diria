@@ -267,4 +267,17 @@ export class NotificacionController {
       });
     }
   }
+
+  async eliminarTodas(req: Request, res: Response) {
+    try {
+      const usuarioId = Number((req as any).usuario?.id);
+      if (!usuarioId) return res.status(401).json({ mensaje: 'Usuario no autenticado' });
+
+      const resultado = await this.service.eliminarTodas(usuarioId);
+      return res.json({ mensaje: 'Notificaciones eliminadas correctamente', ...resultado });
+    } catch (error) {
+      console.error('Error al eliminar notificaciones:', error);
+      return res.status(500).json({ mensaje: 'Error al eliminar las notificaciones' });
+    }
+  }
 }

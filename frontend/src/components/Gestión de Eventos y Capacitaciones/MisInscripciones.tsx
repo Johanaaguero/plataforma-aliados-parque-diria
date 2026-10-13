@@ -17,31 +17,11 @@ import {
 } from '../../services/inscripcionService';
 
 import type { EventoCapacitacion } from '../../services/eventosCapacitacionesService';
+import { formatearFechaActividad } from '../../utils/fechas';
 
 type FiltroTipo = 'todas' | 'evento' | 'capacitacion';
 
 type FiltroTiempo = 'proximas' | 'pasadas' | 'canceladas' | 'todas';
-
-const formatearFecha = (
-  valor: string | Date | null | undefined,
-): string => {
-  if (!valor) {
-    return 'Sin fecha';
-  }
-
-  const fecha = new Date(valor);
-
-  if (Number.isNaN(fecha.getTime())) {
-    return 'Sin fecha';
-  }
-
-  return new Intl.DateTimeFormat('es-CR', {
-    weekday: 'short',
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  }).format(fecha);
-};
 
 const formatearTipoActividad = (tipo: string): string => {
   if (tipo === 'evento') {
@@ -871,6 +851,9 @@ export default function MisInscripciones() {
                             </div>
 
                             <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-slate-500 dark:text-slate-400">
+                              <span className="rounded-lg border border-sky-500/25 bg-sky-500/10 px-2.5 py-1 text-xs font-bold text-sky-700 dark:text-sky-300">
+                                Nº de ticket: {inscripcion.numeroTicket ?? '#TKT-00000000'}
+                              </span>
                               <span className="inline-flex items-center gap-1.5">
                                 <svg
                                   className="h-4 w-4 text-slate-400 dark:text-slate-500"
@@ -887,7 +870,7 @@ export default function MisInscripciones() {
                                   />
                                 </svg>
 
-                                {formatearFecha(
+                                {formatearFechaActividad(
                                   inscripcion.fechaActividad,
                                 )}
                               </span>
@@ -947,7 +930,7 @@ export default function MisInscripciones() {
 
                             <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
                               Inscrito el{' '}
-                              {formatearFecha(
+                              {formatearFechaActividad(
                                 inscripcion.fechaInscripcion,
                               )}
                             </p>
@@ -956,10 +939,17 @@ export default function MisInscripciones() {
                               'cancelada' && (
                               <p className="mt-1 text-xs font-medium text-rose-600 dark:text-rose-300">
                                 Cancelada el{' '}
-                                {formatearFecha(
+                                {formatearFechaActividad(
                                   inscripcion.fechaCancelacion,
                                 )}
                               </p>
+                            )}
+
+                            {estadoInscripcion === 'rechazada' && inscripcion.motivoRechazo && (
+                              <div className="mt-3 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2.5 text-sm text-rose-700 dark:text-rose-300">
+                                <p><strong>Motivo del rechazo:</strong> {inscripcion.motivoRechazo}</p>
+                                <p className="mt-1 text-xs">Puedes realizar una nueva reserva corrigiendo esta indicación.</p>
+                              </div>
                             )}
                           </div>
                         </div>

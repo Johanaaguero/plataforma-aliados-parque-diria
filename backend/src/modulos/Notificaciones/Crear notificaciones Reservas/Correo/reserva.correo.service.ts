@@ -13,6 +13,7 @@ interface EnviarCorreoReservaParams {
   hora: string;
   estado: 'aprobada' | 'rechazada';
   lugar?: string | null | undefined;
+  motivoRechazo?: string | null;
 }
 
 interface ConfiguracionCorreo {
@@ -100,6 +101,7 @@ export async function enviarCorreoReserva({
   hora,
   estado,
   lugar,
+  motivoRechazo,
 }: EnviarCorreoReservaParams): Promise<void> {
   const configuracion =
     obtenerConfiguracionCorreo();
@@ -112,6 +114,7 @@ export async function enviarCorreoReserva({
       hora,
       estado,
       lugar,
+      motivoRechazo,
     });
 
   const transporter =

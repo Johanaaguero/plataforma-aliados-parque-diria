@@ -126,6 +126,9 @@ export class EventosCapacitaciones {
   @Column({ type: 'int', default: 0 })
   precio!: number;
 
+  @Column({ type: 'varchar', length: 40, name: 'tipo_pago', nullable: true })
+  tipoPago!: string | null;
+
   @Column({ type: 'text', name: 'politicas_cancelacion', nullable: true })
   politicasCancelacion!: string | null;
 
@@ -162,6 +165,7 @@ export class EventosCapacitaciones {
     temporada?: Temporada | null;
     esPago?: boolean;
     precio?: number;
+    tipoPago?: string | null;
     politicasCancelacion?: string | null;
   }) {
     if (!params) return;
@@ -231,6 +235,7 @@ export class EventosCapacitaciones {
     }
     if (params.esPago !== undefined) this.esPago = params.esPago;
     if (params.precio !== undefined) this.precio = params.precio;
+    if (params.tipoPago !== undefined) this.tipoPago = params.tipoPago;
     if (params.politicasCancelacion !== undefined) this.politicasCancelacion = params.politicasCancelacion;
   }
 
@@ -254,6 +259,7 @@ export class EventosCapacitaciones {
       temporada: this.temporada,
       esPago: this.esPago,
       precio: this.precio,
+      tipoPago: this.tipoPago,
       politicasCancelacion: this.politicasCancelacion,
       createdAt: serializarFechaUtc(this.createdAt),
       updatedAt: serializarFechaUtc(this.updatedAt),

@@ -59,6 +59,12 @@ router.patch(
 
 // Eliminar notificación
 router.delete(
+  '/eliminar-todas',
+  verificarToken,
+  controller.eliminarTodas.bind(controller),
+);
+
+router.delete(
   '/:id',
   verificarToken,
   controller.eliminar.bind(controller),

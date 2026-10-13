@@ -18,7 +18,7 @@
 :root {
   color-scheme: light;
   --sigtad-background: #f3f6ee;
-  --sigtad-surface: rgb(255 255 251 / 88%);
+  --sigtad-surface: rgb(255 255 251 / 68%);
   --sigtad-surface-solid: #fffef9;
   --sigtad-surface-soft: rgb(237 244 231 / 88%);
   --sigtad-surface-hover: #e6efdf;
@@ -27,7 +27,7 @@
   --sigtad-muted: #52645b;
   --sigtad-accent-text: #416817;
   --sigtad-border: rgb(9 85 64 / 19%);
-  --sigtad-glass-edge: rgb(255 255 255 / 76%);
+  --sigtad-glass-edge: rgb(255 255 255 / 55%);
   --sigtad-focus: #08743f;
   --sigtad-primary: #095540;
   --sigtad-primary-hover: #08743f;
@@ -212,6 +212,48 @@ button:not(:disabled) {
   transition: transform 300ms ease-in-out, color 300ms ease-in-out,
     background-color 300ms ease-in-out, border-color 300ms ease-in-out,
     box-shadow 300ms ease-in-out;
+}
+
+/* Las tarjetas de notificación se animan como una unidad; sus controles no
+   deben escalar de forma aislada y desplazar el texto sobre los iconos. */
+.sigtad-notificaciones button:not(:disabled):hover {
+  transform: none;
+}
+
+.sigtad-notificaciones li {
+  will-change: transform, box-shadow;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Base compartida para selects nativos: el menú del sistema mantiene sus
+   restricciones, mientras el control visible conserva la estética glass. */
+select {
+  border: 1px solid rgb(226 232 240 / 100%);
+  border-radius: .75rem;
+  background-color: rgb(255 255 255 / 80%);
+  color: #1e293b;
+  box-shadow: 0 10px 28px rgb(7 63 49 / 12%);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+[data-theme="dark"] select {
+  border-color: #1e293b;
+  background-color: rgb(15 23 42 / 80%);
+  color: #fff;
+  box-shadow: 0 14px 30px rgb(0 0 0 / 32%);
+}
+
+/* Los navegadores controlan el panel de un <select> nativo, pero estas reglas
+   conservan contraste legible para las opciones que sí permiten estilizar. */
+select option {
+  background-color: #fff;
+  color: #17372c;
+}
+
+[data-theme="dark"] select option {
+  background-color: #0f172a;
+  color: #f8fafc;
 }
 
 @media (hover: hover) {
@@ -432,19 +474,39 @@ main {
 }
 
 .sigtad-footer {
-  background: #004d3d !important;
+  background-color: #095540 !important;
 }
 
 [data-theme="dark"] .sigtad-footer {
-  background: linear-gradient(90deg, #050807 0%, #080d0b 55%, #0f1a15 100%) !important;
+  background-color: #020617 !important;
 }
 
 .sigtad-footer-wave {
-  fill: #004d3d !important;
+  fill: #095540 !important;
 }
 
 [data-theme="dark"] .sigtad-footer-wave {
-  fill: #080d0b !important;
+  fill: #020617 !important;
+}
+
+/* La foto institucional se conserva en ambos temas; la capa de contraste se
+   adapta sin afectar el contenido ni los controles del formulario. */
+.sigtad-incidencia-form::before {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  content: "";
+  background: rgb(237 247 240 / 72%);
+  transition: background-color 300ms ease;
+}
+
+.sigtad-incidencia-form > * {
+  position: relative;
+  z-index: 1;
+}
+
+[data-theme="dark"] .sigtad-incidencia-form::before {
+  background: rgb(2 6 23 / 72%);
 }
 
 /* Only the decorative pseudo-element is blurred, never the catalog or its children. */

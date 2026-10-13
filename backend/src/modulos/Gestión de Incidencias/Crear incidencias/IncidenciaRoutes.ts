@@ -9,6 +9,8 @@ import {
   actualizarVisibilidadPublica,
   cerrarMiIncidencia,
   compartirIncidencia,
+  agregarComentarioIncidencia,
+  obtenerComentariosIncidencia,
 } from './IncidenciaController';
 import {
   registrarEvidencia,
@@ -58,6 +60,8 @@ router.patch(
   autorizarRoles('visitante', 'asociado'),
   (req, res) => cerrarMiIncidencia(req, res),
 );
+router.post('/:id/comentarios', verificarToken, autorizarRoles('administrador'), (req, res) => agregarComentarioIncidencia(req, res));
+router.get('/:id/comentarios', verificarToken, (req, res) => obtenerComentariosIncidencia(req, res));
 
 router.get(
   '/:id',

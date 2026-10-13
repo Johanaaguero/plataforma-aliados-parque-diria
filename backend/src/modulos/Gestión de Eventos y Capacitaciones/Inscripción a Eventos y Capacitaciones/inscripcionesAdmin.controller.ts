@@ -31,11 +31,19 @@ const cambiarEstadoReserva = (estado: 'aprobada' | 'rechazada') => async (req: R
       return res.status(400).json({ ok: false, code: 'INVALID_ID', message: 'El id de la reserva no es válido.' });
     }
 
+    const motivoRechazo = typeof req.body?.motivoRechazo === 'string'
+      ? req.body.motivoRechazo.trim()
+      : '';
+    if (estado === 'rechazada' && !motivoRechazo) {
+      return res.status(400).json({ ok: false, code: 'REJECTION_REASON_REQUIRED', message: 'El motivo del rechazo es obligatorio.' });
+    }
+
     const reserva = await actualizarEstadoReserva(
       id,
       estado === 'aprobada' ? EstadoReserva.APROBADA : EstadoReserva.RECHAZADA,
+      motivoRechazo || null,
     );
-    return res.status(200).json({ ok: true, message: `Reserva ${estado} correctamente.`, data: { id: reserva.id, estado: reserva.estado } });
+    return res.status(200).json({ ok: true, message: `Reserva ${estado} correctamente.`, data: { id: reserva.id, estado: reserva.estado, motivoRechazo: reserva.motivoRechazo } });
   } catch (error) {
     if (error instanceof Error && error.name === 'NotFoundError') {
       return res.status(404).json({ ok: false, code: 'RESERVATION_NOT_FOUND', message: error.message });

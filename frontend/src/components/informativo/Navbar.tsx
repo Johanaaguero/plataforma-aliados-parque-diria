@@ -14,6 +14,7 @@ import {
 } from '../../services/notificacionesService';
 import useNotificacionToast from '../../hooks/useNotificacionToast';
 import NotificacionToast from '../Notificaciones/NotificacionToast';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 interface NavbarProps {
   onRegistro: () => void;
@@ -49,6 +50,7 @@ function Navbar({
   modoAdministracion = false,
 }: NavbarProps) {
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const [scrolled, setScrolled] = useState(false);
   const [menuAbierto, setMenuAbierto] = useState(false);
@@ -270,7 +272,7 @@ function Navbar({
                 seccionActiva === 'inicio' ? 'page' : undefined
               }
             >
-              Inicio
+              {t('nav.home')}
             </button>
 
             <button
@@ -287,7 +289,7 @@ function Navbar({
                   : undefined
               }
             >
-              Emprendimientos
+              {t('nav.businesses')}
             </button>
 
             <button
@@ -304,7 +306,7 @@ function Navbar({
                   : undefined
               }
             >
-              Eventos y Capacitaciones
+              {t('nav.events')}
             </button>
 
             {onRegistrarIncidencia && (
@@ -322,7 +324,7 @@ function Navbar({
                     : undefined
                 }
               >
-                Reportar incidencia
+                {t('nav.reportIncident')}
               </button>
             )}
           </div>
@@ -337,7 +339,7 @@ function Navbar({
                   onClick={onLogin}
                   className="min-h-10 rounded-full bg-[#095540] px-4 py-2 text-sm font-bold text-white shadow-md shadow-[#095540]/20 motion-safe:transition motion-safe:duration-200 hover:bg-[#009444] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8DC63F] focus-visible:ring-offset-2 motion-safe:hover:-translate-y-0.5 motion-reduce:transform-none"
                 >
-                  Iniciar sesión
+                  {t('nav.login')}
                 </button>
               )}
 
@@ -353,9 +355,9 @@ function Navbar({
                   aria-label={
                     noLeidas > 0
                       ? `Notificaciones, ${noLeidas} sin leer`
-                      : 'Notificaciones'
+                      : t('nav.notifications')
                   }
-                  title="Notificaciones"
+                  title={t('nav.notifications')}
                 >
                   <svg
                     viewBox="0 0 24 24"
@@ -433,7 +435,7 @@ function Navbar({
                             onClick={irMisInscripciones}
                             className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10"
                           >
-                            Mis reservas
+                            {t('nav.myBookings')}
                           </button>
 
                           <button
@@ -441,7 +443,7 @@ function Navbar({
                             onClick={irMisIncidencias}
                             className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10"
                           >
-                            Mis incidencias
+                            {t('nav.myIncidents')}
                           </button>
                         </>
                       )}
@@ -453,7 +455,7 @@ function Navbar({
                             onClick={irMisInscripciones}
                             className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10"
                           >
-                            Mis eventos y capacitaciones
+                            {t('nav.myEvents')}
                           </button>
 
                           <button
@@ -461,7 +463,7 @@ function Navbar({
                             onClick={irMisEmprendimientos}
                             className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10"
                           >
-                            Mis emprendimientos
+                            {t('nav.myBusinesses')}
                           </button>
 
                           <button
@@ -469,7 +471,7 @@ function Navbar({
                             onClick={irMisIncidencias}
                             className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10"
                           >
-                            Mis incidencias
+                            {t('nav.myIncidents')}
                           </button>
                         </>
                       )}
@@ -485,7 +487,7 @@ function Navbar({
                           }
                           className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10"
                         >
-                          Panel de control
+                          {t('nav.controlPanel')}
                         </button>
                       )}
 
@@ -496,7 +498,7 @@ function Navbar({
                         onClick={cerrarSesionDesdeMenu}
                         className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-bold text-[#d9f3bd] transition hover:bg-white/10"
                       >
-                        Cerrar sesión
+                        {t('nav.logout')}
                       </button>
                     </div>
                   )}
@@ -576,7 +578,7 @@ function Navbar({
                   seccionActiva === 'inicio' ? 'page' : undefined
                 }
               >
-                Inicio
+                {t('nav.home')}
               </button>
 
               <button
@@ -593,7 +595,7 @@ function Navbar({
                     : undefined
                 }
               >
-                Emprendimientos
+                {t('nav.businesses')}
               </button>
 
               <button
@@ -611,7 +613,7 @@ function Navbar({
                   seccionActiva === 'eventos' ? 'page' : undefined
                 }
               >
-                Eventos y Capacitaciones
+                {t('nav.events')}
               </button>
 
               {/* NOTIFICACIONES MÓVIL
@@ -642,7 +644,7 @@ function Navbar({
                     onClick={irMisInscripciones}
                     className={claseNavegacionMovil}
                   >
-                    Mis reservas
+                    {t('nav.myBookings')}
                   </button>
 
                   <button
@@ -650,7 +652,7 @@ function Navbar({
                     onClick={irMisIncidencias}
                     className={claseNavegacionMovil}
                   >
-                    Mis incidencias
+                    {t('nav.myIncidents')}
                   </button>
                 </>
               )}
@@ -663,7 +665,7 @@ function Navbar({
                     onClick={irMisInscripciones}
                     className={claseNavegacionMovil}
                   >
-                    Mis eventos y capacitaciones
+                    {t('nav.myEvents')}
                   </button>
 
                   <button
@@ -671,7 +673,7 @@ function Navbar({
                     onClick={irMisEmprendimientos}
                     className={claseNavegacionMovil}
                   >
-                    Mis emprendimientos
+                    {t('nav.myBusinesses')}
                   </button>
 
                   <button
@@ -679,7 +681,7 @@ function Navbar({
                     onClick={irMisIncidencias}
                     className={claseNavegacionMovil}
                   >
-                    Mis incidencias
+                    {t('nav.myIncidents')}
                   </button>
                 </>
               )}
@@ -702,7 +704,7 @@ function Navbar({
                       : undefined
                   }
                 >
-                  Reportar incidencia
+                  {t('nav.reportIncident')}
                 </button>
               )}
             </div>
@@ -718,7 +720,7 @@ function Navbar({
                   }}
                   className="min-h-12 rounded-full bg-[#095540] px-4 py-3 text-sm font-bold text-white shadow-md motion-safe:transition motion-safe:duration-200 hover:bg-[#009444] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8DC63F]"
                 >
-                  Iniciar sesión
+                  {t('nav.login')}
                 </button>
               </div>
             )}
@@ -743,7 +745,7 @@ function Navbar({
                   }}
                   className="min-h-12 rounded-full bg-[#095540] px-4 py-3 text-sm font-bold text-white shadow-md motion-safe:transition motion-safe:duration-200 hover:bg-[#009444] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8DC63F]"
                 >
-                  Cerrar sesión
+                  {t('nav.logout')}
                 </button>
               </div>
             )}
@@ -756,7 +758,7 @@ function Navbar({
                   onClick={irDashboard}
                   className="min-h-12 w-full rounded-full bg-[#095540] px-4 py-3 text-sm font-bold text-white shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f]"
                 >
-                  Panel de control
+                  {t('nav.controlPanel')}
                 </button>
               </div>
             )}
@@ -769,7 +771,7 @@ function Navbar({
                   onClick={irDashboardSuperAdmin}
                   className="min-h-12 w-full rounded-full bg-[#095540] px-4 py-3 text-sm font-bold text-white shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f]"
                 >
-                  Panel de control
+                  {t('nav.controlPanel')}
                 </button>
               </div>
             )}

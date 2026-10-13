@@ -197,7 +197,7 @@ function Informativo() {
         </ScrollReveal>
 
         <div className="pt-24 sm:pt-28">
-          <div className="mx-auto max-w-3xl text-center">
+          <ScrollReveal className="mx-auto max-w-3xl text-center">
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#009444] sm:text-sm">
               Vive el territorio
             </p>
@@ -208,7 +208,7 @@ function Informativo() {
               Conoce las distintas formas en que el parque y sus comunidades se
               encuentran, crecen y comparten su identidad.
             </p>
-          </div>
+          </ScrollReveal>
 
           <ScrollReveal stagger className="mt-10 grid gap-5 sm:grid-cols-2 lg:mt-12 lg:grid-cols-4">
             {MODULOS.map((modulo) => (

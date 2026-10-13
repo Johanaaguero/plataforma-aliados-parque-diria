@@ -19,6 +19,8 @@ export interface MiInscripcionDTO {
   fechaActividad: string | null;
   fechaInscripcion: Date | string | null;
   origen?: 'participante' | 'reserva';
+  motivoRechazo?: string | null;
+  numeroTicket?: string | null;
 }
 
 export const listarMisInscripciones = async (
@@ -61,6 +63,7 @@ export const listarMisInscripciones = async (
       horaFin: null,
       cuposDisponibles,
       estado: participante.estado,
+      numeroTicket: participante.numeroTicket ?? null,
       fechaCancelacion: serializarFechaUtc(participante.fechaCancelacion),
       fechaActividad: serializarFechaCalendario(evento.fecha),
       fechaInscripcion: serializarFechaUtc(participante.createdAt),
@@ -99,6 +102,7 @@ export const listarMisInscripciones = async (
           ...inscripcionParticipante,
           id: reserva.id,
           estado: EstadoReservaNueva.APROBADA,
+          numeroTicket: reserva.numeroTicket ?? participante.numeroTicket ?? null,
           fechaInscripcion: serializarFechaUtc(reserva.createdAt),
           origen: 'reserva',
         };
@@ -123,6 +127,8 @@ export const listarMisInscripciones = async (
       horaFin: null,
       cuposDisponibles: reserva.eventoCapacitacion.cuposDisponibles,
       estado: reserva.estado as string,
+      motivoRechazo: reserva.motivoRechazo ?? null,
+      numeroTicket: reserva.numeroTicket ?? null,
       fechaCancelacion: null,
       fechaActividad: serializarFechaCalendario(reserva.eventoCapacitacion.fecha),
       fechaInscripcion: serializarFechaUtc(reserva.createdAt),

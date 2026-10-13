@@ -5,6 +5,7 @@ import accesoParque from '../../assets/diria-paisaje-1.jpg';
 import rioDiria from '../../assets/diria-paisaje-2.jpg';
 import bosqueDiria from '../../assets/diria-paisaje-3.jpg';
 import cafeLocal from '../../assets/diria-paisaje-4.jpg';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 const DIAPOSITIVAS = [
   {
@@ -37,6 +38,7 @@ const DIAPOSITIVAS = [
 const INTERVALO_AUTOPLAY = 6000;
 
 function Hero() {
+  const { language, t } = useLanguage();
   const [indiceActual, setIndiceActual] = useState(0);
   const [pausado, setPausado] = useState(false);
   const [punteroSobreCarrusel, setPunteroSobreCarrusel] = useState(false);
@@ -135,15 +137,28 @@ function Hero() {
 
       <div className="relative z-10 flex min-h-[480px] w-full items-center px-6 pb-20 pt-28 sm:min-h-[500px] sm:px-10 sm:pb-24 sm:pt-32 md:pt-36 lg:min-h-[540px] lg:px-14 lg:pb-24 lg:pt-36">
         <div className="max-w-4xl">
-          <h1 className="sigtad-animate-in font-brand max-w-3xl text-3xl font-bold leading-tight tracking-[-0.035em] text-white md:text-4xl lg:text-5xl">
+          <h1 className={`sigtad-animate-in font-brand max-w-3xl text-3xl font-bold leading-tight tracking-[-0.035em] text-white md:text-4xl lg:text-5xl ${language === 'en' ? 'sr-only' : ''}`}>
             Uniendo la Conservación, la Comunidad
             <span className="block text-[#8dc63f]">y el Desarrollo Sostenible en el Parque Nacional Diriá.</span>
           </h1>
 
-          <p className="sigtad-animate-in mt-4 max-w-2xl text-sm leading-6 text-white/85 sm:text-base sm:leading-7 lg:text-lg">
+          {language === 'en' && (
+            <h1 className="sigtad-animate-in font-brand max-w-3xl text-3xl font-bold leading-tight tracking-[-0.035em] text-white md:text-4xl lg:text-5xl">
+              {t('hero.title')}
+              <span className="block text-[#8dc63f]">{t('hero.titleAccent')}</span>
+            </h1>
+          )}
+
+          <p className={`sigtad-animate-in mt-4 max-w-2xl text-sm leading-6 text-white/85 sm:text-base sm:leading-7 lg:text-lg ${language === 'en' ? 'sr-only' : ''}`}>
             Descubre el Parque Nacional Diriá y las experiencias, actividades y
             emprendimientos que nacen alrededor de este paisaje único.
           </p>
+
+          {language === 'en' && (
+            <p className="sigtad-animate-in mt-4 max-w-2xl text-sm leading-6 text-white/85 sm:text-base sm:leading-7 lg:text-lg">
+              {t('hero.description')}
+            </p>
+          )}
         </div>
       </div>
 
@@ -161,7 +176,7 @@ function Hero() {
           <div
             className="flex items-center justify-center gap-1"
             role="group"
-            aria-label="Seleccionar imagen"
+            aria-label={t('hero.selectImage')}
           >
             {DIAPOSITIVAS.map((diapositiva, index) => (
             <button
@@ -169,7 +184,7 @@ function Hero() {
               type="button"
               onClick={() => setIndiceActual(index)}
               className="group flex h-6 w-6 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d9d823] focus-visible:ring-offset-1 focus-visible:ring-offset-[#095540]"
-              aria-label={`Mostrar diapositiva ${index + 1}: ${diapositiva.nombre}`}
+              aria-label={`${t('hero.showSlide')} ${index + 1}: ${diapositiva.nombre}`}
               aria-current={indiceActual === index ? 'true' : undefined}
             >
               <span
@@ -190,7 +205,7 @@ function Hero() {
             type="button"
             onClick={() => setPausado((valor) => !valor)}
             className="flex h-8 w-8 items-center justify-center rounded-full text-white transition-colors duration-200 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d9d823]"
-            aria-label={pausado ? 'Reanudar carrusel' : 'Pausar carrusel'}
+            aria-label={pausado ? t('hero.resume') : t('hero.pause')}
             aria-pressed={pausado}
           >
             {pausado ? (

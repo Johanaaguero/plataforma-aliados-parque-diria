@@ -42,6 +42,7 @@ export default function GestionRoles() {
     useState<UsuarioRol | null>(null);
   const [nuevoRol, setNuevoRol] = useState<NombreRol | ''>('');
   const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false);
+  const [paginaActual, setPaginaActual] = useState(1);
 
   const [mostrarSelectorRol, setMostrarSelectorRol] = useState(false);
 
@@ -136,6 +137,18 @@ export default function GestionRoles() {
       return coincideBusqueda && coincideRol;
     });
   }, [usuarios, busqueda, filtroRol]);
+
+  const tamanoPagina = 10;
+  const totalPaginas = Math.max(1, Math.ceil(usuariosFiltrados.length / tamanoPagina));
+  const paginaSegura = Math.min(paginaActual, totalPaginas);
+  const usuariosPaginados = usuariosFiltrados.slice(
+    (paginaSegura - 1) * tamanoPagina,
+    paginaSegura * tamanoPagina,
+  );
+
+  useEffect(() => {
+    setPaginaActual(1);
+  }, [busqueda, filtroRol]);
 
   const cantidadSuperAdministradores = usuarios.filter(
     (usuario) => esSuperAdministrador(usuario)
@@ -702,7 +715,7 @@ export default function GestionRoles() {
               </div>
 
               <span className="inline-flex w-fit rounded-full border border-[#00AEEF]/20 bg-[#00AEEF]/10 px-3 py-1.5 text-xs font-bold text-[#0087BA]">
-                Mostrando {usuariosFiltrados.length} de {usuarios.length}
+                Mostrando {usuariosPaginados.length} de {usuariosFiltrados.length}
               </span>
             </div>
 
@@ -770,7 +783,7 @@ export default function GestionRoles() {
                       </td>
                     </tr>
                   ) : (
-                    usuariosFiltrados.map((usuario) => {
+                    usuariosPaginados.map((usuario) => {
                       const estiloRol =
                         obtenerEstiloRol(usuario.rol);
 
@@ -853,6 +866,15 @@ export default function GestionRoles() {
                 </tbody>
               </table>
             </div>
+            {usuariosFiltrados.length > tamanoPagina && (
+              <div className="flex items-center justify-between border-t border-slate-100 px-5 py-4 text-sm sm:px-7">
+                <span className="text-slate-500">Página {paginaSegura} de {totalPaginas}</span>
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => setPaginaActual((pagina) => Math.max(1, pagina - 1))} disabled={paginaSegura === 1} className="rounded-xl border border-slate-200 px-3 py-2 font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-40">Anterior</button>
+                  <button type="button" onClick={() => setPaginaActual((pagina) => Math.min(totalPaginas, pagina + 1))} disabled={paginaSegura === totalPaginas} className="rounded-xl border border-slate-200 px-3 py-2 font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-40">Siguiente</button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

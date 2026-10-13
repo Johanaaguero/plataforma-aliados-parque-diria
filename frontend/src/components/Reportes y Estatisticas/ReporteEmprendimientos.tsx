@@ -1,5 +1,6 @@
 import {useEffect, useRef, useState, type ReactNode, } from 'react';
 import AccionesReporteGuardado from './AccionesReporteGuardado';
+import LiquidFilterSelect from '../ui/LiquidFilterSelect';
 type Periodo =
   | 'hoy'
   | '7dias'
@@ -1460,53 +1461,15 @@ export default function ReporteEmprendimientos() {
               Emprendimiento
             </label>
 
-            <select
+            <LiquidFilterSelect
               id="filtro-emprendimiento"
-              value={
-                emprendimientoId
-              }
-              onChange={(e) => {
-                setEmprendimientoId(
-                  e.target.value,
-                );
-
-                setConsultado(
-                  false,
-                );
-
-                setDatos(null);
-                setError('');
-              }}
-              disabled={
-                cargandoFiltros
-              }
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm font-medium text-slate-800 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700/80 dark:bg-slate-800/60 dark:text-slate-100"
-            >
-
-              <option value="">
-                Todos los emprendimientos
-              </option>
-
-              {emprendimientosFiltro.map(
-                (
-                  emprendimiento,
-                ) => (
-                  <option
-                    key={
-                      emprendimiento.id
-                    }
-                    value={
-                      emprendimiento.id
-                    }
-                  >
-                    {
-                      emprendimiento.nombre
-                    }
-                  </option>
-                ),
-              )}
-
-            </select>
+              ariaLabel="Emprendimiento"
+              value={emprendimientoId}
+              placeholder="Todos los emprendimientos"
+              disabled={cargandoFiltros}
+              onChange={(nextValue) => { setEmprendimientoId(nextValue); setConsultado(false); setDatos(null); setError(''); }}
+              options={emprendimientosFiltro.map((emprendimiento) => ({ value: String(emprendimiento.id), label: emprendimiento.nombre }))}
+            />
 
           </div>
 
@@ -1523,51 +1486,15 @@ export default function ReporteEmprendimientos() {
               Categoría
             </label>
 
-            <select
+            <LiquidFilterSelect
               id="filtro-categoria"
-              value={
-                categoriaId
-              }
-              onChange={(e) => {
-                setCategoriaId(
-                  e.target.value,
-                );
-
-                setConsultado(
-                  false,
-                );
-
-                setDatos(null);
-                setError('');
-              }}
-              disabled={
-                cargandoFiltros
-              }
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm font-medium text-slate-800 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700/80 dark:bg-slate-800/60 dark:text-slate-100"
-            >
-
-              <option value="">
-                Todas las categorías
-              </option>
-
-              {categoriasFiltro.map(
-                (categoria) => (
-                  <option
-                    key={
-                      categoria.id
-                    }
-                    value={
-                      categoria.id
-                    }
-                  >
-                    {
-                      categoria.nombre
-                    }
-                  </option>
-                ),
-              )}
-
-            </select>
+              ariaLabel="Categoría"
+              value={categoriaId}
+              placeholder="Todas las categorías"
+              disabled={cargandoFiltros}
+              onChange={(nextValue) => { setCategoriaId(nextValue); setConsultado(false); setDatos(null); setError(''); }}
+              options={categoriasFiltro.map((categoria) => ({ value: String(categoria.id), label: categoria.nombre }))}
+            />
 
           </div>
 

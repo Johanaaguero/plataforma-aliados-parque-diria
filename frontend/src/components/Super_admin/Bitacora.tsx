@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../../services/api';
+import LiquidFilterSelect from '../ui/LiquidFilterSelect';
 
 interface UsuarioAuditoria {
   id: number;
@@ -240,21 +241,15 @@ export default function Bitacora() {
                 Filtrar por acción
               </label>
 
-              <select
+              <LiquidFilterSelect
                 id="filtro-accion"
-                value={accion}
-                onChange={(event) => setAccion(event.target.value)}
+                ariaLabel="Filtrar por acción"
+                value={accion === 'TODAS' ? '' : accion}
+                placeholder="Todas las acciones"
                 disabled={cargando}
-                className="w-full rounded-2xl border border-[#095540]/15 bg-[#f7faf5] px-4 py-3 text-sm font-medium text-slate-800 outline-none transition focus:border-[#009444] focus:bg-white focus:ring-4 focus:ring-[#009444]/15"
-              >
-                <option value="TODAS">Todas las acciones</option>
-
-                {accionesDisponibles.map((item) => (
-                  <option key={item} value={item}>
-                    {formatearAccion(item)}
-                  </option>
-                ))}
-              </select>
+                onChange={(nextValue) => setAccion(nextValue || 'TODAS')}
+                options={accionesDisponibles.map((item) => ({ value: item, label: formatearAccion(item) }))}
+              />
             </div>
           </div>
         </section>

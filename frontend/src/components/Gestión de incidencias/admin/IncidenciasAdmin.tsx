@@ -17,6 +17,7 @@ import {
 
 import EditarIncidencia from './EditarIncidencia';
 import imagenParque from '../../../assets/parque-hero.jpg';
+import LiquidFilterSelect from '../../ui/LiquidFilterSelect';
 
 /* =========================================================
    CONFIGURACIÓN
@@ -107,6 +108,12 @@ const categoriaClases: Record<CategoriaIncidencia, string> = {
   otro: 'bg-[#E4F3F7] text-[#187E9B]',
 };
 
+function formatearCodigoIncidencia(codigo?: string | null): string {
+  const valor = codigo?.trim();
+  if (!valor) return '#INC-00000000';
+  return valor.startsWith('#INC-') ? valor : `#INC-${valor}`;
+}
+
 /* =========================================================
    ICONO
 ========================================================= */
@@ -177,21 +184,13 @@ function SelectFiltro<T extends string>({
         {etiqueta}
       </span>
 
-      <select
+      <LiquidFilterSelect
+        className="mt-2"
+        ariaLabel={etiqueta}
         value={valor}
-        onChange={(event) => {
-          onChange(event.target.value as T | '');
-        }}
-        className="mt-2 h-12 w-full rounded-[1rem] border border-white/70 bg-white/60 px-4 text-sm font-semibold text-[#304B40] shadow-[0_7px_20px_rgba(7,63,49,0.035)] backdrop-blur-xl outline-none transition-all duration-200 hover:bg-white/75 focus:border-[#8DC63F]/60 focus:ring-4 focus:ring-[#8DC63F]/10 dark:border-slate-700/70 dark:bg-slate-800/70 dark:text-slate-100 dark:hover:bg-slate-800"
-      >
-        <option value="">Todos</option>
-
-        {opciones.map((opcion) => (
-          <option key={opcion} value={opcion}>
-            {etiquetas[opcion]}
-          </option>
-        ))}
-      </select>
+        onChange={(nextValue) => onChange(nextValue as T | '')}
+        options={opciones.map((opcion) => ({ value: opcion, label: etiquetas[opcion] }))}
+      />
     </label>
   );
 }
@@ -318,6 +317,8 @@ export default function IncidenciasAdmin({
   const [filtroPrioridad, setFiltroPrioridad] =
     useState<PrioridadIncidencia | ''>('');
 
+  const [busqueda, setBusqueda] = useState('');
+
   /* =======================================================
      COMPARTIR
   ======================================================= */
@@ -420,10 +421,17 @@ export default function IncidenciasAdmin({
         filtroPrioridad === '' ||
         incidencia.prioridad === filtroPrioridad;
 
+      const termino = busqueda.trim().toLowerCase();
+      const coincideBusqueda =
+        !termino ||
+        formatearCodigoIncidencia(incidencia.codigo).toLowerCase().includes(termino) ||
+        String(incidencia.id).includes(termino);
+
       return (
         coincideEstado &&
         coincideCategoria &&
-        coincidePrioridad
+        coincidePrioridad &&
+        coincideBusqueda
       );
     });
   }, [
@@ -431,6 +439,7 @@ export default function IncidenciasAdmin({
     filtroEstado,
     filtroCategoria,
     filtroPrioridad,
+    busqueda,
   ]);
 
   /* =======================================================
@@ -731,7 +740,7 @@ export default function IncidenciasAdmin({
 
       <div className="relative z-10 mx-auto w-full max-w-[1500px] px-4 pb-12 pt-5 sm:px-7 sm:pt-7 lg:px-10 lg:pt-9">
 
-        <section className="overflow-hidden rounded-[2.6rem] border border-white/60 bg-white/25 shadow-[0_28px_80px_rgba(7,63,49,0.10)] backdrop-blur-[28px] dark:border-slate-700/60 dark:bg-slate-900/30 sm:rounded-[3rem]">
+        <section className="overflow-visible rounded-[2.6rem] border border-white/60 bg-white/25 shadow-[0_28px_80px_rgba(7,63,49,0.10)] backdrop-blur-[28px] dark:border-slate-700/60 dark:bg-slate-900/30 sm:rounded-[3rem]">
 
           {/* CABECERA */}
 
@@ -759,7 +768,7 @@ export default function IncidenciasAdmin({
 
           {/* FILTRO */}
 
-          <section className="px-7 pb-7 pt-2 sm:px-10 sm:pb-8 lg:px-14">
+          <section className="relative z-30 px-7 pb-7 pt-2 sm:px-10 sm:pb-8 lg:px-14">
             <div className="mb-4">
               <p className="text-[18px] font-bold tracking-[0.03em] text-[#00AEEF] sm:text-[20px]">
                 Filtro
@@ -768,7 +777,20 @@ export default function IncidenciasAdmin({
 
             <div className="rounded-[1.9rem] border border-white/60 bg-white/24 p-5 shadow-[0_18px_45px_rgba(7,63,49,0.045)] backdrop-blur-2xl dark:border-slate-700/60 dark:bg-slate-800/30 sm:p-6 lg:p-7">
 
-              <div className="grid gap-5 md:grid-cols-3">
+              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+
+                <label className="block">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#5F766B] dark:text-slate-400">
+                    Buscar por código o número
+                  </span>
+                  <input
+                    type="search"
+                    value={busqueda}
+                    onChange={(event) => setBusqueda(event.target.value)}
+                    placeholder="INC-00010026 o 7"
+                    className="mt-2 h-12 w-full rounded-[1rem] border border-white/70 bg-white/60 px-4 text-sm font-semibold text-[#304B40] shadow-[0_7px_20px_rgba(7,63,49,0.035)] backdrop-blur-xl outline-none transition-all duration-200 placeholder:font-normal placeholder:text-[#82938B] hover:bg-white/75 focus:border-[#8DC63F]/60 focus:ring-4 focus:ring-[#8DC63F]/10 dark:border-slate-700/70 dark:bg-slate-800/70 dark:text-slate-100 dark:placeholder:text-slate-400 dark:hover:bg-slate-800"
+                  />
+                </label>
 
                 <SelectFiltro
                   etiqueta="Estado"
@@ -800,7 +822,7 @@ export default function IncidenciasAdmin({
 
           {/* INCIDENCIAS RECIENTES */}
 
-          <section className="px-7 pb-8 pt-1 sm:px-10 lg:px-14">
+          <section className="relative z-10 px-7 pb-8 pt-1 sm:px-10 lg:px-14">
 
             <div className="mb-5 flex items-center justify-between gap-4">
 
@@ -862,7 +884,7 @@ export default function IncidenciasAdmin({
             {!cargando &&
               !error &&
               incidenciasFiltradas.length > 0 && (
-                <div className="space-y-4">
+                <div className="custom-scrollbar max-h-[calc(100vh-200px)] space-y-4 overflow-y-auto pr-2">
 
                   {incidenciasFiltradas.map(
                     (incidencia) => {
@@ -892,6 +914,10 @@ export default function IncidenciasAdmin({
                                 <h2 className="text-xl font-bold tracking-[-0.02em] text-[#174D3B] dark:text-white sm:text-2xl">
                                   {incidencia.titulo}
                                 </h2>
+
+                                <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#009444] dark:text-[#A8D66D]">
+                                  Código de incidencia · {formatearCodigoIncidencia(incidencia.codigo)}
+                                </p>
 
                                 <p className="mt-2 max-w-4xl text-sm leading-6 text-[#71837B] dark:text-slate-300">
                                   {incidencia.descripcion}

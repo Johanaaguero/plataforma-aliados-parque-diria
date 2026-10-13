@@ -104,8 +104,15 @@ export class Reserva {
   })
   estado!: EstadoReserva;
 
+  @Index('UQ_reservas_numero_ticket', { unique: true })
+  @Column({ type: 'varchar', length: 20, name: 'numero_ticket', nullable: true })
+  numeroTicket!: string | null;
+
   @Column({ type: 'varchar', length: 500, name: 'comprobante_url', nullable: true })
   comprobanteUrl!: string | null;
+
+  @Column({ type: 'text', name: 'motivo_rechazo', nullable: true })
+  motivoRechazo!: string | null;
 
   @Column({ type: 'datetime', name: 'fecha_expiracion_pre_reserva', nullable: true })
   fechaExpiracionPreReserva!: Date | null;

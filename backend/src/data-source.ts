@@ -26,6 +26,7 @@ import { ConsultaEmprendimiento } from './models/ConsultaEmprendimiento';
 import { Notificacion } from './models/Notificacion';
 import { ConversacionChatbot } from './models/ConversacionChatbot';
 import { PreguntasFrecuentes } from './models/PreguntasFrecuentes';
+import { ComentarioIncidencia } from './models/ComentarioIncidencia';
 
 dotenv.config();
 
@@ -75,6 +76,7 @@ timezone: '-06:00',
     Notificacion,
     ConversacionChatbot,
     PreguntasFrecuentes,
+    ComentarioIncidencia,
 
   ],
  

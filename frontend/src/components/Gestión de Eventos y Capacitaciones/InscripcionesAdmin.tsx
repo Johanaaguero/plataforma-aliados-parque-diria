@@ -248,6 +248,8 @@ export default function InscripcionesAdmin() {
   const [reservaEnActualizacion, setReservaEnActualizacion] = useState<number | null>(null);
   const [accionEnActualizacion, setAccionEnActualizacion] = useState<'aprobada' | 'rechazada' | null>(null);
   const [mensajeExito, setMensajeExito] = useState('');
+  const [reservaARechazar, setReservaARechazar] = useState<InscripcionAdministrativa | null>(null);
+  const [motivoRechazo, setMotivoRechazo] = useState('');
 
   const cargarInscripciones = async () => {
     try {
@@ -291,7 +293,7 @@ export default function InscripcionesAdmin() {
     return () => window.clearTimeout(temporizador);
   }, [mensajeExito]);
 
-  const cambiarEstadoReserva = async (id: number, estado: 'aprobada' | 'rechazada') => {
+  const cambiarEstadoReserva = async (id: number, estado: 'aprobada' | 'rechazada', motivo?: string) => {
     if (reservaEnActualizacion !== null) return;
 
     try {
@@ -299,14 +301,15 @@ export default function InscripcionesAdmin() {
       setAccionEnActualizacion(estado);
       setError('');
 
-      const reservaActualizada = await actualizarEstadoReserva(id, estado);
+      const reservaActualizada = await actualizarEstadoReserva(id, estado, motivo);
 
       setInscripciones((actuales) =>
         actuales.map((inscripcion) =>
           inscripcion.id === id
             ? {
                 ...inscripcion,
-                estado: reservaActualizada.estado
+                estado: reservaActualizada.estado,
+                motivoRechazo: estado === 'rechazada' ? motivo?.trim() || null : null,
               }
             : inscripcion
         )
@@ -317,6 +320,10 @@ export default function InscripcionesAdmin() {
           ? 'Inscripción aprobada exitosamente.'
           : 'Inscripción rechazada exitosamente.'
       );
+      if (estado === 'rechazada') {
+        setReservaARechazar(null);
+        setMotivoRechazo('');
+      }
     } catch (err: unknown) {
       const errorConRespuesta = err as {
         response?: { data?: { message?: string } };
@@ -376,7 +383,8 @@ const registrosFiltrados = useMemo(() => {
         registro.nombreActividad,
         registro.numeroIdentificacion,
         registro.telefono,
-        registro.tipoActividad
+        registro.tipoActividad,
+        registro.numeroTicket,
       ]
         .filter(Boolean)
         .join(' ')
@@ -639,6 +647,10 @@ const registrosFiltrados = useMemo(() => {
                               {inscripcion.nombreActividad || 'Actividad sin nombre'}
                             </p>
 
+                            <p className="mt-2 w-fit rounded-lg border border-sky-500/25 bg-sky-500/10 px-2 py-1 text-xs font-bold text-sky-700 dark:text-sky-300">
+                              Nº de ticket: {inscripcion.numeroTicket ?? '#TKT-00000000'}
+                            </p>
+
                             <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
                               <span className="inline-flex items-center gap-1.5">
                                 <IconoCalendario />
@@ -759,7 +771,7 @@ const registrosFiltrados = useMemo(() => {
                             )}
                             <button
                               type="button"
-                              onClick={() => void cambiarEstadoReserva(inscripcion.id, 'rechazada')}
+                              onClick={() => { setReservaARechazar(inscripcion); setMotivoRechazo(''); }}
                               disabled={isSubmitting}
                               aria-busy={isSubmitting}
                               className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-900/60 dark:bg-slate-900 dark:text-red-300 dark:hover:bg-red-950/30"
@@ -808,6 +820,23 @@ const registrosFiltrados = useMemo(() => {
         )}
         </div>
       </div>
+
+      {reservaARechazar && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="titulo-rechazo" onMouseDown={(event) => { if (event.target === event.currentTarget && reservaEnActualizacion === null) { setReservaARechazar(null); setMotivoRechazo(''); } }}>
+          <div className="w-full max-w-lg rounded-2xl border border-white/20 bg-white/80 p-6 shadow-xl backdrop-blur-md dark:border-white/10 dark:bg-slate-900/80">
+            <h2 id="titulo-rechazo" className="text-xl font-bold text-slate-900 dark:text-white">Rechazar Inscripción</h2>
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">Indica a {reservaARechazar.nombreCompleto} cómo puede corregir su solicitud antes de realizar una nueva reserva.</p>
+            <label className="mt-5 block text-sm font-semibold text-slate-800 dark:text-slate-100">
+              Ingrese el motivo del rechazo para el usuario...
+              <textarea value={motivoRechazo} onChange={(event) => setMotivoRechazo(event.target.value)} disabled={reservaEnActualizacion !== null} required rows={4} className="mt-2 w-full resize-y rounded-xl border border-slate-200 bg-white/70 px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-rose-400 focus:ring-4 focus:ring-rose-500/15 disabled:opacity-60 dark:border-white/10 dark:bg-slate-950/40 dark:text-white" />
+            </label>
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button type="button" onClick={() => { setReservaARechazar(null); setMotivoRechazo(''); }} disabled={reservaEnActualizacion !== null} className="rounded-xl border border-slate-200 bg-white/70 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-60 dark:border-white/10 dark:bg-white/5 dark:text-slate-200">Cancelar</button>
+              <button type="button" onClick={() => void cambiarEstadoReserva(reservaARechazar.id, 'rechazada', motivoRechazo)} disabled={!motivoRechazo.trim() || reservaEnActualizacion !== null} className="rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60">{reservaEnActualizacion !== null ? 'Rechazando...' : 'Confirmar Rechazo'}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

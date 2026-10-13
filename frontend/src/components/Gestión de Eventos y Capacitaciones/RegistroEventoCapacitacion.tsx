@@ -156,6 +156,7 @@ export default function RegistroEventoCapacitacion({
   const [imagenes, setImagenes] = useState<File[]>([]);
   const [esPago, setEsPago] = useState(false);
   const [precio, setPrecio] = useState('');
+  const [tipoPago, setTipoPago] = useState<'sinpe_movil' | 'transferencia_bancaria'>('sinpe_movil');
   const [politicasCancelacion, setPoliticasCancelacion] = useState('');
 
   const [mensaje, setMensaje] = useState('');
@@ -358,6 +359,9 @@ export default function RegistroEventoCapacitacion({
     setEdadMinima('');
     setEdadMaxima('');
     setImagenes([]);
+    setEsPago(false);
+    setPrecio('');
+    setTipoPago('sinpe_movil');
 
     setErrores({});
     setMensaje('');
@@ -461,6 +465,7 @@ export default function RegistroEventoCapacitacion({
             temporada: temporada || null,
             esPago,
             precio: esPago ? Number(precio) : 0,
+            tipoPago: esPago ? tipoPago : null,
             politicasCancelacion: esPago ? politicasCancelacion.trim() || null : null,
           }),
         },
@@ -574,7 +579,7 @@ export default function RegistroEventoCapacitacion({
   >
     <div className="flex min-h-full items-start justify-center px-3 py-4 sm:px-6 sm:py-6 lg:items-center lg:py-8">
       <form
-        className="relative my-auto w-full max-w-2xl overflow-hidden rounded-[2rem] border border-white/65 bg-white/95 shadow-[0_30px_90px_rgba(0,0,0,0.35)] backdrop-blur-2xl motion-safe:transition-[transform,box-shadow] motion-safe:duration-300 motion-safe:ease-out motion-reduce:transition-none"
+        className="relative my-auto w-full max-w-2xl overflow-hidden rounded-[2rem] border border-white/20 bg-white/70 shadow-xl backdrop-blur-md dark:border-white/10 dark:bg-slate-900/70 motion-safe:transition-[transform,box-shadow] motion-safe:duration-300 motion-safe:ease-out motion-reduce:transition-none"
         noValidate
         onSubmit={handleSubmit}
         aria-busy={estado === 'cargando'}
@@ -1156,6 +1161,12 @@ export default function RegistroEventoCapacitacion({
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
                 <label className={LABEL_CLASS}>Precio (₡)
                   <input type="number" min={1} step={1} required className={`${INPUT_BASE_CLASS} ${INPUT_DEFAULT_CLASS}`} value={precio} onChange={(e) => setPrecio(e.target.value)} disabled={estado === 'cargando' || segundosRestantes !== null} />
+                </label>
+                <label className={LABEL_CLASS}>Método de pago
+                  <select className={`${INPUT_BASE_CLASS} ${INPUT_DEFAULT_CLASS}`} value={tipoPago} onChange={(e) => setTipoPago(e.target.value as 'sinpe_movil' | 'transferencia_bancaria')} disabled={estado === 'cargando' || segundosRestantes !== null}>
+                    <option value="sinpe_movil">SINPE Móvil</option>
+                    <option value="transferencia_bancaria">Transferencia bancaria</option>
+                  </select>
                 </label>
                 <label className={LABEL_CLASS}>Políticas de cancelación
                   <textarea className={`${INPUT_BASE_CLASS} ${INPUT_DEFAULT_CLASS}`} value={politicasCancelacion} onChange={(e) => setPoliticasCancelacion(e.target.value)} disabled={estado === 'cargando' || segundosRestantes !== null} placeholder="Ej. Cancelaciones con 48 horas de anticipación." />

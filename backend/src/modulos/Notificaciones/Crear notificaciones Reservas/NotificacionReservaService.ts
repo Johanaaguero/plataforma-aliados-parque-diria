@@ -436,7 +436,7 @@ export class NotificacionService {
 
           : `Su reserva para "${evento.nombre}" ha sido rechazada. ` +
             `Fecha: ${evento.fecha}, hora: ${evento.hora}. ` +
-            `Estado: rechazada.`,
+            `Estado: rechazada. Motivo: ${reserva.motivoRechazo ?? 'No especificado.'}`,
 
         leida: false,
 
@@ -464,6 +464,7 @@ export class NotificacionService {
   hora: evento.hora ?? 'No disponible',
   estado: aprobada ? 'aprobada' : 'rechazada',
   lugar: evento.lugar ?? 'No disponible',
+  motivoRechazo: reserva.motivoRechazo,
 });
     } catch (error) {
       console.error(
@@ -564,5 +565,14 @@ export class NotificacionService {
       mensaje:
         'Notificación eliminada correctamente',
     };
+  }
+
+  async eliminarTodas(usuarioId: number) {
+    const resultado = await this.repositorio.update(
+      { usuarioId, estado: EstadoNotificacion.ACTIVA },
+      { estado: EstadoNotificacion.ELIMINADA },
+    );
+
+    return { cantidad: resultado.affected ?? 0 };
   }
 }

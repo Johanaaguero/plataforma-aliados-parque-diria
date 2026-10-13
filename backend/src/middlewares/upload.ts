@@ -18,3 +18,12 @@ export const upload = multer({
     }
   },
 });
+
+// Los comprobantes admiten PDF sin ampliar los tipos permitidos para imágenes.
+export const uploadComprobante = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    cb(null, ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'].includes(file.mimetype));
+  },
+});

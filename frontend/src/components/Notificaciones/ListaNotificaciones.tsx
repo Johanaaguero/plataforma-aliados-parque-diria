@@ -296,7 +296,7 @@ export default function ListaNotificaciones({
   }
 
   return (
-    <section className="min-h-screen bg-gradient-to-b from-[#f5f8f6] via-[#f5f8f6] to-[#eaf2ed] px-4 py-12 text-[#17372c] transition-colors dark:from-[#071c14] dark:via-[#0b241b] dark:to-[#0d2b20] dark:text-[#edf8f1] sm:px-6 lg:px-8">
+    <section className="sigtad-notificaciones min-h-screen bg-gradient-to-b from-[#f5f8f6] via-[#f5f8f6] to-[#eaf2ed] px-4 py-12 text-[#17372c] transition-colors dark:from-[#071c14] dark:via-[#0b241b] dark:to-[#0d2b20] dark:text-[#edf8f1] sm:px-6 lg:px-8">
       <div className="mx-auto w-full max-w-none">
         <header className="mb-7 flex flex-col gap-5 rounded-[1.75rem] border border-white/70 bg-white/75 p-5 shadow-[0_16px_45px_rgba(7,63,49,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.05] sm:flex-row sm:items-center sm:justify-between sm:p-7">
           <div>

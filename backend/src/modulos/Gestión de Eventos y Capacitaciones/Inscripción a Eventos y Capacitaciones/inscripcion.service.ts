@@ -93,6 +93,26 @@ function calcularEdad(fechaNacimiento: Date, hoy: Date): number {
   return edad;
 }
 
+function sufijoTicketActual(): string {
+  const partes = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Costa_Rica', month: '2-digit', year: '2-digit',
+  }).formatToParts(new Date());
+  const valor = (tipo: string) => partes.find((parte) => parte.type === tipo)?.value ?? '';
+  return `${valor('month')}${valor('year')}`;
+}
+
+async function generarNumeroTicket(manager: import('typeorm').EntityManager): Promise<string> {
+  const sufijo = sufijoTicketActual();
+  const patron = `%${sufijo}`;
+  const [reserva, participante] = await Promise.all([
+    manager.getRepository(Reserva).createQueryBuilder('reserva').select('MAX(CAST(SUBSTRING(reserva.numero_ticket, 6, 4) AS UNSIGNED))', 'ultimo').where('reserva.numero_ticket LIKE :patron', { patron }).getRawOne<{ ultimo: string | null }>(),
+    manager.getRepository(Participantes).createQueryBuilder('participante').select('MAX(CAST(SUBSTRING(participante.numero_ticket, 6, 4) AS UNSIGNED))', 'ultimo').where('participante.numero_ticket LIKE :patron', { patron }).getRawOne<{ ultimo: string | null }>(),
+  ]);
+  const consecutivo = Math.max(Number(reserva?.ultimo ?? 0), Number(participante?.ultimo ?? 0)) + 1;
+  if (consecutivo > 9999) throw errorReserva('TicketLimitError', 'Se alcanzó el límite mensual de tickets.');
+  return `#TKT-${String(consecutivo).padStart(4, '0')}${sufijo}`;
+}
+
 function validarDatosReserva(datos: DatosReserva): {
   nombreCompleto: string;
   fechaNacimiento: string;
@@ -311,6 +331,7 @@ export class InscripcionService {
             telefono: datosValidados.telefono,
             estado: EstadoReservaNueva.PENDIENTE,
             comprobanteUrl: null,
+            motivoRechazo: null,
             fechaExpiracionPreReserva: evento.esPago ? new Date(Date.now() + 24 * 60 * 60 * 1000) : null,
           })
         : reservasRepo.create({
@@ -323,6 +344,7 @@ export class InscripcionService {
             correo: datosValidados.correo,
             telefono: datosValidados.telefono,
             estado: EstadoReservaNueva.PENDIENTE,
+            numeroTicket: await generarNumeroTicket(manager),
             fechaExpiracionPreReserva: evento.esPago ? new Date(Date.now() + 24 * 60 * 60 * 1000) : null,
           });
 
@@ -520,6 +542,7 @@ export class InscripcionService {
             usuarioId,
             eventoCapacitacionId,
             estado: EstadoReserva.CONFIRMADA,
+            numeroTicket: await generarNumeroTicket(manager),
           });
 
       const participanteGuardado = await participantesRepo.save(participante);
