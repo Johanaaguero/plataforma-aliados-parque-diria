@@ -159,14 +159,7 @@ const BIENVENIDA = (): Mensaje[] => [
     tipo: 'bot',
     hora: new Date(),
     texto:
-      'Bienvenido a SIGTAD. Soy el asistente virtual del Parque Nacional Diriá.',
-  },
-  {
-    id: 2,
-    tipo: 'bot',
-    hora: new Date(),
-    texto:
-      '¿En qué puedo ayudarte? Elige una opción o escribe tu pregunta.',
+      '¡Hola! Bienvenido a SIGTAD. Soy el asistente virtual del Parque Nacional Diriá. ¿En qué puedo ayudarte? Elige una opción o escribe tu pregunta.',
   },
 ];
 
@@ -433,21 +426,26 @@ const Chatbot = () => {
         >
           {mensajes.map((m) => {
             const esUsuario = m.tipo === 'usuario';
+            const esBienvenida = m.id === 1 && !esUsuario;
             return (
               <div
                 key={m.id}
-                className={`flex items-end gap-2 ${esUsuario ? 'justify-end' : 'justify-start'}`}
+                className={`flex items-end ${esBienvenida ? 'gap-1.5' : 'gap-2'} ${esUsuario ? 'justify-end' : 'justify-start'}`}
               >
                 {!esUsuario && (
-                  <div className="mb-5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-800">
-                    <IconoBot className="h-7 w-7" />
+                  <div className={`${esBienvenida ? 'mb-4 h-8 w-8' : 'mb-5 h-10 w-10'} flex shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-800`}>
+                    <IconoBot className={esBienvenida ? 'h-5 w-5' : 'h-7 w-7'} />
                   </div>
                 )}
 
-                <div className={`flex max-w-[80%] flex-col ${esUsuario ? 'items-end' : 'items-start'}`}>
+                <div className={`flex ${esBienvenida ? 'max-w-[92%]' : 'max-w-[80%]'} flex-col ${esUsuario ? 'items-end' : 'items-start'}`}>
                   <div
                     className={`
-                      whitespace-pre-line break-words rounded-2xl px-4 py-2.5 text-[14px] leading-relaxed
+                      whitespace-pre-line break-words rounded-2xl ${
+                        esBienvenida
+                          ? 'px-3 py-2 text-[13px] leading-snug'
+                          : 'px-4 py-2.5 text-[14px] leading-relaxed'
+                      }
                       ${
                         esUsuario
                           ? 'rounded-br-sm bg-emerald-700 text-white'

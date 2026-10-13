@@ -394,14 +394,6 @@ main {
   animation: sigtad-logout-welcome 1800ms ease-in-out both;
 }
 
-.sigtad-splash {
-  animation: sigtad-splash-out 900ms ease-in-out 3300ms both;
-}
-
-.sigtad-splash-logo {
-  animation: sigtad-splash-logo-in 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
 @keyframes sigtad-toast-in {
   from { opacity: 0; transform: translateY(-18px) scale(0.97); }
   to { opacity: 1; transform: translateY(0) scale(1); }
@@ -410,16 +402,6 @@ main {
 @keyframes sigtad-toast-out {
   from { opacity: 1; transform: translateY(0) scale(1); }
   to { opacity: 0; transform: translateY(-8px) scale(0.98); }
-}
-
-@keyframes sigtad-splash-logo-in {
-  from { opacity: 0; transform: scale(1.1); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-@keyframes sigtad-splash-out {
-  from { opacity: 1; }
-  to { opacity: 0; visibility: hidden; pointer-events: none; }
 }
 
 @keyframes sigtad-logout-welcome {
