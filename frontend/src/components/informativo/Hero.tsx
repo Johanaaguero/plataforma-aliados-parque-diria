@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import paisajePrincipal from '../../assets/parque-hero.jpg';
 import accesoParque from '../../assets/diria-paisaje-1.jpg';
@@ -6,6 +6,7 @@ import rioDiria from '../../assets/diria-paisaje-2.jpg';
 import bosqueDiria from '../../assets/diria-paisaje-3.jpg';
 import cafeLocal from '../../assets/diria-paisaje-4.jpg';
 import { useLanguage } from '../../i18n/LanguageContext';
+import { obtenerConfiguracionVisual, urlVisual, type ConfiguracionVisual } from '../../services/configuracionVisualService';
 
 const DIAPOSITIVAS = [
   {
@@ -43,8 +44,31 @@ function Hero() {
   const [pausado, setPausado] = useState(false);
   const [punteroSobreCarrusel, setPunteroSobreCarrusel] = useState(false);
   const [focoDentroCarrusel, setFocoDentroCarrusel] = useState(false);
+  const [configuracionVisual, setConfiguracionVisual] = useState<ConfiguracionVisual | null>(null);
   const inicioArrastreX = useRef<number | null>(null);
   const interactuando = punteroSobreCarrusel || focoDentroCarrusel;
+  const diapositivas = useMemo(() => {
+    const imagenes = configuracionVisual?.heroImagenes?.filter(Boolean) ?? [];
+    if (!imagenes.length) return DIAPOSITIVAS;
+    return imagenes.map((imagen, indice) => ({
+      imagen: urlVisual(imagen),
+      alt: configuracionVisual?.heroLeyendas?.[indice] || `Imagen ${indice + 1} del Parque Nacional Diriá`,
+      nombre: configuracionVisual?.heroLeyendas?.[indice] || `Paisaje del Diriá ${indice + 1}`,
+    }));
+  }, [configuracionVisual]);
+
+  useEffect(() => { obtenerConfiguracionVisual().then(setConfiguracionVisual).catch(() => undefined); }, []);
+
+  useEffect(() => {
+    const actualizar = (evento: Event) => {
+      const configuracion = (evento as CustomEvent<ConfiguracionVisual>).detail;
+      if (configuracion) setConfiguracionVisual(configuracion);
+    };
+    window.addEventListener('configuracion-visual:actualizada', actualizar);
+    return () => window.removeEventListener('configuracion-visual:actualizada', actualizar);
+  }, []);
+
+  useEffect(() => { setIndiceActual((actual) => Math.min(actual, diapositivas.length - 1)); }, [diapositivas.length]);
 
   useEffect(() => {
     const movimientoReducido = window.matchMedia(
@@ -56,21 +80,21 @@ function Hero() {
     }
 
     const temporizador = window.setInterval(() => {
-      setIndiceActual((actual) => (actual + 1) % DIAPOSITIVAS.length);
+      setIndiceActual((actual) => (actual + 1) % diapositivas.length);
     }, INTERVALO_AUTOPLAY);
 
     return () => window.clearInterval(temporizador);
-  }, [interactuando, pausado]);
+  }, [diapositivas.length, interactuando, pausado]);
 
   const mostrarAnterior = () => {
     setIndiceActual(
       (actual) =>
-        (actual - 1 + DIAPOSITIVAS.length) % DIAPOSITIVAS.length,
+        (actual - 1 + diapositivas.length) % diapositivas.length,
     );
   };
 
   const mostrarSiguiente = () => {
-    setIndiceActual((actual) => (actual + 1) % DIAPOSITIVAS.length);
+    setIndiceActual((actual) => (actual + 1) % diapositivas.length);
   };
 
   const registrarInicioArrastre = (posicionX: number) => {
@@ -104,7 +128,7 @@ function Hero() {
       }}
     >
       <div className="absolute inset-0">
-        {DIAPOSITIVAS.map((diapositiva, index) => (
+        {diapositivas.map((diapositiva, index) => (
           <img
             key={diapositiva.imagen}
             src={diapositiva.imagen}
@@ -137,9 +161,12 @@ function Hero() {
 
       <div className="relative z-10 flex min-h-[480px] w-full items-center px-6 pb-20 pt-28 sm:min-h-[500px] sm:px-10 sm:pb-24 sm:pt-32 md:pt-36 lg:min-h-[540px] lg:px-14 lg:pb-24 lg:pt-36">
         <div className="max-w-4xl">
+          <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-slate-950/35 px-3 py-1.5 text-xs font-bold backdrop-blur-xl">{configuracionVisual?.epoca === 'lluviosa' ? '💧 Época lluviosa' : '☀️ Época seca'}</span>
           <h1 className={`sigtad-animate-in font-brand max-w-3xl text-3xl font-bold leading-tight tracking-[-0.035em] text-white md:text-4xl lg:text-5xl ${language === 'en' ? 'sr-only' : ''}`}>
-            Uniendo la Conservación, la Comunidad
-            <span className="block text-[#8dc63f]">y el Desarrollo Sostenible en el Parque Nacional Diriá.</span>
+            {configuracionVisual?.heroTitulo || <>
+              Uniendo la Conservación, la Comunidad
+              <span className="block text-[#8dc63f]">y el Desarrollo Sostenible en el Parque Nacional Diriá.</span>
+            </>}
           </h1>
 
           {language === 'en' && (
@@ -150,8 +177,7 @@ function Hero() {
           )}
 
           <p className={`sigtad-animate-in mt-4 max-w-2xl text-sm leading-6 text-white/85 sm:text-base sm:leading-7 lg:text-lg ${language === 'en' ? 'sr-only' : ''}`}>
-            Descubre el Parque Nacional Diriá y las experiencias, actividades y
-            emprendimientos que nacen alrededor de este paisaje único.
+            {configuracionVisual?.heroEslogan || 'Descubre el Parque Nacional Diriá y las experiencias, actividades y emprendimientos que nacen alrededor de este paisaje único.'}
           </p>
 
           {language === 'en' && (
@@ -167,8 +193,8 @@ function Hero() {
         aria-live={pausado || interactuando ? 'polite' : 'off'}
         aria-atomic="true"
       >
-        Diapositiva {indiceActual + 1} de {DIAPOSITIVAS.length}:{' '}
-        {DIAPOSITIVAS[indiceActual].nombre}
+        Diapositiva {indiceActual + 1} de {diapositivas.length}:{' '}
+        {diapositivas[indiceActual].nombre}
       </p>
 
       <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-between px-3 sm:px-6">
@@ -178,7 +204,7 @@ function Hero() {
             role="group"
             aria-label={t('hero.selectImage')}
           >
-            {DIAPOSITIVAS.map((diapositiva, index) => (
+            {diapositivas.map((diapositiva, index) => (
             <button
               key={diapositiva.nombre}
               type="button"

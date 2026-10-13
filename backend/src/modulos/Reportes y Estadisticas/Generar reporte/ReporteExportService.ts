@@ -28,7 +28,7 @@ const tituloTipo = (tipo: string): string => ({
   usuarios: 'Reporte de usuarios',
   reservas: 'Reporte de reservas',
   emprendimientos: 'Reporte de emprendimientos',
-  eventos_capacitaciones: 'Reporte de eventos y capacitaciones',
+  eventos: 'Reporte de eventos y capacitaciones',
   incidencias: 'Reporte de incidencias',
 }[tipo] ?? `Reporte de ${tipo}`);
 
@@ -36,7 +36,7 @@ const metricasPorTipo: Record<string, Array<[string, string[]]>> = {
   usuarios: [['TOTAL USUARIOS', ['total']], ['ADMINISTRADORES', ['administradores']], ['ASOCIADOS', ['asociados']], ['VISITANTES', ['visitantes']]],
   reservas: [['TOTAL RESERVAS', ['total', 'totalReservas']], ['PENDIENTES', ['pendientes']], ['APROBADAS', ['aprobadas', 'confirmadas']], ['RECHAZADAS', ['rechazadas']]],
   emprendimientos: [['TOTAL EMPRENDIMIENTOS', ['total', 'totalEmprendimientos']], ['PUBLICADOS', ['publicados']], ['BORRADORES', ['borradores']], ['NO PUBLICADOS', ['noPublicados']]],
-  eventos_capacitaciones: [['TOTAL ACTIVIDADES', ['total', 'totalActividades']], ['EVENTOS', ['eventos']], ['CAPACITACIONES', ['capacitaciones']], ['PUBLICADAS', ['publicados']]],
+  eventos: [['TOTAL ACTIVIDADES', ['total', 'totalActividades']], ['EVENTOS', ['eventos']], ['CAPACITACIONES', ['capacitaciones']], ['PUBLICADAS', ['publicados']]],
   incidencias: [['TOTAL INCIDENCIAS', ['total', 'totalIncidencias']], ['PENDIENTES', ['pendientes']], ['EN PROCESO', ['enProceso']], ['RESUELTAS', ['resueltas']]],
 };
 
@@ -46,15 +46,48 @@ const metricasDelReporte = (tipo: string, contenido: Record<string, unknown>): A
     claves.map((clave) => contenido[clave]).find((valor) => valor !== undefined) ?? 0,
   ]);
 
+const fechaLegible = (valor: unknown): string | null => {
+  if (typeof valor !== 'string' || !/^\d{4}-\d{2}-\d{2}/.test(valor)) return null;
+
+  const [anio, mes, dia] = valor.slice(0, 10).split('-');
+  return `${dia}/${mes}/${anio}`;
+};
+
 const periodoLegible = (contenido: Record<string, unknown>): string => {
-  if (typeof contenido.periodoTexto === 'string') return contenido.periodoTexto;
-  const inicio = contenido.fechaInicio;
-  const fin = contenido.fechaFin;
-  if (typeof inicio === 'string' && typeof fin === 'string') return `${inicio} al ${fin}`;
-  return typeof contenido.periodo === 'string' ? contenido.periodo : 'Sin rango especificado';
+  if (typeof contenido.periodoTexto === 'string' && contenido.periodoTexto.trim()) {
+    return contenido.periodoTexto;
+  }
+
+  const periodo = contenido.periodo;
+  const rango = periodo && typeof periodo === 'object' && !Array.isArray(periodo)
+    ? periodo as Record<string, unknown>
+    : {};
+  const inicio = fechaLegible(contenido.fechaInicio ?? rango.fechaInicio);
+  const fin = fechaLegible(contenido.fechaFin ?? rango.fechaFin);
+
+  if (inicio && fin) return `Desde: ${inicio}  Hasta: ${fin}`;
+  if (inicio) return `Desde: ${inicio}`;
+  if (fin) return `Hasta: ${fin}`;
+  return 'Histórico Completo (Todas las fechas)';
 };
 
 const filasDeContenido = (contenido: Record<string, unknown>): Fila[] => {
+  const coleccionesPreferidas = [
+    'detalleActividades',
+    'detalleReservas',
+    'detalleIncidencias',
+    'usuarios',
+    'reservas',
+    'incidencias',
+  ];
+  const preferida = coleccionesPreferidas
+    .map((clave) => contenido[clave])
+    .find((valor): valor is Fila[] =>
+      Array.isArray(valor) && valor.every((fila) => typeof fila === 'object' && fila !== null),
+    );
+
+  if (preferida) return preferida;
+
   const coleccion = Object.values(contenido).find((valor): valor is Fila[] =>
     Array.isArray(valor) && valor.every((fila) => typeof fila === 'object' && fila !== null),
   );
@@ -91,12 +124,18 @@ export class ReporteExportService {
         .text('Plataforma SIGTAD', 42, 33);
       documento.font('Helvetica').fontSize(10).fillColor('#d1fae5')
         .text('Parque Nacional Diría · Reporte Estadístico', 42, 58);
+      documento.rect(42, 52, 280, 16).fill('#064e3b');
+      documento.font('Helvetica').fontSize(10).fillColor('#d1fae5')
+        .text('Parque Nacional Diriá · Reporte Estadístico', 42, 58);
       documento.font('Helvetica-Bold').fontSize(12).fillColor('#ffffff')
         .text(contenido.nombre ? texto(contenido.nombre) : tituloTipo(reporte.tipoReporte), 42, 82);
       documento.font('Helvetica').fontSize(8).fillColor('#d1fae5')
         .text(`Fecha de generación  ${reporte.fechaGeneracion.toLocaleString('es-CR')}`, 330, 38, { width: 224, align: 'right' })
         .text(`TIPO  ${reporte.tipoReporte.toUpperCase()}`, 370, 53, { width: 184, align: 'right' })
         .text(`RANGO  ${periodoLegible(contenido)}`, 370, 68, { width: 184, align: 'right' });
+      documento.rect(330, 34, 224, 14).fill('#064e3b');
+      documento.font('Helvetica').fontSize(8).fillColor('#d1fae5')
+        .text(`Fecha de generación  ${reporte.fechaGeneracion.toLocaleString('es-CR')}`, 330, 38, { width: 224, align: 'right' });
 
       documento.y = 146;
       documento.font('Helvetica-Bold').fontSize(11).fillColor('#064e3b').text('Resumen del reporte');

@@ -32,12 +32,24 @@ export interface ReservaResponse extends DatosReserva {
   updatedAt: string;
   cuposDisponibles: number | null;
   comprobanteUrl?: string | null;
+  metodoPago?: 'sinpe_movil' | 'transferencia_bancaria' | null;
+  datosDevolucion?: {
+    tipo: 'sinpe_movil' | 'transferencia_bancaria';
+    telefono?: string;
+    iban?: string;
+    banco?: string;
+  } | null;
+  motivoRechazo?: string | null;
+  esPago?: boolean;
+  precio?: number | null;
+  politicasCancelacion?: string | null;
   fechaExpiracionPreReserva?: string | null;
   numeroTicket?: string | null;
 }
 
 export interface ConsultaReservaResponse {
   existe: boolean;
+  inscrito?: boolean;
   estado: EstadoReserva | null;
   reserva: ReservaResponse | null;
 }

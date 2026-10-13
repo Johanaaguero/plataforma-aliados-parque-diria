@@ -1,4 +1,5 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import SelectorUbicacion from '../SelectorUbicacion';
 import { useLanguage } from '../../i18n/LanguageContext';
 import paisajeParque from '../../assets/parque-hero.jpg';
@@ -12,6 +13,37 @@ import type {
 interface RegistroIncidenciaProps {
   onClose?: () => void;
   onRegistrada?: () => void;
+}
+
+function ExitoIncidenciaOverlay({
+  mensaje,
+  codigo,
+  onCerrar,
+}: {
+  mensaje: string;
+  codigo: string;
+  onCerrar: () => void;
+}) {
+  return createPortal(
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-live="polite"
+      className="fixed inset-0 z-[9999] flex h-screen w-screen items-center justify-center bg-black/60 p-4 backdrop-blur-md"
+    >
+      <div className="w-full max-w-md rounded-3xl border border-white/20 bg-white/95 p-8 text-center shadow-2xl animate-fade-in dark:bg-emerald-950/95">
+        <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500 text-2xl font-bold text-white">✓</span>
+        <h3 className="mt-4 text-2xl font-black text-emerald-950 dark:text-white">¡Registro exitoso!</h3>
+        <p className="mt-3 text-sm leading-6 text-emerald-950/75 dark:text-emerald-50/85">
+          {mensaje} Código: <strong>{codigo || '#INC-00000000'}</strong>.
+        </p>
+        <button type="button" onClick={onCerrar} className="mt-6 w-full rounded-2xl bg-emerald-700 px-5 py-3 font-bold text-white shadow-lg shadow-emerald-950/20 transition hover:bg-emerald-600">
+          Aceptar
+        </button>
+      </div>
+    </div>,
+    document.body,
+  );
 }
 
 type Categoria =
@@ -288,6 +320,23 @@ export default function RegistroIncidencia({
   const [exito, setExito] =
     useState('');
   const [codigoRegistrado, setCodigoRegistrado] = useState('');
+
+  const cerrarExito = () => {
+    setExito('');
+    setCodigoRegistrado('');
+    onClose?.();
+  };
+
+  const aceptarExito = () => {
+    cerrarExito();
+    window.location.assign('/');
+  };
+
+  useEffect(() => {
+    if (!exito) return undefined;
+    const temporizador = window.setTimeout(cerrarExito, 3800);
+    return () => window.clearTimeout(temporizador);
+  }, [exito]);
 
   const inputArchivoRef =
     useRef<HTMLInputElement>(null);
@@ -577,8 +626,12 @@ export default function RegistroIncidencia({
                 longitud,
                 esAnonimo:
                   reporteAnonimo,
-                nombreContacto: usuarioAutenticado ? undefined : nombreContacto.trim() || undefined,
-                telefonoContacto: usuarioAutenticado ? undefined : telefonoContacto.trim() || undefined,
+                nombreContacto: reporteAnonimo
+                  ? nombreContacto.trim() || null
+                  : null,
+                telefonoContacto: reporteAnonimo
+                  ? telefonoContacto.trim() || null
+                  : null,
               }),
             },
           );
@@ -705,6 +758,8 @@ export default function RegistroIncidencia({
       className="sigtad-incidencia-form relative isolate w-full overflow-hidden px-4 py-8 sm:px-6 lg:px-8"
       style={{ backgroundImage: `url(${paisajeParque})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
     >
+      {exito && <ExitoIncidenciaOverlay mensaje={exito} codigo={codigoRegistrado} onCerrar={aceptarExito} />}
+      {exito && <style>{`.sigtad-incidencia-form [role="dialog"] { display: none !important; }`}</style>}
       {exito && <div role="dialog" aria-modal="true" className="fixed inset-0 z-[100] flex items-center justify-center bg-emerald-950/55 p-4 backdrop-blur-md"><div className="w-full max-w-sm rounded-3xl border border-white/30 bg-white/85 p-7 text-center shadow-2xl backdrop-blur-2xl dark:bg-slate-900/85"><span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500 text-2xl text-white">✓</span><h3 className="mt-4 text-2xl font-black text-emerald-950 dark:text-white">¡Registro exitoso!</h3><p className="mt-3 text-sm text-emerald-950/70 dark:text-white/70">Su incidencia ha sido registrada correctamente con el código <strong>{codigoRegistrado}</strong>.</p><button type="button" onClick={() => { setExito(''); setCodigoRegistrado(''); onClose?.(); }} className="mt-6 w-full rounded-2xl bg-emerald-700 px-5 py-3 font-bold text-white">Aceptar</button></div></div>}
       <div className="relative mx-auto flex max-w-4xl flex-col overflow-hidden rounded-3xl border border-white/40 bg-white/60 shadow-xl ring-1 ring-slate-900/10 backdrop-blur-xl dark:border-slate-700/70 dark:bg-slate-900/75 dark:ring-white/10 sm:bg-white/50">
 
@@ -769,28 +824,6 @@ export default function RegistroIncidencia({
 
                 <p className="mt-0.5 text-xs opacity-90">
                   {error}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {exito && (
-            <div
-              role="status"
-              className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 text-sm text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-200"
-            >
-              <Icon className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                <path d="M22 4L12 14.01l-3-3" />
-              </Icon>
-
-              <div>
-                <p className="font-semibold">
-                  ¡Registro exitoso!
-                </p>
-
-                <p className="mt-0.5 text-xs opacity-90">
-                  {exito}
                 </p>
               </div>
             </div>

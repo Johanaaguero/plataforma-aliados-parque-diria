@@ -16,8 +16,12 @@ import type {
 
 import {
   actualizarIncidenciaAdministrativa,
+  actualizarVisibilidadIncidencia,
+  agregarComentarioIncidencia,
+  obtenerComentariosIncidencia,
   urlArchivoEvidencia,
 } from '../../../services/incidenciaServices';
+import type { ComentarioIncidencia } from '../../../services/incidenciaServices';
 
 import parqueHero from '../../../assets/parque-hero.jpg';
 
@@ -273,14 +277,14 @@ export default function EditarIncidencia({
   const [prioridad, setPrioridad] =
     useState<PrioridadIncidencia>(incidencia.prioridad);
 
-  const [observacionesAdmin, setObservacionesAdmin] =
-    useState(incidencia.observacionesAdmin ?? '');
-
   const [ultimaActualizacion, setUltimaActualizacion] =
     useState(incidencia.fechaActualizacion);
 
   const [actualizadoPor, setActualizadoPor] =
     useState(incidencia.adminActualiza);
+
+  const [esPublica, setEsPublica] = useState(incidencia.esPublica === true);
+  const [actualizandoVisibilidad, setActualizandoVisibilidad] = useState(false);
 
   const [estadoGuardado, setEstadoGuardado] =
     useState<EstadoGuardado>('inicial');
@@ -294,8 +298,25 @@ export default function EditarIncidencia({
   const [evidenciaAmpliada, setEvidenciaAmpliada] =
     useState<EvidenciaIncidencia | null>(null);
 
+  const [comentarios, setComentarios] = useState<ComentarioIncidencia[]>([]);
+  const [textoComentario, setTextoComentario] = useState('');
+  const [tipoHistorial, setTipoHistorial] = useState<'publico' | 'privado'>('publico');
+  const [cargandoComentarios, setCargandoComentarios] = useState(true);
+  const [guardandoComentario, setGuardandoComentario] = useState(false);
+  const [errorComentario, setErrorComentario] = useState<string | null>(null);
+
   const carruselEvidenciasRef =
     useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    let activo = true;
+    setCargandoComentarios(true);
+    obtenerComentariosIncidencia(incidencia.id)
+      .then((historial) => { if (activo) setComentarios(historial); })
+      .catch((error) => { if (activo) setErrorComentario(error instanceof Error ? error.message : 'No se pudo cargar el historial.'); })
+      .finally(() => { if (activo) setCargandoComentarios(false); });
+    return () => { activo = false; };
+  }, [incidencia.id]);
 
   const [puedeRetrocederEvidencias, setPuedeRetrocederEvidencias] =
     useState(false);
@@ -378,6 +399,10 @@ export default function EditarIncidencia({
     incidencia.fechaActualizacion,
   ]);
 
+  useEffect(() => {
+    setEsPublica(incidencia.esPublica === true);
+  }, [incidencia.esPublica]);
+
   /* =======================================================
      FECHAS
   ======================================================= */
@@ -410,6 +435,17 @@ export default function EditarIncidencia({
     }).format(new Date(ultimaActualizacion));
   }, [ultimaActualizacion]);
 
+  const tiempoAtencion = useMemo(() => {
+    const inicio = new Date(incidencia.fechaRegistro).getTime();
+    const dias = Math.max(0, Math.floor((Date.now() - inicio) / 86_400_000));
+    return dias === 1 ? 'Transcurrido 1 día desde el reporte' : `Transcurridos ${dias} días desde el reporte`;
+  }, [incidencia.fechaRegistro]);
+
+  const ubicacionReporte = incidencia.ubicacion?.trim() || 'Ubicación no especificada';
+  const enlaceMapa = incidencia.latitud != null && incidencia.longitud != null
+    ? `https://www.google.com/maps?q=${incidencia.latitud},${incidencia.longitud}`
+    : null;
+
   /* =======================================================
      GUARDAR
   ======================================================= */
@@ -424,10 +460,6 @@ export default function EditarIncidencia({
         'Esta incidencia ya no puede ser gestionada porque está resuelta o cerrada.',
       );
 
-      return;
-    }
-
-    if (cambiosGuardados) {
       return;
     }
 
@@ -453,8 +485,6 @@ export default function EditarIncidencia({
           {
             categoria,
             prioridad,
-            observacionesAdmin:
-              observacionesAdmin.trim() || null,
           },
         );
 
@@ -464,11 +494,6 @@ export default function EditarIncidencia({
 
       setPrioridad(
         incidenciaActualizada.prioridad,
-      );
-
-      setObservacionesAdmin(
-        incidenciaActualizada.observacionesAdmin ??
-          '',
       );
 
       const incidenciaParaGuardar: Incidencia = {
@@ -489,20 +514,8 @@ export default function EditarIncidencia({
 
       onGuardar(incidenciaParaGuardar);
 
-      /*
-       * Se marca como guardado antes de cerrar
-       * para evitar cualquier segundo guardado.
-       */
-      setCambiosGuardados(true);
+      setCambiosGuardados(false);
       setEstadoGuardado('exito');
-
-      /*
-       * Se mantiene unos milisegundos para que
-       * el usuario pueda ver el mensaje.
-       */
-      setTimeout(() => {
-        onCancelar();
-      }, 800);
     } catch (error) {
       setEstadoGuardado('error');
 
@@ -521,6 +534,45 @@ export default function EditarIncidencia({
     guardando ||
     cambiosGuardados ||
     incidenciaNoGestionable;
+
+  const comentariosVisibles = comentarios.filter((comentario) =>
+    tipoHistorial === 'privado' ? comentario.esNotaPrivada : !comentario.esNotaPrivada,
+  );
+
+  const registrarComentario = async () => {
+    const texto = textoComentario.trim();
+    if (!texto || guardandoComentario) return;
+    setGuardandoComentario(true);
+    setErrorComentario(null);
+    try {
+      const creado = await agregarComentarioIncidencia(incidencia.id, texto, tipoHistorial === 'privado');
+      setComentarios((actuales) => [...actuales, creado]);
+      setTextoComentario('');
+    } catch (error) {
+      setErrorComentario(error instanceof Error ? error.message : 'No se pudo registrar el comentario.');
+    } finally {
+      setGuardandoComentario(false);
+    }
+  };
+
+  const formatearFechaComentario = (fecha: string) => new Intl.DateTimeFormat('es-CR', {
+    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true,
+  }).format(new Date(fecha));
+
+  const cambiarVisibilidad = async () => {
+    if (actualizandoVisibilidad) return;
+    setActualizandoVisibilidad(true);
+    setMensajeError(null);
+    try {
+      const actualizada = await actualizarVisibilidadIncidencia(incidencia.id, !esPublica);
+      setEsPublica(actualizada.esPublica === true);
+      onGuardar({ ...incidencia, ...actualizada, evidencias: actualizada.evidencias ?? incidencia.evidencias });
+    } catch (error) {
+      setMensajeError(error instanceof Error ? error.message : 'No se pudo actualizar la visibilidad pública.');
+    } finally {
+      setActualizandoVisibilidad(false);
+    }
+  };
 
   /* =======================================================
      VISTA
@@ -874,12 +926,16 @@ export default function EditarIncidencia({
                   />
 
                   <InfoItem
-                    etiqueta="Observación administrativa actual"
+                    etiqueta="Ubicación / coordenadas"
                     valor={
-                      incidencia.observacionesAdmin ??
-                      'Sin observaciones administrativas'
+                      <div className="space-y-2">
+                        <p>{ubicacionReporte}</p>
+                        {enlaceMapa ? <a href={enlaceMapa} target="_blank" rel="noreferrer" className="inline-flex rounded-full bg-emerald-600/10 px-3 py-1.5 text-xs font-bold text-emerald-800 transition hover:bg-emerald-600/20 dark:text-emerald-200">Ver en mapa</a> : <p className="text-xs font-medium text-[#73867D] dark:text-slate-300">Sin coordenadas disponibles</p>}
+                      </div>
                     }
                   />
+
+                  <InfoItem etiqueta="Tiempo de atención" valor={tiempoAtencion} />
 
                 </div>
 
@@ -986,26 +1042,16 @@ export default function EditarIncidencia({
                     disabled={formularioBloqueado}
                   />
 
-                  <label className="block">
+                  <section className="rounded-[1.25rem] border border-white/60 bg-white/28 p-4 shadow-[0_7px_20px_rgba(9,85,64,0.025)] backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04]">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#60776C] dark:text-[#9AAEA6]">Visibilidad y clasificación pública</p>
+                    <div className="mt-3 flex items-center justify-between gap-4"><div><p className="text-sm font-bold text-[#174D3B] dark:text-white">Publicar en Novedades del Inicio</p><p className="mt-1 text-xs leading-5 text-[#73867D] dark:text-slate-300">{esPublica ? 'Visible para visitantes en el inicio.' : 'Uso exclusivamente administrativo.'}</p></div><button type="button" role="switch" aria-checked={esPublica} disabled={actualizandoVisibilidad} onClick={() => void cambiarVisibilidad()} className={`relative h-7 w-12 shrink-0 rounded-full transition disabled:cursor-wait disabled:opacity-60 ${esPublica ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-600'}`}><span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition ${esPublica ? 'left-6' : 'left-1'}`} /></button></div>
+                  </section>
 
-                    <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#60776C] dark:text-[#9AAEA6]">
-                      Observaciones de seguimiento
-                    </span>
-
-                    <textarea
-                      value={observacionesAdmin}
-                      onChange={(event) =>
-                        setObservacionesAdmin(
-                          event.target.value,
-                        )
-                      }
-                      disabled={formularioBloqueado}
-                      rows={5}
-                      placeholder="Describe el seguimiento administrativo..."
-                      className="mt-2 w-full resize-none rounded-[1rem] border border-white/70 bg-white/55 px-4 py-3.5 text-sm font-medium leading-6 text-[#304B40] shadow-[0_7px_20px_rgba(7,63,49,0.03)] backdrop-blur-xl outline-none transition-all duration-200 placeholder:text-[#9AA9A2] focus:border-[#8DC63F]/60 focus:bg-white/70 focus:ring-4 focus:ring-[#8DC63F]/10 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-[#102B23]/80 dark:text-[#D9E8E2] dark:placeholder:text-[#70847B] dark:focus:border-[#8DC63F]/60 dark:focus:bg-[#15382E] dark:disabled:bg-[#17261F] dark:disabled:text-[#73877E]"
-                    />
-
-                  </label>
+                  <section className="rounded-[1.25rem] border border-white/60 bg-white/28 p-4 shadow-[0_7px_20px_rgba(9,85,64,0.025)] backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04]">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#60776C] dark:text-[#9AAEA6]">Acciones rápidas / asignación</p>
+                    <div className="mt-3 rounded-xl border border-white/50 bg-white/30 px-3 py-3 dark:border-white/10 dark:bg-slate-950/20"><p className="text-xs font-semibold text-[#73867D] dark:text-slate-300">Encargado registrado</p><p className="mt-1 text-sm font-bold text-[#174D3B] dark:text-white">{actualizadoPor?.nombre ?? 'Se asigna automáticamente al guardar cambios'}</p></div>
+                    <div className="mt-3 rounded-xl border border-white/50 bg-white/30 px-3 py-3 dark:border-white/10 dark:bg-slate-950/20"><p className="text-xs font-semibold text-[#73867D] dark:text-slate-300">Estado actual de la incidencia</p><p className="mt-1 text-sm font-bold text-[#174D3B] dark:text-white">{etiquetasEstado[incidencia.estado]}</p><p className="mt-1 text-xs leading-5 text-[#73867D] dark:text-slate-300">El estado conserva el flujo de resolución y cierre establecido por el sistema.</p></div>
+                  </section>
 
                 </div>
 
@@ -1015,7 +1061,7 @@ export default function EditarIncidencia({
 
                 {estadoGuardado === 'exito' && (
                   <div className="mt-5 rounded-[1.2rem] border border-[#B8D99F] bg-[#E8F2DE] px-4 py-3.5 text-sm font-semibold text-[#527A38] dark:border-[#456B55] dark:bg-[#173B2E] dark:text-[#B9DFAF]">
-                    Cambios guardados correctamente. La incidencia ya no puede modificarse desde este formulario.
+                    Cambios guardados correctamente. Puedes continuar trabajando en esta incidencia.
                   </div>
                 )}
 
@@ -1078,6 +1124,26 @@ export default function EditarIncidencia({
             </aside>
 
           </div>
+
+          <section className="border-t border-white/30 px-7 py-8 dark:border-white/10 sm:px-10 lg:px-14">
+            <div className="rounded-[1.9rem] border border-white/55 bg-white/30 p-5 shadow-[0_12px_32px_rgba(9,85,64,0.045)] backdrop-blur-2xl dark:border-white/10 dark:bg-white/[0.035] sm:p-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div><p className="text-[9px] font-bold uppercase tracking-[0.18em] text-[#00AEEF]">Historial inmutable</p><h2 className="mt-2 text-2xl font-bold text-[#174D3B] dark:text-white">Seguimiento de la incidencia</h2><p className="mt-1 text-sm text-[#73867D] dark:text-[#9BAEA7]">Los registros se conservan en orden cronológico y no se pueden editar ni eliminar.</p></div>
+                {tipoHistorial === 'privado' && <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-amber-400/35 bg-amber-400/10 px-3 py-1.5 text-xs font-bold text-amber-800 dark:text-amber-200"><span aria-hidden="true">🔒</span> Solo Admin</span>}
+              </div>
+              <div className="mt-5 flex gap-2 rounded-2xl border border-white/45 bg-white/25 p-1.5 dark:border-white/10 dark:bg-white/5">
+                <button type="button" onClick={() => setTipoHistorial('publico')} className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-bold transition ${tipoHistorial === 'publico' ? 'bg-emerald-700 text-white shadow-sm' : 'text-[#547368] hover:bg-white/45 dark:text-slate-300 dark:hover:bg-white/10'}`}>Seguimiento Público</button>
+                <button type="button" onClick={() => setTipoHistorial('privado')} className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-bold transition ${tipoHistorial === 'privado' ? 'bg-slate-800 text-white shadow-sm dark:bg-slate-700' : 'text-[#547368] hover:bg-white/45 dark:text-slate-300 dark:hover:bg-white/10'}`}>Notas Internas Privadas</button>
+              </div>
+              <div className="custom-scrollbar mt-5 max-h-80 space-y-3 overflow-y-auto pr-1">
+                {cargandoComentarios && <p className="py-4 text-sm text-[#73867D] dark:text-slate-300">Cargando historial…</p>}
+                {!cargandoComentarios && comentariosVisibles.length === 0 && <p className="rounded-2xl border border-dashed border-white/55 px-4 py-5 text-sm text-[#73867D] dark:border-white/10 dark:text-slate-300">Aún no hay registros en este historial.</p>}
+                {comentariosVisibles.map((comentario) => <article key={comentario.id} className="rounded-2xl border border-white/55 bg-white/32 p-4 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/25"><div className="flex flex-wrap items-center justify-between gap-2"><p className="font-bold text-[#174D3B] dark:text-white">{comentario.nombreAutor}</p><time className="text-xs font-semibold text-[#73867D] dark:text-slate-300" dateTime={comentario.fechaHora}>{formatearFechaComentario(comentario.fechaHora)}</time></div><p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-[#456257] dark:text-slate-200">{comentario.texto}</p></article>)}
+              </div>
+              {errorComentario && <p className="mt-4 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-700 dark:text-rose-200">{errorComentario}</p>}
+              <div className="mt-5 border-t border-white/35 pt-5 dark:border-white/10"><label className="block text-sm font-bold text-[#174D3B] dark:text-white">{tipoHistorial === 'privado' ? 'Agregar nota privada' : 'Agregar comentario público'}<textarea value={textoComentario} onChange={(event) => setTextoComentario(event.target.value)} rows={3} maxLength={5000} placeholder={tipoHistorial === 'privado' ? 'Visible solo para administración…' : 'Visible para la persona reportante…'} className="mt-2 w-full resize-y rounded-2xl border border-white/60 bg-white/45 px-4 py-3 text-sm text-[#304B40] outline-none backdrop-blur-xl focus:border-emerald-400 focus:ring-4 focus:ring-emerald-500/10 dark:border-white/10 dark:bg-slate-950/35 dark:text-white" /></label><div className="mt-3 flex justify-end"><button type="button" onClick={() => void registrarComentario()} disabled={!textoComentario.trim() || guardandoComentario} className="rounded-full bg-emerald-700 px-5 py-2.5 text-sm font-bold text-white shadow-md transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50">{guardandoComentario ? 'Guardando…' : tipoHistorial === 'privado' ? 'Guardar nota privada' : 'Publicar seguimiento'}</button></div></div>
+            </div>
+          </section>
 
           {/* =================================================
               PIE

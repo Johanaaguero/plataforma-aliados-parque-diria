@@ -4,6 +4,14 @@ import { Reserva, EstadoReserva as EstadoReservaNueva } from '../../../../models
 import { EventosCapacitaciones } from '../../../../models/EventosCapacitaciones';
 import { serializarFechaCalendario, serializarFechaUtc } from '../../../../utils/fechas';
 
+const validarDatosDevolucion = (valor: unknown): { tipo: 'sinpe_movil' | 'transferencia_bancaria'; telefono?: string; iban?: string; banco?: string } => {
+  if (!valor || typeof valor !== 'object') { const error = new Error('Debes indicar los datos para la devolución.'); error.name = 'RefundDataError'; throw error; }
+  const datos = valor as Record<string, unknown>;
+  if (datos.tipo === 'sinpe_movil' && typeof datos.telefono === 'string' && datos.telefono.trim()) return { tipo: 'sinpe_movil', telefono: datos.telefono.trim() };
+  if (datos.tipo === 'transferencia_bancaria' && typeof datos.iban === 'string' && datos.iban.trim() && typeof datos.banco === 'string' && datos.banco.trim()) return { tipo: 'transferencia_bancaria', iban: datos.iban.trim(), banco: datos.banco.trim() };
+  const error = new Error('Completa los datos de devolución requeridos.'); error.name = 'RefundDataError'; throw error;
+};
+
 export interface MiInscripcionDTO {
   id: number;
   eventoCapacitacionId: number;
@@ -21,6 +29,9 @@ export interface MiInscripcionDTO {
   origen?: 'participante' | 'reserva';
   motivoRechazo?: string | null;
   numeroTicket?: string | null;
+  comprobanteUrl?: string | null;
+  metodoPago?: string | null;
+  datosDevolucion?: unknown;
 }
 
 export const listarMisInscripciones = async (
@@ -128,6 +139,9 @@ export const listarMisInscripciones = async (
       cuposDisponibles: reserva.eventoCapacitacion.cuposDisponibles,
       estado: reserva.estado as string,
       motivoRechazo: reserva.motivoRechazo ?? null,
+      comprobanteUrl: reserva.comprobanteUrl ?? null,
+      metodoPago: reserva.metodoPago ?? reserva.eventoCapacitacion.tipoPago ?? null,
+      datosDevolucion: reserva.datosDevolucion ?? null,
       numeroTicket: reserva.numeroTicket ?? null,
       fechaCancelacion: null,
       fechaActividad: serializarFechaCalendario(reserva.eventoCapacitacion.fecha),
@@ -150,6 +164,7 @@ export const listarMisInscripciones = async (
 export const cancelarInscripcion = async (
   usuarioId: number,
   inscripcionId: number,
+  _datosDevolucion?: unknown,
 ): Promise<{ id: number; estado: EstadoReserva; fechaCancelacion: Date; cuposDisponibles: number | null }> => {
   return AppDataSource.transaction(async (manager) => {
     const participantesRepo = manager.getRepository(Participantes);
@@ -207,6 +222,7 @@ export const cancelarInscripcion = async (
 export const cancelarReserva = async (
   usuarioId: number,
   reservaId: number,
+  datosDevolucion?: unknown,
 ): Promise<{ id: number; estado: EstadoReservaNueva.CANCELADA; fechaCancelacion: Date; cuposDisponibles: number | null }> => {
   return AppDataSource.transaction(async (manager) => {
     const reservasRepo = manager.getRepository(Reserva);
@@ -247,6 +263,8 @@ export const cancelarReserva = async (
         error.name = 'PaymentCancellationWindowError';
         throw error;
       }
+      const datos = validarDatosDevolucion(datosDevolucion);
+      reserva.datosDevolucion = datos;
     }
 
     if (reserva.estado === EstadoReservaNueva.APROBADA) {
@@ -280,5 +298,40 @@ export const cancelarReserva = async (
       fechaCancelacion,
       cuposDisponibles: evento.cuposDisponibles,
     };
+  });
+};
+
+export const registrarDatosDevolucion = async (
+  usuarioId: number,
+  reservaId: number,
+  datosDevolucion: unknown,
+): Promise<{ id: number; datosDevolucion: Reserva['datosDevolucion'] }> => {
+  return AppDataSource.transaction(async (manager) => {
+    const reservasRepo = manager.getRepository(Reserva);
+    const reserva = await reservasRepo.findOne({
+      where: { id: reservaId },
+      relations: { eventoCapacitacion: true },
+    });
+
+    if (!reserva) {
+      const error = new Error('La reserva no existe.');
+      error.name = 'NotFoundError';
+      throw error;
+    }
+    if (reserva.usuarioId !== usuarioId) {
+      const error = new Error('No tienes permiso para actualizar esta reserva.');
+      error.name = 'ForbiddenError';
+      throw error;
+    }
+    if (!reserva.eventoCapacitacion.esPago || ![EstadoReservaNueva.RECHAZADA, EstadoReservaNueva.CANCELADA].includes(reserva.estado)) {
+      const error = new Error('Los datos de devolución solo se solicitan para reservas de pago rechazadas o canceladas.');
+      error.name = 'InvalidReservationStateError';
+      throw error;
+    }
+
+    reserva.datosDevolucion = validarDatosDevolucion(datosDevolucion);
+    await reservasRepo.save(reserva);
+
+    return { id: reserva.id, datosDevolucion: reserva.datosDevolucion };
   });
 };

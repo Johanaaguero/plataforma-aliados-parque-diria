@@ -227,6 +227,7 @@ export class InscripcionService {
   }> {
     const reserva = await AppDataSource.getRepository(Reserva).findOne({
       where: { usuarioId, eventoCapacitacionId },
+      relations: { eventoCapacitacion: true },
     });
 
     return {
@@ -331,6 +332,8 @@ export class InscripcionService {
             telefono: datosValidados.telefono,
             estado: EstadoReservaNueva.PENDIENTE,
             comprobanteUrl: null,
+            metodoPago: evento.esPago ? evento.tipoPago : null,
+            datosDevolucion: null,
             motivoRechazo: null,
             fechaExpiracionPreReserva: evento.esPago ? new Date(Date.now() + 24 * 60 * 60 * 1000) : null,
           })
@@ -345,6 +348,8 @@ export class InscripcionService {
             telefono: datosValidados.telefono,
             estado: EstadoReservaNueva.PENDIENTE,
             numeroTicket: await generarNumeroTicket(manager),
+            metodoPago: evento.esPago ? evento.tipoPago : null,
+            datosDevolucion: null,
             fechaExpiracionPreReserva: evento.esPago ? new Date(Date.now() + 24 * 60 * 60 * 1000) : null,
           });
 

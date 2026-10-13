@@ -22,15 +22,36 @@ import { notificacionIncidenciaService } from '../../Notificaciones/Crear notifi
 import { AppDataSource } from '../../../data-source';
 import { ComentarioIncidencia } from '../../../models/ComentarioIncidencia';
 
+const serializarComentario = (comentario: ComentarioIncidencia) => {
+  const nombreAutor = comentario.autor
+    ? `${comentario.autor.nombre} ${comentario.autor.apellidos}`.trim() || comentario.autor.nombreUsuario
+    : 'Administrador';
+
+  return {
+    id: comentario.id,
+    incidenciaId: comentario.incidenciaId,
+    autorId: comentario.autorId,
+    nombreAutor,
+    texto: comentario.texto,
+    fechaHora: comentario.fechaHora,
+    esNotaPrivada: comentario.esNotaPrivada,
+    esDatoSensible: comentario.esDatoSensible,
+  };
+};
+
 export const agregarComentarioIncidencia = async (req: Request, res: Response): Promise<void> => {
   const incidenciaId = Number(req.params.id);
   const texto = typeof req.body?.texto === 'string' ? req.body.texto.trim() : '';
   if (!Number.isSafeInteger(incidenciaId) || incidenciaId <= 0 || !texto) { res.status(400).json({ mensaje: 'El comentario es obligatorio.' }); return; }
   const esNotaPrivada = req.body?.esNotaPrivada === true;
   const esDatoSensible = req.body?.esDatoSensible === true;
+  const esAdministrador = req.usuario?.rol === 'administrador' || req.usuario?.rol === 'super_admin';
+  if (esNotaPrivada && !esAdministrador) { res.status(403).json({ mensaje: 'Solo administración puede registrar notas privadas.' }); return; }
   try {
-    const comentario = await AppDataSource.getRepository(ComentarioIncidencia).save({ incidenciaId, autorId: req.usuario?.id ?? null, texto, esNotaPrivada, esDatoSensible });
-    res.status(201).json({ comentario });
+    const repositorio = AppDataSource.getRepository(ComentarioIncidencia);
+    const creado = await repositorio.save({ incidenciaId, autorId: req.usuario?.id ?? null, texto, esNotaPrivada, esDatoSensible });
+    const comentario = await repositorio.findOne({ where: { id: creado.id }, relations: { autor: true } });
+    res.status(201).json({ comentario: serializarComentario(comentario ?? creado) });
   } catch { res.status(500).json({ mensaje: 'No se pudo registrar el comentario.' }); }
 };
 
@@ -63,9 +84,10 @@ export const obtenerComentariosIncidencia = async (req: Request, res: Response):
       where: esAdministrador
         ? { incidenciaId }
         : { incidenciaId, esNotaPrivada: false, esDatoSensible: false },
+      relations: { autor: true },
       order: { fechaHora: 'ASC' },
     });
-    res.status(200).json({ comentarios });
+    res.status(200).json({ comentarios: comentarios.map(serializarComentario) });
   } catch {
     res.status(500).json({ mensaje: 'No se pudo obtener el historial de comentarios.' });
   }

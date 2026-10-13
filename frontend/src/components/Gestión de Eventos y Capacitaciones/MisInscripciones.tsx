@@ -3,7 +3,9 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   cancelarInscripcion,
   cancelarReserva,
+  guardarDatosDevolucion,
   obtenerMisInscripciones,
+  type DatosDevolucion,
   type MiInscripcion,
 } from '../../services/MisInscripcionesService';
 
@@ -131,6 +133,19 @@ export default function MisInscripciones() {
 
   const [cancelando, setCancelando] = useState(false);
 
+  const [tipoDevolucion, setTipoDevolucion] = useState<DatosDevolucion['tipo']>('sinpe_movil');
+
+  const [telefonoDevolucion, setTelefonoDevolucion] = useState('');
+
+  const [ibanDevolucion, setIbanDevolucion] = useState('');
+
+  const [bancoDevolucion, setBancoDevolucion] = useState('');
+
+  const [reservaParaDevolucion, setReservaParaDevolucion] =
+    useState<MiInscripcion | null>(null);
+
+  const [guardandoDevolucion, setGuardandoDevolucion] = useState(false);
+
   const [reservaAEditar, setReservaAEditar] =
     useState<MiInscripcion | null>(null);
 
@@ -139,6 +154,43 @@ export default function MisInscripciones() {
 
   const [cargandoEdicion, setCargandoEdicion] =
     useState(false);
+
+  const obtenerDatosDevolucion = (): DatosDevolucion | null => {
+    if (tipoDevolucion === 'sinpe_movil') {
+      const telefono = telefonoDevolucion.trim();
+      return telefono ? { tipo: 'sinpe_movil', telefono } : null;
+    }
+
+    const iban = ibanDevolucion.trim();
+    const banco = bancoDevolucion.trim();
+    return iban && banco
+      ? { tipo: 'transferencia_bancaria', iban, banco }
+      : null;
+  };
+
+  const limpiarDatosDevolucion = () => {
+    setTipoDevolucion('sinpe_movil');
+    setTelefonoDevolucion('');
+    setIbanDevolucion('');
+    setBancoDevolucion('');
+  };
+
+  const camposDevolucion = () => (
+    <>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <button type="button" onClick={() => setTipoDevolucion('sinpe_movil')} className={`rounded-xl border px-3 py-2 text-xs font-bold transition ${tipoDevolucion === 'sinpe_movil' ? 'border-emerald-500 bg-emerald-500/15 text-emerald-800 dark:text-emerald-200' : 'border-slate-200 text-slate-600 dark:border-white/10 dark:text-slate-300'}`}>SINPE Móvil</button>
+        <button type="button" onClick={() => setTipoDevolucion('transferencia_bancaria')} className={`rounded-xl border px-3 py-2 text-xs font-bold transition ${tipoDevolucion === 'transferencia_bancaria' ? 'border-emerald-500 bg-emerald-500/15 text-emerald-800 dark:text-emerald-200' : 'border-slate-200 text-slate-600 dark:border-white/10 dark:text-slate-300'}`}>Transferencia</button>
+      </div>
+      {tipoDevolucion === 'sinpe_movil' ? (
+        <input value={telefonoDevolucion} onChange={(event) => setTelefonoDevolucion(event.target.value)} placeholder="Número de teléfono SINPE" className="mt-3 w-full rounded-xl border border-slate-200 bg-white/80 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-emerald-500 dark:border-white/10 dark:bg-slate-950/40 dark:text-white" />
+      ) : (
+        <div className="mt-3 grid gap-2">
+          <input value={ibanDevolucion} onChange={(event) => setIbanDevolucion(event.target.value)} placeholder="Cuenta IBAN" className="w-full rounded-xl border border-slate-200 bg-white/80 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-emerald-500 dark:border-white/10 dark:bg-slate-950/40 dark:text-white" />
+          <input value={bancoDevolucion} onChange={(event) => setBancoDevolucion(event.target.value)} placeholder="Banco o entidad financiera" className="w-full rounded-xl border border-slate-200 bg-white/80 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-emerald-500 dark:border-white/10 dark:bg-slate-950/40 dark:text-white" />
+        </div>
+      )}
+    </>
+  );
 
   const confirmarCancelacion = async () => {
     if (!reservaACancelar || cancelando) {
@@ -171,12 +223,21 @@ export default function MisInscripciones() {
       return;
     }
 
+    const datosDevolucion = reservaACancelar.esPago && reservaACancelar.origen === 'reserva'
+      ? obtenerDatosDevolucion()
+      : undefined;
+
+    if (reservaACancelar.esPago && reservaACancelar.origen === 'reserva' && !datosDevolucion) {
+      mostrarFeedback('error', 'Completa los datos requeridos para solicitar la devolución.');
+      return;
+    }
+
     setCancelando(true);
 
     try {
       const resultado =
         reservaACancelar.origen === 'reserva'
-          ? await cancelarReserva(reservaACancelar.id)
+          ? await cancelarReserva(reservaACancelar.id, datosDevolucion ?? undefined)
           : await cancelarInscripcion(reservaACancelar.id);
 
       setInscripciones((actuales) =>
@@ -193,6 +254,7 @@ export default function MisInscripciones() {
       );
 
       setReservaACancelar(null);
+      limpiarDatosDevolucion();
 
       mostrarFeedback(
         'registro',
@@ -207,6 +269,43 @@ export default function MisInscripciones() {
       );
     } finally {
       setCancelando(false);
+    }
+  };
+
+  const guardarDevolucionRechazo = async () => {
+    if (!reservaParaDevolucion || guardandoDevolucion) {
+      return;
+    }
+
+    const datosDevolucion = obtenerDatosDevolucion();
+    if (!datosDevolucion) {
+      mostrarFeedback('error', 'Completa los datos requeridos para la devolución.');
+      return;
+    }
+
+    setGuardandoDevolucion(true);
+    try {
+      const resultado = await guardarDatosDevolucion(
+        reservaParaDevolucion.id,
+        datosDevolucion,
+      );
+      setInscripciones((actuales) => actuales.map((inscripcion) =>
+        inscripcion.id === resultado.id
+          ? { ...inscripcion, datosDevolucion: resultado.datosDevolucion }
+          : inscripcion,
+      ));
+      setReservaParaDevolucion(null);
+      limpiarDatosDevolucion();
+      mostrarFeedback('registro', 'Tus datos de devolución fueron enviados correctamente.');
+    } catch (errorSolicitud: unknown) {
+      mostrarFeedback(
+        'error',
+        errorSolicitud instanceof Error
+          ? errorSolicitud.message
+          : 'No se pudieron guardar los datos de devolución.',
+      );
+    } finally {
+      setGuardandoDevolucion(false);
     }
   };
 
@@ -951,6 +1050,22 @@ export default function MisInscripciones() {
                                 <p className="mt-1 text-xs">Puedes realizar una nueva reserva corrigiendo esta indicación.</p>
                               </div>
                             )}
+
+                            {estadoInscripcion === 'rechazada' && inscripcion.esPago && inscripcion.origen === 'reserva' && !inscripcion.datosDevolucion && (
+                              <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-400/30 bg-amber-500/10 px-3 py-2.5 text-sm text-amber-800 dark:text-amber-200">
+                                <p>Tu pago requiere datos para gestionar la devolución.</p>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    limpiarDatosDevolucion();
+                                    setReservaParaDevolucion(inscripcion);
+                                  }}
+                                  className="rounded-lg border border-amber-500/30 bg-white/70 px-3 py-1.5 text-xs font-bold text-amber-800 transition hover:bg-white dark:bg-slate-900/50 dark:text-amber-200"
+                                >
+                                  Ingresar datos de devolución
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </div>
 
@@ -1160,15 +1275,25 @@ export default function MisInscripciones() {
                 cancelada.
               </p>
               {reservaACancelar.esPago && (
-                <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">{reservaACancelar.politicasCancelacion || 'Las actividades de pago solo pueden cancelarse con al menos 48 horas de anticipación.'}</p>
+                <>
+                  <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-300/20 dark:bg-amber-500/10 dark:text-amber-100">{reservaACancelar.politicasCancelacion || 'Las actividades de pago solo pueden cancelarse con al menos 48 horas de anticipación.'}</p>
+                  {reservaACancelar.origen === 'reserva' && (
+                    <div className="mt-3 rounded-2xl border border-white/20 bg-white/60 p-4 backdrop-blur-md dark:border-white/10 dark:bg-slate-900/60">
+                      <p className="text-sm font-bold text-slate-800 dark:text-white">Datos para la devolución</p>
+                      <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">Indica cómo debe procesarse la devolución si la cancelación cumple el plazo de 48 horas.</p>
+                      {camposDevolucion()}
+                    </div>
+                  )}
+                </>
               )}
 
               <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                 <button
                   type="button"
-                  onClick={() =>
-                    setReservaACancelar(null)
-                  }
+                  onClick={() => {
+                    setReservaACancelar(null);
+                    limpiarDatosDevolucion();
+                  }}
                   disabled={cancelando}
                   className="rounded-xl px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-100 disabled:opacity-50 dark:text-slate-300 dark:hover:bg-white/10"
                 >
@@ -1187,6 +1312,20 @@ export default function MisInscripciones() {
                     ? 'Cancelando…'
                     : 'Confirmar cancelación'}
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {reservaParaDevolucion && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="titulo-devolucion">
+            <div className="w-full max-w-md rounded-[28px] border border-white/20 bg-white/80 p-6 shadow-xl backdrop-blur-md dark:bg-slate-900/80">
+              <h2 id="titulo-devolucion" className="text-lg font-bold text-slate-900 dark:text-white">Datos para devolución</h2>
+              <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">Ingresa los datos para procesar la devolución de “{reservaParaDevolucion.nombreActividad}”.</p>
+              {camposDevolucion()}
+              <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                <button type="button" onClick={() => { setReservaParaDevolucion(null); limpiarDatosDevolucion(); }} disabled={guardandoDevolucion} className="rounded-xl px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-100 disabled:opacity-50 dark:text-slate-300 dark:hover:bg-white/10">Cancelar</button>
+                <button type="button" onClick={() => void guardarDevolucionRechazo()} disabled={guardandoDevolucion} className="rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60">{guardandoDevolucion ? 'Guardando…' : 'Enviar datos'}</button>
               </div>
             </div>
           </div>
