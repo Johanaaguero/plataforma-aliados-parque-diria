@@ -1006,7 +1006,13 @@ function App() {
         </button>
 
         <RegistroCategoria
-          onCategoriaCreada={() => {}}
+          onCategoriaCreada={() => {
+            setSeccionActual('emprendimientos');
+
+            if (rutaActual === '/registro-categoria') {
+              window.location.href = '/';
+            }
+          }}
         />
       </section>
     );

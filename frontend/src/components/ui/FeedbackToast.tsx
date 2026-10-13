@@ -37,8 +37,8 @@ export default function FeedbackToast() {
       if (temporizadorOcultar.current) window.clearTimeout(temporizadorOcultar.current);
       setSaliendo(false);
       setNotificacion(detalle);
-      temporizadorSalida.current = window.setTimeout(() => setSaliendo(true), 1650);
-      temporizadorOcultar.current = window.setTimeout(() => setNotificacion(null), 2000);
+      temporizadorSalida.current = window.setTimeout(() => setSaliendo(true), 3400);
+      temporizadorOcultar.current = window.setTimeout(() => setNotificacion(null), 3800);
     };
 
     window.addEventListener('sigtad:feedback', recibirNotificacion);
@@ -51,6 +51,12 @@ export default function FeedbackToast() {
 
   if (!notificacion) return null;
 
+  const cerrar = () => {
+    if (temporizadorSalida.current) window.clearTimeout(temporizadorSalida.current);
+    if (temporizadorOcultar.current) window.clearTimeout(temporizadorOcultar.current);
+    setNotificacion(null);
+  };
+
   const icono = ICONOS[notificacion.tipo];
   const encabezados: Record<TipoNotificacion, string> = {
     bienvenida: '¡Bienvenido de nuevo a Aliados Diriá!',
@@ -61,7 +67,7 @@ export default function FeedbackToast() {
 
   return (
     <div
-      className={`sigtad-feedback-toast relative fixed left-1/2 top-24 z-[100] flex w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 items-center gap-3 overflow-hidden rounded-2xl border border-white/60 bg-white/80 px-5 py-4 text-[#095540] shadow-[0_18px_50px_rgba(7,63,49,0.24)] backdrop-blur-2xl ${notificacion.tipo === 'bienvenida' ? 'sigtad-feedback-toast-welcome' : ''} ${notificacion.tipo === 'despedida' ? 'sigtad-feedback-toast-farewell' : ''} ${saliendo ? 'sigtad-feedback-toast-out' : ''}`}
+      className={`sigtad-feedback-toast fixed right-6 top-6 z-[10001] flex w-[calc(100%-3rem)] max-w-md items-center gap-3 overflow-hidden rounded-2xl border border-emerald-500/30 bg-white/90 px-5 py-4 text-slate-800 shadow-2xl backdrop-blur-md transition-all duration-300 dark:bg-emerald-950/90 dark:text-slate-100 ${notificacion.tipo === 'bienvenida' ? 'sigtad-feedback-toast-welcome' : ''} ${notificacion.tipo === 'despedida' ? 'sigtad-feedback-toast-farewell' : ''} ${saliendo ? 'sigtad-feedback-toast-out' : ''}`}
       role="status"
       aria-live="polite"
     >
@@ -72,10 +78,13 @@ export default function FeedbackToast() {
         {icono === 'star' && <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden="true"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-2.9-5.6 2.9 1.1-6.2L3 9.6l6.2-.9L12 3Z" /></svg>}
         {icono === 'error' && <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true"><path d="M12 8v4m0 4h.01M10.3 3.9 2.8 17a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" strokeLinecap="round" /></svg>}
       </span>
-      <div className="relative min-w-0">
+      <div className="relative min-w-0 flex-1">
         <p className="text-sm font-bold leading-5">{encabezados[notificacion.tipo]}</p>
-        <p className="mt-0.5 text-xs leading-5 text-[#095540]/70">{notificacion.mensaje}</p>
+        <p className="mt-0.5 text-xs leading-5 text-slate-600 dark:text-slate-300">{notificacion.mensaje}</p>
       </div>
+      <button type="button" onClick={cerrar} className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-slate-500 transition hover:bg-emerald-500/10 hover:text-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 dark:text-slate-300 dark:hover:text-white" aria-label="Cerrar notificación">
+        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" strokeLinecap="round" /></svg>
+      </button>
     </div>
   );
 }

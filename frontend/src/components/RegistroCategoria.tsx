@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { crearCategoria } from '../services/categoriaEmprendimientoService';
+import { mostrarFeedback } from './ui/FeedbackToast';
 
 interface Props {
   onCategoriaCreada?: () => void;
@@ -14,7 +15,7 @@ function RegistroCategoria({
   const [descripcion, setDescripcion] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [exito, setExito] = useState(false);
+  const [, setExito] = useState(false);
 
   async function handleSubmit(
     e: React.FormEvent<HTMLFormElement>
@@ -32,6 +33,7 @@ function RegistroCategoria({
       });
 
       setExito(true);
+      mostrarFeedback('registro', 'Categoría creada correctamente.');
       setNombre('');
       setDescripcion('');
 
@@ -193,29 +195,6 @@ function RegistroCategoria({
           )}
 
           {/* ÉXITO */}
-
-          {exito && (
-            <div className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800" role="status" aria-live="polite">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="mt-0.5 h-5 w-5 shrink-0"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path
-                  d="M5 12.5 9.5 17 19 7"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-
-              <span>
-                Categoría creada correctamente.
-              </span>
-            </div>
-          )}
 
           {/* =================================================
               BOTONES

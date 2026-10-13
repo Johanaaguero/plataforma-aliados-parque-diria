@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import type { FormEvent } from 'react';
 import ImageDropzone from './Imagedropzone';
+import DatePickerCampo from '../ui/DatePickerCampo';
 
 type Estado = 'idle' | 'cargando' | 'exito' | 'error';
 type TipoActividad = 'evento' | 'capacitacion';
@@ -656,14 +657,13 @@ export default function EdicionEventoCapacitacion({
             <div className="mt-4 grid gap-4 sm:mt-5 sm:grid-cols-2 sm:gap-5">
               <div>
                 <label className={LABEL_CLASS} htmlFor="fecha">Fecha</label>
-                <input
+                <DatePickerCampo
                   id="fecha"
-                  type="date"
                   min={obtenerFechaHoy()}
                   className={errores.fecha ? `${INPUT_BASE_CLASS} ${INPUT_ERROR_CLASS}` : `${INPUT_BASE_CLASS} ${INPUT_DEFAULT_CLASS}`}
                   value={fecha}
-                  onChange={(e) => {
-                    setFecha(e.target.value);
+                  onChange={(valor) => {
+                    setFecha(valor);
                     limpiarError('fecha');
                   }}
                   disabled={estado === 'cargando' || segundosRestantes !== null}

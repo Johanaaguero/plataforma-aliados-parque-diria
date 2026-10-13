@@ -12,6 +12,7 @@ import { obtenerCategorias } from '../services/categoriaEmprendimientoService';
 import type { CategoriaEmprendimiento } from '../services/categoriaEmprendimientoService';
 import { crearEmprendimiento } from '../services/emprendimientoService';
 import RegistroCategoria from './RegistroCategoria';
+import { mostrarFeedback } from './ui/FeedbackToast';
 import SelectorUbicacion from './SelectorUbicacion';
 
 import PhoneInput, {
@@ -306,7 +307,7 @@ function RegistroEmprendimiento({ onExito }: Props) {
   const [error, setError] =
     useState<string | null>(null);
 
-  const [exito, setExito] =
+  const [, setExito] =
     useState(false);
 
   const [categoriaAbierta, setCategoriaAbierta] =
@@ -1010,6 +1011,12 @@ function RegistroEmprendimiento({ onExito }: Props) {
       );
 
       setExito(true);
+      mostrarFeedback(
+        'registro',
+        esBorrador
+          ? 'El borrador del emprendimiento se guardó correctamente.'
+          : 'El emprendimiento se registró correctamente.',
+      );
       // Al guardar un borrador se conserva la categoría elegida para que el
       // usuario pueda seguir completándolo sin tener que seleccionarla otra vez.
       setForm((formularioActual) =>
@@ -1031,10 +1038,8 @@ function RegistroEmprendimiento({ onExito }: Props) {
       imagenesRef.current = [];
       setPortadaIndex(0);
 
-      if (onExito) {
-        window.setTimeout(() => {
-          onExito();
-        }, 1200);
+      if (onExito && !esBorrador) {
+        onExito();
       }
     } catch (err) {
       const mensaje =
@@ -2007,30 +2012,6 @@ function RegistroEmprendimiento({ onExito }: Props) {
           {/* ==============================================
               MENSAJE DE ÉXITO
           =============================================== */}
-
-          {exito && (
-            <div
-              className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800"
-              role="status"
-              aria-live="polite"
-            >
-              <span className="text-lg">
-                ✓
-              </span>
-
-              <div>
-                <p className="font-bold">
-                  ¡Emprendimiento guardado
-                  correctamente!
-                </p>
-
-                <p className="mt-1">
-                  La información fue enviada
-                  correctamente.
-                </p>
-              </div>
-            </div>
-          )}
 
           {/* ==============================================
               BOTONES
