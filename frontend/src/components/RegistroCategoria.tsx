@@ -33,7 +33,7 @@ function RegistroCategoria({
       });
 
       setExito(true);
-      mostrarFeedback('registro', 'Categoría creada correctamente.');
+      mostrarFeedback('categoria', 'La categoría ya está disponible para asignarla a emprendimientos.');
       setNombre('');
       setDescripcion('');
 

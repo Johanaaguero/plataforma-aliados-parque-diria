@@ -147,7 +147,7 @@ function TarjetaIncidencia({
   const restoEvidencias = incidencia.evidencias?.slice(1) ?? [];
 
   return (
-    <div className="overflow-hidden rounded-[1.75rem] border border-slate-100 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.1)] dark:border-slate-800 dark:bg-slate-900">
+    <div className="overflow-hidden rounded-2xl border border-white/40 bg-white/70 shadow-lg backdrop-blur-lg transition-all hover:shadow-2xl dark:border-white/10 dark:bg-slate-800/70">
 
       <div className="flex flex-col sm:flex-row">
 
@@ -489,12 +489,18 @@ export default function ListaIncidencias() {
 <section
   className="
     w-full
-    bg-[#f7fbe9]
+    rounded-3xl
+    border
+    border-white/30
+    bg-white/40
+    shadow-xl
+    backdrop-blur-md
     px-4
     py-16
     sm:px-6
     lg:px-8
-    dark:bg-[#0b241b]
+    dark:border-white/10
+    dark:bg-slate-900/20
   "
 >
 

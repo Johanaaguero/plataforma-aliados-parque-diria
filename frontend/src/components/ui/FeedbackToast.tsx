@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-type TipoNotificacion = 'bienvenida' | 'registro' | 'despedida' | 'error';
+type TipoNotificacion = 'bienvenida' | 'registro' | 'categoria' | 'despedida' | 'error';
 
 interface Notificacion {
   tipo: TipoNotificacion;
@@ -10,6 +10,7 @@ interface Notificacion {
 const ICONOS: Record<TipoNotificacion, string> = {
   bienvenida: 'user',
   registro: 'check',
+  categoria: 'check',
   despedida: 'star',
   error: 'error',
 };
@@ -61,6 +62,7 @@ export default function FeedbackToast() {
   const encabezados: Record<TipoNotificacion, string> = {
     bienvenida: '¡Bienvenido de nuevo a Aliados Diriá!',
     registro: '¡Cuenta creada con éxito!',
+    categoria: 'Categoría creada correctamente',
     despedida: 'Sesión cerrada correctamente',
     error: 'No fue posible completar la acción',
   };
