@@ -20,6 +20,7 @@ import {
 } from '../models/EventosCapacitaciones';
 import { EstadoReserva as EstadoParticipante, Participantes } from '../models/Participantes';
 import { EstadoReserva, Reserva } from '../models/Reserva';
+import type { AuditLog } from '../models/AuditLog';
 import type { Rol, NombreRol } from '../models/Rol';
 import type { Usuario } from '../models/Usuario';
 import { errorMiddleware } from '../middlewares/registro.middleware';
@@ -78,6 +79,7 @@ let server: Server | undefined;
 let baseUrl = '';
 let UsuarioModel: typeof import('../models/Usuario').Usuario;
 let RolModel: typeof import('../models/Rol').Rol;
+let AuditLogModel: typeof AuditLog;
 let secuencia = 0;
 
 const variableRequerida = (nombre: string): string => {
@@ -217,15 +219,36 @@ const actualizarReservaComoAdmin = async (
   reservaId: number,
   estado: 'aprobar' | 'rechazar',
   token: string,
-): Promise<RespuestaHttp> => solicitar(`/api/admin/inscripciones/${reservaId}/${estado}`, {
-  method: 'PATCH',
-  headers: { Authorization: `Bearer ${token}` },
-});
+): Promise<RespuestaHttp> => {
+  const options: RequestInit = {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  };
+
+  if (estado === 'rechazar') {
+    options.body = JSON.stringify({
+      motivoRechazo: 'No cumple los requisitos de la actividad.',
+    });
+  }
+
+  return solicitar(`/api/admin/inscripciones/${reservaId}/${estado}`, options);
+};
 
 const cancelarReserva = async (
   reservaId: number,
   token: string,
 ): Promise<RespuestaHttp> => solicitar(`/api/reservas/${reservaId}/cancelar`, {
+  method: 'PATCH',
+  headers: { Authorization: `Bearer ${token}` },
+});
+
+const cancelarInscripcionHttp = async (
+  inscripcionId: number,
+  token: string,
+): Promise<RespuestaHttp> => solicitar(`/api/inscripciones/${inscripcionId}/cancelar`, {
   method: 'PATCH',
   headers: { Authorization: `Bearer ${token}` },
 });
@@ -245,8 +268,15 @@ const obtenerDetalle = async (eventoId: number): Promise<Record<string, unknown>
   return comoObjeto(body.data);
 };
 
+const obtenerAuditorias = async (action: string): Promise<AuditLog[]> =>
+  (await exigirConexionAislada()).getRepository(AuditLogModel).find({
+    where: { action },
+    order: { id: 'ASC' },
+  });
+
 const limpiarBaseTest = async (): Promise<void> => {
   const conexion = await exigirConexionAislada();
+  await conexion.query('DELETE FROM audit_logs');
   await conexion.query('DELETE FROM reservas');
   await conexion.query('DELETE FROM participantes');
   await conexion.query('DELETE FROM eventos_capacitaciones');
@@ -279,6 +309,7 @@ before(async () => {
   const dataSourceModule = await import('../data-source');
   const usuarioModule = await import('../models/Usuario');
   const rolModule = await import('../models/Rol');
+  const auditLogModule = await import('../models/AuditLog');
   const rutasInscripcion = await import(
     '../modulos/Gestión de Eventos y Capacitaciones/Crear Eventos y Capacitaciones/eventosCapacitaciones.routes'
   );
@@ -295,6 +326,7 @@ before(async () => {
   dataSource = dataSourceModule.AppDataSource;
   UsuarioModel = usuarioModule.Usuario;
   RolModel = rolModule.Rol;
+  AuditLogModel = auditLogModule.AuditLog;
   exigirNombreAislado((dataSource.options as { database?: string }).database);
   assert.equal(dataSource.options.synchronize, false);
   await dataSource.initialize();
@@ -417,6 +449,41 @@ describe('POST /api/eventos-capacitaciones/:id/inscripcion', () => {
     assert.equal(participante?.id, body.data.id);
   });
 
+  test('registra auditoría de inscripción sin duplicar eventos en operaciones fallidas', async () => {
+    const usuario = await crearUsuario();
+    const evento = await crearEvento(3);
+    const token = crearToken(usuario.id, 'visitante');
+
+    assert.equal((await inscribir(evento.id, token)).status, 201);
+    assert.equal((await inscribir(evento.id, token)).status, 409);
+
+    const auditorias = await obtenerAuditorias('CREAR_INSCRIPCION_EVENTO_CAPACITACION');
+    assert.equal(auditorias.length, 1);
+    assert.equal(auditorias[0]?.usuarioId, usuario.id);
+    const detalles = JSON.parse(auditorias[0]?.details ?? '{}') as Record<string, unknown>;
+    assert.equal(detalles.eventoCapacitacionId, evento.id);
+    assert.equal(detalles.estado, EstadoParticipante.CONFIRMADA);
+  });
+
+  test('registra auditoría al cancelar una inscripción', async () => {
+    const usuario = await crearUsuario();
+    const evento = await crearEvento(3);
+    const token = crearToken(usuario.id, 'visitante');
+    const respuestaInscripcion = await inscribir(evento.id, token);
+    const inscripcionId = (respuestaInscripcion.body as RespuestaInscripcion).data.id;
+
+    const respuesta = await cancelarInscripcionHttp(inscripcionId, token);
+
+    assert.equal(respuesta.status, 200, respuesta.texto);
+    const auditorias = await obtenerAuditorias('CANCELAR_INSCRIPCION_EVENTO_CAPACITACION');
+    assert.equal(auditorias.length, 1);
+    assert.equal(auditorias[0]?.usuarioId, usuario.id);
+    const detalles = JSON.parse(auditorias[0]?.details ?? '{}') as Record<string, unknown>;
+    assert.equal(detalles.participanteId, inscripcionId);
+    assert.equal(detalles.estadoAnterior, EstadoParticipante.CONFIRMADA);
+    assert.equal(detalles.estadoNuevo, EstadoParticipante.CANCELADA);
+  });
+
   test('rechaza una inscripción duplicada con 409 y conserva un solo registro', async () => {
     const usuario = await crearUsuario();
     const evento = await crearEvento(3);
@@ -481,6 +548,7 @@ describe('POST /api/eventos-capacitaciones/:id/inscripcion', () => {
     await conexion.getRepository(Participantes).save({
       usuarioId: usuarioInscrito.id,
       eventoCapacitacionId: evento.id,
+      numeroTicket: '#TKT-99999999',
     });
     await conexion.getRepository(EventosCapacitaciones).update(evento.id, {
       cuposDisponibles: null,
@@ -529,6 +597,51 @@ describe('POST /api/eventos-capacitaciones/:id/inscripcion', () => {
 });
 
 describe('POST /api/eventos-capacitaciones/:id/reserva', () => {
+  test('registra auditoría de reserva y no registra éxito si la operación falla', async () => {
+    const usuario = await crearUsuario();
+    const evento = await crearEvento(1);
+    const token = crearToken(usuario.id, 'visitante');
+
+    assert.equal((await reservar(evento.id, token)).status, 201);
+    const sinCupo = await reservar(evento.id, crearToken((await crearUsuario()).id, 'visitante'));
+    assert.equal(sinCupo.status, 409, sinCupo.texto);
+
+    const auditorias = await obtenerAuditorias('CREAR_RESERVA_EVENTO_CAPACITACION');
+    assert.equal(auditorias.length, 1);
+    assert.equal(auditorias[0]?.usuarioId, usuario.id);
+    const detalles = JSON.parse(auditorias[0]?.details ?? '{}') as Record<string, unknown>;
+    assert.equal(detalles.eventoCapacitacionId, evento.id);
+    assert.equal(detalles.estado, EstadoReserva.PENDIENTE);
+  });
+
+  test('revierte la reserva y cupos si falla la auditoría obligatoria', async () => {
+    const usuario = await crearUsuario();
+    const evento = await crearEvento(1);
+    const conexion = await exigirConexionAislada();
+    const nombreTrigger = `audit_reserva_bloqueo_${Date.now()}`;
+    await conexion.query(`
+      CREATE TRIGGER \`${nombreTrigger}\`
+      BEFORE INSERT ON \`audit_logs\`
+      FOR EACH ROW
+      BEGIN
+        IF NEW.action = 'CREAR_RESERVA_EVENTO_CAPACITACION' THEN
+          SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Fallo de prueba en auditoría';
+        END IF;
+      END
+    `);
+
+    try {
+      const respuesta = await reservar(evento.id, crearToken(usuario.id, 'visitante'));
+
+      assert.equal(respuesta.status, 500, respuesta.texto);
+      assert.equal(await conexion.getRepository(Reserva).count(), 0);
+      const eventoActualizado = await conexion.getRepository(EventosCapacitaciones).findOneByOrFail({ id: evento.id });
+      assert.equal(eventoActualizado.cuposDisponibles, 1);
+    } finally {
+      await conexion.query(`DROP TRIGGER \`${nombreTrigger}\``);
+    }
+  });
+
   test('crea una reserva pendiente y persiste los datos personales', async () => {
     const usuario = await crearUsuario();
     const evento = await crearEvento(3);
@@ -734,6 +847,14 @@ describe('PATCH /api/admin/inscripciones/:id/{aprobar|rechazar}', () => {
     assert.equal(eventoActualizado.cuposDisponibles, 2);
     assert.ok(participante);
     assert.equal(participante?.estado, 'confirmada');
+
+    const auditorias = await obtenerAuditorias('CAMBIAR_ESTADO_RESERVA_EVENTO_CAPACITACION');
+    assert.equal(auditorias.length, 1);
+    assert.equal(auditorias[0]?.usuarioId, admin.id);
+    const detalles = JSON.parse(auditorias[0]?.details ?? '{}') as Record<string, unknown>;
+    assert.equal(detalles.reservaId, reservaId);
+    assert.equal(detalles.estadoAnterior, EstadoReserva.PENDIENTE);
+    assert.equal(detalles.estadoNuevo, EstadoReserva.APROBADA);
   });
 
   test('no crea un Participante duplicado al aprobar', async () => {
@@ -745,6 +866,7 @@ describe('PATCH /api/admin/inscripciones/:id/{aprobar|rechazar}', () => {
       usuarioId: usuario.id,
       eventoCapacitacionId: evento.id,
       estado: EstadoParticipante.PENDIENTE,
+      numeroTicket: '#TKT-99989999',
     });
     const reservaRespuesta = await reservar(evento.id, crearToken(usuario.id, 'visitante'));
     const reservaId = (reservaRespuesta.body as RespuestaReserva).data.id;
@@ -837,6 +959,14 @@ describe('PATCH /api/reservas/:id/cancelar', () => {
     const eventoActualizado = await (await exigirConexionAislada()).getRepository(EventosCapacitaciones).findOneByOrFail({ id: evento.id });
     assert.equal(reserva.estado, EstadoReserva.CANCELADA);
     assert.equal(eventoActualizado.cuposDisponibles, 3);
+
+    const auditorias = await obtenerAuditorias('CANCELAR_RESERVA_EVENTO_CAPACITACION');
+    assert.equal(auditorias.length, 1);
+    assert.equal(auditorias[0]?.usuarioId, usuario.id);
+    const detalles = JSON.parse(auditorias[0]?.details ?? '{}') as Record<string, unknown>;
+    assert.equal(detalles.reservaId, reservaId);
+    assert.equal(detalles.estadoAnterior, EstadoReserva.PENDIENTE);
+    assert.equal(detalles.estadoNuevo, EstadoReserva.CANCELADA);
   });
 
   test('cancela una reserva aprobada, cancela su Participante y libera un cupo', async () => {

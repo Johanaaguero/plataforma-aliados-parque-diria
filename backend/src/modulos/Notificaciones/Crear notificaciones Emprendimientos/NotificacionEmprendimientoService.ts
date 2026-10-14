@@ -9,6 +9,7 @@ import {
   EstadoNotificacion,
   TipoNotificacion,
 } from '../../../models/Notificacion';
+import type { EntityManager } from 'typeorm';
 
 export class NotificacionEmprendimientoService {
   private readonly notificacionRepo =
@@ -24,6 +25,7 @@ export class NotificacionEmprendimientoService {
   async notificarNuevoEmprendimientoAlAdministrador(
     emprendimiento: Emprendimiento,
     usuarioCreador: Usuario,
+    manager?: EntityManager,
   ): Promise<void> {
     // Solo aplica si quien creó el emprendimiento es un asociado.
     if (
@@ -33,7 +35,11 @@ export class NotificacionEmprendimientoService {
       return;
     }
 
-    const administradores = await this.usuarioRepo
+    const usuarioRepo =
+      manager?.getRepository(Usuario) ?? this.usuarioRepo;
+    const notificacionRepo =
+      manager?.getRepository(Notificacion) ?? this.notificacionRepo;
+    const administradores = await usuarioRepo
       .createQueryBuilder('usuario')
       .leftJoinAndSelect('usuario.rol', 'rol')
       .where('rol.nombre = :rol', {
@@ -50,7 +56,7 @@ export class NotificacionEmprendimientoService {
 
     const notificaciones = administradores.map(
       (administrador) =>
-        this.notificacionRepo.create({
+        notificacionRepo.create({
           usuarioId: administrador.id,
           tipo: TipoNotificacion.NUEVO_EMPRENDIMIENTO,
           titulo: 'Nuevo emprendimiento registrado',
@@ -63,7 +69,7 @@ export class NotificacionEmprendimientoService {
         }),
     );
 
-    await this.notificacionRepo.save(notificaciones);
+    await notificacionRepo.save(notificaciones);
   }
 
   /**
@@ -72,6 +78,7 @@ export class NotificacionEmprendimientoService {
    */
   async notificarNuevoEmprendimientoAVisitantes(
     emprendimiento: Emprendimiento,
+    manager?: EntityManager,
   ): Promise<void> {
     // Solo se notifican emprendimientos publicados.
     if (
@@ -81,7 +88,11 @@ export class NotificacionEmprendimientoService {
       return;
     }
 
-    const visitantes = await this.usuarioRepo
+    const usuarioRepo =
+      manager?.getRepository(Usuario) ?? this.usuarioRepo;
+    const notificacionRepo =
+      manager?.getRepository(Notificacion) ?? this.notificacionRepo;
+    const visitantes = await usuarioRepo
       .createQueryBuilder('usuario')
       .leftJoinAndSelect('usuario.rol', 'rol')
       .where('rol.nombre = :rol', {
@@ -95,7 +106,7 @@ export class NotificacionEmprendimientoService {
 
     const notificaciones = visitantes.map(
       (visitante) =>
-        this.notificacionRepo.create({
+        notificacionRepo.create({
           usuarioId: visitante.id,
           tipo: TipoNotificacion.NUEVO_EMPRENDIMIENTO,
           titulo: 'Nuevo emprendimiento disponible',
@@ -108,7 +119,7 @@ export class NotificacionEmprendimientoService {
         }),
     );
 
-    await this.notificacionRepo.save(notificaciones);
+    await notificacionRepo.save(notificaciones);
   }
 
   /**

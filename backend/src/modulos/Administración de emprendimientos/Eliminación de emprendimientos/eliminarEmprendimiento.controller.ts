@@ -8,7 +8,7 @@ export const eliminar = async (
   try {
     const id = Number(req.params.id);
 
-    await eliminarEmprendimiento(id);
+    await eliminarEmprendimiento(id, req.usuario!.id);
 
     return res.status(204).send();
   } catch (error) {

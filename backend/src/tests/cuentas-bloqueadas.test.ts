@@ -7,6 +7,7 @@ import type { Server } from 'node:http';
 import express from 'express';
 import { config } from 'dotenv';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 import type { DataSource } from 'typeorm';
 import type { Usuario } from '../models/Usuario';
 import type { Rol, NombreRol } from '../models/Rol';
@@ -33,6 +34,7 @@ let RolModel: typeof Rol;
 let LoginAttemptModel: typeof LoginAttempt;
 let AuditLogModel: typeof AuditLog;
 let unlockAccountService: typeof import('../modulos/Autenticación y gestión de usuario/Super_admin/Cuentas Bloqueadas/cuentasBloqueadas.service').unlockAccount;
+let loginUserService: typeof import('../modulos/Autenticación y gestión de usuario/inicio de sesion/login.service').loginUser;
 let server: Server;
 let baseUrl: string;
 
@@ -195,6 +197,9 @@ before(async () => {
   const serviceModule = await import(
     '../modulos/Autenticación y gestión de usuario/Super_admin/Cuentas Bloqueadas/cuentasBloqueadas.service'
   );
+  const loginServiceModule = await import(
+    '../modulos/Autenticación y gestión de usuario/inicio de sesion/login.service'
+  );
   const routeModule = await import(
     '../modulos/Autenticación y gestión de usuario/Super_admin/Cuentas Bloqueadas/cuentasBloqueadas.route'
   );
@@ -205,6 +210,7 @@ before(async () => {
   LoginAttemptModel = loginAttemptModule.LoginAttempt;
   AuditLogModel = auditLogModule.AuditLog;
   unlockAccountService = serviceModule.unlockAccount;
+  loginUserService = loginServiceModule.loginUser;
 
   await dataSource.initialize();
   await assertTestDatabase();
@@ -300,6 +306,115 @@ describe('consulta de cuentas bloqueadas', () => {
         'bloqueadoHasta',
       ].sort(),
     );
+  });
+
+  test('login bloquea por cuenta normalizada y la cuenta aparece en la consulta', async () => {
+    const rolRepository = dataSource.getRepository(RolModel);
+    const superAdminRol = await rolRepository.findOneByOrFail({
+      nombre: 'super_admin',
+    });
+    const visitanteRol = await rolRepository.findOneByOrFail({
+      nombre: 'visitante',
+    });
+
+    const superAdmin = await crearUsuario('60000001', superAdminRol);
+    const visitante = await crearUsuario('60000002', visitanteRol);
+    const otraCuenta = await crearUsuario('60000003', visitanteRol);
+    const usuarioRepository = dataSource.getRepository(UsuarioModel);
+    const hash = await bcrypt.hash('clave-correcta', 8);
+
+    visitante.contraseña = hash;
+    otraCuenta.contraseña = hash;
+    await usuarioRepository.save([visitante, otraCuenta]);
+
+    const identificadorConFormato = `  ${visitante.correo.toUpperCase()}  `;
+
+    const primerIntento = await loginUserService({
+      identificador: identificadorConFormato,
+      password: 'clave-incorrecta',
+      ipAddress: '127.0.0.1',
+      userAgent: 'cuentas-bloqueadas-test',
+    });
+    assert.equal(primerIntento.ok, false);
+    assert.equal(primerIntento.code, 'INVALID_CREDENTIALS');
+
+    let intento = await dataSource
+      .getRepository(LoginAttemptModel)
+      .findOneByOrFail({ usuarioId: visitante.id });
+    assert.equal(intento.intentosFallidos, 1);
+    assert.equal(intento.bloqueadoHasta, null);
+
+    const segundoIntento = await loginUserService({
+      identificador: identificadorConFormato,
+      password: 'clave-incorrecta',
+      ipAddress: '127.0.0.1',
+      userAgent: 'cuentas-bloqueadas-test',
+    });
+    assert.equal(segundoIntento.ok, false);
+    assert.equal(segundoIntento.code, 'INVALID_CREDENTIALS');
+
+    intento = await dataSource
+      .getRepository(LoginAttemptModel)
+      .findOneByOrFail({ usuarioId: visitante.id });
+    assert.equal(intento.intentosFallidos, 2);
+    assert.equal(intento.bloqueadoHasta, null);
+
+    const tercerIntento = await loginUserService({
+      identificador: identificadorConFormato,
+      password: 'clave-incorrecta',
+      ipAddress: '127.0.0.1',
+      userAgent: 'cuentas-bloqueadas-test',
+    });
+    assert.equal(tercerIntento.ok, false);
+    assert.equal(tercerIntento.code, 'ACCOUNT_BLOCKED');
+
+    intento = await dataSource
+      .getRepository(LoginAttemptModel)
+      .findOneByOrFail({ usuarioId: visitante.id });
+    assert.equal(intento.intentosFallidos, 3);
+    assert.ok(intento.bloqueadoHasta);
+    const minutosBloqueo = Math.round(
+      (intento.bloqueadoHasta.getTime() - Date.now()) / 60000,
+    );
+    assert.ok(minutosBloqueo >= 14 && minutosBloqueo <= 15);
+
+    const consulta = await request('/api/admin/cuentas-bloqueadas', {
+      headers: {
+        Authorization: `Bearer ${token(superAdmin, 'super_admin')}`,
+      },
+    });
+    assert.equal(consulta.status, 200);
+    const cuentas = consulta.body.data as Array<Record<string, unknown>>;
+    assert.equal(cuentas.some((cuenta) => cuenta.id === visitante.id), true);
+
+    const intentoOtraCuenta = await loginUserService({
+      identificador: otraCuenta.correo,
+      password: 'clave-incorrecta',
+      ipAddress: '127.0.0.1',
+      userAgent: 'cuentas-bloqueadas-test',
+    });
+    assert.equal(intentoOtraCuenta.ok, false);
+    assert.equal(intentoOtraCuenta.code, 'INVALID_CREDENTIALS');
+
+    const registroOtraCuenta = await dataSource
+      .getRepository(LoginAttemptModel)
+      .findOneByOrFail({ usuarioId: otraCuenta.id });
+    assert.equal(registroOtraCuenta.intentosFallidos, 1);
+    assert.equal(registroOtraCuenta.bloqueadoHasta, null);
+
+    const loginCorrecto = await loginUserService({
+      identificador: otraCuenta.correo,
+      password: 'clave-correcta',
+      ipAddress: '127.0.0.1',
+      userAgent: 'cuentas-bloqueadas-test',
+    });
+    assert.equal(loginCorrecto.ok, true);
+
+    const registroOtraCuentaLimpio = await dataSource
+      .getRepository(LoginAttemptModel)
+      .findOneByOrFail({ usuarioId: otraCuenta.id });
+    assert.equal(registroOtraCuentaLimpio.intentosFallidos, 0);
+    assert.equal(registroOtraCuentaLimpio.bloqueadoHasta, null);
   });
 });
 

@@ -14,6 +14,7 @@ import {
 import { In } from 'typeorm';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
 import { NotificacionService } from '../../Notificaciones/Crear notificaciones Reservas/NotificacionReservaService';
+import { registrarAuditoria } from '../../Autenticación y gestión de usuario/Autenticación y seguridad de acceso al sistema/auditoria.service';
 
 export interface DatosReserva {
   nombreCompleto: unknown;
@@ -366,6 +367,24 @@ export class InscripcionService {
         evento,
       );
 
+      await registrarAuditoria(
+        {
+          usuarioId,
+          action: 'CREAR_RESERVA_EVENTO_CAPACITACION',
+          description: `Creación de reserva #${reservaGuardada.id} para actividad #${evento.id}`,
+          status: 'success',
+          details: JSON.stringify({
+            reservaId: reservaGuardada.id,
+            eventoCapacitacionId: evento.id,
+            tipoActividad: evento.tipoActividad,
+            estado: reservaGuardada.estado,
+            cuposDisponibles: evento.cuposDisponibles,
+            reservaReutilizada: Boolean(reservaExistente),
+          }),
+        },
+        manager,
+      );
+
       return {
         reserva: reservaGuardada,
         cuposDisponibles: evento.cuposDisponibles,
@@ -461,6 +480,30 @@ export class InscripcionService {
 
       // 8. Guardar la reserva
       const reservaGuardada = await reservasRepo.save(reserva);
+
+      await registrarAuditoria(
+        {
+          usuarioId,
+          action: 'ACTUALIZAR_RESERVA_EVENTO_CAPACITACION',
+          description: `Actualización de reserva #${reservaGuardada.id} para actividad #${evento.id}`,
+          status: 'success',
+          details: JSON.stringify({
+            reservaId: reservaGuardada.id,
+            eventoCapacitacionId: evento.id,
+            tipoActividad: evento.tipoActividad,
+            estado: reservaGuardada.estado,
+            camposActualizados: [
+              'nombreCompleto',
+              'fechaNacimiento',
+              'tipoIdentificacion',
+              'numeroIdentificacion',
+              'correo',
+              'telefono',
+            ],
+          }),
+        },
+        manager,
+      );
 
       return {
         reserva: reservaGuardada,
@@ -562,6 +605,24 @@ export class InscripcionService {
 
         await eventosRepo.save(evento);
       }
+
+      await registrarAuditoria(
+        {
+          usuarioId,
+          action: 'CREAR_INSCRIPCION_EVENTO_CAPACITACION',
+          description: `Inscripción #${participanteGuardado.id} para actividad #${evento.id}`,
+          status: 'success',
+          details: JSON.stringify({
+            participanteId: participanteGuardado.id,
+            eventoCapacitacionId: evento.id,
+            tipoActividad: evento.tipoActividad,
+            estado: participanteGuardado.estado,
+            cuposDisponibles,
+            inscripcionReutilizada: Boolean(inscripcionExistente),
+          }),
+        },
+        manager,
+      );
 
       return {
         participante: participanteGuardado,

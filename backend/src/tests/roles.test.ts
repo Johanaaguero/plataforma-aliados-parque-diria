@@ -13,6 +13,7 @@ import type { Usuario } from '../models/Usuario';
 import {errorMiddleware} from '../middlewares/registro.middleware';
 import type { Rol, NombreRol } from '../models/Rol';
 import type { HistorialCambioRol } from '../models/HistorialCambioRol';
+import type { AuditLog } from '../models/AuditLog';
 import { RegisterInitialRoles1786838400000 } from '../migrations/1786838400000-RegisterInitialRoles';
 import { RegisterSuperAdminRole1787558400000 } from '../migrations/1787558400000-RegisterSuperAdminRole';
 
@@ -31,6 +32,7 @@ let dataSource: DataSource;
 let UsuarioModel: typeof Usuario;
 let RolModel: typeof Rol;
 let HistorialModel: typeof HistorialCambioRol;
+let AuditLogModel: typeof AuditLog;
 let getUsersWithRoles: typeof import('../modulos/Autenticación y gestión de usuario/Gestión de Roles/roles.service').getUsersWithRoles;
 let updateUserRole: typeof import('../modulos/Autenticación y gestión de usuario/Gestión de Roles/roles.service').updateUserRole;
 let getUsersRoles: typeof import('../modulos/Autenticación y gestión de usuario/Gestión de Roles/roles.controller').getUsersRoles;
@@ -161,6 +163,7 @@ const prepararEscenario = async (
 
 const limpiarBaseTest = async () => {
   await assertTestDatabase();
+  await dataSource.query('DELETE FROM audit_logs');
   await dataSource.query('DELETE FROM historial_cambio_roles');
   await dataSource.query('DELETE FROM login_attempts');
   await dataSource.query('DELETE FROM usuarios');
@@ -221,6 +224,7 @@ before(async () => {
   const usuarioModule = await import('../models/Usuario');
   const rolModule = await import('../models/Rol');
   const historialModule = await import('../models/HistorialCambioRol');
+  const auditLogModule = await import('../models/AuditLog');
   const authModule = await import('../middlewares/auth.middleware');
   const authorizationModule = await import('../middlewares/authorization.middleware');
   const serviceModule = await import(
@@ -232,11 +236,15 @@ before(async () => {
   const routeModule = await import(
     '../modulos/Autenticación y gestión de usuario/Gestión de Roles/roles.route'
   );
+  const bitacoraRouteModule = await import(
+    '../modulos/Autenticación y gestión de usuario/Super_admin/Bitacora/bitacora.route'
+  );
 
   dataSource = dataSourceModule.AppDataSource;
   UsuarioModel = usuarioModule.Usuario;
   RolModel = rolModule.Rol;
   HistorialModel = historialModule.HistorialCambioRol;
+  AuditLogModel = auditLogModule.AuditLog;
   verificarToken = authModule.verificarToken;
   autorizarRoles = authorizationModule.autorizarRoles;
   getUsersWithRoles = serviceModule.getUsersWithRoles;
@@ -258,6 +266,7 @@ before(async () => {
   const app = express();
   app.use(express.json());
   app.use('/api/users', routeModule.default);
+  app.use('/api/admin', bitacoraRouteModule.default);
   app.get(
     '/api/test/super-admin',
     verificarToken,
@@ -511,6 +520,56 @@ describe('roles.service', () => {
     assert.equal(auditorias.length, 1);
   });
 
+  test('registra el cambio de rol en historial y audit_logs', async () => {
+    const escenario = await prepararEscenario();
+    await updateUserRole({
+      usuarioId: escenario.visitanteId,
+      nuevoRol: 'asociado',
+      actorId: escenario.administradorId,
+    });
+
+    const historial = await dataSource.getRepository(HistorialModel).findOneByOrFail({
+      usuarioAfectadoId: escenario.visitanteId,
+    });
+    const auditoria = await dataSource.getRepository(AuditLogModel).findOneByOrFail({
+      usuarioId: escenario.administradorId,
+      action: 'CAMBIO_ROL',
+    });
+    const details = JSON.parse(auditoria.details!) as Record<string, unknown>;
+
+    assert.equal(historial.actorId, escenario.administradorId);
+    assert.equal(historial.rolAnterior, 'visitante');
+    assert.equal(historial.rolNuevo, 'asociado');
+    assert.equal(auditoria.status, 'success');
+    assert.equal(details.actorId, escenario.administradorId);
+    assert.equal(details.actorNombreUsuario, 'usuario_10000001');
+    assert.equal(details.actorNombreCompleto, 'Nombre 10000001 Apellido 10000001');
+    assert.equal(details.usuarioAfectadoId, escenario.visitanteId);
+    assert.equal(details.usuarioAfectadoNombreUsuario, 'usuario_10000002');
+    assert.equal(details.usuarioAfectadoNombreCompleto, 'Nombre 10000002 Apellido 10000002');
+    assert.equal(details.rolAnterior, 'visitante');
+    assert.equal(details.rolNuevo, 'asociado');
+    assert.equal(await dataSource.getRepository(HistorialModel).count(), 1);
+    assert.equal(await dataSource.getRepository(AuditLogModel).count(), 1);
+  });
+
+  test('no registra un cambio cuando el usuario ya tiene el rol solicitado', async () => {
+    const escenario = await prepararEscenario();
+    const resultado = await updateUserRole({
+      usuarioId: escenario.visitanteId,
+      nuevoRol: 'visitante',
+      actorId: escenario.administradorId,
+    });
+
+    assert.equal(resultado.ok, true);
+    if (resultado.ok) {
+      assert.equal(resultado.message, 'El usuario ya tiene ese rol');
+      assert.equal(resultado.data.rolAnterior, 'visitante');
+      assert.equal(resultado.data.rolNuevo, 'visitante');
+    }
+    assert.equal(await dataSource.getRepository(HistorialModel).count(), 0);
+    assert.equal(await dataSource.getRepository(AuditLogModel).count(), 0);
+  });
   test('revierte el rol si falla la auditoría', async () => {
     const escenario = await prepararEscenario();
     await assert.rejects(() =>
@@ -524,8 +583,10 @@ describe('roles.service', () => {
       id: escenario.visitanteId,
     });
     const auditorias = await dataSource.getRepository(HistorialModel).count();
+    const auditoriasGlobales = await dataSource.getRepository(AuditLogModel).count();
     assert.equal(usuario.rol.nombre, 'visitante');
     assert.equal(auditorias, 0);
+    assert.equal(auditoriasGlobales, 0);
   });
 
   test('una operación rechazada no crea auditoría', async () => {
@@ -537,6 +598,10 @@ describe('roles.service', () => {
     });
     assert.equal(
       await dataSource.getRepository(HistorialModel).count(),
+      0,
+    );
+    assert.equal(
+      await dataSource.getRepository(AuditLogModel).count(),
       0,
     );
   });
@@ -752,6 +817,35 @@ describe('rutas HTTP de roles', () => {
     assert.equal(resultado.status, 200);
   });
 
+  test('PUT con token super_admin permanece prohibido y no crea cambios falsos', async () => {
+    const escenario = await prepararEscenario();
+    const rolRepository = dataSource.getRepository(RolModel);
+    const rolSuperAdmin = await rolRepository.save(
+      rolRepository.create({
+        nombre: 'super_admin',
+        descripcion: 'Super administrador',
+      }),
+    );
+    const superAdmin = await crearUsuario('40000002', rolSuperAdmin);
+
+    const resultado = await request(`/api/users/${escenario.visitanteId}/role`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token(superAdmin.id, 'super_admin')}`,
+      },
+      body: JSON.stringify({ rol: 'asociado' }),
+    });
+
+    assert.equal(resultado.status, 403);
+    const usuario = await dataSource
+      .getRepository(UsuarioModel)
+      .findOneByOrFail({ id: escenario.visitanteId });
+    assert.equal(usuario.rol.nombre, 'visitante');
+    assert.equal(await dataSource.getRepository(HistorialModel).count(), 0);
+    assert.equal(await dataSource.getRepository(AuditLogModel).count(), 0);
+  });
+
   test('PUT de auto-democión devuelve 400', async () => {
     const escenario = await prepararEscenario(1);
     const resultado = await request(`/api/users/${escenario.administradorId}/role`, {
@@ -892,6 +986,91 @@ describe('auditoría de roles', () => {
     assert.equal(eventos[0]!.rolAnterior, 'visitante');
     assert.equal(eventos[0]!.rolNuevo, 'asociado');
     assert.ok(eventos[0]!.fechaCambio instanceof Date);
+    assert.equal(await dataSource.getRepository(AuditLogModel).count(), 1);
+  });
+
+  test('la Bitácora central recupera los cambios filtrando por CAMBIO_ROL', async () => {
+    const escenario = await prepararEscenario();
+    await updateUserRole({
+      usuarioId: escenario.visitanteId,
+      nuevoRol: 'asociado',
+      actorId: escenario.administradorId,
+    });
+    const rolRepository = dataSource.getRepository(RolModel);
+    const rolSuperAdmin = await rolRepository.save(
+      rolRepository.create({
+        nombre: 'super_admin',
+        descripcion: 'Super administrador',
+      }),
+    );
+    const superAdmin = await crearUsuario('40000003', rolSuperAdmin);
+
+    const resultado = await request('/api/admin/bitacora?action=CAMBIO_ROL', {
+      headers: {
+        Authorization: `Bearer ${token(superAdmin.id, 'super_admin')}`,
+      },
+    });
+    const sinFiltro = await request('/api/admin/bitacora?page=1&limit=10', {
+      headers: {
+        Authorization: `Bearer ${token(superAdmin.id, 'super_admin')}`,
+      },
+    });
+
+    assert.equal(resultado.status, 200);
+    const registros = resultado.body.registros as Array<
+      Record<string, unknown>
+    >;
+    assert.equal(registros.length, 1);
+    assert.equal(registros[0]!.action, 'CAMBIO_ROL');
+    assert.equal(registros[0]!.usuarioId, escenario.administradorId);
+    assert.match(String(registros[0]!.description), /usuario_10000002/);
+    assert.match(String(registros[0]!.description), /usuario_10000001/);
+    assert.equal(sinFiltro.status, 200);
+    assert.equal(sinFiltro.body.total, 1);
+  });
+
+  test('la API expone en el mes correcto cambios históricos sin duplicarlos en audit_logs', async () => {
+    const escenario = await prepararEscenario();
+    const historialRepository = dataSource.getRepository(HistorialModel);
+    await historialRepository.save(
+      historialRepository.create({
+        actorId: escenario.administradorId,
+        usuarioAfectadoId: escenario.visitanteId,
+        rolAnterior: 'visitante',
+        rolNuevo: 'asociado',
+        fechaCambio: new Date('2026-10-14T12:00:00-06:00'),
+      }),
+    );
+    const rolRepository = dataSource.getRepository(RolModel);
+    const rolSuperAdmin = await rolRepository.save(
+      rolRepository.create({
+        nombre: 'super_admin',
+        descripcion: 'Super administrador',
+      }),
+    );
+    const superAdmin = await crearUsuario('40000004', rolSuperAdmin);
+    const authorization = `Bearer ${token(superAdmin.id, 'super_admin')}`;
+
+    const sinFiltro = await request(
+      '/api/admin/bitacora?page=1&limit=10&desde=2026-10-01&hasta=2026-10-31',
+      { headers: { Authorization: authorization } },
+    );
+    const conFiltro = await request(
+      '/api/admin/bitacora?page=1&limit=10&action=CAMBIO_ROL&desde=2026-10-01&hasta=2026-10-31',
+      { headers: { Authorization: authorization } },
+    );
+
+    assert.equal(sinFiltro.status, 200);
+    assert.equal(conFiltro.status, 200);
+    assert.equal(sinFiltro.body.total, 1);
+    assert.equal(conFiltro.body.total, 1);
+    const registro = (
+      conFiltro.body.registros as Array<Record<string, unknown>>
+    )[0]!;
+    assert.equal(registro.action, 'CAMBIO_ROL');
+    assert.equal(registro.usuarioId, escenario.administradorId);
+    assert.match(String(registro.details), /historial_cambio_roles/);
+    assert.equal(await dataSource.getRepository(AuditLogModel).count(), 0);
   });
 
   test('no registra auditoría después de una operación HTTP rechazada', async () => {
@@ -906,6 +1085,7 @@ describe('auditoría de roles', () => {
     });
     assert.equal(resultado.status, 400);
     assert.equal(await dataSource.getRepository(HistorialModel).count(), 0);
+    assert.equal(await dataSource.getRepository(AuditLogModel).count(), 0);
   });
 });
 

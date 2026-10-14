@@ -12,6 +12,7 @@ import {
   EstadoNotificacion,
   TipoNotificacion,
 } from '../../../models/Notificacion';
+import type { EntityManager } from 'typeorm';
 
 export class NotificacionEventoService {
   private readonly notificacionRepo =
@@ -26,8 +27,13 @@ export class NotificacionEventoService {
    */
   async notificarNuevoEvento(
     evento: EventosCapacitaciones,
+    manager?: EntityManager,
   ): Promise<void> {
-    const usuarios = await this.usuarioRepo
+    const usuarioRepo =
+      manager?.getRepository(Usuario) ?? this.usuarioRepo;
+    const notificacionRepo =
+      manager?.getRepository(Notificacion) ?? this.notificacionRepo;
+    const usuarios = await usuarioRepo
       .createQueryBuilder('usuario')
       .leftJoinAndSelect('usuario.rol', 'rol')
       .where('rol.nombre IN (:...roles)', {
@@ -60,7 +66,7 @@ export class NotificacionEventoService {
       `Lugar: ${evento.lugar}.`;
 
     const notificaciones = usuarios.map((usuario) =>
-      this.notificacionRepo.create({
+      notificacionRepo.create({
         usuarioId: usuario.id,
         tipo: tipoNotificacion,
         titulo,
@@ -71,7 +77,7 @@ export class NotificacionEventoService {
       }),
     );
 
-    await this.notificacionRepo.save(notificaciones);
+    await notificacionRepo.save(notificaciones);
   }
 
   /**

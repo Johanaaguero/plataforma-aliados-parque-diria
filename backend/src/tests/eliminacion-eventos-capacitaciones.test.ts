@@ -12,6 +12,7 @@ import type { DataSource } from 'typeorm';
 
 import type { Usuario } from '../models/Usuario';
 import type { Rol, NombreRol } from '../models/Rol';
+import type { AuditLog } from '../models/AuditLog';
 
 config({ path: resolve(process.cwd(), '.env') });
 
@@ -44,6 +45,7 @@ let UsuarioModel: typeof import('../models/Usuario').Usuario;
 let RolModel: typeof import('../models/Rol').Rol;
 let EventosModel: typeof import('../models/EventosCapacitaciones').EventosCapacitaciones;
 let ImagenModel: typeof import('../models/EventoCapacitacionImagen').EventoCapacitacionImagen;
+let AuditLogModel: typeof AuditLog;
 let EventoEnums: typeof import('../models/EventosCapacitaciones');
 let RegisterInitialRolesModel: typeof import('../migrations/1786838400000-RegisterInitialRoles').RegisterInitialRoles1786838400000;
 
@@ -138,6 +140,12 @@ const solicitar = async (
   };
 };
 
+const obtenerAuditorias = async (action: string): Promise<AuditLog[]> =>
+  dataSource.getRepository(AuditLogModel).find({
+    where: { action },
+    order: { id: 'ASC' },
+  });
+
 const crearToken = (
   usuarioId: number,
   rol: NombreRol,
@@ -182,6 +190,7 @@ const limpiarBaseTest = async (): Promise<void> => {
   await dataSource.query(
     'DELETE FROM eventos_capacitaciones_imagenes',
   );
+  await dataSource.query('DELETE FROM audit_logs');
   await dataSource.query('DELETE FROM eventos_capacitaciones');
   await dataSource.query('DELETE FROM usuarios');
   await dataSource.query('DELETE FROM roles');
@@ -302,6 +311,7 @@ before(async () => {
   const dataSourceModule = await import('../data-source');
   const usuarioModule = await import('../models/Usuario');
   const rolModule = await import('../models/Rol');
+  const auditLogModule = await import('../models/AuditLog');
   EventoEnums = await import('../models/EventosCapacitaciones');
   const imagenModule = await import(
     '../models/EventoCapacitacionImagen'
@@ -313,6 +323,7 @@ before(async () => {
   dataSource = dataSourceModule.AppDataSource;
   UsuarioModel = usuarioModule.Usuario;
   RolModel = rolModule.Rol;
+  AuditLogModel = auditLogModule.AuditLog;
   EventosModel = EventoEnums.EventosCapacitaciones;
   ImagenModel = imagenModule.EventoCapacitacionImagen;
   RegisterInitialRolesModel =
@@ -373,6 +384,121 @@ after(async () => {
   }
 });
 
+describe('Auditoría de eventos y capacitaciones', () => {
+  test('registra creación, actualización y cambio de estado sin duplicar la actualización existente', async () => {
+    const escenario = await prepararEscenario();
+    const tokenAdmin = crearToken(escenario.administradorId, 'administrador');
+    const payload = {
+      nombre: 'Actividad auditada',
+      descripcion: 'Actividad creada desde prueba de auditoría.',
+      fecha: '2099-12-20',
+      hora: '10:30',
+      lugar: 'Parque Nacional Diriá',
+      tipoActividad: EventoEnums.TipoActividad.CAPACITACION,
+      cupoMinimo: 1,
+      cupoMaximo: 10,
+      edadMinima: 8,
+      edadMaxima: 99,
+      temporada: EventoEnums.Temporada.SECA,
+      estado: EventoEnums.EstadoEventoCapacitacion.BORRADOR,
+    };
+
+    const crear = await solicitar('/api/eventos-capacitaciones', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${tokenAdmin}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+    assert.equal(crear.status, 201, crear.texto);
+    const creado = crear.body as { id: number };
+
+    const actualizar = await solicitar(`/api/eventos-capacitaciones/${creado.id}`, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${tokenAdmin}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ descripcion: 'Descripción auditada actualizada.' }),
+    });
+    assert.equal(actualizar.status, 200, actualizar.texto);
+
+    const cambiarEstado = await solicitar(`/api/eventos-capacitaciones/${creado.id}/estado`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${tokenAdmin}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ estado: EventoEnums.EstadoEventoCapacitacion.NO_PUBLICADO }),
+    });
+    assert.equal(cambiarEstado.status, 200, cambiarEstado.texto);
+
+    const creaciones = await obtenerAuditorias('CREAR_EVENTO_CAPACITACION');
+    const actualizaciones = await obtenerAuditorias('ACTUALIZAR_EVENTO_CAPACITACION');
+    const cambiosEstado = await obtenerAuditorias('CAMBIAR_ESTADO_EVENTO_CAPACITACION');
+    assert.equal(creaciones.length, 1);
+    assert.equal(actualizaciones.length, 1);
+    assert.equal(cambiosEstado.length, 1);
+    assert.equal(creaciones[0]?.usuarioId, escenario.administradorId);
+    const detalleEstado = JSON.parse(cambiosEstado[0]?.details ?? '{}') as Record<string, unknown>;
+    assert.equal(detalleEstado.estadoAnterior, EventoEnums.EstadoEventoCapacitacion.BORRADOR);
+    assert.equal(detalleEstado.estadoNuevo, EventoEnums.EstadoEventoCapacitacion.NO_PUBLICADO);
+  });
+
+  test('revierte la creacion del evento si falla el registro de auditoria', async () => {
+    const escenario = await prepararEscenario();
+    const tokenAdmin = crearToken(
+      escenario.administradorId,
+      'administrador',
+    );
+    const cantidadAntes = await dataSource
+      .getRepository(EventosModel)
+      .count();
+    const trigger = 'test_falla_auditoria_evento';
+
+    await dataSource.query(
+      `CREATE TRIGGER ${trigger} BEFORE INSERT ON audit_logs FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'fallo de auditoria de prueba'`,
+    );
+
+    try {
+      const respuesta = await solicitar('/api/eventos-capacitaciones', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${tokenAdmin}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          nombre: 'Evento con auditoria fallida',
+          descripcion: 'Prueba de rollback de auditoria.',
+          fecha: '2099-12-20',
+          hora: '10:30',
+          lugar: 'Parque Nacional Diriá',
+          tipoActividad: EventoEnums.TipoActividad.EVENTO,
+          cupoMinimo: 1,
+          cupoMaximo: 10,
+          edadMinima: 8,
+          edadMaxima: 99,
+          temporada: EventoEnums.Temporada.SECA,
+          estado: EventoEnums.EstadoEventoCapacitacion.BORRADOR,
+        }),
+      });
+
+      assert.equal(respuesta.status, 500);
+      assert.equal(
+        await dataSource.getRepository(EventosModel).count(),
+        cantidadAntes,
+      );
+      assert.equal(
+        (await obtenerAuditorias('CREAR_EVENTO_CAPACITACION')).length,
+        0,
+      );
+    } finally {
+      await dataSource.query(`DROP TRIGGER IF EXISTS ${trigger}`);
+    }
+  });
+});
+
 describe('DELETE /api/eventos-capacitaciones/:id', () => {
   test('rechaza con 400 IDs inválidos y formatos peligrosos sin eliminar', async () => {
     const escenario = await prepararEscenario();
@@ -427,7 +553,7 @@ describe('DELETE /api/eventos-capacitaciones/:id', () => {
     assert.deepEqual(resultado.body, {
       ok: false,
       code: 'TOKEN_NOT_PROVIDED',
-      message: 'Token no proporcionado',
+      message: 'Se requiere inicio de sesión',
     });
     await comprobarQueNoSeElimino(escenario);
   });
@@ -577,5 +703,12 @@ describe('DELETE /api/eventos-capacitaciones/:id', () => {
       false,
       'El catálogo no debe contener el registro eliminado',
     );
+
+    const auditorias = await obtenerAuditorias('ELIMINAR_EVENTO_CAPACITACION');
+    assert.equal(auditorias.length, 1);
+    assert.equal(auditorias[0]?.usuarioId, escenario.administradorId);
+    const detalles = JSON.parse(auditorias[0]?.details ?? '{}') as Record<string, unknown>;
+    assert.equal(detalles.eventoCapacitacionId, escenario.eventoId);
+    assert.equal(detalles.tipoActividad, EventoEnums.TipoActividad.EVENTO);
   });
 });

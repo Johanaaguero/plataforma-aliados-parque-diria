@@ -1,11 +1,22 @@
 import { Router } from 'express';
-import { rateLimit } from 'express-rate-limit';
+import type { Request } from 'express';
+import { ipKeyGenerator, rateLimit } from 'express-rate-limit';
 import { login, logout } from './login.controller';
 import { verificarToken } from '../../../middlewares/auth.middleware';
 
+export const obtenerClaveRateLimitLogin = (req: Request): string => {
+  const identificador =
+    typeof req.body?.identificador === 'string'
+      ? req.body.identificador.trim().toLowerCase()
+      : 'sin-identificador';
+
+  return `${ipKeyGenerator(req.ip ?? 'ip-desconocida')}:${identificador}`;
+};
+
 const loginRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 5, // máximo 5 intentos de login por IP en 15 minutos
+  max: 5, // maximo 5 intentos de login por IP e identificador en 15 minutos
+  keyGenerator: obtenerClaveRateLimitLogin,
   message: {
     ok: false,
     code: 'RATE_LIMIT_EXCEEDED',
