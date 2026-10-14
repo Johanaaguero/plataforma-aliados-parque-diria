@@ -14,7 +14,7 @@ import {
   Participantes,
 } from '../../../models/Participantes';
 
-import { In, Repository } from 'typeorm';
+import { In, Repository, type EntityManager } from 'typeorm';
 
 import { calcularCuposDisponibles } from '../cuposDisponibles';
 
@@ -79,27 +79,27 @@ const TIPOS_MIME_PERMITIDOS = [
 const TAMANO_MAXIMO_BYTES = 5 * 1024 * 1024;
 
 export class EventosCapacitacionesService {
+  private readonly manager: EntityManager | undefined;
+
   private repo: Repository<EventosCapacitaciones>;
 
   private imagenesRepo: Repository<EventoCapacitacionImagen>;
 
   private participantesRepo: Repository<Participantes>;
 
-  constructor() {
+  constructor(manager?: EntityManager) {
+    this.manager = manager;
     this.repo =
-      AppDataSource.getRepository(
-        EventosCapacitaciones,
-      );
+      manager?.getRepository(EventosCapacitaciones) ??
+      AppDataSource.getRepository(EventosCapacitaciones);
 
     this.imagenesRepo =
-      AppDataSource.getRepository(
-        EventoCapacitacionImagen,
-      );
+      manager?.getRepository(EventoCapacitacionImagen) ??
+      AppDataSource.getRepository(EventoCapacitacionImagen);
 
     this.participantesRepo =
-      AppDataSource.getRepository(
-        Participantes,
-      );
+      manager?.getRepository(Participantes) ??
+      AppDataSource.getRepository(Participantes);
   }
 
   private validar(
@@ -698,6 +698,12 @@ export class EventosCapacitacionesService {
     return registro;
   }
 
+  async obtenerDetalle(
+    id: number,
+  ) {
+    return this.obtenerOFallar(id);
+  }
+
   private async obtenerImagenOFallar(
     id: number,
   ) {
@@ -881,6 +887,7 @@ export class EventosCapacitacionesService {
     ) {
       await notificacionEventoService.notificarNuevoEvento(
         eventoFinal,
+        this.manager,
       );
     }
 
@@ -1153,6 +1160,7 @@ export class EventosCapacitacionesService {
     ) {
       await notificacionEventoService.notificarNuevoEvento(
         guardado,
+        this.manager,
       );
     }
 
@@ -1276,11 +1284,13 @@ export class EventosCapacitacionesService {
 
   async remove(
     id: number,
-  ): Promise<void> {
+  ): Promise<EventosCapacitaciones> {
     const registro =
       await this.obtenerOFallar(id);
 
+    const eliminado = this.repo.create(registro);
     await this.repo.remove(registro);
+    return eliminado;
   }
 
   private validarCambioEstado(
@@ -1412,6 +1422,7 @@ export class EventosCapacitacionesService {
     ) {
       await notificacionEventoService.notificarNuevoEvento(
         guardado,
+        this.manager,
       );
     }
 

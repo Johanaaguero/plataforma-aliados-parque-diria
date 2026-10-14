@@ -9,11 +9,13 @@ import { ConsultaEmprendimiento } from '../../../models/ConsultaEmprendimiento';
 import { CategoriaEmprendimiento } from '../../../models/CategoriaEmprendimiento';
 import { Usuario } from '../../../models/Usuario';
 import { EmprendimientoImagen } from '../../../models/EmprendimientoImagen';
+import type { EntityManager } from 'typeorm';
 
 // ============================================================
 // NUEVO: SERVICIO DE NOTIFICACIONES DE EMPRENDIMIENTOS
 // ============================================================
 import { notificacionEmprendimientoService } from '../../Notificaciones/Crear notificaciones Emprendimientos/NotificacionEmprendimientoService';
+import { registrarAuditoria } from '../../Autenticación y gestión de usuario/Autenticación y seguridad de acceso al sistema/auditoria.service';
 
 const emprendimientoRepository =
   AppDataSource.getRepository(Emprendimiento);
@@ -29,6 +31,26 @@ const usuarioRepository =
 
 const imagenRepository =
   AppDataSource.getRepository(EmprendimientoImagen);
+
+const registrarAuditoriaEmprendimiento = async (
+  usuarioId: number,
+  action: string,
+  emprendimiento: Emprendimiento,
+  details: Record<string, unknown>,
+  manager?: EntityManager,
+): Promise<void> => {
+  await registrarAuditoria({
+    usuarioId,
+    action,
+    description: `${action} del emprendimiento #${emprendimiento.id}`,
+    status: 'success',
+    details: JSON.stringify({
+      emprendimientoId: emprendimiento.id,
+      nombre: emprendimiento.nombre,
+      ...details,
+    }),
+  }, manager);
+};
 
 // ============================================================
 // DTO CREAR
@@ -309,8 +331,13 @@ export class EmprendimientoService {
 
   private async buscarPorId(
     id: number,
+    manager?: EntityManager,
   ): Promise<Emprendimiento | null> {
-    return emprendimientoRepository.findOne({
+    const repository =
+      manager?.getRepository(Emprendimiento) ??
+      emprendimientoRepository;
+
+    return repository.findOne({
       where: { id },
       relations: {
         categoria: true,
@@ -328,7 +355,22 @@ export class EmprendimientoService {
     dto: CrearEmprendimientoDto,
     usuarioId: number,
     rolUsuario: string,
+    manager?: EntityManager,
   ): Promise<Emprendimiento> {
+    if (!manager) {
+      return AppDataSource.transaction((transactionManager) =>
+        this.crear(dto, usuarioId, rolUsuario, transactionManager),
+      );
+    }
+
+    const emprendimientoRepository =
+      manager.getRepository(Emprendimiento);
+    const imagenRepository =
+      manager.getRepository(EmprendimientoImagen);
+    const categoriaRepository =
+      manager.getRepository(CategoriaEmprendimiento);
+    const usuarioRepository =
+      manager.getRepository(Usuario);
 
     // ============================================================
     // NUEVO: OBTENER USUARIO QUE REALMENTE ESTÁ CREANDO
@@ -520,6 +562,7 @@ export class EmprendimientoService {
         .notificarNuevoEmprendimientoAlAdministrador(
           guardado,
           usuarioCreador,
+          manager,
         );
     }
 
@@ -534,8 +577,21 @@ export class EmprendimientoService {
       await notificacionEmprendimientoService
         .notificarNuevoEmprendimientoAVisitantes(
           guardado,
+          manager,
         );
     }
+
+    await registrarAuditoriaEmprendimiento(
+      usuarioId,
+      'CREAR_EMPRENDIMIENTO',
+      guardado,
+      {
+        estadoPublicacion: guardado.estadoPublicacion,
+        asociadoId: guardado.asociado?.id ?? dto.asociadoId ?? null,
+        categoriaId: guardado.categoria?.id ?? dto.categoriaId ?? null,
+      },
+      manager,
+    );
 
     return guardado;
   }
@@ -736,10 +792,11 @@ export class EmprendimientoService {
 
   async obtenerPorId(
     id: number,
+    manager?: EntityManager,
   ): Promise<Emprendimiento> {
 
     const emprendimiento =
-      await this.buscarPorId(id);
+      await this.buscarPorId(id, manager);
 
     if (!emprendimiento) {
       throw new Error(
@@ -829,10 +886,26 @@ export class EmprendimientoService {
     id: number,
     nuevoEstado: EstadoPublicacion,
     rolUsuario: string,
+    usuarioId: number,
+    manager?: EntityManager,
   ): Promise<ResultadoCambioPublicacion> {
+    if (!manager) {
+      return AppDataSource.transaction((transactionManager) =>
+        this.cambiarPublicacion(
+          id,
+          nuevoEstado,
+          rolUsuario,
+          usuarioId,
+          transactionManager,
+        ),
+      );
+    }
+
+    const emprendimientoRepository =
+      manager.getRepository(Emprendimiento);
 
     const emprendimiento =
-      await this.buscarPorId(id);
+      await this.buscarPorId(id, manager);
 
     if (!emprendimiento) {
       return {
@@ -937,8 +1010,20 @@ export class EmprendimientoService {
       await notificacionEmprendimientoService
         .notificarNuevoEmprendimientoAVisitantes(
           emprendimientoActualizado,
+          manager,
         );
     }
+
+    await registrarAuditoriaEmprendimiento(
+      usuarioId,
+      'CAMBIAR_ESTADO_EMPRENDIMIENTO',
+      emprendimientoActualizado,
+      {
+        estadoAnterior: estadoActual,
+        estadoNuevo: nuevoEstado,
+      },
+      manager,
+    );
 
     return {
       ok: true,
@@ -1040,10 +1125,29 @@ export class EmprendimientoService {
     dto: ActualizarEmprendimientoDto,
     usuarioId: number,
     rolUsuario: string,
+    manager?: EntityManager,
   ): Promise<Emprendimiento> {
+    if (!manager) {
+      return AppDataSource.transaction((transactionManager) =>
+        this.actualizar(
+          id,
+          dto,
+          usuarioId,
+          rolUsuario,
+          transactionManager,
+        ),
+      );
+    }
+
+    const emprendimientoRepository =
+      manager.getRepository(Emprendimiento);
+    const categoriaRepository =
+      manager.getRepository(CategoriaEmprendimiento);
+    const imagenRepository =
+      manager.getRepository(EmprendimientoImagen);
 
     const emprendimiento =
-      await this.obtenerPorId(id);
+      await this.obtenerPorId(id, manager);
 
     // ============================================================
     // NUEVO: GUARDAR ESTADO ANTERIOR PARA NOTIFICACIONES
@@ -1389,6 +1493,7 @@ export class EmprendimientoService {
     const resultado =
       await this.buscarPorId(
         actualizado.id,
+        manager,
       );
 
     if (!resultado) {
@@ -1410,8 +1515,29 @@ export class EmprendimientoService {
       await notificacionEmprendimientoService
         .notificarNuevoEmprendimientoAVisitantes(
           resultado,
+          manager,
         );
     }
+
+    await registrarAuditoriaEmprendimiento(
+      usuarioIdNumero,
+      'ACTUALIZAR_EMPRENDIMIENTO',
+      resultado,
+      {
+        estadoAnterior,
+        estadoNuevo: resultado.estadoPublicacion,
+        camposActualizados: Object.keys(dto).filter(
+          (campo) =>
+            ![
+              'imagen',
+              'imagenes',
+              'imagenesConservadas',
+              'portadaNueva',
+            ].includes(campo),
+        ),
+      },
+      manager,
+    );
 
     return resultado;
   }
@@ -1422,13 +1548,35 @@ export class EmprendimientoService {
 
   async eliminar(
     id: number,
+    usuarioId: number,
+    manager?: EntityManager,
   ): Promise<void> {
+    if (!manager) {
+      return AppDataSource.transaction((transactionManager) =>
+        this.eliminar(id, usuarioId, transactionManager),
+      );
+    }
+
+    const emprendimientoRepository =
+      manager.getRepository(Emprendimiento);
 
     const emprendimiento =
-      await this.obtenerPorId(id);
+      await this.obtenerPorId(id, manager);
+    const estadoAnterior =
+      emprendimiento.estadoPublicacion;
 
     await emprendimientoRepository.remove(
       emprendimiento,
+    );
+
+    await registrarAuditoriaEmprendimiento(
+      usuarioId,
+      'ELIMINAR_EMPRENDIMIENTO',
+      emprendimiento,
+      {
+        estadoAnterior,
+      },
+      manager,
     );
   }
 }

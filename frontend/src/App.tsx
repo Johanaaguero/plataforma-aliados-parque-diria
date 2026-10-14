@@ -620,7 +620,7 @@ function App() {
 
     if (mostrarCuentasBloqueadas) {
       return (
-        <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef] pt-20 sm:pt-24">
+        <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef]">
           <BotonVolverInicio
             texto="Volver al Dashboard"
             onClick={() => setMostrarCuentasBloqueadas(false)}
@@ -701,6 +701,9 @@ function App() {
       }
       onIrComunicados={() => navigate('/admin/comunicados')}
       onIrPreguntasFrecuentes={() => navigate('/admin/preguntas-frecuentes')}
+      onCerrarSesion={() => {
+        void cerrarSesion();
+      }}
     />
   </section>
 );
@@ -892,7 +895,7 @@ function App() {
     rolAutenticado === 'super_admin'
   ) {
     return (
-      <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef] pt-20 sm:pt-24">
+      <section className="relative min-h-screen overflow-x-hidden bg-transparent">
         <BotonVolverInicio
           texto="Volver al Dashboard"
           onClick={() => navigate('/super-admin/dashboard')}

@@ -18,6 +18,7 @@ import {
   Emprendimiento,
   EstadoPublicacion,
 } from '../models/Emprendimiento';
+import { AuditLog } from '../models/AuditLog';
 import { RegisterInitialRoles1786838400000 } from '../migrations/1786838400000-RegisterInitialRoles';
 
 config({ path: resolve(process.cwd(), '.env') });
@@ -47,6 +48,7 @@ let UsuarioModel: typeof Usuario;
 let RolModel: typeof Rol;
 let CategoriaModel: typeof CategoriaEmprendimiento;
 let EmprendimientoModel: typeof Emprendimiento;
+let AuditLogModel: typeof AuditLog;
 
 let server: Server;
 let baseUrl: string;
@@ -129,6 +131,7 @@ const limpiarBaseTest = async () => {
 
   await dataSource.query('DELETE FROM emprendimientos');
   await dataSource.query('DELETE FROM categorias_emprendimientos');
+  await dataSource.query('DELETE FROM audit_logs');
   await dataSource.query('DELETE FROM historial_cambio_roles');
   await dataSource.query('DELETE FROM login_attempts');
   await dataSource.query('DELETE FROM usuarios');
@@ -249,6 +252,7 @@ before(async () => {
   const emprendimientoModule = await import(
     '../models/Emprendimiento'
   );
+  const auditLogModule = await import('../models/AuditLog');
 
   const routeModule = await import(
     '../modulos/Administración de emprendimientos/Eliminación de emprendimientos/eliminarEmprendimiento.route'
@@ -262,6 +266,7 @@ before(async () => {
     categoriaModule.CategoriaEmprendimiento;
   EmprendimientoModel =
     emprendimientoModule.Emprendimiento;
+  AuditLogModel = auditLogModule.AuditLog;
 
   await dataSource.initialize();
   await dataSource.runMigrations();
@@ -448,4 +453,96 @@ describe('DELETE /api/emprendimientos/:id', () => {
 
     assert.equal(eliminado, null);
   });
-});
+
+  test('eliminacion exitosa registra auditoria con actor y estado anterior', async () => {
+    const escenario = await prepararEscenario();
+
+    const resultado = await request(
+      `/api/emprendimientos/${escenario.emprendimientoId}`,
+      {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${crearToken(
+            escenario.administradorId,
+            'administrador',
+          )}`,
+        },
+      },
+    );
+
+    assert.equal(resultado.status, 204);
+
+    const auditoria = await dataSource.getRepository(AuditLogModel).findOneByOrFail({
+      action: 'ELIMINAR_EMPRENDIMIENTO',
+      usuarioId: escenario.administradorId,
+    });
+    const details = JSON.parse(auditoria.details!) as Record<string, unknown>;
+
+    assert.equal(auditoria.status, 'success');
+    assert.equal(details.emprendimientoId, escenario.emprendimientoId);
+    assert.equal(details.estadoAnterior, EstadoPublicacion.NO_PUBLICADO);
+  });
+
+  test('revierte la eliminacion si falla el registro de auditoria', async () => {
+    const escenario = await prepararEscenario();
+    const trigger = 'test_falla_auditoria_eliminar_emprendimiento';
+    await dataSource.query(
+      `CREATE TRIGGER ${trigger} BEFORE INSERT ON audit_logs FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'fallo de auditoria de prueba'`,
+    );
+
+    try {
+      const resultado = await request(
+        `/api/emprendimientos/${escenario.emprendimientoId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${crearToken(
+              escenario.administradorId,
+              'administrador',
+            )}`,
+          },
+        },
+      );
+
+      assert.equal(resultado.status, 500);
+      assert.notEqual(
+        await dataSource
+          .getRepository(EmprendimientoModel)
+          .findOneBy({ id: escenario.emprendimientoId }),
+        null,
+      );
+      assert.equal(
+        await dataSource.getRepository(AuditLogModel).count({
+          where: { action: 'ELIMINAR_EMPRENDIMIENTO' },
+        }),
+        0,
+      );
+    } finally {
+      await dataSource.query(`DROP TRIGGER IF EXISTS ${trigger}`);
+    }
+  });
+
+  test('eliminacion fallida no registra auditoria de exito', async () => {
+    const escenario = await prepararEscenario();
+
+    const resultado = await request(
+      '/api/emprendimientos/999999',
+      {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${crearToken(
+            escenario.administradorId,
+            'administrador',
+          )}`,
+        },
+      },
+    );
+
+    assert.equal(resultado.status, 404);
+    assert.equal(
+      await dataSource.getRepository(AuditLogModel).count({
+        where: { action: 'ELIMINAR_EMPRENDIMIENTO' },
+      }),
+      0,
+    );
+  });});

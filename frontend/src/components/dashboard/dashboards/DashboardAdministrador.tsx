@@ -23,6 +23,7 @@ interface DashboardAdministradorProps {
   onIrReportes: () => void;
   onIrComunicados: () => void;
   onIrPreguntasFrecuentes: () => void;
+  onCerrarSesion: () => void;
 }
 
 type EstadoCarga = 'cargando' | 'listo' | 'error';
@@ -116,6 +117,13 @@ const iconos = {
     <Icono>
       <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
       <path d="M10 21h4" />
+    </Icono>
+  ),
+  cerrarSesion: (
+    <Icono>
+      <path d="m16 17 5-5-5-5" />
+      <path d="M21 12H9" />
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
     </Icono>
   ),
 };
@@ -286,6 +294,7 @@ export default function DashboardAdministrador({
   onIrIncidencias,
   onIrReportes,
   onIrComunicados,
+  onCerrarSesion,
 }: DashboardAdministradorProps) {
   const navigate = useNavigate();
 
@@ -468,6 +477,28 @@ export default function DashboardAdministrador({
         </nav>
 
         <div className={`${sidebarAbierto ? 'px-5 pb-5' : 'px-3 pb-4'} shrink-0`}>
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onCerrarSesion();
+            }}
+            title={!sidebarAbierto ? 'Cerrar sesión' : undefined}
+            className={`
+              mb-3 flex w-full items-center rounded-2xl py-3
+              text-[#877870] transition-all duration-300
+              hover:bg-red-50 hover:text-red-600
+              dark:text-[#c6aaa1] dark:hover:bg-red-950/30 dark:hover:text-red-300
+              ${sidebarAbierto ? 'gap-3 px-3' : 'justify-center px-2'}
+            `}
+          >
+            <span className="shrink-0">{iconos.cerrarSesion}</span>
+            {sidebarAbierto && (
+              <span className="font-brand text-sm font-semibold">
+                Cerrar sesión
+              </span>
+            )}
+          </button>
           <div
             className={`rounded-2xl border border-white/55 bg-white/28 backdrop-blur-xl dark:border-white/[0.10] dark:bg-white/[0.05] ${
               sidebarAbierto ? 'p-3.5' : 'p-2.5'
@@ -518,8 +549,8 @@ export default function DashboardAdministrador({
 
       {/* Menú móvil */}
       {menuMovilAbierto && (
-        <div className="fixed inset-3 z-[60] overflow-y-auto rounded-[1.8rem] border border-white/60 bg-white/55 p-4 shadow-[0_30px_90px_rgba(11,58,39,0.18)] backdrop-blur-[30px] dark:border-white/[0.10] dark:bg-[#0d2b20]/72 lg:hidden">
-          <div className="flex items-center justify-between border-b border-black/[0.06] pb-4 dark:border-white/[0.07]">
+        <div className="fixed inset-3 z-[60] flex min-h-0 flex-col overflow-hidden rounded-[1.8rem] border border-white/60 bg-white/55 p-4 shadow-[0_30px_90px_rgba(11,58,39,0.18)] backdrop-blur-[30px] dark:border-white/[0.10] dark:bg-[#0d2b20]/72 lg:hidden">
+          <div className="flex shrink-0 items-center justify-between border-b border-black/[0.06] pb-4 dark:border-white/[0.07]">
             <div className="flex items-center gap-3">
               <img
                 src={logo}
@@ -546,7 +577,7 @@ export default function DashboardAdministrador({
             </button>
           </div>
 
-          <nav className="mt-4 flex flex-col gap-2">
+          <nav className="mt-4 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain">
             <Link to="/" onClick={() => setMenuMovilAbierto(false)} className={claseItemMovil}>
               {iconos.inicio}
               Inicio
@@ -593,6 +624,20 @@ export default function DashboardAdministrador({
               )}
             </button>
           </nav>
+
+          <div className="shrink-0 border-t border-black/[0.06] pt-4 dark:border-white/[0.07]">
+            <button
+              type="button"
+              onClick={() => {
+                setMenuMovilAbierto(false);
+                onCerrarSesion();
+              }}
+              className="flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#0b6849] px-4 py-3 font-brand text-sm font-semibold text-white shadow-[0_12px_28px_rgba(11,104,73,0.18)] transition-colors hover:bg-[#095b40]"
+            >
+              {iconos.cerrarSesion}
+              Cerrar sesión
+            </button>
+          </div>
         </div>
       )}
 

@@ -48,6 +48,7 @@ export default function DashboardPage({
           onIrReportes={onIrReportes}
           onIrComunicados={onIrComunicados}
           onIrPreguntasFrecuentes={onIrPreguntasFrecuentes}
+          onCerrarSesion={onCerrarSesion ?? (() => {})}
         />
       );
 

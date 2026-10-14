@@ -32,48 +32,90 @@ interface CuentaBloqueadaResumen {
    ICONOS
 ========================================================= */
 
-const IconoCasa = () => (
-  <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="m3 10 9-7 9 7" />
-    <path d="M5 9v11h14V9" />
-    <path d="M9 20v-6h6v6" />
+const Icono = ({
+  children,
+  className = 'h-5 w-5',
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) => (
+  <svg
+    viewBox="0 0 24 24"
+    className={className}
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    {children}
   </svg>
+);
+
+const IconoCasa = () => (
+  <Icono className="h-[18px] w-[18px]">
+    <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" />
+    <path d="M3 10a2 2 0 0 1 .7-1.5l7-6a2 2 0 0 1 2.6 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+  </Icono>
 );
 
 const IconoDashboard = () => (
-  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <rect x="4" y="4" width="6" height="6" rx="1.2" />
-    <rect x="14" y="4" width="6" height="6" rx="1.2" />
-    <rect x="4" y="14" width="6" height="6" rx="1.2" />
-    <rect x="14" y="14" width="6" height="6" rx="1.2" />
-  </svg>
+  <Icono>
+    <rect width="7" height="9" x="3" y="3" rx="1" />
+    <rect width="7" height="5" x="14" y="3" rx="1" />
+    <rect width="7" height="9" x="14" y="12" rx="1" />
+    <rect width="7" height="5" x="3" y="16" rx="1" />
+  </Icono>
 );
 
 const IconoBitacora = () => (
-  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <rect x="6" y="4" width="12" height="16" rx="1.8" />
-    <path d="M9 8h6" />
-    <path d="M9 12h6" />
-    <path d="M9 16h4" />
-  </svg>
+  <Icono>
+    <path d="M15 12h-5" />
+    <path d="M15 8h-5" />
+    <path d="M19 17V5a2 2 0 0 0-2-2H4" />
+    <path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3" />
+  </Icono>
 );
 
 const IconoCuentas = () => (
-  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <rect x="5" y="4" width="14" height="16" rx="1.8" />
-    <path d="M8.5 9h7" />
-    <path d="M8.5 12.5h4" />
-    <circle cx="16.5" cy="16.5" r="2.8" />
-    <path d="m18.5 18.5 1.2 1.2" />
-  </svg>
+  <Icono>
+    <path d="M20 13c0 5-3.5 7.5-7.7 8.9a1 1 0 0 1-.6 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.2-2.7a1.2 1.2 0 0 1 1.6 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z" />
+    <path d="m9 12 2 2 4-4" />
+  </Icono>
+);
+
+const IconoPreguntasFrecuentes = () => (
+  <Icono>
+    <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z" />
+    <path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3" />
+    <path d="M12 17h.01" />
+  </Icono>
+);
+
+const IconoContenidoVisual = () => (
+  <Icono>
+    <rect width="18" height="18" x="3" y="3" rx="2" />
+    <circle cx="9" cy="9" r="2" />
+    <path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21" />
+    <path d="m14 19 1-1a2 2 0 0 1 2.8 0l.2.2" />
+  </Icono>
+);
+
+const IconoComunicados = () => (
+  <Icono>
+    <path d="M4 10v4h3l7 4V6l-7 4H4Z" />
+    <path d="M17 9a4 4 0 0 1 0 6" />
+    <path d="M20 7a7 7 0 0 1 0 10" />
+  </Icono>
 );
 
 const IconoCerrarSesion = () => (
-  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="M10 4H5v16h5" />
-    <path d="m14 8 4 4-4 4" />
-    <path d="M9 12h9" />
-  </svg>
+  <Icono>
+    <path d="m16 17 5-5-5-5" />
+    <path d="M21 12H9" />
+    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+  </Icono>
 );
 
 
@@ -105,10 +147,13 @@ export default function DashboardSuper_admin({
 
       try {
         const [bitacora, cuentas] = await Promise.all([
-          api.solicitar<RegistroBitacoraResumen[]>(
-            '/admin/bitacora',
+          api.solicitar<{ registros: RegistroBitacoraResumen[]; total: number }>(
+            '/admin/bitacora?page=1&limit=1',
             { method: 'GET' },
-            { mensajeError: 'No se pudo cargar la actividad reciente.' },
+            {
+              desempaquetarData: false,
+              mensajeError: 'No se pudo cargar la actividad reciente.',
+            },
           ),
           api.solicitar<CuentaBloqueadaResumen[]>(
             '/admin/cuentas-bloqueadas',
@@ -117,12 +162,12 @@ export default function DashboardSuper_admin({
           ),
         ]);
 
-        if (!Array.isArray(bitacora) || !Array.isArray(cuentas)) {
+        if (!Array.isArray(bitacora.registros) || !Array.isArray(cuentas)) {
           throw new Error('La respuesta del resumen no es válida.');
         }
 
         if (componenteActivo) {
-          setMovimientosRecientes(bitacora.length);
+          setMovimientosRecientes(bitacora.total);
           setCuentasBloqueadas(cuentas.length);
         }
       } catch (errorSolicitud: unknown) {
@@ -170,11 +215,6 @@ export default function DashboardSuper_admin({
         sm:px-4 sm:py-4 md:px-5 md:py-5 lg:px-7 lg:py-6
       "
     >
-      <div className="absolute right-5 top-5 z-[70] flex gap-2">
-        <button type="button" onClick={onIrComunicados} className="rounded-full border border-white/50 bg-white/55 px-4 py-2 text-xs font-bold text-emerald-800 shadow-lg backdrop-blur-md transition hover:bg-white dark:border-white/10 dark:bg-white/10 dark:text-emerald-100">Comunicados</button>
-        <button type="button" onClick={() => setVistaPreguntasFrecuentes(true)} className="rounded-full border border-white/50 bg-white/55 px-4 py-2 text-xs font-bold text-emerald-800 shadow-lg backdrop-blur-md transition hover:bg-white dark:border-white/10 dark:bg-white/10 dark:text-emerald-100">Preguntas frecuentes</button>
-        <button type="button" onClick={() => setVistaContenidoVisual(true)} className="rounded-full border border-white/50 bg-white/55 px-4 py-2 text-xs font-bold text-emerald-800 shadow-lg backdrop-blur-md transition hover:bg-white dark:border-white/10 dark:bg-white/10 dark:text-emerald-100">Contenido visual</button>
-      </div>
       {/* =====================================================
           FONDO SUTIL — conserva la fotografía del proyecto,
           pero deja de dominar el dashboard.
@@ -208,21 +248,21 @@ export default function DashboardSuper_admin({
         aria-label={sidebarAbierto ? 'Menú lateral. Haz clic en el panel para contraerlo.' : 'Menú lateral. Haz clic para expandirlo.'}
         className={`
           fixed left-3 top-3 z-50
-          hidden h-[calc(100dvh-1.5rem)] max-h-[calc(100dvh-1.5rem)] flex-col
+          hidden h-[calc(100dvh-1.5rem)] max-h-[calc(100dvh-1.5rem)] min-h-0 flex-col overflow-hidden
           cursor-pointer rounded-[2rem] border border-white/55
           bg-white/42 shadow-[0_24px_70px_rgba(11,58,39,0.14)]
           backdrop-blur-[28px] transition-[width] duration-500 ease-[cubic-bezier(.22,1,.36,1)]
           dark:border-white/[0.10] dark:bg-[#0d2b20]/48
           lg:flex lg:left-5 lg:top-5 lg:h-[calc(100dvh-2.5rem)]
           xl:left-6 xl:top-6 xl:h-[calc(100dvh-3rem)]
-          ${sidebarAbierto ? 'w-[220px] lg:w-[clamp(228px,16vw,280px)]' : 'w-[72px] lg:w-[clamp(74px,5vw,84px)]'}
+          ${sidebarAbierto ? 'w-[240px] lg:w-[clamp(248px,18vw,300px)]' : 'w-[72px] lg:w-[clamp(74px,5vw,84px)]'}
         `}
       >
         {/* borde luminoso */}
         <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[#00AEEF]/50 to-transparent" />
 
         {/* LOGO */}
-        <div className="flex items-center justify-center px-3 pt-5">
+        <div className="shrink-0 px-3 pt-4 sm:pt-5">
           <Link
             to="/"
             onClick={(event) => event.stopPropagation()}
@@ -233,13 +273,13 @@ export default function DashboardSuper_admin({
             <img
               src={logo}
               alt="Aliados del Parque Nacional Diriá"
-              className="h-[82px] w-[82px] object-contain transition-transform duration-300 group-hover:-translate-y-0.5 dark:brightness-0 dark:invert"
+              className={`${sidebarAbierto ? 'h-[72px] w-[72px] xl:h-[82px] xl:w-[82px]' : 'h-11 w-11 xl:h-12 xl:w-12'} object-contain transition-transform duration-300 group-hover:-translate-y-0.5 dark:brightness-0 dark:invert`}
             />
           </Link>
         </div>
 
         {/* MARCA / ESTADO VISUAL */}
-        <div className={`${sidebarAbierto ? 'px-5' : 'px-3'} mt-7`}>
+        <div className={`${sidebarAbierto ? 'px-5' : 'px-3'} mt-4 shrink-0 xl:mt-6`}>
           <div
             className={`
               relative overflow-hidden rounded-2xl border
@@ -247,8 +287,9 @@ export default function DashboardSuper_admin({
               shadow-[0_10px_30px_rgba(11,58,39,0.06)]
               transition-all duration-500 dark:border-white/[0.12]
               dark:bg-[#16372b]/78 dark:shadow-[0_14px_34px_rgba(0,0,0,0.24)]
-              ${sidebarAbierto ? 'p-4' : 'p-2.5'}
+              ${sidebarAbierto ? 'p-3.5 xl:p-4' : 'p-2.5'}
             `}
+            title={!sidebarAbierto ? 'Estado: Super admin' : undefined}
           >
             <span
               className="
@@ -274,7 +315,7 @@ export default function DashboardSuper_admin({
 
         {/* NAVEGACIÓN */}
         <nav
-          className={`${sidebarAbierto ? 'px-4' : 'px-3'} mt-7 flex flex-1 flex-col gap-2`}
+          className={`${sidebarAbierto ? 'px-4' : 'px-3'} mt-4 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain pb-3 pr-1 [scrollbar-color:rgba(11,104,73,0.32)_transparent] [scrollbar-width:thin] xl:mt-6`}
           aria-label="Navegación administrativa"
         >
           <Link
@@ -372,9 +413,84 @@ export default function DashboardSuper_admin({
             )}
           </button>
 
-          {/* separador */}
-          <div className="mx-3 mb-3 mt-auto h-px bg-black/[0.06] dark:bg-white/[0.06]" />
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onIrComunicados();
+            }}
+            title={!sidebarAbierto ? 'Comunicados' : undefined}
+            className={`
+              group flex w-full items-center rounded-2xl py-3
+              text-[#718078] transition-all duration-300
+              hover:bg-white hover:text-[#0b6849]
+              dark:text-[#a7bdb1] dark:hover:bg-white/[0.06] dark:hover:text-white
+              ${sidebarAbierto ? 'gap-3 px-3' : 'justify-center px-2'}
+            `}
+          >
+            <span className="transition-transform duration-300 group-hover:-translate-y-0.5">
+              <IconoComunicados />
+            </span>
+            {sidebarAbierto && (
+              <span className="font-brand text-sm font-semibold">
+                Comunicados
+              </span>
+            )}
+          </button>
 
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              setVistaPreguntasFrecuentes(true);
+            }}
+            title={!sidebarAbierto ? 'Preguntas frecuentes' : undefined}
+            className={`
+              group flex w-full items-center rounded-2xl py-3
+              text-[#718078] transition-all duration-300
+              hover:bg-white hover:text-[#0b6849]
+              dark:text-[#a7bdb1] dark:hover:bg-white/[0.06] dark:hover:text-white
+              ${sidebarAbierto ? 'gap-2.5 px-3' : 'justify-center px-2'}
+            `}
+          >
+            <span className="shrink-0 transition-transform duration-300 group-hover:-translate-y-0.5">
+              <IconoPreguntasFrecuentes />
+            </span>
+            {sidebarAbierto && (
+              <span className="min-w-0 whitespace-nowrap font-brand text-sm font-semibold">
+                Preguntas frecuentes
+              </span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              setVistaContenidoVisual(true);
+            }}
+            title={!sidebarAbierto ? 'Contenido visual' : undefined}
+            className={`
+              group flex w-full items-center rounded-2xl py-3
+              text-[#718078] transition-all duration-300
+              hover:bg-white hover:text-[#0b6849]
+              dark:text-[#a7bdb1] dark:hover:bg-white/[0.06] dark:hover:text-white
+              ${sidebarAbierto ? 'gap-3 px-3' : 'justify-center px-2'}
+            `}
+          >
+            <span className="transition-transform duration-300 group-hover:-translate-y-0.5">
+              <IconoContenidoVisual />
+            </span>
+            {sidebarAbierto && (
+              <span className="font-brand text-sm font-semibold">
+                Contenido visual
+              </span>
+            )}
+          </button>
+        </nav>
+
+        {/* PIE DE SIDEBAR */}
+        <div className={`${sidebarAbierto ? 'px-5' : 'px-3'} shrink-0 border-t border-black/[0.06] pb-4 pt-3 dark:border-white/[0.07] xl:pb-5 xl:pt-4`}>
           <button
             type="button"
             onClick={(event) => {
@@ -383,7 +499,7 @@ export default function DashboardSuper_admin({
             }}
             title={!sidebarAbierto ? 'Cerrar sesión' : undefined}
             className={`
-              group flex w-full items-center rounded-2xl py-3
+              group mb-3 flex w-full items-center rounded-2xl py-3
               text-[#877870] transition-all duration-300
               hover:bg-red-50 hover:text-red-600
               dark:text-[#c6aaa1] dark:hover:bg-red-950/30 dark:hover:text-red-300
@@ -399,54 +515,51 @@ export default function DashboardSuper_admin({
               </span>
             )}
           </button>
-        </nav>
 
-        {/* PIE DE SIDEBAR */}
-<div className={`${sidebarAbierto ? 'px-5' : 'px-3'} pb-5 pt-4`}>
-  <div className="rounded-2xl border border-white/55 bg-white/24 p-3 backdrop-blur-xl dark:border-white/[0.06] dark:bg-white/[0.025]">
-    <div
-      className={`flex items-center ${
-        sidebarAbierto ? 'justify-between' : 'justify-center'
-      }`}
-    >
-      {sidebarAbierto ? (
-        <span className="font-brand text-[9px] font-bold uppercase tracking-[0.16em] text-[#829188] dark:text-[#a9beb2]">
-          Control del sistema
-        </span>
-      ) : (
-        <span
-          className="flex h-8 w-8 items-center justify-center text-[#829188] dark:text-[#a9beb2]"
-          title="Control del sistema"
-          aria-label="Control del sistema"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            className="h-[20px] w-[20px]"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M4 7h16" />
-            <circle cx="9" cy="7" r="2" fill="currentColor" stroke="none" />
+          <div className="rounded-2xl border border-white/55 bg-white/24 p-3 backdrop-blur-xl dark:border-white/[0.06] dark:bg-white/[0.025]">
+            <div
+              className={`flex items-center ${
+                sidebarAbierto ? 'justify-between' : 'justify-center'
+              }`}
+            >
+              {sidebarAbierto ? (
+                <span className="font-brand text-[9px] font-bold uppercase tracking-[0.16em] text-[#829188] dark:text-[#a9beb2]">
+                  Control del sistema
+                </span>
+              ) : (
+                <span
+                  className="flex h-8 w-8 items-center justify-center text-[#829188] dark:text-[#a9beb2]"
+                  title="Control del sistema"
+                  aria-label="Control del sistema"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-[20px] w-[20px]"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M4 7h16" />
+                    <circle cx="9" cy="7" r="2" fill="currentColor" stroke="none" />
 
-            <path d="M4 12h16" />
-            <circle cx="15" cy="12" r="2" fill="currentColor" stroke="none" />
+                    <path d="M4 12h16" />
+                    <circle cx="15" cy="12" r="2" fill="currentColor" stroke="none" />
 
-            <path d="M4 17h16" />
-            <circle cx="11" cy="17" r="2" fill="currentColor" stroke="none" />
-          </svg>
-        </span>
-      )}
+                    <path d="M4 17h16" />
+                    <circle cx="11" cy="17" r="2" fill="currentColor" stroke="none" />
+                  </svg>
+                </span>
+              )}
 
-      {sidebarAbierto && (
-        <span className="h-1.5 w-1.5 rounded-full bg-[#00AEEF]" />
-      )}
-    </div>
-  </div>
-</div>
+              {sidebarAbierto && (
+                <span className="h-1.5 w-1.5 rounded-full bg-[#00AEEF]" />
+              )}
+            </div>
+          </div>
+        </div>
       </aside>
 
       {/* =====================================================
@@ -481,8 +594,8 @@ export default function DashboardSuper_admin({
       </div>
 
       {menuMovilAbierto && (
-        <div className="fixed inset-3 z-[60] flex flex-col overflow-y-auto rounded-[1.8rem] border border-white/60 bg-white/55 p-4 shadow-[0_30px_90px_rgba(11,58,39,0.18)] backdrop-blur-[30px] lg:hidden dark:border-white/[0.10] dark:bg-[#0d2b20]/72">
-          <div className="flex items-center justify-between border-b border-black/[0.06] pb-4 dark:border-white/[0.07]">
+        <div className="fixed inset-x-3 bottom-3 top-3 z-[60] flex min-h-0 flex-col overflow-hidden rounded-[1.8rem] border border-white/60 bg-white/55 p-4 shadow-[0_30px_90px_rgba(11,58,39,0.18)] backdrop-blur-[30px] lg:hidden dark:border-white/[0.10] dark:bg-[#0d2b20]/72">
+          <div className="flex shrink-0 items-center justify-between border-b border-black/[0.06] pb-4 dark:border-white/[0.07]">
             <div className="flex min-w-0 items-center gap-3">
               <img
                 src={logo}
@@ -509,7 +622,7 @@ export default function DashboardSuper_admin({
             </button>
           </div>
 
-          <nav className="mt-4 flex flex-col gap-2" aria-label="Navegación móvil administrativa">
+          <nav className="mt-4 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain pr-1 [scrollbar-color:rgba(11,104,73,0.32)_transparent] [scrollbar-width:thin]" aria-label="Navegación móvil administrativa">
             <Link
               to="/"
               onClick={() => setMenuMovilAbierto(false)}
@@ -551,9 +664,45 @@ export default function DashboardSuper_admin({
               <IconoCuentas />
               Cuentas bloqueadas
             </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setMenuMovilAbierto(false);
+                onIrComunicados();
+              }}
+              className="flex min-h-11 items-center gap-3 rounded-2xl bg-white/60 px-4 py-3 text-left font-brand text-sm font-semibold text-[#21473a] transition-colors hover:bg-white dark:bg-white/[0.05] dark:text-[#e4f3ea] dark:hover:bg-white/[0.08]"
+            >
+              <IconoComunicados />
+              Comunicados
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setMenuMovilAbierto(false);
+                setVistaPreguntasFrecuentes(true);
+              }}
+              className="flex min-h-11 items-center gap-3 rounded-2xl bg-white/60 px-4 py-3 text-left font-brand text-sm font-semibold text-[#21473a] transition-colors hover:bg-white dark:bg-white/[0.05] dark:text-[#e4f3ea] dark:hover:bg-white/[0.08]"
+            >
+              <IconoPreguntasFrecuentes />
+              Preguntas frecuentes
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setMenuMovilAbierto(false);
+                setVistaContenidoVisual(true);
+              }}
+              className="flex min-h-11 items-center gap-3 rounded-2xl bg-white/60 px-4 py-3 text-left font-brand text-sm font-semibold text-[#21473a] transition-colors hover:bg-white dark:bg-white/[0.05] dark:text-[#e4f3ea] dark:hover:bg-white/[0.08]"
+            >
+              <IconoContenidoVisual />
+              Contenido visual
+            </button>
           </nav>
 
-          <div className="mt-auto border-t border-black/[0.06] pt-4 dark:border-white/[0.07]">
+          <div className="shrink-0 border-t border-black/[0.06] pt-4 dark:border-white/[0.07]">
             <button
               type="button"
               onClick={() => {

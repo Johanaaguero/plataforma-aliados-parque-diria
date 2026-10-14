@@ -1,19 +1,30 @@
 import { Request, Response } from 'express';
-import { obtenerBitacora } from './bitacora.service';
+import {
+  BitacoraValidationError,
+  normalizarFiltrosBitacora,
+  obtenerBitacora,
+} from './bitacora.service';
 
 export const getBitacora = async (
-  _req: Request,
+  req: Request,
   res: Response,
 ) => {
   try {
-    const bitacora = await obtenerBitacora();
+    const filtros = normalizarFiltrosBitacora(req.query);
+    const bitacora = await obtenerBitacora(filtros);
 
     return res.status(200).json(bitacora);
   } catch (error) {
-    console.error('Error al obtener la bitácora:', error);
+    if (error instanceof BitacoraValidationError) {
+      return res.status(400).json({
+        message: error.message,
+      });
+    }
+
+    console.error('Error al obtener la bitacora:', error);
 
     return res.status(500).json({
-      message: 'No se pudo obtener la bitácora.',
+      message: 'No se pudo obtener la bitacora.',
     });
   }
 };

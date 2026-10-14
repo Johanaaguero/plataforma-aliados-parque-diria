@@ -27,14 +27,18 @@ export const loginUser = async ({
   const usuarioRepo = AppDataSource.getRepository(Usuario);
   const attemptRepo = AppDataSource.getRepository(LoginAttempt);
   const intentoAccesoRepo = AppDataSource.getRepository(IntentoAcceso);
+  const identificadorNormalizado = identificador.trim().toLowerCase();
 
-  const usuario = await usuarioRepo.findOne({
-    where: [
-      { correo: identificador },
-      { nombreUsuario: identificador },
-    ],
-    relations: { rol: true },
-  });
+  const usuario = await usuarioRepo
+    .createQueryBuilder('usuario')
+    .leftJoinAndSelect('usuario.rol', 'rol')
+    .where('LOWER(usuario.correo) = :identificador', {
+      identificador: identificadorNormalizado,
+    })
+    .orWhere('LOWER(usuario.nombreUsuario) = :identificador', {
+      identificador: identificadorNormalizado,
+    })
+    .getOne();
 
   
   // USUARIO NO ENCONTRADO
@@ -43,7 +47,7 @@ export const loginUser = async ({
     // Registrar en intentos_acceso
     await intentoAccesoRepo.save({
       usuarioId: null,
-      correo: identificador,
+      correo: identificadorNormalizado,
       exitoso: false,
       motivo: 'Usuario no encontrado',
       ip: ipAddress || null,

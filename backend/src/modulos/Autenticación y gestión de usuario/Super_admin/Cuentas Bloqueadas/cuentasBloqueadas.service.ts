@@ -11,6 +11,8 @@ interface UnlockAccountInput {
 }
 
 export const getBlockedAccounts = async () => {
+  const ahora = new Date();
+
   const intentos = await AppDataSource.getRepository(LoginAttempt)
     .createQueryBuilder('loginAttempt')
     .innerJoinAndSelect('loginAttempt.usuario', 'usuario')
@@ -23,7 +25,7 @@ export const getBlockedAccounts = async () => {
       'usuario.nombreUsuario',
       'usuario.correo',
     ])
-    .where('loginAttempt.bloqueadoHasta > NOW()')
+    .where('loginAttempt.bloqueadoHasta > :ahora', { ahora })
     .orderBy('loginAttempt.bloqueadoHasta', 'ASC')
     .getMany();
 
