@@ -27,6 +27,7 @@ interface NavbarProps {
   onBitacora?: () => void;
   onIrInicio: () => void;
   onIrEmprendimientos: () => void;
+    onIrMisEmprendimientos?: () => void;   // nueva
   onIrEventos: () => void;
   onRegistrarIncidencia?: () => void;
   seccionActiva?: 'inicio' | 'emprendimientos' | 'eventos' | 'incidencias';
@@ -44,6 +45,8 @@ function Navbar({
   onBitacora: _onBitacora,
   onIrInicio,
   onIrEmprendimientos,
+    onIrMisEmprendimientos,   // nueva
+
   onIrEventos,
   onRegistrarIncidencia,
   seccionActiva = 'inicio',
@@ -185,10 +188,11 @@ function Navbar({
     navigate('/mis-incidencias');
   };
 
-  const irMisEmprendimientos = () => {
-    setMenuUsuarioAbierto(false);
-    onIrEmprendimientos();
-  };
+ const irMisEmprendimientos = () => {
+  setMenuAbierto(false);
+  setMenuUsuarioAbierto(false);
+  (onIrMisEmprendimientos ?? onIrEmprendimientos)();
+};
 
   const irNotificaciones = () => {
     setMenuAbierto(false);

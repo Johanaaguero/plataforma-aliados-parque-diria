@@ -23,7 +23,9 @@ interface Props {
   onRegistrarCategoria?: () => void;
   onEditar?: (emprendimiento: Emprendimiento) => void;
   contexto?: 'publico' | 'administrativo';
+  soloMios?: boolean;
 }
+
 
 interface MensajeAccion {
   tipo: 'exito' | 'error';
@@ -97,7 +99,46 @@ const obtenerUbicacion = (
 
   return null;
 };
+interface DatosPropietario {
+  nombre?: string | null;
+  nombreUsuario?: string | null;
+  rol?: string | null;
+}
 
+const obtenerPropietario = (
+  emprendimiento: Emprendimiento,
+): { nombre: string; rol: string | null } | null => {
+  const datos = emprendimiento as unknown as {
+    asociado?: DatosPropietario | null;
+    propietario?: DatosPropietario | null;
+    usuario?: DatosPropietario | null;
+    creadoPor?: DatosPropietario | null;
+    asociadoId?: number | null;
+  };
+
+  const origen =
+    datos.asociado ??
+    datos.propietario ??
+    datos.usuario ??
+    datos.creadoPor ??
+    null;
+
+  const nombre =
+    origen?.nombre?.trim() ||
+    origen?.nombreUsuario?.trim() ||
+    (datos.asociadoId ? `Usuario #${datos.asociadoId}` : '');
+
+  if (!nombre) return null;
+
+  const rol =
+    origen?.rol === 'administrador'
+      ? 'Administrador'
+      : origen?.rol === 'asociado'
+        ? 'Asociado'
+        : null;
+
+  return { nombre, rol };
+};
 const abrirWhatsApp = (telefono: string) => {
   const numero = telefono.replace(/\D/g, '');
 
@@ -156,6 +197,7 @@ function ListaEmprendimientos({
   onRegistrarCategoria,
   onEditar,
   contexto = 'publico',
+  soloMios = false,
 }: Props) {
   const [emprendimientos, setEmprendimientos] = useState<Emprendimiento[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -190,19 +232,24 @@ function ListaEmprendimientos({
   const [errorEliminacion, setErrorEliminacion] = useState<string | null>(null);
 
   const esContextoAdministrativo = contexto === 'administrativo';
-  const esAdministrador =
-    esContextoAdministrativo && rolAutenticado === 'administrador';
-  const esAsociado = rolAutenticado === 'asociado';
-  const esGestionAdministrativa = esContextoAdministrativo || esAdministrador || esAsociado;
-  const esCatalogoPublico = !esGestionAdministrativa;
-  const puedeRegistrar = esAdministrador || esAsociado;
+const esAdministrador =
+  esContextoAdministrativo && rolAutenticado === 'administrador';
+const esAsociado = rolAutenticado === 'asociado';
 
-  const esPropietario = (emprendimiento: Emprendimiento) =>
-    esAsociado && usuarioId !== null && emprendimiento.asociadoId === usuarioId;
+const puedeVerPropietario = esAdministrador;
+// El asociado solo entra a gestión cuando está en "Mis emprendimientos"
+const verSoloMios = esAsociado && soloMios;
 
-  const puedeEditarEmprendimiento = (emprendimiento: Emprendimiento) =>
-    esAdministrador || esPropietario(emprendimiento);
+const esGestionAdministrativa =
+  esContextoAdministrativo || esAdministrador || verSoloMios;
+const esCatalogoPublico = !esGestionAdministrativa;
+const puedeRegistrar = esAdministrador || verSoloMios;
 
+const esPropietario = (emprendimiento: Emprendimiento) =>
+  esAsociado && usuarioId !== null && emprendimiento.asociadoId === usuarioId;
+
+const puedeEditarEmprendimiento = (emprendimiento: Emprendimiento) =>
+  esAdministrador || (verSoloMios && esPropietario(emprendimiento));
   const abrirDetalle = async (emprendimiento: Emprendimiento) => {
     if (detalleEnCargaRef.current === emprendimiento.id) {
       return;
@@ -275,14 +322,20 @@ function ListaEmprendimientos({
 
         let data: Emprendimiento[];
 
-        if (esGestionAdministrativa) {
-          data = await obtenerEmprendimientosAdministrativos(
-            undefined,
-            controlador.signal,
-          );
-        } else {
-          data = await obtenerCatalogoPublicado(controlador.signal);
-        }
+      if (esGestionAdministrativa) {
+  data = await obtenerEmprendimientosAdministrativos(
+    undefined,
+    controlador.signal,
+  );
+
+  if (verSoloMios) {
+    data = data.filter(
+      (emprendimiento) => emprendimiento.asociadoId === usuarioId,
+    );
+  }
+} else {
+  data = await obtenerCatalogoPublicado(controlador.signal);
+}
 
         if (componenteActivo && !controlador.signal.aborted) {
           setEmprendimientos(data);
@@ -308,7 +361,7 @@ function ListaEmprendimientos({
       componenteActivo = false;
       controlador?.abort();
     };
-  }, [esGestionAdministrativa, rolAutenticado]);
+}, [esGestionAdministrativa, rolAutenticado, verSoloMios, usuarioId]);
 
   const abrirConfirmacion = (
     emprendimiento: Emprendimiento,
@@ -1177,8 +1230,8 @@ useEffect(() => {
           {/* =========================
               CONTENIDO
           ========================== */}
-          <div className="flex flex-1 flex-col p-4">
-            {/* Título */}
+<div className="flex flex-col p-4">
+              {/* Título */}
             <div className="min-h-0">
               <h2 className="line-clamp-2 text-lg font-extrabold tracking-tight text-stone-900 motion-safe:transition-colors group-hover:text-emerald-900">
                 {emprendimiento.nombre}
@@ -1283,6 +1336,7 @@ useEffect(() => {
                         d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"
                       />
                     </svg>
+              
                   </div>
 
                   <div className="min-w-0">
@@ -1295,7 +1349,44 @@ useEffect(() => {
                     </p>
                   </div>
                 </div>
+                
               )}
+              {puedeVerPropietario && (() => {
+  const propietario = obtenerPropietario(emprendimiento);
+  if (!propietario) return null;
+
+  return (
+    <div className="col-span-2 flex items-center gap-3">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
+        <svg
+          className="h-4 w-4"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth="1.8"
+          stroke="currentColor"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="8" r="4" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4 21c0-4 4-6 8-6s8 2 8 6" />
+        </svg>
+      </div>
+
+      <div className="min-w-0">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+          Registrado por
+        </p>
+        <p className="mt-0.5 truncate text-xs font-semibold text-slate-700">
+          {propietario.nombre}
+          {propietario.rol && (
+            <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
+              {propietario.rol}
+            </span>
+          )}
+        </p>
+      </div>
+    </div>
+  );
+})()}
             </div>
           </div>
 
@@ -1327,27 +1418,44 @@ useEffect(() => {
     </div>
 
     <div>
-      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-        Ubicación en el mapa
-      </p>
+    
+<p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-400">
+  Ubicación en el mapa
+</p>
 
-      <p className="text-xs font-semibold text-slate-700">
-        {emprendimiento.nombre}
-      </p>
+<p className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+  Ver mapa en el detalle
+</p>
+
     </div>
   </div>
 
-  <div className="relative flex h-20 items-center justify-center overflow-hidden rounded-2xl border border-emerald-900/10 bg-[linear-gradient(135deg,rgba(236,253,245,0.95),rgba(209,250,229,0.72))] shadow-inner">
-    <div className="absolute inset-0 opacity-40 [background-image:linear-gradient(rgba(5,150,105,.18)_1px,transparent_1px),linear-gradient(90deg,rgba(5,150,105,.18)_1px,transparent_1px)] [background-size:18px_18px]" aria-hidden="true" />
-    <span className="relative inline-flex items-center gap-2 rounded-full border border-emerald-700/15 bg-white/75 px-3 py-1.5 text-xs font-bold text-emerald-900 backdrop-blur-sm">
-      <svg className="h-4 w-4 text-emerald-700" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" aria-hidden="true">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 21s7.5-5.646 7.5-12a7.5 7.5 0 1 0-15 0c0 6.354 7.5 12 7.5 12Z" />
-        <circle cx="12" cy="9" r="2.25" />
-      </svg>
-      Ver mapa en el detalle
-    </span>
-  </div>
+<div className="relative flex h-20 items-center justify-center overflow-hidden rounded-2xl border border-emerald-900/10 bg-[linear-gradient(135deg,rgba(236,253,245,0.95),rgba(209,250,229,0.72))] shadow-inner dark:border-emerald-300/15 dark:bg-[linear-gradient(135deg,rgba(6,45,35,0.98),rgba(8,70,52,0.95))]">
+  <div
+    className="absolute inset-0 opacity-40 dark:opacity-30 [background-image:linear-gradient(rgba(5,150,105,.18)_1px,transparent_1px),linear-gradient(90deg,rgba(5,150,105,.18)_1px,transparent_1px)] dark:[background-image:linear-gradient(rgba(110,231,183,.15)_1px,transparent_1px),linear-gradient(90deg,rgba(110,231,183,.15)_1px,transparent_1px)] [background-size:18px_18px]"
+    aria-hidden="true"
+  />
+
+  <span className="relative inline-flex items-center gap-2 rounded-full border border-emerald-700/15 bg-white/75 px-3 py-1.5 text-xs font-bold text-emerald-900 backdrop-blur-sm dark:border-emerald-300/20 dark:bg-emerald-950/90 dark:text-emerald-100">
+    <svg
+      className="h-4 w-4 text-emerald-700 dark:text-emerald-300"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth="2"
+      stroke="currentColor"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M12 21s7.5-5.646 7.5-12a7.5 7.5 0 1 0-15 0c0 6.354 7.5 12 7.5 12Z"
+      />
+      <circle cx="12" cy="9" r="2.25" />
+    </svg>
+    Ver mapa en el detalle
+  </span>
 </div>
+</div> {/* Cierre del contenedor MAPA DE UBICACIÓN */}
 
 
 
@@ -1357,8 +1465,7 @@ useEffect(() => {
               ACCIONES
           ========================== */}
           {(esAdministrador || (puedeEditar && onEditar)) && (
-            <div className="border-t border-slate-100 bg-slate-50/70 p-4">
-              {esAdministrador && (
+<div className="mt-auto border-t border-slate-100 bg-slate-50/70 p-4">              {esAdministrador && (
                 <div className="space-y-2.5">
                   {transicionesDisponibles.map((transicion) => {
                     const esEstaTransicionProcesando =
@@ -1626,7 +1733,11 @@ useEffect(() => {
           const ubicacionDetalle = obtenerUbicacion(detalleSeleccionado);
           return (
             <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#052f25]/70 p-4 backdrop-blur-sm sm:p-6" role="dialog" aria-modal="true" aria-labelledby="titulo-detalle-emprendimiento" onClick={() => setDetalleSeleccionado(null)}>
-              <div className="custom-scrollbar my-auto max-h-[85vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-white/60 bg-[#fffef9]/95 p-6 pr-4 shadow-[0_24px_70px_rgba(5,47,37,0.3)] backdrop-blur-xl sm:p-8" onClick={(event) => event.stopPropagation()}>
+
+<div
+  className="custom-scrollbar my-auto max-h-[85vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-white/60 bg-[#fffef9]/95 p-6 pr-4 text-slate-800 shadow-[0_24px_70px_rgba(5,47,37,0.3)] backdrop-blur-xl sm:p-8 dark:border-white/10 dark:bg-slate-950/95 dark:text-slate-100"
+  onClick={(event) => event.stopPropagation()}
+>
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#009444]">Detalle del emprendimiento</p>
@@ -1677,6 +1788,20 @@ useEffect(() => {
     </span>
   </button>
 )}                  {detalleSeleccionado.correoElectronico && <p className="text-sm text-slate-700"><strong className="block text-xs uppercase tracking-wider text-slate-400">Correo</strong>{detalleSeleccionado.correoElectronico}</p>}
+{puedeVerPropietario && (() => {
+  const propietario = obtenerPropietario(detalleSeleccionado);
+  if (!propietario) return null;
+
+  return (
+    <p className="text-sm text-slate-700">
+      <strong className="block text-xs uppercase tracking-wider text-slate-400">
+        Registrado por
+      </strong>
+      {propietario.nombre}
+      {propietario.rol ? ` (${propietario.rol})` : ''}
+    </p>
+  );
+})()}
                   </div>
                 </div>
               </div>

@@ -23,7 +23,7 @@ const translations = {
     'nav.controlPanel': 'Panel de control',
     'nav.myBookings': 'Mis reservas',
     'nav.myIncidents': 'Mis incidencias',
-    'nav.myEvents': 'Mis eventos y capacitaciones',
+    'nav.myEvents': 'Mis reservas',
     'nav.myBusinesses': 'Mis emprendimientos',
     'nav.language': 'Idioma',
     'hero.title': 'Uniendo la Conservación, la Comunidad',

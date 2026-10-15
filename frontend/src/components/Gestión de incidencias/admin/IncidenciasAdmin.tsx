@@ -1341,34 +1341,7 @@ export default function IncidenciasAdmin({
                   }
                 />
 
-                <OpcionCanal
-               titulo="Notificación por correo"
-
-descripcion="Se enviará un correo a las personas usuarias registradas para informarles y advertirles sobre la incidencia."
-                  marcado={canalCorreo}
-                  deshabilitado={
-                    !modalTieneCorreo ||
-                    compartiendo
-                  }
-                  nota={
-                    !modalTieneCorreo
-                      ? 'No disponible: reporte anónimo o sin correo registrado.'
-                      : undefined
-                  }
-                  onChange={setCanalCorreo}
-                  icono={
-                    <Icon className="h-4 w-4">
-                      <rect
-                        x="3"
-                        y="5"
-                        width="18"
-                        height="14"
-                        rx="2"
-                      />
-                      <path d="m3 7 9 6 9-6" />
-                    </Icon>
-                  }
-                />
+                
 
               </div>
 
