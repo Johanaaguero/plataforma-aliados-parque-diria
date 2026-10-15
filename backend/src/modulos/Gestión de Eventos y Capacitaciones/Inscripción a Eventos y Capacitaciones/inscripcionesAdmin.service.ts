@@ -1,3 +1,4 @@
+
 import { AppDataSource } from '../../../data-source';
 
 import {
@@ -5,12 +6,15 @@ import {
   Participantes,
 } from '../../../models/Participantes';
 
+import { generarNumeroTicket } from './inscripcion.service';
+
 import {
   Reserva,
   EstadoReserva,
 } from '../../../models/Reserva';
 
 import { EventosCapacitaciones } from '../../../models/EventosCapacitaciones';
+
 import {
   serializarFechaCalendario,
   serializarFechaUtc,
@@ -42,138 +46,138 @@ export interface InscripcionAdministrativaDTO {
   numeroTicket?: string | null;
 }
 
-export const listarInscripcionesAdministrativas = async (): Promise<
-  InscripcionAdministrativaDTO[]
-> => {
-  const registros = await AppDataSource.getRepository(Participantes)
-    .createQueryBuilder('participante')
-    .innerJoinAndSelect('participante.usuario', 'usuario')
-    .innerJoinAndSelect(
-      'participante.eventoCapacitacion',
-      'evento',
-    )
-    .select([
-      'participante.id AS id',
-      'participante.usuarioId AS usuarioId',
-      'usuario.nombreUsuario AS nombreUsuario',
-      'usuario.correo AS correo',
-      'usuario.nombre AS nombre',
-      'usuario.apellidos AS apellidos',
-      'participante.eventoCapacitacionId AS eventoCapacitacionId',
-      'evento.nombre AS nombreActividad',
-      'evento.tipoActividad AS tipoActividad',
-      'evento.esPago AS esPago',
-      "DATE_FORMAT(evento.fecha, '%Y-%m-%d') AS fechaActividad",
-      'participante.createdAt AS fechaInscripcion',
-      'participante.numeroTicket AS numeroTicket',
-    ])
-    .orderBy('participante.createdAt', 'DESC')
-    .getRawMany();
+export const listarInscripcionesAdministrativas =
+  async (): Promise<InscripcionAdministrativaDTO[]> => {
+    const registros = await AppDataSource
+      .getRepository(Participantes)
+      .createQueryBuilder('participante')
+      .innerJoinAndSelect('participante.usuario', 'usuario')
+      .innerJoinAndSelect(
+        'participante.eventoCapacitacion',
+        'evento',
+      )
+      .select([
+        'participante.id AS id',
+        'participante.usuarioId AS usuarioId',
+        'usuario.nombreUsuario AS nombreUsuario',
+        'usuario.correo AS correo',
+        'usuario.nombre AS nombre',
+        'usuario.apellidos AS apellidos',
+        'participante.eventoCapacitacionId AS eventoCapacitacionId',
+        'evento.nombre AS nombreActividad',
+        'evento.tipoActividad AS tipoActividad',
+        'evento.esPago AS esPago',
+        "DATE_FORMAT(evento.fecha, '%Y-%m-%d') AS fechaActividad",
+        'participante.createdAt AS fechaInscripcion',
+        'participante.numeroTicket AS numeroTicket',
+      ])
+      .orderBy('participante.createdAt', 'DESC')
+      .getRawMany();
 
-  const participantes = registros.map((registro) => {
-    const nombreCompleto =
-      `${registro.nombre ?? ''} ${registro.apellidos ?? ''}`.trim();
+    const participantes: InscripcionAdministrativaDTO[] =
+      registros.map((registro) => {
+        const nombreCompleto =
+          `${registro.nombre ?? ''} ${registro.apellidos ?? ''}`.trim();
 
-    return {
-      id: Number(registro.id),
-      usuarioId: Number(registro.usuarioId),
-      nombreUsuario: registro.nombreUsuario,
-      correo: registro.correo,
-      nombreCompleto,
-      fechaNacimiento: null,
-      tipoIdentificacion: null,
-      numeroIdentificacion: null,
-      telefono: null,
-      eventoCapacitacionId: Number(
-        registro.eventoCapacitacionId,
-      ),
-      nombreActividad: registro.nombreActividad,
-      tipoActividad: registro.tipoActividad,
-      fechaActividad: serializarFechaCalendario(
-        registro.fechaActividad,
-      ),
-      fechaInscripcion: serializarFechaUtc(
-        registro.fechaInscripcion,
-      ),
-      estado: 'confirmada',
-      origen: 'participante' as const,
-      esPago: Boolean(registro.esPago),
-      comprobanteUrl: null,
-      numeroTicket: registro.numeroTicket ?? null,
-    };
-  });
+        return {
+          id: Number(registro.id),
+          usuarioId: Number(registro.usuarioId),
+          nombreUsuario: registro.nombreUsuario,
+          correo: registro.correo,
+          nombreCompleto,
+          fechaNacimiento: null,
+          tipoIdentificacion: null,
+          numeroIdentificacion: null,
+          telefono: null,
+          eventoCapacitacionId: Number(
+            registro.eventoCapacitacionId,
+          ),
+          nombreActividad: registro.nombreActividad,
+          tipoActividad: registro.tipoActividad,
+          fechaActividad: serializarFechaCalendario(
+            registro.fechaActividad,
+          ),
+          fechaInscripcion: serializarFechaUtc(
+            registro.fechaInscripcion,
+          ),
+          estado: 'confirmada',
+          origen: 'participante',
+          esPago: Boolean(registro.esPago),
+          comprobanteUrl: null,
+          numeroTicket: registro.numeroTicket ?? null,
+        };
+      });
 
-  const reservas = await AppDataSource.getRepository(Reserva)
-    .createQueryBuilder('reserva')
-    .innerJoinAndSelect('reserva.usuario', 'usuario')
-    .innerJoinAndSelect(
-      'reserva.eventoCapacitacion',
-      'evento',
-    )
-    .select([
-      'reserva.id AS id',
-      'reserva.usuarioId AS usuarioId',
-      'usuario.nombreUsuario AS nombreUsuario',
-      'reserva.correo AS correo',
-      'reserva.nombreCompleto AS nombreCompleto',
-      'reserva.fechaNacimiento AS fechaNacimiento',
-      'reserva.tipoIdentificacion AS tipoIdentificacion',
-      'reserva.numeroIdentificacion AS numeroIdentificacion',
-      'reserva.telefono AS telefono',
-      'reserva.eventoCapacitacionId AS eventoCapacitacionId',
-      'evento.nombre AS nombreActividad',
-      'evento.tipoActividad AS tipoActividad',
-      'evento.esPago AS esPago',
-      'reserva.comprobanteUrl AS comprobanteUrl',
-      'reserva.motivoRechazo AS motivoRechazo',
-      "DATE_FORMAT(evento.fecha, '%Y-%m-%d') AS fechaActividad",
-      'reserva.createdAt AS fechaInscripcion',
-      'reserva.estado AS estado',
-      'reserva.numeroTicket AS numeroTicket',
-    ])
-    .orderBy('reserva.createdAt', 'DESC')
-    .getRawMany();
+    const reservas = await AppDataSource
+      .getRepository(Reserva)
+      .createQueryBuilder('reserva')
+      .innerJoinAndSelect('reserva.usuario', 'usuario')
+      .innerJoinAndSelect(
+        'reserva.eventoCapacitacion',
+        'evento',
+      )
+      .select([
+        'reserva.id AS id',
+        'reserva.usuarioId AS usuarioId',
+        'usuario.nombreUsuario AS nombreUsuario',
+        'reserva.correo AS correo',
+        'reserva.nombreCompleto AS nombreCompleto',
+        'reserva.fechaNacimiento AS fechaNacimiento',
+        'reserva.tipoIdentificacion AS tipoIdentificacion',
+        'reserva.numeroIdentificacion AS numeroIdentificacion',
+        'reserva.telefono AS telefono',
+        'reserva.eventoCapacitacionId AS eventoCapacitacionId',
+        'evento.nombre AS nombreActividad',
+        'evento.tipoActividad AS tipoActividad',
+        'evento.esPago AS esPago',
+        'reserva.comprobanteUrl AS comprobanteUrl',
+        'reserva.motivoRechazo AS motivoRechazo',
+        "DATE_FORMAT(evento.fecha, '%Y-%m-%d') AS fechaActividad",
+        'reserva.createdAt AS fechaInscripcion',
+        'reserva.estado AS estado',
+        'reserva.numeroTicket AS numeroTicket',
+      ])
+      .orderBy('reserva.createdAt', 'DESC')
+      .getRawMany();
 
-  return [
-    ...participantes,
-    ...reservas.map((registro) => ({
-      id: Number(registro.id),
-      usuarioId: Number(registro.usuarioId),
-      nombreUsuario: registro.nombreUsuario,
-      correo: registro.correo,
-      nombreCompleto: registro.nombreCompleto,
-      fechaNacimiento: serializarFechaCalendario(
-        registro.fechaNacimiento,
-      ),
-      tipoIdentificacion:
-        registro.tipoIdentificacion ?? null,
-      numeroIdentificacion:
-        registro.numeroIdentificacion ?? null,
-      telefono: registro.telefono ?? null,
-      eventoCapacitacionId: Number(
-        registro.eventoCapacitacionId,
-      ),
-      nombreActividad: registro.nombreActividad,
-      tipoActividad: registro.tipoActividad,
-      fechaActividad: serializarFechaCalendario(
-        registro.fechaActividad,
-      ),
-      fechaInscripcion: serializarFechaUtc(
-        registro.fechaInscripcion,
-      ),
-      estado: registro.estado,
-      origen: 'reserva' as const,
-      esPago: Boolean(registro.esPago),
-      comprobanteUrl: registro.comprobanteUrl ?? null,
-      motivoRechazo: registro.motivoRechazo ?? null,
-      numeroTicket: registro.numeroTicket ?? null,
-    })),
-  ].sort(
-    (a, b) =>
-      new Date(b.fechaInscripcion ?? 0).getTime() -
-      new Date(a.fechaInscripcion ?? 0).getTime(),
-  );
-};
+    const reservasFormateadas: InscripcionAdministrativaDTO[] =
+      reservas.map((registro) => ({
+        id: Number(registro.id),
+        usuarioId: Number(registro.usuarioId),
+        nombreUsuario: registro.nombreUsuario,
+        correo: registro.correo,
+        nombreCompleto: registro.nombreCompleto,
+        fechaNacimiento: serializarFechaCalendario(
+          registro.fechaNacimiento,
+        ),
+        tipoIdentificacion: registro.tipoIdentificacion ?? null,
+        numeroIdentificacion: registro.numeroIdentificacion ?? null,
+        telefono: registro.telefono ?? null,
+        eventoCapacitacionId: Number(
+          registro.eventoCapacitacionId,
+        ),
+        nombreActividad: registro.nombreActividad,
+        tipoActividad: registro.tipoActividad,
+        fechaActividad: serializarFechaCalendario(
+          registro.fechaActividad,
+        ),
+        fechaInscripcion: serializarFechaUtc(
+          registro.fechaInscripcion,
+        ),
+        estado: registro.estado,
+        origen: 'reserva',
+        esPago: Boolean(registro.esPago),
+        comprobanteUrl: registro.comprobanteUrl ?? null,
+        motivoRechazo: registro.motivoRechazo ?? null,
+        numeroTicket: registro.numeroTicket ?? null,
+      }));
+
+    return [...participantes, ...reservasFormateadas].sort(
+      (a, b) =>
+        new Date(b.fechaInscripcion ?? 0).getTime() -
+        new Date(a.fechaInscripcion ?? 0).getTime(),
+    );
+  };
 
 export const actualizarEstadoReserva = async (
   reservaId: number,
@@ -183,13 +187,10 @@ export const actualizarEstadoReserva = async (
 ) => {
   return AppDataSource.transaction(async (manager) => {
     const reservasRepo = manager.getRepository(Reserva);
-    const participantesRepo =
-      manager.getRepository(Participantes);
-    const eventosRepo =
-      manager.getRepository(EventosCapacitaciones);
+    const participantesRepo = manager.getRepository(Participantes);
+    const eventosRepo = manager.getRepository(EventosCapacitaciones);
 
-    const notificacionService =
-      new NotificacionService();
+    const notificacionService = new NotificacionService();
 
     const reserva = await reservasRepo.findOneBy({
       id: reservaId,
@@ -228,41 +229,45 @@ export const actualizarEstadoReserva = async (
     const estadoAnterior = reserva.estado;
 
     if (estado === EstadoReserva.APROBADA) {
-      const participanteExistente =
-        await participantesRepo.findOne({
-          where: {
-            usuarioId: reserva.usuarioId,
-            eventoCapacitacionId:
-              reserva.eventoCapacitacionId,
-          },
-        });
+      const participanteExistente = await participantesRepo.findOne({
+        where: {
+          usuarioId: reserva.usuarioId,
+          eventoCapacitacionId: reserva.eventoCapacitacionId,
+        },
+      });
 
-      const participante = participanteExistente
+           const participante = participanteExistente
         ? Object.assign(participanteExistente, {
             estado: EstadoParticipante.CONFIRMADA,
             fechaCancelacion: null,
+            numeroTicket:
+              participanteExistente.numeroTicket ??
+              reserva.numeroTicket ??
+              (await generarNumeroTicket(manager)),
           })
         : participantesRepo.create({
             usuarioId: reserva.usuarioId,
-            eventoCapacitacionId:
-              reserva.eventoCapacitacionId,
+            eventoCapacitacionId: reserva.eventoCapacitacionId,
             estado: EstadoParticipante.CONFIRMADA,
-            numeroTicket: reserva.numeroTicket,
+            fechaCancelacion: null,
+            numeroTicket:
+              reserva.numeroTicket ??
+              (await generarNumeroTicket(manager)),
           });
 
       await participantesRepo.save(participante);
     }
 
     reserva.estado = estado;
-    reserva.motivoRechazo = estado === EstadoReserva.RECHAZADA
-      ? motivoRechazo
-      : null;
+    reserva.motivoRechazo =
+      estado === EstadoReserva.RECHAZADA
+        ? motivoRechazo
+        : null;
 
-    const reservaActualizada =
-      await reservasRepo.save(reserva);
+    const reservaActualizada = await reservasRepo.save(reserva);
 
-    // Crear una NUEVA notificación para el usuario
-    // sin modificar la notificación original.
+    // Crear una nueva notificación para el usuario.
+    // Se conserva la notificación original.
     await notificacionService.notificarCambioEstadoReserva(
       manager,
       reservaActualizada,
@@ -271,7 +276,7 @@ export const actualizarEstadoReserva = async (
 
     if (
       estado === EstadoReserva.RECHAZADA &&
-      evento.cuposDisponibles !== null
+      evento.cuposDisponibles != null
     ) {
       evento.cuposDisponibles += 1;
       await eventosRepo.save(evento);

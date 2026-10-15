@@ -1,3 +1,4 @@
+
 import { AppDataSource } from '../../../data-source';
 import {
   Participantes,
@@ -11,7 +12,7 @@ import {
   EventosCapacitaciones,
   EstadoEventoCapacitacion,
 } from '../../../models/EventosCapacitaciones';
-import { In } from 'typeorm';
+import { In, EntityManager } from 'typeorm';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
 import { NotificacionService } from '../../Notificaciones/Crear notificaciones Reservas/NotificacionReservaService';
 import { registrarAuditoria } from '../../Autenticación y gestión de usuario/Autenticación y seguridad de acceso al sistema/auditoria.service';
@@ -49,7 +50,6 @@ function obtenerFechaValida(
   campo: string,
 ): { texto: string; fecha: Date } {
   const texto = textoRequerido(valor, campo);
-
   const coincidencia = /^(\d{4})-(\d{2})-(\d{2})$/.exec(texto);
 
   if (!coincidencia) {
@@ -96,21 +96,62 @@ function calcularEdad(fechaNacimiento: Date, hoy: Date): number {
 
 function sufijoTicketActual(): string {
   const partes = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'America/Costa_Rica', month: '2-digit', year: '2-digit',
+    timeZone: 'America/Costa_Rica',
+    month: '2-digit',
+    year: '2-digit',
   }).formatToParts(new Date());
-  const valor = (tipo: string) => partes.find((parte) => parte.type === tipo)?.value ?? '';
+
+  const valor = (tipo: string) =>
+    partes.find((parte) => parte.type === tipo)?.value ?? '';
+
   return `${valor('month')}${valor('year')}`;
 }
 
-async function generarNumeroTicket(manager: import('typeorm').EntityManager): Promise<string> {
+/**
+ * Genera un número de ticket consecutivo tomando en cuenta
+ * los tickets existentes en reservas y participantes.
+ */
+export async function generarNumeroTicket(
+  manager: EntityManager,
+): Promise<string> {
   const sufijo = sufijoTicketActual();
   const patron = `%${sufijo}`;
+
   const [reserva, participante] = await Promise.all([
-    manager.getRepository(Reserva).createQueryBuilder('reserva').select('MAX(CAST(SUBSTRING(reserva.numero_ticket, 6, 4) AS UNSIGNED))', 'ultimo').where('reserva.numero_ticket LIKE :patron', { patron }).getRawOne<{ ultimo: string | null }>(),
-    manager.getRepository(Participantes).createQueryBuilder('participante').select('MAX(CAST(SUBSTRING(participante.numero_ticket, 6, 4) AS UNSIGNED))', 'ultimo').where('participante.numero_ticket LIKE :patron', { patron }).getRawOne<{ ultimo: string | null }>(),
+    manager
+      .getRepository(Reserva)
+      .createQueryBuilder('reserva')
+      .select(
+        'MAX(CAST(SUBSTRING(reserva.numero_ticket, 6, 4) AS UNSIGNED))',
+        'ultimo',
+      )
+      .where('reserva.numero_ticket LIKE :patron', { patron })
+      .getRawOne<{ ultimo: string | null }>(),
+
+    manager
+      .getRepository(Participantes)
+      .createQueryBuilder('participante')
+      .select(
+        'MAX(CAST(SUBSTRING(participante.numero_ticket, 6, 4) AS UNSIGNED))',
+        'ultimo',
+      )
+      .where('participante.numero_ticket LIKE :patron', { patron })
+      .getRawOne<{ ultimo: string | null }>(),
   ]);
-  const consecutivo = Math.max(Number(reserva?.ultimo ?? 0), Number(participante?.ultimo ?? 0)) + 1;
-  if (consecutivo > 9999) throw errorReserva('TicketLimitError', 'Se alcanzó el límite mensual de tickets.');
+
+  const consecutivo =
+    Math.max(
+      Number(reserva?.ultimo ?? 0),
+      Number(participante?.ultimo ?? 0),
+    ) + 1;
+
+  if (consecutivo > 9999) {
+    throw errorReserva(
+      'TicketLimitError',
+      'Se alcanzó el límite mensual de tickets.',
+    );
+  }
+
   return `#TKT-${String(consecutivo).padStart(4, '0')}${sufijo}`;
 }
 
@@ -144,7 +185,6 @@ function validarDatosReserva(datos: DatosReserva): {
   );
 
   const correo = textoRequerido(datos.correo, 'correo');
-
   const telefono = textoRequerido(datos.telefono, 'telefono');
 
   if (nombreCompleto.length < 3) {
@@ -168,9 +208,9 @@ function validarDatosReserva(datos: DatosReserva): {
   };
 
   if (
-    !patronesIdentificacion[tipoIdentificacion as TipoIdentificacion].test(
-      numeroIdentificacion,
-    )
+    !patronesIdentificacion[
+      tipoIdentificacion as TipoIdentificacion
+    ].test(numeroIdentificacion)
   ) {
     throw errorReserva(
       'ValidationError',
@@ -179,7 +219,10 @@ function validarDatosReserva(datos: DatosReserva): {
   }
 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
-    throw errorReserva('ValidationError', 'El correo no es válido.');
+    throw errorReserva(
+      'ValidationError',
+      'El correo no es válido.',
+    );
   }
 
   const numeroTelefono = parsePhoneNumberFromString(telefono);
@@ -213,9 +256,9 @@ function validarDatosReserva(datos: DatosReserva): {
 }
 
 export class InscripcionService {
-  // Corrección 1: la propiedad debe declararse en la clase
   constructor(
-    private readonly notificacionService: NotificacionService = new NotificacionService(),
+    private readonly notificacionService: NotificacionService =
+      new NotificacionService(),
   ) {}
 
   async consultarReserva(
@@ -299,7 +342,10 @@ export class InscripcionService {
         );
       }
 
-      if (evento.cuposDisponibles === null || evento.cuposDisponibles <= 0) {
+      if (
+        evento.cuposDisponibles === null ||
+        evento.cuposDisponibles <= 0
+      ) {
         throw errorReserva(
           'CapacityError',
           'No hay cupos disponibles para este evento o capacitación.',
@@ -324,7 +370,7 @@ export class InscripcionService {
       }
 
       const reserva = reservaExistente
-          ? Object.assign(reservaExistente, {
+        ? Object.assign(reservaExistente, {
             nombreCompleto: datosValidados.nombreCompleto,
             fechaNacimiento: datosValidados.fechaNacimiento,
             tipoIdentificacion: datosValidados.tipoIdentificacion,
@@ -336,7 +382,9 @@ export class InscripcionService {
             metodoPago: evento.esPago ? evento.tipoPago : null,
             datosDevolucion: null,
             motivoRechazo: null,
-            fechaExpiracionPreReserva: evento.esPago ? new Date(Date.now() + 24 * 60 * 60 * 1000) : null,
+            fechaExpiracionPreReserva: evento.esPago
+              ? new Date(Date.now() + 24 * 60 * 60 * 1000)
+              : null,
           })
         : reservasRepo.create({
             usuarioId,
@@ -351,14 +399,14 @@ export class InscripcionService {
             numeroTicket: await generarNumeroTicket(manager),
             metodoPago: evento.esPago ? evento.tipoPago : null,
             datosDevolucion: null,
-            fechaExpiracionPreReserva: evento.esPago ? new Date(Date.now() + 24 * 60 * 60 * 1000) : null,
+            fechaExpiracionPreReserva: evento.esPago
+              ? new Date(Date.now() + 24 * 60 * 60 * 1000)
+              : null,
           });
 
-      // Corrección 2: una sola resta (antes estaba duplicada)
       evento.cuposDisponibles -= 1;
 
       const reservaGuardada = await reservasRepo.save(reserva);
-
       await eventosRepo.save(evento);
 
       await this.notificacionService.notificarReserva(
@@ -404,7 +452,6 @@ export class InscripcionService {
       const eventosRepo = manager.getRepository(EventosCapacitaciones);
       const reservasRepo = manager.getRepository(Reserva);
 
-      // 1. Buscar el evento/capacitación
       const evento = await eventosRepo.findOne({
         where: { id: eventoCapacitacionId },
       });
@@ -416,7 +463,6 @@ export class InscripcionService {
         );
       }
 
-      // 2. Verificar que la fecha del evento no haya pasado
       const fechaEvento = obtenerFechaValida(
         evento.fecha,
         'fecha del evento',
@@ -432,7 +478,6 @@ export class InscripcionService {
         );
       }
 
-      // 3. Buscar la reserva del usuario
       const reserva = await reservasRepo.findOne({
         where: { usuarioId, eventoCapacitacionId },
       });
@@ -444,7 +489,6 @@ export class InscripcionService {
         );
       }
 
-      // 4. Verificar que esté pendiente
       if (reserva.estado !== EstadoReservaNueva.PENDIENTE) {
         throw errorReserva(
           'ReservationNotEditableError',
@@ -452,10 +496,8 @@ export class InscripcionService {
         );
       }
 
-      // 5. Validar los nuevos datos
       const datosValidados = validarDatosReserva(datos);
 
-      // 6. Verificar restricciones de edad
       if (
         (evento.edadMinima !== null &&
           datosValidados.edad < evento.edadMinima) ||
@@ -468,7 +510,6 @@ export class InscripcionService {
         );
       }
 
-      // 7. Actualizar solamente los datos editables
       Object.assign(reserva, {
         nombreCompleto: datosValidados.nombreCompleto,
         fechaNacimiento: datosValidados.fechaNacimiento,
@@ -478,7 +519,6 @@ export class InscripcionService {
         telefono: datosValidados.telefono,
       });
 
-      // 8. Guardar la reserva
       const reservaGuardada = await reservasRepo.save(reserva);
 
       await registrarAuditoria(
@@ -519,7 +559,7 @@ export class InscripcionService {
     participante: Participantes;
     cuposDisponibles: number | null;
   }> {
-    return await AppDataSource.transaction(async (manager) => {
+    return AppDataSource.transaction(async (manager) => {
       const eventosRepo = manager.getRepository(EventosCapacitaciones);
       const participantesRepo = manager.getRepository(Participantes);
 
@@ -536,7 +576,7 @@ export class InscripcionService {
         );
       }
 
-      if (evento.estado !== 'publicado') {
+      if (evento.estado !== EstadoEventoCapacitacion.PUBLICADO) {
         throw errorReserva(
           'ValidationError',
           'El evento o capacitación no está disponible para inscripción.',
@@ -563,7 +603,10 @@ export class InscripcionService {
         const inscritos = await participantesRepo.count({
           where: {
             eventoCapacitacionId,
-            estado: In([EstadoReserva.PENDIENTE, EstadoReserva.CONFIRMADA]),
+            estado: In([
+              EstadoReserva.PENDIENTE,
+              EstadoReserva.CONFIRMADA,
+            ]),
           },
         });
 
@@ -593,7 +636,8 @@ export class InscripcionService {
             numeroTicket: await generarNumeroTicket(manager),
           });
 
-      const participanteGuardado = await participantesRepo.save(participante);
+      const participanteGuardado =
+        await participantesRepo.save(participante);
 
       const cuposDisponibles =
         evento.cupoMaximo === null
@@ -602,7 +646,6 @@ export class InscripcionService {
 
       if (evento.cupoMaximo !== null) {
         evento.cuposDisponibles = cuposDisponibles;
-
         await eventosRepo.save(evento);
       }
 

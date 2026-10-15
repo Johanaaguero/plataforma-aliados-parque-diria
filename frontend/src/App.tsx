@@ -297,6 +297,21 @@ function App() {
   const [incidenciasAdminKey, setIncidenciasAdminKey] =
     useState(0);
 
+  const [actividadPendienteInscripcion, setActividadPendienteInscripcion] =
+    useState<number | null>(() => {
+      const idGuardado = sessionStorage.getItem(
+        'actividadPendienteInscripcion'
+      );
+
+      if (!idGuardado) {
+        return null;
+      }
+
+      const id = Number(idGuardado);
+
+      return Number.isInteger(id) && id > 0 ? id : null;
+    });
+
   useEffect(() => {
     const sincronizarSesion = () => {
       setRolAutenticado(
@@ -567,6 +582,8 @@ function App() {
     seccionPublicaSolicitada,
   ]);
 
+
+  
   const vieneDelDashboard =
     estadoNavegacion?.fromDashboard === true;
 
@@ -586,6 +603,25 @@ function App() {
         ? '/admin/dashboard'
         : '/',
     );
+  };
+
+  const solicitarLoginParaInscripcion = (
+    actividadId: number,
+    mensaje?: string,
+  ) => {
+    sessionStorage.setItem(
+      'actividadPendienteInscripcion',
+      String(actividadId)
+    );
+
+    setActividadPendienteInscripcion(actividadId);
+
+    if (mensaje) {
+      mostrarFeedback('error', mensaje);
+    }
+
+    setMostrarRegistro(false);
+    setMostrarLogin(true);
   };
 
   if (
@@ -630,6 +666,7 @@ function App() {
         </section>
       );
     }
+
 
    return (
   <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef]">
@@ -1295,18 +1332,14 @@ function App() {
           }`}
         >
           <ListaEventosCapacitaciones
-            rolAutenticado={
-              rolAutenticado
-            }
-            onSolicitarLogin={(mensaje) => {
-              if (mensaje) {
-                mostrarFeedback(
-                  'error',
-                  mensaje
-                );
-              }
-
-              setMostrarLogin(true);
+            rolAutenticado={rolAutenticado}
+            actividadPendienteInscripcionId={actividadPendienteInscripcion}
+            onActividadPendienteRestaurada={() => {
+              sessionStorage.removeItem('actividadPendienteInscripcion');
+              setActividadPendienteInscripcion(null);
+            }}
+            onSolicitarLogin={(actividadId, mensaje) => {
+              solicitarLoginParaInscripcion(actividadId, mensaje);
             }}
             contexto={
               esModuloAdministrativoDesdeDashboard
@@ -1491,6 +1524,19 @@ function App() {
               mostrarBienvenidaLogin(nombre);
 
               setMostrarLogin(false);
+
+              if (
+                (rol === 'visitante' || rol === 'asociado') &&
+                sessionStorage.getItem('actividadPendienteInscripcion')
+              ) {
+                setSeccionActual('eventos');
+
+                navigate('/', {
+                  state: {
+                    seccionPublica: 'eventos',
+                  },
+                });
+              }
 
               if (rol === 'administrador') {
                 navigate('/admin/dashboard');

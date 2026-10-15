@@ -94,6 +94,9 @@ export default function DetalleEventoCapacitacion({
 
   const actividadPasada = evento ? esFechaPasada(evento.fecha) : false;
 
+  const inscripcionBloqueadaPorRol =
+    usuarioAutenticado && !puedeInscribirse;
+
   async function manejarInscripcion() {
     if (!evento || inscribiendo || consultandoReserva) return;
 
@@ -366,12 +369,12 @@ export default function DetalleEventoCapacitacion({
                 disabled={
                   consultandoReserva ||
                   inscribiendo ||
-                  !puedeInscribirse ||
+                  inscripcionBloqueadaPorRol ||
                   evento.cuposDisponibles === 0 ||
                   actividadPasada
                 }
                 className={`rounded-full px-4 py-1.5 text-sm font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444] focus-visible:ring-offset-2 ${
-                  !puedeInscribirse
+                  inscripcionBloqueadaPorRol
                     ? 'border border-[#095540]/15 bg-[#095540]/8 text-[#095540] shadow-sm disabled:cursor-not-allowed'
                     : 'bg-[#095540] text-white hover:bg-[#009444] disabled:cursor-not-allowed disabled:opacity-50'
                 }`}
@@ -382,7 +385,7 @@ export default function DetalleEventoCapacitacion({
                     ? 'Consultando...'
                     : inscribiendo
                       ? 'Inscribiendo...'
-                      : !puedeInscribirse
+                      : inscripcionBloqueadaPorRol
                         ? 'Inscripción no disponible'
                         : evento.cuposDisponibles === 0
                           ? 'Sin cupos'

@@ -22,8 +22,13 @@ type NombreRol =
 
 interface ListaEventosCapacitacionesProps {
   rolAutenticado: NombreRol | null;
-  onSolicitarLogin: (mensaje?: string) => void;
+  onSolicitarLogin: (
+    actividadId: number,
+    mensaje?: string,
+  ) => void;
   contexto?: 'publico' | 'administrativo';
+  actividadPendienteInscripcionId?: number | null;
+  onActividadPendienteRestaurada?: () => void;
 }
 
 type FiltroActividad =
@@ -79,6 +84,8 @@ export default function ListaEventosCapacitaciones({
   rolAutenticado,
   onSolicitarLogin,
   contexto = 'publico',
+  actividadPendienteInscripcionId = null,
+  onActividadPendienteRestaurada,
 }: ListaEventosCapacitacionesProps) {
   const [eventos, setEventos] = useState<EventoCapacitacion[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -371,6 +378,34 @@ export default function ListaEventosCapacitaciones({
   }, [
     cargarDatos,
     esperandoBusqueda,
+  ]);
+
+  useEffect(() => {
+    if (
+      contexto !== 'publico' ||
+      actividadPendienteInscripcionId === null ||
+      actividadPendienteInscripcionId === undefined
+    ) {
+      return;
+    }
+
+    const actividad = eventos.find(
+      (evento) =>
+        evento.id === actividadPendienteInscripcionId,
+    );
+
+    if (!actividad) {
+      // Esperar a que se cargue la actividad desde la API.
+      return;
+    }
+
+    setEventoDetalle(actividad);
+    onActividadPendienteRestaurada?.();
+  }, [
+    eventos,
+    contexto,
+    actividadPendienteInscripcionId,
+    onActividadPendienteRestaurada,
   ]);
 
   function cambiarFiltro(
@@ -2067,7 +2102,9 @@ export default function ListaEventosCapacitaciones({
     rolAutenticado === 'visitante' ||
     rolAutenticado === 'asociado'
   }
-  onSolicitarLogin={onSolicitarLogin}
+  onSolicitarLogin={(mensaje) =>
+    onSolicitarLogin(eventoDetalle.id, mensaje)
+  }
   eventoAdministrativo={
     esAdministrador
       ? eventoDetalle
