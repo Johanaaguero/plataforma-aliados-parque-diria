@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import type { FormEvent } from 'react';
 import ImageDropzone from './Imagedropzone';
 import DatePickerCampo from '../ui/DatePickerCampo';
+import { createPortal } from 'react-dom';
 
 type Estado = 'idle' | 'cargando' | 'exito' | 'error';
 type TipoActividad = 'evento' | 'capacitacion';
@@ -488,7 +489,7 @@ setSegundosRestantes(2);
 
   const urlBaseApi = obtenerUrlBaseApi();
 
-  return (
+return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-black/60 p-4 backdrop-blur-sm"
       role="dialog"
@@ -899,6 +900,7 @@ setSegundosRestantes(2);
           </div>
         </form>
       </div>
-    </div>
+       </div>,
+    document.body,
   );
 }

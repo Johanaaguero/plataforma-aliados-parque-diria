@@ -22,13 +22,11 @@ const normalizarNombre = (valor: string): string =>
 export default function BotonesExportarReporte({
   reporteId,
   nombreReporte,
-  tieneDatos,
 }: BotonesExportarReporteProps) {
   const [isExporting, setIsExporting] = useState<FormatoExportacion | null>(null);
   const [exportado, setExportado] = useState<FormatoExportacion | null>(null);
 
-  if (!reporteId || !tieneDatos) return null;
-
+if (!reporteId) return null;
   const exportar = async (formato: FormatoExportacion): Promise<void> => {
     if (isExporting) return;
     setIsExporting(formato);

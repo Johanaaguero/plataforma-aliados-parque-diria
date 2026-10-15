@@ -1640,11 +1640,11 @@ const contenedorFechasRef =
                     : reporteExportableId ? 'Reporte guardado ✓' : 'Guardar reporte'}
                 </button>
 
-                {reporteExportableId && datos.total > 0 && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => exportarReporte('pdf')}
+                {reporteExportableId && (
+  <>
+    <button
+      type="button"
+      onClick={() => exportarReporte('pdf')}
                       disabled={exportandoFormato !== null}
                       className="rounded-xl border border-red-300 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-700 backdrop-blur-sm transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300"
                     >
