@@ -515,6 +515,7 @@ function obtenerNombrePeriodo(periodo: Periodo): string {
   }
 }
 
+
 function calcularFechasPeriodo(
   periodo: Periodo,
 ): {
@@ -530,34 +531,38 @@ function calcularFechasPeriodo(
       fecha.getDate(),
     ).padStart(2, '0')}`;
 
-  if (periodo === 'hoy') {
-    const fecha = formatear(hoy);
+  const fechaFin = formatear(hoy);
 
+  if (periodo === 'hoy') {
     return {
-      fechaInicio: fecha,
-      fechaFin: fecha,
+      fechaInicio: fechaFin,
+      fechaFin,
     };
   }
 
   if (periodo === '7dias') {
     const inicio = new Date(hoy);
-
     inicio.setDate(inicio.getDate() - 6);
+
+    const fin = new Date(hoy);
+    fin.setDate(fin.getDate() + 7);
 
     return {
       fechaInicio: formatear(inicio),
-      fechaFin: formatear(hoy),
+      fechaFin: formatear(fin),
     };
   }
 
   if (periodo === '30dias') {
     const inicio = new Date(hoy);
-
     inicio.setDate(inicio.getDate() - 29);
+
+    const fin = new Date(hoy);
+    fin.setDate(fin.getDate() + 30);
 
     return {
       fechaInicio: formatear(inicio),
-      fechaFin: formatear(hoy),
+      fechaFin: formatear(fin),
     };
   }
 
@@ -568,14 +573,21 @@ function calcularFechasPeriodo(
       1,
     );
 
+    const fin = new Date(
+      hoy.getFullYear(),
+      hoy.getMonth() + 1,
+      0,
+    );
+
     return {
       fechaInicio: formatear(inicio),
-      fechaFin: formatear(hoy),
+      fechaFin: formatear(fin),
     };
   }
 
   return {};
 }
+
 
 /* Gráfica de montaña */
 function GraficaMontana({
