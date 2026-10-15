@@ -2,6 +2,7 @@ import { AppDataSource } from '../../../data-source';
 import { Usuario } from '../../../models/Usuario';
 import { Rol, NombreRol } from '../../../models/Rol';
 import { HistorialCambioRol } from '../../../models/HistorialCambioRol';
+import { registrarAuditoria } from '../Autenticación y seguridad de acceso al sistema/auditoria.service';
 
 interface CambiarRolInput {
   usuarioId: number;
@@ -91,6 +92,22 @@ export const updateUserRole = async ({
     }
 
     const rolAnterior = usuario.rol.nombre;
+    if (rolAnterior === rol.nombre) {
+      return {
+        ok: true as const,
+        message: 'El usuario ya tiene ese rol',
+        data: {
+          id: usuario.id,
+          nombreUsuario: usuario.nombreUsuario,
+          nombre: usuario.nombre,
+          apellidos: usuario.apellidos,
+          correo: usuario.correo,
+          rolAnterior,
+          rolNuevo: rol.nombre,
+        },
+      };
+    }
+
     const degradaAdministrador =
       rolAnterior === 'administrador' &&
       rol.nombre !== 'administrador';
@@ -124,6 +141,36 @@ export const updateUserRole = async ({
     });
 
     await historialRepository.save(eventoAuditoria);
+
+    const actor =
+      actorId === usuarioId
+        ? usuarioActualizado
+        : await usuarioRepository.findOne({ where: { id: actorId } });
+
+    if (!actor) {
+      throw new Error('El actor autenticado no existe');
+    }
+
+    await registrarAuditoria(
+      {
+        usuarioId: actorId,
+        action: 'CAMBIO_ROL',
+        description: `Cambio de rol de ${usuario.nombreUsuario} (ID ${usuarioId}), realizado por ${actor.nombreUsuario} (ID ${actorId}): de ${rolAnterior} a ${rol.nombre}`,
+        status: 'success',
+        details: JSON.stringify({
+          actorId,
+          actorNombreUsuario: actor.nombreUsuario,
+          actorNombreCompleto: `${actor.nombre} ${actor.apellidos}`.trim(),
+          usuarioAfectadoId: usuarioId,
+          usuarioAfectadoNombreUsuario: usuario.nombreUsuario,
+          usuarioAfectadoNombreCompleto:
+            `${usuario.nombre} ${usuario.apellidos}`.trim(),
+          rolAnterior,
+          rolNuevo: rol.nombre,
+        }),
+      },
+      manager,
+    );
 
     return {
       ok: true as const,

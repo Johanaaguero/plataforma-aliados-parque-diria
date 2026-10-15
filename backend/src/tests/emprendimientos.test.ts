@@ -16,6 +16,7 @@ import {
 import { CategoriaEmprendimiento } from '../models/CategoriaEmprendimiento';
 import { Usuario } from '../models/Usuario';
 import { Rol, type NombreRol } from '../models/Rol';
+import { AuditLog } from '../models/AuditLog';
 
 config({ path: resolve(process.cwd(), '.env') });
 
@@ -84,6 +85,7 @@ type ServicioEmprendimiento = typeof import(
 
 let dataSource: DataSource;
 let emprendimientoService: ServicioEmprendimiento;
+let AuditLogModel: typeof AuditLog;
 let server: Server;
 let baseUrl: string;
 let actores: Actores;
@@ -246,6 +248,7 @@ const crearEmprendimiento = async (
   const sufijo = String(secuenciaEmprendimiento).padStart(2, '0');
   const emprendimiento = repository.create({
     nombre: `Emprendimiento publicación ${sufijo}`,
+    estadoPublicacion: EstadoPublicacion.NO_PUBLICADO,
     ...(completo
       ? { descripcion: `Descripción completa ${sufijo}` }
       : {}),
@@ -322,9 +325,11 @@ before(async () => {
   const serviceModule = await import(
     '../modulos/Administración de emprendimientos/Registro de emprendimientos/emprendimiento.service'
   );
+  const auditLogModule = await import('../models/AuditLog');
 
   dataSource = dataSourceModule.AppDataSource;
   emprendimientoService = serviceModule.emprendimientoService;
+  AuditLogModel = auditLogModule.AuditLog;
   asegurarBaseConfiguradaParaPruebas();
   await dataSource.initialize();
 
@@ -413,9 +418,12 @@ describe('publicación de emprendimientos', () => {
     );
 
     assert.equal(id?.COLUMN_KEY, 'PRI');
-    assert.equal(estado?.COLUMN_TYPE, "enum('no_publicado','publicado')");
+    assert.equal(
+      estado?.COLUMN_TYPE,
+      "enum('borrador','no_publicado','publicado','desactivado')",
+    );
     assert.equal(estado?.IS_NULLABLE, 'NO');
-    assert.equal(estado?.COLUMN_DEFAULT, 'no_publicado');
+    assert.equal(estado?.COLUMN_DEFAULT, EstadoPublicacion.BORRADOR);
     assert.equal(fecha?.COLUMN_TYPE, 'datetime(6)');
     assert.equal(fecha?.IS_NULLABLE, 'YES');
     assert.equal(fecha?.COLUMN_DEFAULT, null);
@@ -429,7 +437,9 @@ describe('publicación de emprendimientos', () => {
   test('un emprendimiento nuevo inicia No Publicado y sin fecha de publicación', async () => {
     const respuesta = await solicitar('/api/emprendimientos', {
       method: 'POST',
-      headers: encabezadosJson(),
+      headers: encabezadosJson(
+        tokenPara(actores.administrador, 'administrador'),
+      ),
       body: JSON.stringify({
         nombre: 'Emprendimiento creado por HTTP',
         descripcion: 'Descripción creada por HTTP',
@@ -529,7 +539,7 @@ describe('publicación de emprendimientos', () => {
     assert.equal(body.ok, false);
     assert.equal(
       body.message,
-      'El emprendimiento no tiene toda la información requerida para publicarse',
+      'El emprendimiento no tiene toda la información requerida para esta acción',
     );
     assert.ok(Array.isArray(body.camposFaltantes));
     assert.ok(body.camposFaltantes.includes('descripción'));
@@ -617,6 +627,11 @@ describe('publicación de emprendimientos', () => {
 
     const catalogoLegado = await solicitar(
       '/api/emprendimientos?estado=publicado',
+      {
+        headers: encabezadosJson(
+          tokenPara(actores.administrador, 'administrador'),
+        ),
+      },
     );
     assert.equal(catalogoLegado.status, 200);
     assert.ok(Array.isArray(catalogoLegado.body));
@@ -788,7 +803,7 @@ describe('publicación de emprendimientos', () => {
     assert.equal(body.ok, false);
     assert.equal(
       body.message,
-      'El estado de publicación debe ser Publicado o No Publicado',
+      'El estado de publicación debe ser Borrador, No Publicado, Publicado o Desactivado',
     );
     await assert.rejects(() =>
       dataSource.query(
@@ -848,4 +863,150 @@ describe('publicación de emprendimientos', () => {
         cambiarPublicacionOriginal;
     }
   });
-});
+
+  test('registra auditoria al crear un emprendimiento', async () => {
+    const creado = await emprendimientoService.crear(
+      {
+        nombre: 'Auditoria creacion emprendimiento',
+        descripcion: 'Registro de auditoria',
+        categoriaId: categoria.id,
+        direccion: 'Direccion auditoria',
+        latitud: 10.1,
+        longitud: -85.1,
+        correoElectronico: 'auditoria.creacion@test.local',
+        telefono: '84000001',
+      },
+      actores.administrador.id,
+      'administrador',
+    );
+
+    const auditoria = await dataSource.getRepository(AuditLogModel).findOneByOrFail({
+      action: 'CREAR_EMPRENDIMIENTO',
+      usuarioId: actores.administrador.id,
+    });
+    const details = JSON.parse(auditoria.details!) as Record<string, unknown>;
+
+    assert.equal(auditoria.status, 'success');
+    assert.equal(details.emprendimientoId, creado.id);
+    assert.equal(details.estadoPublicacion, EstadoPublicacion.NO_PUBLICADO);
+    assert.equal(details.categoriaId, categoria.id);
+    assert.equal('imagen' in details, false);
+    assert.equal('imagenes' in details, false);
+  });
+
+  test('revierte la creacion si falla el registro de auditoria', async () => {
+    const trigger = 'test_falla_auditoria_emprendimiento';
+    await dataSource.query(
+      `CREATE TRIGGER ${trigger} BEFORE INSERT ON audit_logs FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'fallo de auditoria de prueba'`,
+    );
+
+    try {
+      await assert.rejects(() =>
+        emprendimientoService.crear(
+          {
+            nombre: 'Emprendimiento con auditoria fallida',
+            categoriaId: categoria.id,
+          },
+          actores.administrador.id,
+          'administrador',
+        ),
+      );
+
+      assert.equal(
+        await dataSource.getRepository(Emprendimiento).count({
+          where: {
+            nombre: 'Emprendimiento con auditoria fallida',
+          },
+        }),
+        0,
+      );
+      assert.equal(
+        await dataSource.getRepository(AuditLogModel).count({
+          where: { action: 'CREAR_EMPRENDIMIENTO' },
+        }),
+        0,
+      );
+    } finally {
+      await dataSource.query(`DROP TRIGGER IF EXISTS ${trigger}`);
+    }
+  });
+
+  test('registra auditoria al editar un emprendimiento sin guardar cuerpos completos', async () => {
+    const emprendimiento = await crearEmprendimiento();
+
+    await emprendimientoService.actualizar(
+      emprendimiento.id,
+      {
+        nombre: 'Auditoria edicion emprendimiento',
+        telefono: '84000002',
+        imagen: Buffer.from('imagen-no-auditable'),
+      },
+      actores.administrador.id,
+      'administrador',
+    );
+
+    const auditoria = await dataSource.getRepository(AuditLogModel).findOneByOrFail({
+      action: 'ACTUALIZAR_EMPRENDIMIENTO',
+      usuarioId: actores.administrador.id,
+    });
+    const details = JSON.parse(auditoria.details!) as Record<string, unknown>;
+
+    assert.equal(details.emprendimientoId, emprendimiento.id);
+    assert.deepEqual(details.camposActualizados, ['nombre', 'telefono']);
+    assert.equal('imagen' in details, false);
+  });
+
+  test('registra estado anterior y nuevo al cambiar publicacion', async () => {
+    const emprendimiento = await crearEmprendimiento();
+    await dataSource.getRepository(Emprendimiento).update(
+      { id: emprendimiento.id },
+      { estadoPublicacion: EstadoPublicacion.NO_PUBLICADO },
+    );
+
+    const resultado = await emprendimientoService.cambiarPublicacion(
+      emprendimiento.id,
+      EstadoPublicacion.PUBLICADO,
+      'administrador',
+      actores.administrador.id,
+    );
+
+    assert.equal(resultado.ok, true);
+    const auditoria = await dataSource.getRepository(AuditLogModel).findOneByOrFail({
+      action: 'CAMBIAR_ESTADO_EMPRENDIMIENTO',
+      usuarioId: actores.administrador.id,
+    });
+    const details = JSON.parse(auditoria.details!) as Record<string, unknown>;
+
+    assert.equal(details.emprendimientoId, emprendimiento.id);
+    assert.equal(details.estadoAnterior, EstadoPublicacion.NO_PUBLICADO);
+    assert.equal(details.estadoNuevo, EstadoPublicacion.PUBLICADO);
+  });
+
+  test('no registra auditoria de exito cuando falla una operacion de emprendimiento', async () => {
+    await emprendimientoService.crear(
+      {
+        nombre: 'Nombre duplicado auditoria',
+        categoriaId: categoria.id,
+      },
+      actores.administrador.id,
+      'administrador',
+    );
+
+    await assert.rejects(() =>
+      emprendimientoService.crear(
+        {
+          nombre: 'Nombre duplicado auditoria',
+          categoriaId: categoria.id,
+        },
+        actores.administrador.id,
+        'administrador',
+      ),
+    );
+
+    assert.equal(
+      await dataSource.getRepository(AuditLogModel).count({
+        where: { action: 'CREAR_EMPRENDIMIENTO' },
+      }),
+      1,
+    );
+  });});

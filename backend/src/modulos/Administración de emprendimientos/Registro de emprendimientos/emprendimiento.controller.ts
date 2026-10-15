@@ -680,6 +680,7 @@ distrito:
           id,
           nuevoEstado,
           rolUsuario,
+          req.usuario!.id,
         );
 
       if (!resultado.ok) {
@@ -1207,6 +1208,7 @@ async actualizarUbicacion(
 
       await emprendimientoService.eliminar(
         id,
+        req.usuario!.id,
       );
 
       return res

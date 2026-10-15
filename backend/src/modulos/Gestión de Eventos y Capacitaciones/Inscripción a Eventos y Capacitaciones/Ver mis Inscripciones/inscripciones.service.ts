@@ -3,6 +3,7 @@ import { Participantes, EstadoReserva } from '../../../../models/Participantes';
 import { Reserva, EstadoReserva as EstadoReservaNueva } from '../../../../models/Reserva';
 import { EventosCapacitaciones } from '../../../../models/EventosCapacitaciones';
 import { serializarFechaCalendario, serializarFechaUtc } from '../../../../utils/fechas';
+import { registrarAuditoria } from '../../../Autenticación y gestión de usuario/Autenticación y seguridad de acceso al sistema/auditoria.service';
 
 const validarDatosDevolucion = (valor: unknown): { tipo: 'sinpe_movil' | 'transferencia_bancaria'; telefono?: string; iban?: string; banco?: string } => {
   if (!valor || typeof valor !== 'object') { const error = new Error('Debes indicar los datos para la devolución.'); error.name = 'RefundDataError'; throw error; }
@@ -206,6 +207,7 @@ export const cancelarInscripcion = async (
       }
     }
 
+    const estadoAnterior = participante.estado;
     const fechaCancelacion = new Date();
     participante.estado = EstadoReserva.CANCELADA;
     participante.fechaCancelacion = fechaCancelacion;
@@ -214,6 +216,24 @@ export const cancelarInscripcion = async (
       evento.cuposDisponibles += 1;
       await eventosRepo.save(evento);
     }
+
+    await registrarAuditoria(
+      {
+        usuarioId,
+        action: 'CANCELAR_INSCRIPCION_EVENTO_CAPACITACION',
+        description: `Cancelación de inscripción #${participante.id}`,
+        status: 'success',
+        details: JSON.stringify({
+          participanteId: participante.id,
+          eventoCapacitacionId: participante.eventoCapacitacionId,
+          tipoActividad: evento.tipoActividad,
+          estadoAnterior,
+          estadoNuevo: participante.estado,
+          cuposDisponibles: evento.cuposDisponibles,
+        }),
+      },
+      manager,
+    );
 
     return { id: participante.id, estado: participante.estado, fechaCancelacion, cuposDisponibles: evento.cuposDisponibles };
   });
@@ -267,6 +287,10 @@ export const cancelarReserva = async (
       reserva.datosDevolucion = datos;
     }
 
+    const estadoAnteriorReserva = reserva.estado;
+    let participanteCanceladoId: number | null = null;
+    let estadoAnteriorParticipante: EstadoReserva | null = null;
+
     if (reserva.estado === EstadoReservaNueva.APROBADA) {
       const participante = await participantesRepo.findOne({
         where: {
@@ -279,6 +303,8 @@ export const cancelarReserva = async (
         error.name = 'NotFoundError';
         throw error;
       }
+      participanteCanceladoId = participante.id;
+      estadoAnteriorParticipante = participante.estado;
       participante.estado = EstadoReserva.CANCELADA;
       participante.fechaCancelacion = new Date();
       await participantesRepo.save(participante);
@@ -291,6 +317,27 @@ export const cancelarReserva = async (
       evento.cuposDisponibles += 1;
       await eventosRepo.save(evento);
     }
+
+    await registrarAuditoria(
+      {
+        usuarioId,
+        action: 'CANCELAR_RESERVA_EVENTO_CAPACITACION',
+        description: `Cancelación de reserva #${reserva.id}`,
+        status: 'success',
+        details: JSON.stringify({
+          reservaId: reserva.id,
+          eventoCapacitacionId: reserva.eventoCapacitacionId,
+          tipoActividad: evento.tipoActividad,
+          estadoAnterior: estadoAnteriorReserva,
+          estadoNuevo: reserva.estado,
+          participanteCanceladoId,
+          estadoAnteriorParticipante,
+          cuposDisponibles: evento.cuposDisponibles,
+          datosDevolucionRegistrados: Boolean(reserva.datosDevolucion),
+        }),
+      },
+      manager,
+    );
 
     return {
       id: reserva.id,
@@ -331,6 +378,23 @@ export const registrarDatosDevolucion = async (
 
     reserva.datosDevolucion = validarDatosDevolucion(datosDevolucion);
     await reservasRepo.save(reserva);
+
+    await registrarAuditoria(
+      {
+        usuarioId,
+        action: 'REGISTRAR_DATOS_DEVOLUCION_RESERVA',
+        description: `Registro de datos de devolución para reserva #${reserva.id}`,
+        status: 'success',
+        details: JSON.stringify({
+          reservaId: reserva.id,
+          eventoCapacitacionId: reserva.eventoCapacitacionId,
+          tipoActividad: reserva.eventoCapacitacion.tipoActividad,
+          estado: reserva.estado,
+          tipoDevolucion: reserva.datosDevolucion?.tipo ?? null,
+        }),
+      },
+      manager,
+    );
 
     return { id: reserva.id, datosDevolucion: reserva.datosDevolucion };
   });

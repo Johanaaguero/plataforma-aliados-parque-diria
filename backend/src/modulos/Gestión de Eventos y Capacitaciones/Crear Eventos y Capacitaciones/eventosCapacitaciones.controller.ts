@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { AppDataSource } from '../../../data-source';
 import { EventosCapacitacionesService } from './eventosCapacitaciones.service';
 import {
   TipoActividad,
@@ -37,6 +38,33 @@ interface FiltrosEventos {
   tipoActividad?: TipoActividad;
   estado?: EstadoEventoCapacitacion;
   temporada?: Temporada;
+}
+
+const CAMPOS_AUDITABLES_EVENTO = [
+  'nombre',
+  'descripcion',
+  'fecha',
+  'hora',
+  'lugar',
+  'tipoActividad',
+  'cupoMinimo',
+  'cupoMaximo',
+  'edadMinima',
+  'edadMaxima',
+  'estado',
+  'temporada',
+  'esPago',
+  'precio',
+  'tipoPago',
+  'politicasCancelacion',
+] as const;
+
+function datosAuditablesEvento(data: Record<string, unknown>) {
+  return Object.fromEntries(
+    CAMPOS_AUDITABLES_EVENTO
+      .filter((campo) => Object.prototype.hasOwnProperty.call(data, campo))
+      .map((campo) => [campo, data[campo]]),
+  );
 }
 
 function fallar(mensaje: string): never {
@@ -86,7 +114,25 @@ function parsearFiltros(query: Request['query']): FiltrosEventos {
 export class EventosCapacitacionesController {
   async create(req: Request, res: Response) {
     try {
-      const creado = await service.create(req.body);
+      const creado = await AppDataSource.transaction(async (manager) => {
+        const transactionService = new EventosCapacitacionesService(manager);
+        const creado = await transactionService.create(req.body);
+        await registrarAuditoria({
+          usuarioId: req.usuario?.id ?? null,
+          action: 'CREAR_EVENTO_CAPACITACION',
+          description: `Creación del evento o capacitación #${creado.id}`,
+          ipAddress: extraerIPDelRequest(req),
+          userAgent: (req.headers['user-agent'] as string | undefined) ?? null,
+          status: 'success',
+          details: JSON.stringify({
+            eventoCapacitacionId: creado.id,
+            tipoActividad: creado.tipoActividad,
+            estado: creado.estado,
+            campos: datosAuditablesEvento(req.body as Record<string, unknown>),
+          }),
+        }, manager);
+        return creado;
+      });
       return res.status(201).json(creado.toPublic());
     } catch (error) {
       return manejarError(res, error);
@@ -101,16 +147,24 @@ export class EventosCapacitacionesController {
         return res.status(400).json({ mensaje: 'El id debe ser numérico.' });
       }
 
-      const actualizado = await service.update(id, req.body);
-
-      await registrarAuditoria({
-        usuarioId: req.usuario?.id ?? null,
-        action: 'ACTUALIZAR_EVENTO_CAPACITACION',
-        description: `Actualización del evento o capacitación #${id}`,
-        ipAddress: extraerIPDelRequest(req),
-        userAgent: (req.headers['user-agent'] as string | undefined) ?? null,
-        status: 'success',
-        details: JSON.stringify(req.body),
+      const actualizado = await AppDataSource.transaction(async (manager) => {
+        const transactionService = new EventosCapacitacionesService(manager);
+        const actualizado = await transactionService.update(id, req.body);
+        await registrarAuditoria({
+          usuarioId: req.usuario?.id ?? null,
+          action: 'ACTUALIZAR_EVENTO_CAPACITACION',
+          description: `Actualización del evento o capacitación #${id}`,
+          ipAddress: extraerIPDelRequest(req),
+          userAgent: (req.headers['user-agent'] as string | undefined) ?? null,
+          status: 'success',
+          details: JSON.stringify({
+            eventoCapacitacionId: actualizado.id,
+            tipoActividad: actualizado.tipoActividad,
+            estado: actualizado.estado,
+            campos: datosAuditablesEvento(req.body as Record<string, unknown>),
+          }),
+        }, manager);
+        return actualizado;
       });
 
       return res.status(200).json(actualizado.toPublic());
@@ -173,7 +227,24 @@ export class EventosCapacitacionesController {
         });
       }
 
-      await service.remove(id);
+      await AppDataSource.transaction(async (manager) => {
+        const transactionService = new EventosCapacitacionesService(manager);
+        const eliminado = await transactionService.remove(id);
+        await registrarAuditoria({
+          usuarioId: req.usuario?.id ?? null,
+          action: 'ELIMINAR_EVENTO_CAPACITACION',
+          description: `Eliminación del evento o capacitación #${id}`,
+          ipAddress: extraerIPDelRequest(req),
+          userAgent: (req.headers['user-agent'] as string | undefined) ?? null,
+          status: 'success',
+          details: JSON.stringify({
+            eventoCapacitacionId: eliminado.id,
+            tipoActividad: eliminado.tipoActividad,
+            estado: eliminado.estado,
+            nombre: eliminado.nombre,
+          }),
+        }, manager);
+      });
       return res.status(204).send();
     } catch (error) {
       return manejarError(res, error);
@@ -204,7 +275,26 @@ export class EventosCapacitacionesController {
         });
       }
 
-      const actualizado = await service.cambiarEstado(id, estado);
+      const actualizado = await AppDataSource.transaction(async (manager) => {
+        const transactionService = new EventosCapacitacionesService(manager);
+        const anterior = await transactionService.obtenerDetalle(id);
+        const actualizado = await transactionService.cambiarEstado(id, estado);
+        await registrarAuditoria({
+          usuarioId: req.usuario?.id ?? null,
+          action: 'CAMBIAR_ESTADO_EVENTO_CAPACITACION',
+          description: `Cambio de estado del evento o capacitación #${id}`,
+          ipAddress: extraerIPDelRequest(req),
+          userAgent: (req.headers['user-agent'] as string | undefined) ?? null,
+          status: 'success',
+          details: JSON.stringify({
+            eventoCapacitacionId: actualizado.id,
+            tipoActividad: actualizado.tipoActividad,
+            estadoAnterior: anterior.estado,
+            estadoNuevo: actualizado.estado,
+          }),
+        }, manager);
+        return actualizado;
+      });
       return res.status(200).json(actualizado.toPublic());
     } catch (error) {
       return manejarError(res, error);

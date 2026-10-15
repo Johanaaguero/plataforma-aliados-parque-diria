@@ -21,6 +21,7 @@ import {
 } from '../../../utils/fechas';
 
 import { NotificacionService } from '../../Notificaciones/Crear notificaciones Reservas/NotificacionReservaService';
+import { registrarAuditoria } from '../../Autenticación y gestión de usuario/Autenticación y seguridad de acceso al sistema/auditoria.service';
 
 export interface InscripcionAdministrativaDTO {
   id: number;
@@ -182,6 +183,7 @@ export const actualizarEstadoReserva = async (
   reservaId: number,
   estado: EstadoReserva.APROBADA | EstadoReserva.RECHAZADA,
   motivoRechazo: string | null = null,
+  actorId: number | null = null,
 ) => {
   return AppDataSource.transaction(async (manager) => {
     const reservasRepo = manager.getRepository(Reserva);
@@ -224,6 +226,8 @@ export const actualizarEstadoReserva = async (
       throw error;
     }
 
+    const estadoAnterior = reserva.estado;
+
     if (estado === EstadoReserva.APROBADA) {
       const participanteExistente = await participantesRepo.findOne({
         where: {
@@ -232,16 +236,23 @@ export const actualizarEstadoReserva = async (
         },
       });
 
-      const participante = participanteExistente
+           const participante = participanteExistente
         ? Object.assign(participanteExistente, {
             estado: EstadoParticipante.CONFIRMADA,
             fechaCancelacion: null,
+            numeroTicket:
+              participanteExistente.numeroTicket ??
+              reserva.numeroTicket ??
+              (await generarNumeroTicket(manager)),
           })
         : participantesRepo.create({
             usuarioId: reserva.usuarioId,
             eventoCapacitacionId: reserva.eventoCapacitacionId,
             estado: EstadoParticipante.CONFIRMADA,
-            numeroTicket: await generarNumeroTicket(manager),
+            fechaCancelacion: null,
+            numeroTicket:
+              reserva.numeroTicket ??
+              (await generarNumeroTicket(manager)),
           });
 
       await participantesRepo.save(participante);
@@ -270,6 +281,25 @@ export const actualizarEstadoReserva = async (
       evento.cuposDisponibles += 1;
       await eventosRepo.save(evento);
     }
+
+    await registrarAuditoria(
+      {
+        usuarioId: actorId,
+        action: 'CAMBIAR_ESTADO_RESERVA_EVENTO_CAPACITACION',
+        description: `Cambio de estado de reserva #${reservaActualizada.id}`,
+        status: 'success',
+        details: JSON.stringify({
+          reservaId: reservaActualizada.id,
+          usuarioAfectadoId: reservaActualizada.usuarioId,
+          eventoCapacitacionId: reservaActualizada.eventoCapacitacionId,
+          tipoActividad: evento.tipoActividad,
+          estadoAnterior,
+          estadoNuevo: reservaActualizada.estado,
+          motivoRechazoRegistrado: Boolean(reservaActualizada.motivoRechazo),
+        }),
+      },
+      manager,
+    );
 
     return reservaActualizada;
   });

@@ -42,6 +42,7 @@ const cambiarEstadoReserva = (estado: 'aprobada' | 'rechazada') => async (req: R
       id,
       estado === 'aprobada' ? EstadoReserva.APROBADA : EstadoReserva.RECHAZADA,
       motivoRechazo || null,
+      req.usuario?.id ?? null,
     );
     return res.status(200).json({ ok: true, message: `Reserva ${estado} correctamente.`, data: { id: reserva.id, estado: reserva.estado, motivoRechazo: reserva.motivoRechazo } });
   
