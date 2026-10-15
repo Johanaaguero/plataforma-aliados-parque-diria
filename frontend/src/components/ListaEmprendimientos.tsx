@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import MapaUbicacion from './MapaUbicacion'; 
 import ScrollReveal from './ui/ScrollReveal';
+   import { createPortal } from 'react-dom';
 import {
   cambiarEstadoPublicacion,
   obtenerCatalogoPublicado,
@@ -99,46 +100,9 @@ const obtenerUbicacion = (
 
   return null;
 };
-interface DatosPropietario {
-  nombre?: string | null;
-  nombreUsuario?: string | null;
-  rol?: string | null;
-}
 
-const obtenerPropietario = (
-  emprendimiento: Emprendimiento,
-): { nombre: string; rol: string | null } | null => {
-  const datos = emprendimiento as unknown as {
-    asociado?: DatosPropietario | null;
-    propietario?: DatosPropietario | null;
-    usuario?: DatosPropietario | null;
-    creadoPor?: DatosPropietario | null;
-    asociadoId?: number | null;
-  };
 
-  const origen =
-    datos.asociado ??
-    datos.propietario ??
-    datos.usuario ??
-    datos.creadoPor ??
-    null;
 
-  const nombre =
-    origen?.nombre?.trim() ||
-    origen?.nombreUsuario?.trim() ||
-    (datos.asociadoId ? `Usuario #${datos.asociadoId}` : '');
-
-  if (!nombre) return null;
-
-  const rol =
-    origen?.rol === 'administrador'
-      ? 'Administrador'
-      : origen?.rol === 'asociado'
-        ? 'Asociado'
-        : null;
-
-  return { nombre, rol };
-};
 const abrirWhatsApp = (telefono: string) => {
   const numero = telefono.replace(/\D/g, '');
 
@@ -236,7 +200,6 @@ const esAdministrador =
   esContextoAdministrativo && rolAutenticado === 'administrador';
 const esAsociado = rolAutenticado === 'asociado';
 
-const puedeVerPropietario = esAdministrador;
 // El asociado solo entra a gestión cuando está en "Mis emprendimientos"
 const verSoloMios = esAsociado && soloMios;
 
@@ -1233,8 +1196,7 @@ useEffect(() => {
 <div className="flex flex-col p-4">
               {/* Título */}
             <div className="min-h-0">
-              <h2 className="line-clamp-2 text-lg font-extrabold tracking-tight text-stone-900 motion-safe:transition-colors group-hover:text-emerald-900">
-                {emprendimiento.nombre}
+<h2 className="line-clamp-2 min-h-[3rem] shrink-0 text-base font-bold leading-6 text-[#095540] transition-colors duration-200 group-hover:text-[#009444]">                {emprendimiento.nombre}
               </h2>
 
               {emprendimiento.descripcion && (
@@ -1351,42 +1313,7 @@ useEffect(() => {
                 </div>
                 
               )}
-              {puedeVerPropietario && (() => {
-  const propietario = obtenerPropietario(emprendimiento);
-  if (!propietario) return null;
-
-  return (
-    <div className="col-span-2 flex items-center gap-3">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
-        <svg
-          className="h-4 w-4"
-          fill="none"
-          viewBox="0 0 24 24"
-          strokeWidth="1.8"
-          stroke="currentColor"
-          aria-hidden="true"
-        >
-          <circle cx="12" cy="8" r="4" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M4 21c0-4 4-6 8-6s8 2 8 6" />
-        </svg>
-      </div>
-
-      <div className="min-w-0">
-        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-          Registrado por
-        </p>
-        <p className="mt-0.5 truncate text-xs font-semibold text-slate-700">
-          {propietario.nombre}
-          {propietario.rol && (
-            <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
-              {propietario.rol}
-            </span>
-          )}
-        </p>
-      </div>
-    </div>
-  );
-})()}
+              
             </div>
           </div>
 
@@ -1716,98 +1643,103 @@ useEffect(() => {
 
 
         {/* MODAL CAMBIO ESTADO */}
-        {cargandoDetalle && (
-          <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#052f25]/60 p-4 backdrop-blur-sm" role="status" aria-live="polite">
-            <div className="rounded-2xl bg-white/95 px-5 py-4 text-sm font-semibold text-[#095540] shadow-xl">Cargando detalle...</div>
+        {cargandoDetalle &&
+    createPortal(
+      <div className="fixed inset-0 z-[9000] flex items-center justify-center bg-[#052f25]/60 p-4 backdrop-blur-sm" role="status" aria-live="polite">
+        <div className="rounded-2xl bg-white/95 px-5 py-4 text-sm font-semibold text-[#095540] shadow-xl">Cargando detalle...</div>
+      </div>,
+      document.body,
+    )}
+
+      {detalleSeleccionado && (() => {
+  const imagenes = detalleSeleccionado.imagenes?.length
+    ? detalleSeleccionado.imagenes
+    : detalleSeleccionado.imagen
+      ? [{ id: 0, imagen: detalleSeleccionado.imagen, esPortada: true }]
+      : [];
+  const indice = Math.min(imagenDetalle, Math.max(imagenes.length - 1, 0));
+  const imagenActual = imagenes[indice];
+  const ubicacionDetalle = obtenerUbicacion(detalleSeleccionado);
+ 
+  // Se monta en <body> para quedar por encima del navbar y fijo en pantalla.
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[9000] flex items-center justify-center overscroll-contain bg-[#052f25]/70 p-4 backdrop-blur-sm sm:p-6"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="titulo-detalle-emprendimiento"
+      onClick={() => setDetalleSeleccionado(null)}
+    >
+      {/* Tarjeta fija: no se mueve, solo se desplaza el cuerpo */}
+      <div
+        className="relative flex max-h-[calc(100dvh-2rem)] w-full max-w-3xl flex-col overflow-hidden rounded-3xl border border-white/60 bg-[#fffef9] text-slate-800 shadow-[0_24px_70px_rgba(5,47,37,0.3)] sm:max-h-[calc(100dvh-3rem)] dark:border-white/10 dark:bg-slate-950 dark:text-slate-100"
+        onClick={(event) => event.stopPropagation()}
+      >
+        {/* Encabezado fijo */}
+        <div className="flex shrink-0 items-start justify-between gap-4 border-b border-[#095540]/10 px-6 py-4 sm:px-8 sm:py-5 dark:border-white/10">
+          <div className="min-w-0">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#009444]">Detalle del emprendimiento</p>
+            <h2 id="titulo-detalle-emprendimiento" className="mt-1 break-words font-brand text-xl font-bold text-[#095540] sm:text-2xl">{detalleSeleccionado.nombre}</h2>
           </div>
-        )}
-
-        {detalleSeleccionado && (() => {
-          const imagenes = detalleSeleccionado.imagenes?.length
-            ? detalleSeleccionado.imagenes
-            : detalleSeleccionado.imagen
-              ? [{ id: 0, imagen: detalleSeleccionado.imagen, esPortada: true }]
-              : [];
-          const indice = Math.min(imagenDetalle, Math.max(imagenes.length - 1, 0));
-          const imagenActual = imagenes[indice];
-          const ubicacionDetalle = obtenerUbicacion(detalleSeleccionado);
-          return (
-            <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#052f25]/70 p-4 backdrop-blur-sm sm:p-6" role="dialog" aria-modal="true" aria-labelledby="titulo-detalle-emprendimiento" onClick={() => setDetalleSeleccionado(null)}>
-
-<div
-  className="custom-scrollbar my-auto max-h-[85vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-white/60 bg-[#fffef9]/95 p-6 pr-4 text-slate-800 shadow-[0_24px_70px_rgba(5,47,37,0.3)] backdrop-blur-xl sm:p-8 dark:border-white/10 dark:bg-slate-950/95 dark:text-slate-100"
-  onClick={(event) => event.stopPropagation()}
->
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#009444]">Detalle del emprendimiento</p>
-                    <h2 id="titulo-detalle-emprendimiento" className="mt-1 font-brand text-xl font-bold text-[#095540] sm:text-2xl">{detalleSeleccionado.nombre}</h2>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    <button type="button" onClick={() => setDetalleSeleccionado(null)} className="rounded-full p-2 text-[#095540] hover:bg-[#8DC63F]/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444]" aria-label="Cerrar detalles">×</button>
-                  </div>
-                </div>
-                <div className="mt-5 space-y-5">
-                {imagenActual && (
-                  <div>
-                    <img src={imagenActual.imagen} alt={detalleSeleccionado.nombre} className="my-3 h-56 w-full rounded-2xl object-cover shadow-md sm:h-64" />
-                    {imagenes.length > 1 && <div className="mt-3 flex flex-wrap gap-2">
-                      <button type="button" onClick={() => setImagenDetalle((actual) => (actual - 1 + imagenes.length) % imagenes.length)} className="rounded-xl border border-[#095540]/15 bg-white px-3 py-2 text-xs font-bold text-[#095540] hover:bg-[#8DC63F]/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444]" aria-label="Ver imagen anterior">Anterior</button>
-                      {imagenes.map((imagen, indiceMiniatura) => <button key={imagen.id || imagen.imagen} type="button" onClick={() => setImagenDetalle(indiceMiniatura)} className={`h-16 w-16 overflow-hidden rounded-xl border-2 ${indiceMiniatura === indice ? 'border-[#009444]' : 'border-transparent'}`} aria-label={`Ver imagen ${indiceMiniatura + 1}`}><img src={imagen.imagen} alt="" className="h-full w-full object-cover" /></button>)}
-                      <button type="button" onClick={() => setImagenDetalle((actual) => (actual + 1) % imagenes.length)} className="rounded-xl border border-[#095540]/15 bg-white px-3 py-2 text-xs font-bold text-[#095540] hover:bg-[#8DC63F]/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444]" aria-label="Ver imagen siguiente">Siguiente</button>
-                    </div>}
-                    <div className="mt-5">
-                      <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#009444]">Ubicación en el mapa</p>
-                      <MapaUbicacion latitud={detalleSeleccionado.latitud} longitud={detalleSeleccionado.longitud} nombre={detalleSeleccionado.nombre} />
-                    </div>
-                  </div>
-                )}
-                {!imagenActual && (
-                  <div>
-                    <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#009444]">Ubicación en el mapa</p>
-                    <MapaUbicacion latitud={detalleSeleccionado.latitud} longitud={detalleSeleccionado.longitud} nombre={detalleSeleccionado.nombre} />
-                  </div>
-                )}
-                <div className="grid gap-4 text-sm sm:grid-cols-2">
-                  {detalleSeleccionado.descripcion && <p className="sm:col-span-2 text-sm leading-6 text-slate-600">{detalleSeleccionado.descripcion}</p>}
-                  {ubicacionDetalle && <p className="text-sm text-slate-700 dark:text-slate-200"><strong className="block text-xs uppercase tracking-wider text-slate-400">Ubicación</strong>{ubicacionDetalle}</p>}
-                  {detalleSeleccionado.direccion && <p className="text-sm text-slate-700"><strong className="block text-xs uppercase tracking-wider text-slate-400">Ubicación</strong>{detalleSeleccionado.direccion}</p>}
-{detalleSeleccionado.telefono && (
-  <button
-    type="button"
-    onClick={() => abrirWhatsApp(detalleSeleccionado.telefono!)}
-    className="text-left text-sm text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444] focus-visible:ring-offset-2 rounded-lg"
-    aria-label={`Contactar por WhatsApp al ${detalleSeleccionado.telefono}`}
-  >
-    <strong className="block text-xs uppercase tracking-wider text-slate-400">
-      WhatsApp
-    </strong>
-
-    <span className="font-semibold text-emerald-700 underline-offset-2 hover:underline">
-      {detalleSeleccionado.telefono}
-    </span>
-  </button>
-)}                  {detalleSeleccionado.correoElectronico && <p className="text-sm text-slate-700"><strong className="block text-xs uppercase tracking-wider text-slate-400">Correo</strong>{detalleSeleccionado.correoElectronico}</p>}
-{puedeVerPropietario && (() => {
-  const propietario = obtenerPropietario(detalleSeleccionado);
-  if (!propietario) return null;
-
-  return (
-    <p className="text-sm text-slate-700">
-      <strong className="block text-xs uppercase tracking-wider text-slate-400">
-        Registrado por
-      </strong>
-      {propietario.nombre}
-      {propietario.rol ? ` (${propietario.rol})` : ''}
-    </p>
-  );
-})()}
-                  </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <button type="button" onClick={() => setDetalleSeleccionado(null)} className="rounded-full p-2 text-[#095540] hover:bg-[#8DC63F]/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444]" aria-label="Cerrar detalles">×</button>
+          </div>
+        </div>
+ 
+        {/* Cuerpo: lo único que se desplaza */}
+        <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-5 sm:px-8">
+          <div className="space-y-5">
+            {imagenActual && (
+              <div>
+                <img src={imagenActual.imagen} alt={detalleSeleccionado.nombre} className="h-56 w-full rounded-2xl object-cover shadow-md sm:h-64" />
+                {imagenes.length > 1 && <div className="mt-3 flex flex-wrap gap-2">
+                  <button type="button" onClick={() => setImagenDetalle((actual) => (actual - 1 + imagenes.length) % imagenes.length)} className="rounded-xl border border-[#095540]/15 bg-white px-3 py-2 text-xs font-bold text-[#095540] hover:bg-[#8DC63F]/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444]" aria-label="Ver imagen anterior">Anterior</button>
+                  {imagenes.map((imagen, indiceMiniatura) => <button key={imagen.id || imagen.imagen} type="button" onClick={() => setImagenDetalle(indiceMiniatura)} className={`h-16 w-16 overflow-hidden rounded-xl border-2 ${indiceMiniatura === indice ? 'border-[#009444]' : 'border-transparent'}`} aria-label={`Ver imagen ${indiceMiniatura + 1}`}><img src={imagen.imagen} alt="" className="h-full w-full object-cover" /></button>)}
+                  <button type="button" onClick={() => setImagenDetalle((actual) => (actual + 1) % imagenes.length)} className="rounded-xl border border-[#095540]/15 bg-white px-3 py-2 text-xs font-bold text-[#095540] hover:bg-[#8DC63F]/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444]" aria-label="Ver imagen siguiente">Siguiente</button>
+                </div>}
+                <div className="mt-5">
+                  <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#009444]">Ubicación en el mapa</p>
+                  <MapaUbicacion latitud={detalleSeleccionado.latitud} longitud={detalleSeleccionado.longitud} nombre={detalleSeleccionado.nombre} />
                 </div>
               </div>
+            )}
+            {!imagenActual && (
+              <div>
+                <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#009444]">Ubicación en el mapa</p>
+                <MapaUbicacion latitud={detalleSeleccionado.latitud} longitud={detalleSeleccionado.longitud} nombre={detalleSeleccionado.nombre} />
+              </div>
+            )}
+            <div className="grid gap-4 text-sm sm:grid-cols-2">
+              {detalleSeleccionado.descripcion && <p className="sm:col-span-2 text-sm leading-6 text-slate-600">{detalleSeleccionado.descripcion}</p>}
+              {ubicacionDetalle && <p className="text-sm text-slate-700 dark:text-slate-200"><strong className="block text-xs uppercase tracking-wider text-slate-400">Ubicación</strong>{ubicacionDetalle}</p>}
+              {detalleSeleccionado.direccion && <p className="text-sm text-slate-700"><strong className="block text-xs uppercase tracking-wider text-slate-400">Ubicación</strong>{detalleSeleccionado.direccion}</p>}
+              {detalleSeleccionado.telefono && (
+                <button
+                  type="button"
+                  onClick={() => abrirWhatsApp(detalleSeleccionado.telefono!)}
+                  className="rounded-lg text-left text-sm text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444] focus-visible:ring-offset-2"
+                  aria-label={`Contactar por WhatsApp al ${detalleSeleccionado.telefono}`}
+                >
+                  <strong className="block text-xs uppercase tracking-wider text-slate-400">
+                    WhatsApp
+                  </strong>
+ 
+                  <span className="font-semibold text-emerald-700 underline-offset-2 hover:underline">
+                    {detalleSeleccionado.telefono}
+                  </span>
+                </button>
+              )}
+              {detalleSeleccionado.correoElectronico && <p className="text-sm text-slate-700"><strong className="block text-xs uppercase tracking-wider text-slate-400">Correo</strong>{detalleSeleccionado.correoElectronico}</p>}
+             
             </div>
-          );
-        })()}
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+})()}
+
 
         {emprendimientoSeleccionado && (
           <div
