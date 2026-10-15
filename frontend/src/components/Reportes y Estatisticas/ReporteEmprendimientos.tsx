@@ -1726,8 +1726,8 @@ export default function ReporteEmprendimientos() {
                     : 'todas las categorias'}
                 </p>
 
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                  Fecha de generaciÃ³n:{' '}
+                <p className="mt-1 text-xs font-medium text-slate-600 dark:text-slate-300">
+                  Fecha de generación:{' '}
                   {datos.informacionGeneral
                     ?.fechaGeneracion
                     ? new Date(

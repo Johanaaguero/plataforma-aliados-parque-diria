@@ -83,6 +83,14 @@ const iconos = {
       <path d="M8 3v4M16 3v4M4 10h16M8 14h3M8 17h6" />
     </Icono>
   ),
+  eventosCalendario: (
+    <Icono>
+      <rect x="3.5" y="4.5" width="14" height="15" rx="2" />
+      <path d="M7.5 2.5v4M13.5 2.5v4M3.5 9.5h14" />
+      <circle cx="17.5" cy="16.5" r="4" />
+      <path d="M17.5 14.3v2.4l1.5 1" />
+    </Icono>
+  ),
   inscripciones: (
     <Icono>
       <rect x="5" y="4" width="14" height="16" rx="2" />
@@ -717,7 +725,7 @@ export default function DashboardAdministrador({
                 />
 
                 <TarjetaResumen
-                  icono={iconos.eventos}
+                  icono={iconos.eventosCalendario}
                   titulo="Eventos y capacitaciones"
                   valor={conteoEventos.todos}
                   etiqueta="Vigentes"

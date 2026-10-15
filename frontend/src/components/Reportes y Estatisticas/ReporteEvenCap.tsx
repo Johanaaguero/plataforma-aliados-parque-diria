@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import AccionesReporteGuardado from './AccionesReporteGuardado';
+import { rutaApiReportes } from '../../services/reportesApi';
 
-type Periodo = 'hoy' | '7dias' | '30dias' | 'mes' | 'personalizado';
+type Periodo = 'hoy' | '7dias' | '30dias' | 'mes' | 'personalizado' | 'todas';
 type TemporadaFiltro = '' | 'seca' | 'lluviosa';
 type TipoActividadFiltro = '' | 'evento' | 'capacitacion';
 
@@ -88,6 +89,25 @@ interface EstadisticasEventos {
 interface DatoGraficaMontana {
   nombre: string;
   cantidad: number;
+  temporada?: 'seca' | 'lluviosa';
+}
+
+function IconoTemporada({
+  temporada,
+}: {
+  temporada: 'seca' | 'lluviosa';
+}) {
+  return temporada === 'seca' ? (
+    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0 text-amber-500">
+      <circle cx="12" cy="12" r="4" fill="currentColor" />
+      <path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  ) : (
+    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0 text-sky-500">
+      <path d="M12 3C9.8 6.4 6 10.3 6 14a6 6 0 0 0 12 0c0-3.7-3.8-7.6-6-11Z" fill="currentColor" />
+      <path d="M9.5 15.5a2.5 2.5 0 0 0 2.5 2.5" stroke="white" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  );
 }
 
 function Icono({
@@ -488,6 +508,8 @@ function obtenerNombrePeriodo(periodo: Periodo): string {
       return 'Este mes';
     case 'personalizado':
       return 'Período personalizado';
+    case 'todas':
+      return 'Todas las fechas';
     default:
       return 'Todos';
   }
@@ -729,6 +751,9 @@ function GraficaMontana({
             className="max-w-[90px] truncate text-center text-[11px] font-semibold text-slate-500 dark:text-slate-400"
             title={p.dato.nombre}
           >
+            {p.dato.temporada && (
+              <IconoTemporada temporada={p.dato.temporada} />
+            )}
             {p.dato.nombre}
           </span>
         ))}
@@ -855,18 +880,20 @@ export default function ReporteEventos() {
       const parametros =
         new URLSearchParams();
 
-      if (fechaInicio) {
-        parametros.set(
-          'fechaInicio',
-          fechaInicio,
-        );
-      }
+      if (periodo !== 'todas') {
+        if (fechaInicio) {
+          parametros.set(
+            'fechaInicio',
+            fechaInicio,
+          );
+        }
 
-      if (fechaFin) {
-        parametros.set(
-          'fechaFin',
-          fechaFin,
-        );
+        if (fechaFin) {
+          parametros.set(
+            'fechaFin',
+            fechaFin,
+          );
+        }
       }
 
       if (temporada) {
@@ -884,7 +911,9 @@ export default function ReporteEventos() {
       }
 
       const respuesta = await fetch(
-        `http://localhost:3000/api/reportes/eventos/estadisticas/eventos?${parametros.toString()}`,
+        rutaApiReportes(
+          `/eventos/estadisticas/eventos?${parametros.toString()}`,
+        ),
         {
           method: 'GET',
           headers: {
@@ -953,6 +982,7 @@ export default function ReporteEventos() {
     Periodo,
     string,
   ][] = [
+    ['todas', 'Todas las fechas'],
     ['hoy', 'Hoy'],
     ['7dias', 'Últimos 7 días'],
     ['30dias', 'Últimos 30 días'],
@@ -1388,7 +1418,7 @@ export default function ReporteEventos() {
                 </p>
 
                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                  Fecha de generaciÃ³n:{' '}
+                  Fecha de generación:{' '}
                   {datos.informacionGeneral
                     ?.fechaGeneracion
                     ? new Date(
@@ -1551,12 +1581,14 @@ export default function ReporteEventos() {
                     cantidad:
                       datos.actividadesPorTemporada
                         .seca,
+                    temporada: 'seca',
                   },
                   {
                     nombre: 'Lluviosa',
                     cantidad:
                       datos.actividadesPorTemporada
                         .lluviosa,
+                    temporada: 'lluviosa',
                   },
                 ]}
                 idGradiente="degradadoMontanaTemporada"
@@ -1765,7 +1797,12 @@ export default function ReporteEventos() {
                           </td>
 
                           <td className="px-5 py-4 text-sm capitalize text-slate-600 dark:text-slate-300">
-                            {actividad.temporada || '—'}
+                            {actividad.temporada ? (
+                              <span className="inline-flex items-center gap-1.5">
+                                <IconoTemporada temporada={actividad.temporada} />
+                                {actividad.temporada}
+                              </span>
+                            ) : '—'}
                           </td>
 
                           <td className="px-5 py-4">
