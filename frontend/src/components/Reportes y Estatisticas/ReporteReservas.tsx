@@ -1904,9 +1904,55 @@ const contenedorFechasRef =
 
                 <div className="flex items-center justify-between gap-4">
 
-                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
-                    {iconos.temporada}
-                  </span>
+                 <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
+  {datos.reservasPorTemporada.seca >=
+  datos.reservasPorTemporada.lluviosa ? (
+    // Icono de sol: época seca
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-label="Época seca"
+      role="img"
+    >
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2" />
+      <path d="M12 20v2" />
+      <path d="m4.93 4.93 1.42 1.42" />
+      <path d="m17.65 17.65 1.42 1.42" />
+      <path d="M2 12h2" />
+      <path d="M20 12h2" />
+      <path d="m6.35 17.65-1.42 1.42" />
+      <path d="m19.07 4.93-1.42 1.42" />
+    </svg>
+  ) : (
+    // Icono de nube con lluvia: época lluviosa
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-label="Época lluviosa"
+      role="img"
+    >
+      <path d="M20 16.2A4.5 4.5 0 0 0 18 7.6a6 6 0 0 0-11.4 1.8A4 4 0 0 0 7 17h11" />
+      <path d="m8 19-1 2" />
+      <path d="m13 19-1 2" />
+      <path d="m18 19-1 2" />
+    </svg>
+  )}
+</span>
 
                   <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                     Temporada

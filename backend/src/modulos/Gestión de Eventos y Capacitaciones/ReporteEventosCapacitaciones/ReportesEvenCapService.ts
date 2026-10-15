@@ -1,28 +1,16 @@
+
 import { AppDataSource } from '../../../data-source';
+
 import {
   EventosCapacitaciones,
   TipoActividad,
   Temporada,
-  EstadoEventoCapacitacion,
 } from '../../../models/EventosCapacitaciones';
-import { Reporte, TipoReporte } from '../../../models/Reporte';
 
-function eliminarDuplicadosPorId<T extends { id: unknown }>(
-  registros: T[],
-): T[] {
-  const ids = new Set<string>();
-
-  return registros.filter((registro) => {
-    const id = String(registro.id);
-
-    if (ids.has(id)) {
-      return false;
-    }
-
-    ids.add(id);
-    return true;
-  });
-}
+import {
+  Reporte,
+  TipoReporte,
+} from '../../../models/Reporte';
 
 interface FiltrosEventos {
   fechaInicio?: string;
@@ -42,30 +30,33 @@ export class ReportesEventosService {
     filtros: FiltrosEventos,
     usuarioGeneroId: number,
   ) {
+    // CONSULTAR EVENTOS Y CAPACITACIONES
     const query =
-      this.eventosRepository
-        .createQueryBuilder('evento');
+      this.eventosRepository.createQueryBuilder('evento');
 
-    if (filtros.fechaInicio || filtros.fechaFin) {
-      const fechaInicio = filtros.fechaInicio
-        ? new Date(`${filtros.fechaInicio}T00:00:00`)
-        : new Date('2000-01-01T00:00:00');
-      const fechaFin = filtros.fechaFin
-        ? new Date(`${filtros.fechaFin}T23:59:59`)
-        : new Date('2100-12-31T23:59:59');
-
-      query.where(
-        'evento.fecha BETWEEN :fechaInicio AND :fechaFin',
+      
+    // Filtrar por fecha inicial.
+    // La columna fecha es de tipo DATE en MySQL.
+    if (filtros.fechaInicio) {
+      query.andWhere(
+        'evento.fecha >= :fechaInicio',
         {
-          fechaInicio,
-          fechaFin,
+          fechaInicio: filtros.fechaInicio,
         },
       );
     }
 
-    /*
-     * Filtro por temporada.
-     */
+    // Filtrar por fecha final.
+    if (filtros.fechaFin) {
+      query.andWhere(
+        'evento.fecha <= :fechaFin',
+        {
+          fechaFin: filtros.fechaFin,
+        },
+      );
+    }
+
+    // Filtrar por temporada.
     if (filtros.temporada) {
       query.andWhere(
         'evento.temporada = :temporada',
@@ -75,71 +66,58 @@ export class ReportesEventosService {
       );
     }
 
-    /*
-     * Filtro por tipo de actividad.
-     */
+    // Filtrar por tipo de actividad.
     if (filtros.tipoActividad) {
       query.andWhere(
-        'evento.tipo_actividad = :tipoActividad',
+        'evento.tipoActividad = :tipoActividad',
         {
           tipoActividad: filtros.tipoActividad,
         },
       );
     }
 
-    const eventos = eliminarDuplicadosPorId(
-      await query
-        .select([
-          'evento.id AS id',
-          'evento.nombre AS nombre',
-          'evento.fecha AS fecha',
-          'evento.hora AS hora',
-          'evento.lugar AS lugar',
-          'evento.tipo_actividad AS tipoActividad',
-          'evento.cupo_maximo AS cupoMaximo',
-          'evento.cupos_disponibles AS cuposDisponibles',
-          'evento.cupo_minimo AS cupoMinimo',
-          'evento.edad_minima AS edadMinima',
-          'evento.edad_maxima AS edadMaxima',
-          'evento.estado AS estado',
-          'evento.temporada AS temporada',
-        ])
-        .orderBy('evento.fecha', 'DESC')
-        .getRawMany(),
+    // Obtener entidades completas con el mapeo de TypeORM.
+    // No se filtra por estado: se contabilizan todos los estados.
+    const eventos = await query
+      .orderBy('evento.fecha', 'DESC')
+      .addOrderBy('evento.id', 'DESC')
+      .getMany();
+      console.log('Filtros recibidos:', filtros);
+console.log('Total recuperado por TypeORM:', eventos.length);
+console.log('Actividades recuperadas:', eventos);
+
+    console.log(
+      '[Reporte eventos] Filtros aplicados:',
+      filtros,
     );
 
-    /*
-     * TOTAL DE ACTIVIDADES
-     */
+    console.log(
+      '[Reporte eventos] Registros encontrados:',
+      eventos.length,
+    );
+
+    // TOTAL DE ACTIVIDADES
     const totalActividades = eventos.length;
 
-    /*
-     * ACTIVIDADES POR TIPO
-     */
+    // ACTIVIDADES POR TIPO
     const actividadesPorTipo = {
       evento: 0,
       capacitacion: 0,
     };
 
     for (const actividad of eventos) {
-      if (
-        actividad.tipoActividad ===
-        TipoActividad.EVENTO
-      ) {
+      if (actividad.tipoActividad === TipoActividad.EVENTO) {
         actividadesPorTipo.evento++;
       }
 
       if (
-        actividad.tipoActividad ===
-        TipoActividad.CAPACITACION
+        actividad.tipoActividad === TipoActividad.CAPACITACION
       ) {
         actividadesPorTipo.capacitacion++;
       }
     }
 
-    /*
-     * ACTIVIDADES POR ESTADO
-     */
+    // ACTIVIDADES POR ESTADO
     const actividadesPorEstado = {
       borrador: 0,
       publicado: 0,
@@ -148,84 +126,58 @@ export class ReportesEventosService {
     };
 
     for (const actividad of eventos) {
-      const estado = actividad.estado;
+      switch (actividad.estado) {
+        case 'borrador':
+          actividadesPorEstado.borrador++;
+          break;
 
-      if (
-        Object.prototype.hasOwnProperty.call(
-          actividadesPorEstado,
-          estado,
-        )
-      ) {
-        actividadesPorEstado[
-          estado as keyof typeof actividadesPorEstado
-        ]++;
+        case 'publicado':
+          actividadesPorEstado.publicado++;
+          break;
+
+        case 'no_publicado':
+          actividadesPorEstado.no_publicado++;
+          break;
+
+        case 'desactivado':
+          actividadesPorEstado.desactivado++;
+          break;
       }
     }
 
-    /*
-     * ACTIVIDADES POR TEMPORADA
-     */
+    // ACTIVIDADES POR TEMPORADA
     const actividadesPorTemporada = {
       seca: 0,
       lluviosa: 0,
     };
 
     for (const actividad of eventos) {
-      if (
-        actividad.temporada ===
-        Temporada.SECA
-      ) {
+      if (actividad.temporada === Temporada.SECA) {
         actividadesPorTemporada.seca++;
       }
 
-      if (
-        actividad.temporada ===
-        Temporada.LLUVIOSA
-      ) {
+      if (actividad.temporada === Temporada.LLUVIOSA) {
         actividadesPorTemporada.lluviosa++;
       }
     }
 
-    /*
-     * ACTIVIDADES POR MES
-     *
-     * La fecha viene desde MySQL como Date.
-     * Ejemplo:
-     * 2026-09-20T00:00:00.000Z
-     *
-     * Se utiliza UTC para evitar que la zona horaria
-     * cambie el día o el mes.
-     */
-    const actividadesPorMesMap = new Map<
-      string,
-      number
-    >();
+    // ACTIVIDADES POR MES
+    const actividadesPorMesMap = new Map<string, number>();
 
     for (const actividad of eventos) {
       if (!actividad.fecha) {
         continue;
       }
 
-      let fecha: Date;
+      // La columna es DATE: se toma directamente YYYY-MM.
+      const fecha = String(actividad.fecha);
+      const coincidencia = fecha.match(/^(\d{4})-(\d{2})/);
 
-      if (actividad.fecha instanceof Date) {
-        fecha = actividad.fecha;
-      } else {
-        fecha = new Date(
-          String(actividad.fecha),
-        );
-      }
-
-      if (isNaN(fecha.getTime())) {
+      if (!coincidencia) {
         continue;
       }
 
-      const año = fecha.getUTCFullYear();
-      const mes = fecha.getUTCMonth() + 1;
-
-      const clave = `${año}-${String(
-        mes,
-      ).padStart(2, '0')}`;
+      const clave = `${coincidencia[1]}-${coincidencia[2]}`;
 
       actividadesPorMesMap.set(
         clave,
@@ -236,17 +188,13 @@ export class ReportesEventosService {
     const actividadesPorMes = Array.from(
       actividadesPorMesMap.entries(),
     )
-      .sort(([a], [b]) =>
-        a.localeCompare(b),
-      )
+      .sort(([a], [b]) => a.localeCompare(b))
       .map(([mes, cantidad]) => ({
         mes,
         cantidad,
       }));
 
-    /*
-     * MES CON MÁS ACTIVIDADES
-     */
+    // MES CON MÁS ACTIVIDADES
     let mesConMasActividades: {
       mes: string;
       cantidad: number;
@@ -255,154 +203,110 @@ export class ReportesEventosService {
     for (const item of actividadesPorMes) {
       if (
         !mesConMasActividades ||
-        item.cantidad >
-          mesConMasActividades.cantidad
+        item.cantidad > mesConMasActividades.cantidad
       ) {
         mesConMasActividades = item;
       }
     }
 
-    /*
-     * DETALLE DE ACTIVIDADES
-     */
-    const detalleActividades = eventos.map(
-      (actividad) => ({
-        id: Number(actividad.id),
-        nombre:
-          actividad.nombre ??
-          'Sin nombre',
-        fecha: actividad.fecha ?? null,
-        hora: actividad.hora ?? null,
-        lugar: actividad.lugar ?? null,
-        tipoActividad:
-          actividad.tipoActividad ?? null,
-        cupoMaximo:
-          actividad.cupoMaximo !== null &&
-          actividad.cupoMaximo !== undefined
-            ? Number(
-                actividad.cupoMaximo,
-              )
-            : null,
-        cuposDisponibles:
-          actividad.cuposDisponibles !==
-            null &&
-          actividad.cuposDisponibles !==
-            undefined
-            ? Number(
-                actividad.cuposDisponibles,
-              )
-            : null,
-        cupoMinimo:
-          actividad.cupoMinimo !== null &&
-          actividad.cupoMinimo !== undefined
-            ? Number(
-                actividad.cupoMinimo,
-              )
-            : null,
-        edadMinima:
-          actividad.edadMinima !== null &&
-          actividad.edadMinima !== undefined
-            ? Number(
-                actividad.edadMinima,
-              )
-            : null,
-        edadMaxima:
-          actividad.edadMaxima !== null &&
-          actividad.edadMaxima !== undefined
-            ? Number(
-                actividad.edadMaxima,
-              )
-            : null,
-        estado: actividad.estado ?? null,
-        temporada:
-          actividad.temporada ?? null,
-      }),
-    );
+    // DETALLE DE ACTIVIDADES
+    const detalleActividades = eventos.map((actividad) => ({
+      id: Number(actividad.id),
+      nombre: actividad.nombre ?? 'Sin nombre',
+      fecha: actividad.fecha ?? null,
+      hora: actividad.hora ?? null,
+      lugar: actividad.lugar ?? null,
+      tipoActividad: actividad.tipoActividad ?? null,
 
-    /*
-     * REGISTRAR CONSULTA DEL REPORTE
-     */
-    const ultimoReporte =
-      await this.reporteRepository.find({
-        order: {
-          id: 'DESC',
-        },
-        take: 1,
-      });
+      cupoMaximo:
+        actividad.cupoMaximo != null
+          ? Number(actividad.cupoMaximo)
+          : null,
 
-    const siguienteNumero =
-      (ultimoReporte[0]?.id ?? 0) + 1;
+      cuposDisponibles:
+        actividad.cuposDisponibles != null
+          ? Number(actividad.cuposDisponibles)
+          : null,
 
-    const nuevoReporte =
-      this.reporteRepository.create({
-        numeroReporte: `REP-${String(
-          siguienteNumero,
-        ).padStart(6, '0')}`,
-        tipoReporte: TipoReporte.EVENTOS,
-        usuarioGeneroId,
-      });
+      cupoMinimo:
+        actividad.cupoMinimo != null
+          ? Number(actividad.cupoMinimo)
+          : null,
 
-    await this.reporteRepository.save(
-      nuevoReporte,
-    );
+      edadMinima:
+        actividad.edadMinima != null
+          ? Number(actividad.edadMinima)
+          : null,
 
+      edadMaxima:
+        actividad.edadMaxima != null
+          ? Number(actividad.edadMaxima)
+          : null,
+
+      estado: actividad.estado ?? null,
+      temporada: actividad.temporada ?? null,
+    }));
+
+    // REGISTRAR CONSULTA DEL REPORTE
+    const ultimoReporte = await this.reporteRepository.find({
+      order: {
+        id: 'DESC',
+      },
+      take: 1,
+    });
+
+    const siguienteNumero = (ultimoReporte[0]?.id ?? 0) + 1;
+
+    const nuevoReporte = this.reporteRepository.create({
+      numeroReporte: `REP-${String(siguienteNumero).padStart(6, '0')}`,
+      tipoReporte: TipoReporte.EVENTOS,
+      usuarioGeneroId,
+    });
+
+    await this.reporteRepository.save(nuevoReporte);
+
+    // RESPUESTA DEL REPORTE
     return {
       informacionGeneral: {
-        nombre:
-          'Reporte de eventos y capacitaciones',
+        nombre: 'Reporte de eventos y capacitaciones',
         tipo: TipoReporte.EVENTOS,
+
         periodo: {
-          fechaInicio:
-            filtros.fechaInicio ?? null,
-          fechaFin:
-            filtros.fechaFin ?? null,
+          fechaInicio: filtros.fechaInicio ?? null,
+          fechaFin: filtros.fechaFin ?? null,
         },
+
         filtros: {
-          temporada:
-            filtros.temporada ?? null,
-          tipoActividad:
-            filtros.tipoActividad ?? null,
+          temporada: filtros.temporada ?? null,
+          tipoActividad: filtros.tipoActividad ?? null,
         },
-        fechaGeneracion:
-          nuevoReporte.fechaGeneracion,
-        numeroReporte:
-          nuevoReporte.numeroReporte,
+
+        fechaGeneracion: nuevoReporte.fechaGeneracion,
+        numeroReporte: nuevoReporte.numeroReporte,
       },
 
       reporte: {
         id: nuevoReporte.id,
-        numeroReporte:
-          nuevoReporte.numeroReporte,
-        fechaGeneracion:
-          nuevoReporte.fechaGeneracion,
+        numeroReporte: nuevoReporte.numeroReporte,
+        fechaGeneracion: nuevoReporte.fechaGeneracion,
       },
 
       periodo: {
-        fechaInicio:
-          filtros.fechaInicio ?? null,
-        fechaFin:
-          filtros.fechaFin ?? null,
+        fechaInicio: filtros.fechaInicio ?? null,
+        fechaFin: filtros.fechaFin ?? null,
       },
 
       filtros: {
-        temporada:
-          filtros.temporada ?? null,
-        tipoActividad:
-          filtros.tipoActividad ?? null,
+        temporada: filtros.temporada ?? null,
+        tipoActividad: filtros.tipoActividad ?? null,
       },
 
       totalActividades,
-
       actividadesPorTipo,
-
       actividadesPorEstado,
-
       actividadesPorTemporada,
-
       actividadesPorMes,
-
       mesConMasActividades,
-
       detalleActividades,
     };
   }

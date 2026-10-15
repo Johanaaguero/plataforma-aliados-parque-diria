@@ -295,36 +295,27 @@ export default function login({
             </label>
 
             <input
-              id="identificador"
-              type="text"
-              className={`mt-2 block w-full rounded-2xl border bg-white/90 px-4 py-3 text-[0.9375rem] text-slate-900 shadow-sm outline-none placeholder:text-slate-400 focus-visible:ring-4 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-500 motion-safe:transition-[border-color,box-shadow,background-color] motion-safe:duration-200 motion-reduce:transition-none ${
-                errores.identificador
-                  ? 'border-[#D9D823] bg-[#D9D823]/10 focus-visible:border-[#D9D823] focus-visible:ring-[#D9D823]/30'
-                  : 'border-[#095540]/20 hover:border-[#095540]/45 focus-visible:border-[#009444] focus-visible:ring-[#009444]/25'
-              }`}
-              value={identificador}
-              aria-invalid={Boolean(
-                errores.identificador
-              )}
-              aria-describedby={
-                errores.identificador
-                  ? 'identificador-error'
-                  : undefined
-              }
-              onChange={(e) => {
-                setIdentificador(
-                  e.target.value
-                );
-
-                limpiarError(
-                  'identificador'
-                );
-              }}
-              disabled={
-                estado === 'cargando'
-              }
-            />
-
+  id="identificador"
+  type="text"
+  placeholder="Escribe aquí:"
+  className={`mt-2 block w-full rounded-2xl border bg-white/90 px-4 py-3 text-[0.9375rem] text-slate-900 shadow-sm outline-none placeholder:text-slate-400 focus-visible:ring-4 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-500 motion-safe:transition-[border-color,box-shadow,background-color] motion-safe:duration-200 motion-reduce:transition-none ${
+    errores.identificador
+      ? 'border-[#D9D823] bg-[#D9D823]/10 focus-visible:border-[#D9D823] focus-visible:ring-[#D9D823]/30'
+      : 'border-[#095540]/20 hover:border-[#095540]/45 focus-visible:border-[#009444] focus-visible:ring-[#009444]/25'
+  }`}
+  value={identificador}
+  aria-invalid={Boolean(errores.identificador)}
+  aria-describedby={
+    errores.identificador
+      ? 'identificador-error'
+      : undefined
+  }
+  onChange={(e) => {
+    setIdentificador(e.target.value);
+    limpiarError('identificador');
+  }}
+  disabled={estado === 'cargando'}
+/>
             {errores.identificador && (
               <span
                 id="identificador-error"
@@ -351,39 +342,27 @@ export default function login({
 
             <div className="relative mt-2">
               <input
-                id="password"
-                type={
-                  mostrarPassword
-                    ? 'text'
-                    : 'password'
-                }
-                className={`block w-full rounded-2xl border bg-white/90 px-4 py-3 pr-24 text-[0.9375rem] text-slate-900 shadow-sm outline-none placeholder:text-slate-400 focus-visible:ring-4 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-500 motion-safe:transition-[border-color,box-shadow,background-color] motion-safe:duration-200 motion-reduce:transition-none ${
-                  errores.password
-                    ? 'border-[#D9D823] bg-[#D9D823]/10 focus-visible:border-[#D9D823] focus-visible:ring-[#D9D823]/30'
-                    : 'border-[#095540]/20 hover:border-[#095540]/45 focus-visible:border-[#009444] focus-visible:ring-[#009444]/25'
-                }`}
-                value={password}
-                aria-invalid={Boolean(
-                  errores.password
-                )}
-                aria-describedby={
-                  errores.password
-                    ? 'password-error'
-                    : undefined
-                }
-                onChange={(e) => {
-                  setPassword(
-                    e.target.value
-                  );
-
-                  limpiarError(
-                    'password'
-                  );
-                }}
-                disabled={
-                  estado === 'cargando'
-                }
-              />
+  id="password"
+  type={mostrarPassword ? 'text' : 'password'}
+  placeholder="Escribe aquí:"
+  className={`block w-full rounded-2xl border bg-white/90 px-4 py-3 pr-24 text-[0.9375rem] text-slate-900 shadow-sm outline-none placeholder:text-slate-400 focus-visible:ring-4 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-500 motion-safe:transition-[border-color,box-shadow,background-color] motion-safe:duration-200 motion-reduce:transition-none ${
+    errores.password
+      ? 'border-[#D9D823] bg-[#D9D823]/10 focus-visible:border-[#D9D823] focus-visible:ring-[#D9D823]/30'
+      : 'border-[#095540]/20 hover:border-[#095540]/45 focus-visible:border-[#009444] focus-visible:ring-[#009444]/25'
+  }`}
+  value={password}
+  aria-invalid={Boolean(errores.password)}
+  aria-describedby={
+    errores.password
+      ? 'password-error'
+      : undefined
+  }
+  onChange={(e) => {
+    setPassword(e.target.value);
+    limpiarError('password');
+  }}
+  disabled={estado === 'cargando'}
+/>
 
               <button
                 type="button"
