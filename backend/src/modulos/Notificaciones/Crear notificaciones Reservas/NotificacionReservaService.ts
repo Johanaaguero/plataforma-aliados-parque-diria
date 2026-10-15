@@ -21,6 +21,7 @@ import {
   serializarFechaCalendario,
   serializarFechaUtc,
 } from '../../../utils/fechas';
+import { Participantes } from '../../../models/Participantes';
 
 import { enviarCorreoReserva } from '././Correo/reserva.correo.service';
 
@@ -200,6 +201,29 @@ export class NotificacionService {
               id: reserva.eventoCapacitacionId,
             },
           });
+          // Obtener el mismo número de ticket que se muestra
+// en la sección "Mis inscripciones".
+let numeroTicket = reserva.numeroTicket ?? null;
+
+// Cuando la reserva está aprobada, Mis inscripciones
+// también permite utilizar el ticket del participante.
+if (
+  !numeroTicket &&
+  reserva.estado === EstadoReserva.APROBADA
+) {
+  const participante =
+    await AppDataSource.getRepository(
+      Participantes,
+    ).findOne({
+      where: {
+        usuarioId: reserva.usuarioId,
+        eventoCapacitacionId:
+          reserva.eventoCapacitacionId,
+      },
+    });
+
+  numeroTicket = participante?.numeroTicket ?? null;
+}
 
         // ---------------------------------------------------
         // DETERMINAR EL ESTADO DE LA NOTIFICACIÓN
@@ -240,26 +264,20 @@ export class NotificacionService {
           notificacion,
           tipo: 'reserva',
           datos: {
-            reserva: {
-              id: reserva.id,
-              estado: estadoNotificacion,
-              nombreCompleto:
-                reserva.nombreCompleto,
-              fechaNacimiento:
-                serializarFechaCalendario(
-                  reserva.fechaNacimiento,
-                ),
-              tipoIdentificacion:
-                reserva.tipoIdentificacion,
-              numeroIdentificacion:
-                reserva.numeroIdentificacion,
-              correo: reserva.correo,
-              telefono: reserva.telefono,
-              createdAt:
-                serializarFechaUtc(
-                  reserva.createdAt,
-                ),
-            },
+           reserva: {
+  id: reserva.id,
+  numeroTicket,
+  estado: estadoNotificacion,
+  nombreCompleto: reserva.nombreCompleto,
+  fechaNacimiento: serializarFechaCalendario(
+    reserva.fechaNacimiento,
+  ),
+  tipoIdentificacion: reserva.tipoIdentificacion,
+  numeroIdentificacion: reserva.numeroIdentificacion,
+  correo: reserva.correo,
+  telefono: reserva.telefono,
+  createdAt: serializarFechaUtc(reserva.createdAt),
+},
 
             evento: evento
               ? {

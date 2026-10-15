@@ -1,4 +1,3 @@
-// Mostrar todas las notificaciones del usuario
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
@@ -56,6 +55,29 @@ function categoriaNotificacion(
   return null;
 }
 
+function esNotificacionImportante(tipo: string): boolean {
+  return (
+    tipo === 'incidencia_compartida' ||
+    tipo === 'reserva_aprobada' ||
+    tipo === 'reserva_rechazada'
+  );
+}
+
+function colorNotificacion(tipo: string): 'rojo' | 'azul' | null {
+  if (
+    tipo === 'incidencia_compartida' ||
+    tipo === 'reserva_rechazada'
+  ) {
+    return 'rojo';
+  }
+
+  if (tipo === 'reserva_aprobada') {
+    return 'azul';
+  }
+
+  return null;
+}
+
 function IconoTipoNotificacion({ tipo }: { tipo: string }) {
   const categoria = categoriaNotificacion(tipo);
   const rutas: Record<string, string> = {
@@ -68,7 +90,16 @@ function IconoTipoNotificacion({ tipo }: { tipo: string }) {
   };
 
   return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      className="h-5 w-5"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <path d={rutas[categoria ?? 'general']} />
     </svg>
   );
@@ -358,28 +389,29 @@ export default function ListaNotificaciones({
           </div>
 
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <button
-            type="button"
-            onClick={() => void marcarTodas()}
-            disabled={procesando || noLeidas === 0}
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#095540]/20 bg-white px-4 py-3 text-xs font-bold text-[#095540] shadow-sm transition hover:border-[#8DC63F]/60 hover:bg-[#8DC63F]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/15 dark:bg-white/[0.07] dark:text-[#d9f1df] dark:hover:bg-white/10 dark:focus-visible:ring-offset-[#0b241b]"
-          >
-            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="m5 12 4 4L19 6" />
-            </svg>
-            {procesando ? 'Actualizando…' : 'Marcar todas como leídas'}
-          </button>
-          <button
-            type="button"
-            onClick={abrirConfirmacionVaciado}
-            disabled={procesando || notificaciones.length === 0}
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-rose-500/25 bg-rose-50/80 px-4 py-3 text-xs font-bold text-rose-700 shadow-sm transition hover:bg-rose-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-rose-400/25 dark:bg-rose-500/10 dark:text-rose-200 dark:hover:bg-rose-500/20 dark:focus-visible:ring-offset-[#0b241b]"
-          >
-            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M3 6h18M8 6V4h8v2m-7 4v7m4-7v7M6 6l1 15h10l1-15" />
-            </svg>
-            {procesando ? 'Actualizando…' : 'Vaciar notificaciones'}
-          </button>
+            <button
+              type="button"
+              onClick={() => void marcarTodas()}
+              disabled={procesando || noLeidas === 0}
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#095540]/20 bg-white px-4 py-3 text-xs font-bold text-[#095540] shadow-sm transition hover:border-[#8DC63F]/60 hover:bg-[#8DC63F]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/15 dark:bg-white/[0.07] dark:text-[#d9f1df] dark:hover:bg-white/10 dark:focus-visible:ring-offset-[#0b241b]"
+            >
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="m5 12 4 4L19 6" />
+              </svg>
+              {procesando ? 'Actualizando…' : 'Marcar todas como leídas'}
+            </button>
+
+            <button
+              type="button"
+              onClick={abrirConfirmacionVaciado}
+              disabled={procesando || notificaciones.length === 0}
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-rose-500/25 bg-rose-50/80 px-4 py-3 text-xs font-bold text-rose-700 shadow-sm transition hover:bg-rose-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-rose-400/25 dark:bg-rose-500/10 dark:text-rose-200 dark:hover:bg-rose-500/20 dark:focus-visible:ring-offset-[#0b241b]"
+            >
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M3 6h18M8 6V4h8v2m-7 4v7m4-7v7M6 6l1 15h10l1-15" />
+              </svg>
+              {procesando ? 'Actualizando…' : 'Vaciar notificaciones'}
+            </button>
           </div>
         </header>
 
@@ -475,25 +507,41 @@ export default function ListaNotificaciones({
             {visibles.map((n) => (
               <li
                 key={n.id}
-               
-className={`group relative flex items-start gap-3 overflow-hidden rounded-2xl border p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-lg sm:gap-4 sm:p-5 ${
-  n.tipo === 'incidencia_compartida'
-    ? 'border-red-400 bg-red-50 shadow-[0_10px_30px_rgba(220,38,38,.15)] dark:border-red-500/50 dark:bg-red-950/30'
-    : n.leida
-      ? 'border-slate-200/80 bg-white/75 hover:border-slate-300 dark:border-white/10 dark:bg-white/[0.045] dark:hover:border-white/20'
-      : 'border-[#8DC63F]/55 bg-white shadow-[0_10px_30px_rgba(141,198,63,.10)] hover:border-[#8DC63F] dark:border-[#8DC63F]/35 dark:bg-[#102f24]/80 dark:shadow-[0_10px_30px_rgba(0,0,0,.12)]'
-}`}
-
+                className={`group relative flex items-start gap-3 overflow-hidden rounded-2xl border p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-lg sm:gap-4 sm:p-5 ${
+                  !n.leida && colorNotificacion(n.tipo) === 'rojo'
+                    ? 'border-red-400 bg-red-50 shadow-[0_10px_30px_rgba(220,38,38,.15)] dark:border-red-500/50 dark:bg-red-950/30'
+                    : !n.leida && colorNotificacion(n.tipo) === 'azul'
+                      ? 'border-blue-400 bg-blue-50 shadow-[0_10px_30px_rgba(37,99,235,.15)] dark:border-blue-500/50 dark:bg-blue-950/30'
+                      : n.leida
+                        ? 'border-slate-200/80 bg-white/75 hover:border-slate-300 dark:border-white/10 dark:bg-white/[0.045] dark:hover:border-white/20'
+                        : 'border-[#8DC63F]/55 bg-white shadow-[0_10px_30px_rgba(141,198,63,.10)] hover:border-[#8DC63F] dark:border-[#8DC63F]/35 dark:bg-[#102f24]/80 dark:shadow-[0_10px_30px_rgba(0,0,0,.12)]'
+                }`}
               >
                 {!n.leida && (
-                  <span className="absolute inset-y-0 left-0 w-1 bg-[#8DC63F]" aria-hidden="true" />
+                  <span
+                    className={`absolute inset-y-0 left-0 w-1 ${
+                      colorNotificacion(n.tipo) === 'rojo'
+                        ? 'bg-red-500'
+                        : colorNotificacion(n.tipo) === 'azul'
+                          ? 'bg-blue-500'
+                          : 'bg-[#8DC63F]'
+                    }`}
+                    aria-hidden="true"
+                  />
                 )}
 
-                <span className={`mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
-                  n.leida
-                    ? 'bg-slate-100 text-slate-500 dark:bg-white/[0.07] dark:text-slate-300'
-                    : 'bg-[#eaf5df] text-[#095540] dark:bg-[#8DC63F]/15 dark:text-[#c8ee8d]'
-                }`} aria-label={categoriaNotificacion(n.tipo) ?? 'Notificación'}>
+                <span
+                  className={`mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
+                    n.leida
+                      ? 'bg-slate-100 text-slate-500 dark:bg-white/[0.07] dark:text-slate-300'
+                      : colorNotificacion(n.tipo) === 'rojo'
+                        ? 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-200'
+                        : colorNotificacion(n.tipo) === 'azul'
+                          ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-200'
+                          : 'bg-[#eaf5df] text-[#095540] dark:bg-[#8DC63F]/15 dark:text-[#c8ee8d]'
+                  }`}
+                  aria-label={categoriaNotificacion(n.tipo) ?? 'Notificación'}
+                >
                   <IconoTipoNotificacion tipo={n.tipo} />
                 </span>
 
@@ -507,21 +555,28 @@ className={`group relative flex items-start gap-3 overflow-hidden rounded-2xl bo
                       <p className={`text-sm text-[#095540] dark:text-[#e7f5ed] ${n.leida ? 'font-semibold' : 'font-extrabold'}`}>
                         {n.titulo}
                       </p>
+
                       {!n.leida && (
                         <span className="rounded-full bg-[#8DC63F]/20 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-[#095540] dark:bg-[#8DC63F]/15 dark:text-[#c8ee8d]">
                           Nueva
-                          
                         </span>
-                        
-                        
                       )}
-                      
-{n.tipo === 'incidencia_compartida' && (
-  <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-red-800 dark:bg-red-500/20 dark:text-red-200">
-    ¡Gran importancia!
-  </span>
-)}
 
+                      {esNotificacionImportante(n.tipo) && (
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide ${
+                            n.tipo === 'reserva_aprobada'
+                              ? 'bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-200'
+                              : 'bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-200'
+                          }`}
+                        >
+                          {n.tipo === 'incidencia_compartida'
+                            ? '¡Gran importancia!'
+                            : n.tipo === 'reserva_aprobada'
+                              ? 'Reserva aprobada'
+                              : 'Reserva rechazada'}
+                        </span>
+                      )}
                     </div>
 
                     <time
