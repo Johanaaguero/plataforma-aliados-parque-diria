@@ -132,6 +132,8 @@ export default function MisInscripciones() {
   const [filtroTiempo, setFiltroTiempo] =
     useState<FiltroTiempo>('proximas');
 
+    const [busquedaTicket, setBusquedaTicket] = useState('');
+
   const [expandidoId, setExpandidoId] =
     useState<number | null>(null);
 
@@ -471,64 +473,83 @@ export default function MisInscripciones() {
       !esFechaFutura(inscripcion.fechaActividad),
   ).length;
 
-  const registrosVisibles = useMemo(() => {
-    let lista = [...inscripciones];
 
-    if (filtroTiempo === 'todas') {
-      lista = lista.filter(
-        (inscripcion) =>
-          normalizarEstado(inscripcion.estado) !==
-          'cancelada',
-      );
-    }
 
-    if (filtroTiempo === 'proximas') {
-      lista = lista.filter(
-        (inscripcion) =>
-          normalizarEstado(inscripcion.estado) !==
-            'cancelada' &&
-          esFechaFutura(inscripcion.fechaActividad),
-      );
-    }
 
-    if (filtroTiempo === 'pasadas') {
-      lista = lista.filter(
-        (inscripcion) =>
-          normalizarEstado(inscripcion.estado) !==
-            'cancelada' &&
-          !esFechaFutura(inscripcion.fechaActividad),
-      );
-    }
 
-    if (filtroTiempo === 'canceladas') {
-      lista = lista.filter(
-        (inscripcion) =>
-          normalizarEstado(inscripcion.estado) ===
-          'cancelada',
-      );
-    }
 
-    if (filtroTipo !== 'todas') {
-      lista = lista.filter(
-        (inscripcion) =>
-          inscripcion.tipoActividad === filtroTipo,
-      );
-    }
 
-    lista.sort((a, b) => {
-      const fechaA = a.fechaInscripcion
-        ? new Date(a.fechaInscripcion).getTime()
-        : 0;
+  
+const registrosVisibles = useMemo(() => {
+  let lista = [...inscripciones];
 
-      const fechaB = b.fechaInscripcion
-        ? new Date(b.fechaInscripcion).getTime()
-        : 0;
+  // Filtrar por estado temporal
+  if (filtroTiempo === 'todas') {
+    lista = lista.filter(
+      (inscripcion) =>
+        normalizarEstado(inscripcion.estado) !== 'cancelada',
+    );
+  }
 
-      return fechaB - fechaA;
+  if (filtroTiempo === 'proximas') {
+    lista = lista.filter(
+      (inscripcion) =>
+        normalizarEstado(inscripcion.estado) !== 'cancelada' &&
+        esFechaFutura(inscripcion.fechaActividad),
+    );
+  }
+
+  if (filtroTiempo === 'pasadas') {
+    lista = lista.filter(
+      (inscripcion) =>
+        normalizarEstado(inscripcion.estado) !== 'cancelada' &&
+        !esFechaFutura(inscripcion.fechaActividad),
+    );
+  }
+
+  if (filtroTiempo === 'canceladas') {
+    lista = lista.filter(
+      (inscripcion) =>
+        normalizarEstado(inscripcion.estado) === 'cancelada',
+    );
+  }
+
+  // Filtrar por tipo de actividad
+  if (filtroTipo !== 'todas') {
+    lista = lista.filter(
+      (inscripcion) =>
+        inscripcion.tipoActividad === filtroTipo,
+    );
+  }
+
+  // Buscar por número de ticket
+  const ticketBuscado = busquedaTicket.trim().toLowerCase();
+
+  if (ticketBuscado) {
+    lista = lista.filter((inscripcion) => {
+      const numeroTicket = String(
+        inscripcion.numeroTicket ?? '',
+      ).toLowerCase();
+
+      return numeroTicket.includes(ticketBuscado);
     });
+  }
 
-    return lista;
-  }, [inscripciones, filtroTipo, filtroTiempo]);
+  // Ordenar por fecha de inscripción, de más reciente a más antigua
+  lista.sort((a, b) => {
+    const fechaA = a.fechaInscripcion
+      ? new Date(a.fechaInscripcion).getTime()
+      : 0;
+
+    const fechaB = b.fechaInscripcion
+      ? new Date(b.fechaInscripcion).getTime()
+      : 0;
+
+    return fechaB - fechaA;
+  });
+
+  return lista;
+}, [inscripciones, filtroTipo, filtroTiempo, busquedaTicket]);
 
   const claseFiltro = (activo: boolean) =>
     `rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-200 ${
@@ -695,6 +716,68 @@ export default function MisInscripciones() {
                     rápidamente una actividad.
                   </p>
                 </div>
+
+              
+<div className="relative">
+  <label
+    htmlFor="buscar-ticket"
+    className="mb-2 block text-sm font-semibold text-[#073f31] dark:text-emerald-100"
+  >
+    Buscar por número de ticket
+  </label>
+
+  <div className="relative">
+    <svg
+      className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      aria-hidden="true"
+    >
+      <circle cx="10.5" cy="10.5" r="6.75" />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="m15.5 15.5 4.25 4.25"
+      />
+    </svg>
+
+    <input
+      id="buscar-ticket"
+      type="text"
+      value={busquedaTicket}
+      onChange={(event) => setBusquedaTicket(event.target.value)}
+      placeholder="Ej. TKT-00001234"
+      autoComplete="off"
+      className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-11 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#095540] focus:bg-white focus:ring-4 focus:ring-[#095540]/10 dark:border-white/10 dark:bg-white/[0.04] dark:text-white dark:focus:border-[#8dc63f] dark:focus:bg-white/[0.06] dark:focus:ring-[#8dc63f]/10"
+    />
+
+    {busquedaTicket && (
+      <button
+        type="button"
+        onClick={() => setBusquedaTicket('')}
+        aria-label="Limpiar búsqueda de ticket"
+        className="absolute right-3 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-200 hover:text-slate-700 dark:hover:bg-white/10 dark:hover:text-white"
+      >
+        <svg
+          className="h-4 w-4"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth="2"
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="m6 6 12 12M18 6 6 18"
+          />
+        </svg>
+      </button>
+    )}
+  </div>
+</div>
 
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                   <div className="flex flex-wrap gap-2">

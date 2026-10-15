@@ -1,3 +1,5 @@
+import { useNavigate } from 'react-router-dom';
+import type { ReactNode } from 'react';
 import type { DetalleReserva } from '../../../services/notificacionesService';
 
 interface Props {
@@ -77,7 +79,7 @@ function Campo({
       </dt>
 
       <dd className="mt-0.5 break-words text-sm font-semibold text-slate-700">
-        {valor}
+        {valor || 'No disponible'}
       </dd>
     </div>
   );
@@ -88,7 +90,7 @@ function Seccion({
   children,
 }: {
   titulo: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <section className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4">
@@ -104,6 +106,7 @@ function Seccion({
 }
 
 export default function DetalleReservaNotificacion({ datos }: Props) {
+  const navigate = useNavigate();
   const { reserva, evento } = datos;
 
   const estado = ESTADOS[reserva.estado] ?? {
@@ -111,18 +114,29 @@ export default function DetalleReservaNotificacion({ datos }: Props) {
     clase: 'bg-slate-100 text-slate-700 border-slate-200',
   };
 
+  // Utiliza el mismo numeroTicket que devuelve el backend
+  // para InscripcionesAdmin. No lo calcula a partir del ID.
+  const reservaConTicket = reserva as typeof reserva & {
+    numeroTicket?: string | null;
+  };
+
+  const numeroTicket = reservaConTicket.numeroTicket;
+
+ const irAMisReservas = () => {
+  navigate('/mis-inscripciones');
+};
+
   return (
     <div className="space-y-4">
-
       {/* Encabezado */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-slate-500">
-            Reserva
+            Detalle de la reserva
           </p>
 
-          <p className="text-xs text-slate-400">
-            Reserva #{reserva.id}
+          <p className="mt-1 text-sm font-bold text-[#095540]">
+            Nº de ticket: {numeroTicket || 'Pendiente de asignación'}
           </p>
         </div>
 
@@ -207,6 +221,28 @@ export default function DetalleReservaNotificacion({ datos }: Props) {
         Reserva registrada el {fechaHora(reserva.createdAt)}
       </p>
 
+      {/* Botón para consultar las reservas */}
+      <button
+        type="button"
+        onClick={irAMisReservas}
+        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#095540] px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#087451] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8DC63F] focus-visible:ring-offset-2"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          className="h-5 w-5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M5 4h14v16H5z" />
+          <path d="M8 8h8M8 12h8M8 16h5" />
+        </svg>
+
+        Ver mis reservas
+      </button>
     </div>
   );
 }
