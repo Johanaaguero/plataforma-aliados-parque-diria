@@ -44,15 +44,33 @@ const cambiarEstadoReserva = (estado: 'aprobada' | 'rechazada') => async (req: R
       motivoRechazo || null,
     );
     return res.status(200).json({ ok: true, message: `Reserva ${estado} correctamente.`, data: { id: reserva.id, estado: reserva.estado, motivoRechazo: reserva.motivoRechazo } });
+  
   } catch (error) {
+    console.error('Error al cambiar estado de reserva:', error);
+
     if (error instanceof Error && error.name === 'NotFoundError') {
-      return res.status(404).json({ ok: false, code: 'RESERVATION_NOT_FOUND', message: error.message });
+      return res.status(404).json({
+        ok: false,
+        code: 'RESERVATION_NOT_FOUND',
+        message: error.message,
+      });
     }
+
     if (error instanceof Error && error.name === 'InvalidReservationStateError') {
-      return res.status(409).json({ ok: false, code: 'INVALID_RESERVATION_STATE', message: error.message });
+      return res.status(409).json({
+        ok: false,
+        code: 'INVALID_RESERVATION_STATE',
+        message: error.message,
+      });
     }
-    return res.status(500).json({ ok: false, code: 'INTERNAL_SERVER_ERROR', message: 'Error interno del servidor.' });
+
+    return res.status(500).json({
+      ok: false,
+      code: 'INTERNAL_SERVER_ERROR',
+      message: 'Error interno del servidor.',
+    });
   }
+
 };
 
 export const aprobarReserva = cambiarEstadoReserva('aprobada');

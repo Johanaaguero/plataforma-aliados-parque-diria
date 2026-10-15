@@ -121,8 +121,13 @@ class ApiService {
               respuesta.mensaje.trim()
             ? respuesta.mensaje
             : mensajeError;
-      const message =
-        response.status >= 500 ? mensajeError : mensajeRespuesta;
+     const message = mensajeRespuesta;
+
+console.error('Error en solicitud API:', {
+  ruta,
+  status: response.status,
+  respuesta: data,
+});
       const error: ApiError = {
         code:
           typeof respuesta?.code === 'string'

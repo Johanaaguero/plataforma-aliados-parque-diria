@@ -34,7 +34,6 @@ interface RespuestaRegistro {
   code?: string;
 }
 
-const SEGUNDOS_CIERRE = 2;
 
 const INPUT_BASE_CLASS =
   'mt-2 block w-full rounded-2xl border bg-white/90 px-4 py-3 text-[0.9375rem] text-slate-900 shadow-sm outline-none placeholder:text-slate-400 focus-visible:ring-4 motion-safe:transition-[border-color,box-shadow,background-color] motion-safe:duration-200 motion-reduce:transition-none';
@@ -204,25 +203,18 @@ export default function RegistroEventoCapacitacion({
       window.removeEventListener('keydown', manejarTecla);
   }, [isOpen, estado, onClose]);
 
-  useEffect(() => {
-    if (segundosRestantes === null) return;
+ useEffect(() => {
+  if (estado !== 'exito') return;
 
-    if (segundosRestantes === 0) {
-      handleCerrarYLimpiar();
-      onRegistrado?.();
-      return;
-    }
+  const temporizador = window.setTimeout(() => {
+    onRegistrado?.();
+    handleCerrarYLimpiar();
+  }, 2000);
 
-    const temporizador = setTimeout(() => {
-      setSegundosRestantes((prev) =>
-        prev !== null ? prev - 1 : null,
-      );
-    }, 1000);
+  return () => window.clearTimeout(temporizador);
 
-    return () => clearTimeout(temporizador);
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [segundosRestantes]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [estado]);
 
   if (!isOpen) return null;
 
@@ -544,8 +536,7 @@ export default function RegistroEventoCapacitacion({
 }
 
       setEstado('exito');
-      setSegundosRestantes(SEGUNDOS_CIERRE);
-    } catch (error) {
+setSegundosRestantes(2);    } catch (error) {
       console.error(
         'ERROR AL GUARDAR ACTIVIDAD:',
         error,
@@ -1533,11 +1524,7 @@ export default function RegistroEventoCapacitacion({
             </p>
           )}
 
-          {segundosRestantes !== null && (
-            <p className="mt-3 text-center text-xs font-medium text-slate-500">
-              Cerrando en {segundosRestantes}...
-            </p>
-          )}
+          
         </div>
       </form>
     </div>

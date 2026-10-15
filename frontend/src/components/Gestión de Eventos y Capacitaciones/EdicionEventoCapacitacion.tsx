@@ -61,7 +61,6 @@ interface EdicionEventoCapacitacionProps {
   onActualizado?: () => void;
 }
 
-const SEGUNDOS_CIERRE = 2;
 
 const INPUT_BASE_CLASS =
   'mt-2 block w-full rounded-2xl border bg-white/90 px-4 py-3 text-[0.9375rem] text-slate-900 shadow-sm outline-none placeholder:text-slate-400 focus-visible:ring-4 motion-safe:transition-[border-color,box-shadow,background-color] motion-safe:duration-200 motion-reduce:transition-none';
@@ -242,22 +241,16 @@ export default function EdicionEventoCapacitacion({
     return () => window.removeEventListener('keydown', manejarTecla);
   }, [isOpen, estado, onClose]);
 
-  useEffect(() => {
-    if (segundosRestantes === null) return;
+ useEffect(() => {
+  if (estado !== 'exito') return;
 
-    if (segundosRestantes === 0) {
-      onActualizado?.();
-      onClose();
-      return;
-    }
+  const temporizador = window.setTimeout(() => {
+    onActualizado?.();
+    onClose();
+  }, 2000);
 
-    const temporizador = setTimeout(() => {
-      setSegundosRestantes((prev) => (prev !== null ? prev - 1 : null));
-    }, 1000);
-
-    return () => clearTimeout(temporizador);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [segundosRestantes]);
+  return () => window.clearTimeout(temporizador);
+}, [estado, onActualizado, onClose]);
 
   if (!isOpen) return null;
 
@@ -478,9 +471,11 @@ export default function EdicionEventoCapacitacion({
         }
       }
 
-      setMensaje(`${esCapacitacion ? 'Capacitación' : 'Evento'} actualizado correctamente.${advertencia}`);
-      setEstado('exito');
-      setSegundosRestantes(SEGUNDOS_CIERRE);
+      setMensaje(
+  `${esCapacitacion ? 'Capacitación' : 'Evento'} actualizado correctamente.${advertencia}`,
+);
+setEstado('exito');
+setSegundosRestantes(2);
     } catch (error) {
       setMensaje(error instanceof Error ? `Error al guardar: ${error.message}` : 'No se pudo conectar con el servidor');
       setEstado('error');
@@ -900,9 +895,7 @@ export default function EdicionEventoCapacitacion({
               </p>
             )}
 
-            {segundosRestantes !== null && (
-              <p className="mt-3 text-center text-xs font-medium text-slate-500">Cerrando en {segundosRestantes}...</p>
-            )}
+           
           </div>
         </form>
       </div>
