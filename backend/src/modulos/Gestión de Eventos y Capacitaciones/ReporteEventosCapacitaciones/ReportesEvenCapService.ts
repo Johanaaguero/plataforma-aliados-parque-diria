@@ -42,43 +42,26 @@ export class ReportesEventosService {
     filtros: FiltrosEventos,
     usuarioGeneroId: number,
   ) {
-    let fechaInicio: Date;
-    let fechaFin: Date;
-
-    /*
-     * Si no se reciben fechas, se consulta todo el período.
-     */
-    if (filtros.fechaInicio) {
-      fechaInicio = new Date(
-        `${filtros.fechaInicio}T00:00:00`,
-      );
-    } else {
-      fechaInicio = new Date('2000-01-01T00:00:00');
-    }
-
-    if (filtros.fechaFin) {
-      fechaFin = new Date(
-        `${filtros.fechaFin}T23:59:59`,
-      );
-    } else {
-      // Sin un rango explícito, el reporte debe incluir también las actividades
-      // programadas a futuro, no solo las registradas hasta el día de hoy.
-      fechaFin = new Date('2100-12-31T23:59:59');
-    }
-
-    /*
-     * Consulta base.
-     */
     const query =
       this.eventosRepository
-        .createQueryBuilder('evento')
-        .where(
-          'evento.fecha BETWEEN :fechaInicio AND :fechaFin',
-          {
-            fechaInicio,
-            fechaFin,
-          },
-        );
+        .createQueryBuilder('evento');
+
+    if (filtros.fechaInicio || filtros.fechaFin) {
+      const fechaInicio = filtros.fechaInicio
+        ? new Date(`${filtros.fechaInicio}T00:00:00`)
+        : new Date('2000-01-01T00:00:00');
+      const fechaFin = filtros.fechaFin
+        ? new Date(`${filtros.fechaFin}T23:59:59`)
+        : new Date('2100-12-31T23:59:59');
+
+      query.where(
+        'evento.fecha BETWEEN :fechaInicio AND :fechaFin',
+        {
+          fechaInicio,
+          fechaFin,
+        },
+      );
+    }
 
     /*
      * Filtro por temporada.

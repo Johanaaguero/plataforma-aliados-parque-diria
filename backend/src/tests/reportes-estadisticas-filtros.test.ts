@@ -524,6 +524,63 @@ describe('Task 4075 - aplicacion de filtros en reportes estadisticos', () => {
     assertExcluyeId(body.detalleActividades, marzo.id);
   });
 
+  test('actividades sin rango incluye fechas pasadas, futuras y nulas y conserva otros filtros', async () => {
+    const admin = await crearUsuario('administrador');
+    const pasado = await crearEvento({
+      nombre: 'Actividad histórica',
+      fecha: '1999-12-31',
+      tipoActividad: TipoActividad.EVENTO,
+      temporada: Temporada.SECA,
+    });
+    const presente = await crearEvento({
+      nombre: 'Actividad en período',
+      fecha: '2026-09-25',
+      tipoActividad: TipoActividad.CAPACITACION,
+      temporada: Temporada.LLUVIOSA,
+    });
+    const futura = await crearEvento({
+      nombre: 'Actividad futura',
+      fecha: '2200-01-01',
+      tipoActividad: TipoActividad.EVENTO,
+      temporada: Temporada.LLUVIOSA,
+    });
+    const sinFecha = await crearEvento({
+      nombre: 'Actividad sin fecha',
+      fecha: null,
+      tipoActividad: TipoActividad.CAPACITACION,
+      temporada: Temporada.SECA,
+    });
+
+    const respuesta = await solicitar(
+      '/api/reportes/eventos/estadisticas/eventos',
+      crearToken(admin.id, 'administrador'),
+    );
+
+    assert.equal(respuesta.status, 200, respuesta.texto);
+    const body = comoObjeto(respuesta.body);
+    const actividadesPorTipo = comoObjeto(body.actividadesPorTipo);
+    assert.equal(body.totalActividades, 4);
+    assert.equal(actividadesPorTipo.evento, 2);
+    assert.equal(actividadesPorTipo.capacitacion, 2);
+    assertIncluyeId(body.detalleActividades, pasado.id);
+    assertIncluyeId(body.detalleActividades, presente.id);
+    assertIncluyeId(body.detalleActividades, futura.id);
+    assertIncluyeId(body.detalleActividades, sinFecha.id);
+
+    const respuestaFiltrada = await solicitar(
+      '/api/reportes/eventos/estadisticas/eventos?temporada=lluviosa&tipoActividad=capacitacion',
+      crearToken(admin.id, 'administrador'),
+    );
+
+    assert.equal(respuestaFiltrada.status, 200, respuestaFiltrada.texto);
+    const bodyFiltrado = comoObjeto(respuestaFiltrada.body);
+    assert.equal(bodyFiltrado.totalActividades, 1);
+    assertIncluyeId(bodyFiltrado.detalleActividades, presente.id);
+    assertExcluyeId(bodyFiltrado.detalleActividades, pasado.id);
+    assertExcluyeId(bodyFiltrado.detalleActividades, futura.id);
+    assertExcluyeId(bodyFiltrado.detalleActividades, sinFecha.id);
+  });
+
   test('actividades filtra por temporada', async () => {
     const admin = await crearUsuario('administrador');
     const seca = await crearEvento({ nombre: 'Actividad seca', temporada: Temporada.SECA });
