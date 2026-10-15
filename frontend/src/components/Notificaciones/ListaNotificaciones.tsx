@@ -475,11 +475,15 @@ export default function ListaNotificaciones({
             {visibles.map((n) => (
               <li
                 key={n.id}
-                className={`group relative flex items-start gap-3 overflow-hidden rounded-2xl border p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-lg sm:gap-4 sm:p-5 ${
-                  n.leida
-                    ? 'border-slate-200/80 bg-white/75 hover:border-slate-300 dark:border-white/10 dark:bg-white/[0.045] dark:hover:border-white/20'
-                    : 'border-[#8DC63F]/55 bg-white shadow-[0_10px_30px_rgba(141,198,63,.10)] hover:border-[#8DC63F] dark:border-[#8DC63F]/35 dark:bg-[#102f24]/80 dark:shadow-[0_10px_30px_rgba(0,0,0,.12)]'
-                }`}
+               
+className={`group relative flex items-start gap-3 overflow-hidden rounded-2xl border p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-lg sm:gap-4 sm:p-5 ${
+  n.tipo === 'incidencia_compartida'
+    ? 'border-red-400 bg-red-50 shadow-[0_10px_30px_rgba(220,38,38,.15)] dark:border-red-500/50 dark:bg-red-950/30'
+    : n.leida
+      ? 'border-slate-200/80 bg-white/75 hover:border-slate-300 dark:border-white/10 dark:bg-white/[0.045] dark:hover:border-white/20'
+      : 'border-[#8DC63F]/55 bg-white shadow-[0_10px_30px_rgba(141,198,63,.10)] hover:border-[#8DC63F] dark:border-[#8DC63F]/35 dark:bg-[#102f24]/80 dark:shadow-[0_10px_30px_rgba(0,0,0,.12)]'
+}`}
+
               >
                 {!n.leida && (
                   <span className="absolute inset-y-0 left-0 w-1 bg-[#8DC63F]" aria-hidden="true" />
@@ -506,8 +510,18 @@ export default function ListaNotificaciones({
                       {!n.leida && (
                         <span className="rounded-full bg-[#8DC63F]/20 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-[#095540] dark:bg-[#8DC63F]/15 dark:text-[#c8ee8d]">
                           Nueva
+                          
                         </span>
+                        
+                        
                       )}
+                      
+{n.tipo === 'incidencia_compartida' && (
+  <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-red-800 dark:bg-red-500/20 dark:text-red-200">
+    ¡Gran importancia!
+  </span>
+)}
+
                     </div>
 
                     <time

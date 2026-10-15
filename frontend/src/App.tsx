@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -250,6 +250,7 @@ function App() {
   const [mostrarRegistroIncidencia, setMostrarRegistroIncidencia] =
     useState(false);
 
+const vinoDeNotificacionIncidenciasRef = useRef(false);
 
   const [mostrarGestionRoles, setMostrarGestionRoles] =
     useState(false);
@@ -268,6 +269,7 @@ function App() {
   >('inicio');
 
   const [emprendimientoEditar, setEmprendimientoEditar] =
+
     useState<Emprendimiento | null>(null);
 
   const [rolAutenticado, setRolAutenticado] =
@@ -297,6 +299,17 @@ function App() {
   const [incidenciasAdminKey, setIncidenciasAdminKey] =
     useState(0);
 
+    const [vistaEmprendimientos, setVistaEmprendimientos] =
+  useState<'catalogo' | 'mios'>('catalogo');
+  const irACatalogoEmprendimientos = () => {
+  setVistaEmprendimientos('catalogo');
+  setSeccionActual('emprendimientos');
+};
+
+const irAMisEmprendimientos = () => {
+  setVistaEmprendimientos('mios');
+  setSeccionActual('emprendimientos');
+};
   const [actividadPendienteInscripcion, setActividadPendienteInscripcion] =
     useState<number | null>(() => {
       const idGuardado = sessionStorage.getItem(
@@ -556,31 +569,61 @@ function App() {
       ''
     ) || '/';
 
-  const estadoNavegacion = location.state as {
-    fromDashboard?: boolean;
-    seccionPublica?: 'emprendimientos' | 'eventos';
-    abrirNovedades?: boolean;
-  } | null;
+ const estadoNavegacion = location.state as {
+  fromDashboard?: boolean;
+  seccionPublica?: 'emprendimientos' | 'eventos' | 'incidencias';
+  abrirNovedades?: boolean;
+  abrirIncidencias?: boolean;
+} | null;
 
   const seccionPublicaSolicitada =
     estadoNavegacion?.seccionPublica;
 
-  useEffect(() => {
-    if (rutaActual === '/') {
-      setSeccionActual(
-        seccionPublicaSolicitada ?? 'inicio'
-      );
+  
+useEffect(() => {
+  if (rutaActual === '/') {
+    if (estadoNavegacion?.abrirIncidencias) {
+      vinoDeNotificacionIncidenciasRef.current = true;
+      setSeccionActual('incidencias');
 
-      window.scrollTo({
-        top: 0,
-        left: 0,
-        behavior: 'auto',
-      });
+      window.setTimeout(() => {
+        window.scrollTo({
+          top: 0,
+          left: 0,
+          behavior: 'smooth',
+        });
+
+        navigate('/', {
+          replace: true,
+          state: {},
+        });
+      }, 100);
+
+      return;
     }
-  }, [
-    rutaActual,
-    seccionPublicaSolicitada,
-  ]);
+
+    // Esta ejecución es la causada por limpiar el state: no reiniciar la sección
+    if (vinoDeNotificacionIncidenciasRef.current) {
+      vinoDeNotificacionIncidenciasRef.current = false;
+      return;
+    }
+
+    setSeccionActual(
+      seccionPublicaSolicitada ?? 'inicio'
+    );
+
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: 'auto',
+    });
+  }
+}, [
+  rutaActual,
+  seccionPublicaSolicitada,
+  estadoNavegacion?.abrirIncidencias,
+  navigate,
+]);
 
 
   
@@ -1238,14 +1281,12 @@ function App() {
           onBitacora={() =>
             navigate('/bitacora')
           }
-          onIrInicio={() =>
-            setSeccionActual('inicio')
-          }
-          onIrEmprendimientos={() =>
-            setSeccionActual(
-              'emprendimientos'
-            )
-          }
+          onIrInicio={() => {
+            setVistaEmprendimientos('catalogo');
+            setSeccionActual('inicio');
+          }}
+          onIrEmprendimientos={irACatalogoEmprendimientos}
+          onIrMisEmprendimientos={irAMisEmprendimientos}
           onIrEventos={() =>
             setSeccionActual('eventos')
           }
@@ -1298,14 +1339,12 @@ function App() {
             onCerrarSesion={() => {
               void cerrarSesion();
             }}
-            onIrInicio={() =>
-              setSeccionActual('inicio')
-            }
-            onIrEmprendimientos={() =>
-              setSeccionActual(
-                'emprendimientos'
-              )
-            }
+            onIrInicio={() => {
+              setVistaEmprendimientos('catalogo');
+              setSeccionActual('inicio');
+            }}
+            onIrEmprendimientos={irACatalogoEmprendimientos}
+            onIrMisEmprendimientos={irAMisEmprendimientos}
             onIrEventos={() =>
               setSeccionActual('eventos')
             }
@@ -1380,14 +1419,12 @@ function App() {
             onCerrarSesion={() => {
               void cerrarSesion();
             }}
-            onIrInicio={() =>
-              setSeccionActual('inicio')
-            }
-            onIrEmprendimientos={() =>
-              setSeccionActual(
-                'emprendimientos'
-              )
-            }
+            onIrInicio={() => {
+              setVistaEmprendimientos('catalogo');
+              setSeccionActual('inicio');
+            }}
+            onIrEmprendimientos={irACatalogoEmprendimientos}
+            onIrMisEmprendimientos={irAMisEmprendimientos}
             onIrEventos={() =>
               setSeccionActual('eventos')
             }
@@ -1420,6 +1457,10 @@ function App() {
                 ? null
                 : rolAutenticado
             }
+            soloMios={
+  rolAutenticado === 'asociado' &&
+  vistaEmprendimientos === 'mios'
+}
             usuarioId={usuarioId}
             contexto={
               esModuloAdministrativoDesdeDashboard
@@ -1668,14 +1709,12 @@ function App() {
               window.location.href =
                 '/bitacora';
             }}
-            onIrInicio={() =>
-              setSeccionActual('inicio')
-            }
-            onIrEmprendimientos={() =>
-              setSeccionActual(
-                'emprendimientos'
-              )
-            }
+            onIrInicio={() => {
+              setVistaEmprendimientos('catalogo');
+              setSeccionActual('inicio');
+            }}
+            onIrEmprendimientos={irACatalogoEmprendimientos}
+            onIrMisEmprendimientos={irAMisEmprendimientos}
             onIrEventos={() =>
               setSeccionActual('eventos')
             }

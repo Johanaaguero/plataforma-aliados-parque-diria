@@ -13,6 +13,10 @@ import {
   type DetalleReserva,
   type Notificacion,
 } from '../../services/notificacionesService.ts';
+import {
+  obtenerDetalleIncidencia,
+  type Incidencia,
+} from '../../services/incidenciaServices.ts';
 
 interface Props {
   notificacionId: number;
@@ -32,6 +36,8 @@ export default function DetalleNotificacion({
   const [detalle, setDetalle] = useState<Detalle | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [incidencia, setIncidencia] = useState<Incidencia | null>(null);
+const [cargandoIncidencia, setCargandoIncidencia] = useState(false);
 
   const esNotificacionEvento =
     notificacion?.tipo === 'nuevo_evento' ||
@@ -91,6 +97,48 @@ export default function DetalleNotificacion({
   ]);
 
   useEffect(() => {
+  if (!esNotificacionIncidencia || !notificacion) {
+    setIncidencia(null);
+    setCargandoIncidencia(false);
+    return;
+  }
+
+  const id = Number(notificacion.referenciaId);
+
+  if (!Number.isInteger(id) || id <= 0) {
+    setIncidencia(null);
+    setCargandoIncidencia(false);
+    return;
+  }
+
+  let activo = true;
+
+  setIncidencia(null);
+  setCargandoIncidencia(true);
+
+  obtenerDetalleIncidencia(id)
+    .then((resultado) => {
+      if (activo) {
+        setIncidencia(resultado);
+      }
+    })
+    .catch(() => {
+      if (activo) {
+        setIncidencia(null);
+      }
+    })
+    .finally(() => {
+      if (activo) {
+        setCargandoIncidencia(false);
+      }
+    });
+
+  return () => {
+    activo = false;
+  };
+}, [esNotificacionIncidencia, notificacion?.referenciaId]);
+
+  useEffect(() => {
     const cerrar = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
@@ -120,30 +168,30 @@ export default function DetalleNotificacion({
   };
 
  
-  const irAIncidencias = () => {
-    onClose();
-
-    if (
-      !esAdministrador &&
-      notificacion?.tipo === 'incidencia_compartida'
-    ) {
-      navigate('/', {
-        state: { fromNotification: true, abrirNovedades: true },
-      });
-      return;
-    }
-
-    if (esAdministrador) {
-      navigate('/admin/incidencias', {
-        state: { fromNotification: true },
-      });
-      return;
-    }
-
-    navigate('/mis-incidencias', {
-      state: { fromNotification: true },
+   const irAIncidencias = () => {
+  if (
+    notificacion?.tipo === 'incidencia_compartida' &&
+    !esAdministrador
+  ) {
+    navigate('/', {
+      state: {
+        fromNotification: true,
+        abrirIncidencias: true,
+      },
     });
-  };
+
+    onClose();
+    return;
+  }
+
+  if (esAdministrador) {
+    navigate('/admin/incidencias');
+  } else {
+    navigate('/mis-incidencias');
+  }
+
+  onClose();
+};
 
   const esNuevaReservaAdministrador =
     detalle?.notificacion.tipo === 'nueva_reserva_admin';
@@ -225,11 +273,13 @@ export default function DetalleNotificacion({
                 onVerEmprendimientos={irAEmprendimientos}
               />
             ) : esNotificacionIncidencia && notificacion ? (
-              <DetalleIncidenciaNotificacion
-                notificacion={notificacion}
-                esAdministrador={esAdministrador}
-                onVerIncidencias={irAIncidencias}
-              />
+             <DetalleIncidenciaNotificacion
+  notificacion={notificacion}
+  esAdministrador={esAdministrador}
+  onVerIncidencias={irAIncidencias}
+  incidencia={incidencia}
+  cargandoIncidencia={cargandoIncidencia}
+/>
             ) : detalle ? (
               <>
                 <p className="text-base font-medium leading-relaxed text-slate-700 sm:text-lg dark:text-slate-200">

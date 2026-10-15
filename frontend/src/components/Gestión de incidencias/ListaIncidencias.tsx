@@ -361,15 +361,16 @@ export default function ListaIncidencias() {
 
       try {
 
-        const datos =
-          await listarIncidencias(filtros);
+      const datos =
+  await listarIncidencias(filtros);
 
-        if (!cancelado) {
-
-          setIncidencias(datos);
-          setIndiceActual(0);
-
-        }
+if (!cancelado) {
+  // Solo se muestran las que el administrador marcó como "Visible públicamente"
+  setIncidencias(
+    datos.filter((incidencia) => incidencia.esPublica === true)
+  );
+  setIndiceActual(0);
+}
 
       } catch (err) {
 
@@ -560,18 +561,7 @@ export default function ListaIncidencias() {
               ]}
             />
 
-            <FiltroFlotante
-              etiqueta="Todo estado"
-              valor={filtroEstado}
-              onChange={setFiltroEstado}
-              opciones={[
-                { valor: '', etiqueta: 'Todo estado' },
-                ...Object.entries(ETIQUETAS_ESTADO).map(([valor, etiqueta]) => ({
-                  valor: valor as EstadoIncidencia,
-                  etiqueta,
-                })),
-              ]}
-            />
+         
 
             {/* Limpiar filtros */}
             {hayFiltrosActivos && (

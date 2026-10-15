@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import PhoneInput, { isValidPhoneNumber } from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
@@ -32,15 +33,16 @@ const camposIniciales: DatosReserva = {
 };
 
 const INPUT_CLASS =
-  'mt-1 w-full rounded-xl border border-[#095540]/15 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-[#009444] focus:ring-4 focus:ring-[#009444]/15 disabled:cursor-not-allowed disabled:bg-slate-100';
+  'mt-1 w-full rounded-xl border border-[#095540]/20 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition duration-200 placeholder:text-slate-400 hover:border-[#009444]/60 focus:border-[#009444] focus:ring-4 focus:ring-[#009444]/15 disabled:cursor-not-allowed disabled:bg-slate-100';
 
 const LABEL_CLASS = 'text-sm font-semibold text-[#095540]';
 
 function fechaLocalValida(valor: string): Date | null {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(valor)) return null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(valor)) {
+    return null;
+  }
 
   const [anio, mes, dia] = valor.split('-').map(Number);
-
   const fecha = new Date(anio, mes - 1, dia);
 
   if (
@@ -57,9 +59,7 @@ function fechaLocalValida(valor: string): Date | null {
 function calcularEdad(fechaNacimiento: Date): number {
   const hoy = new Date();
 
-  let edad =
-    hoy.getFullYear() -
-    fechaNacimiento.getFullYear();
+  let edad = hoy.getFullYear() - fechaNacimiento.getFullYear();
 
   if (
     hoy.getMonth() < fechaNacimiento.getMonth() ||
@@ -93,26 +93,19 @@ export default function FormularioReserva({
   onSuccess,
   reservaInicial,
 }: FormularioReservaProps) {
-  const [formulario, setFormulario] = useState<DatosReserva>(
-    reservaInicial ?? camposIniciales,
-  );
+  const [formulario, setFormulario] = useState<DatosReserva>(() => ({
+    ...camposIniciales,
+    ...reservaInicial,
+  }));
 
-  const [errores, setErrores] =
-    useState<ErroresReserva>({});
-
-  const [enviando, setEnviando] =
-    useState(false);
-
-  const [mensajeError, setMensajeError] =
-    useState<string | null>(null);
-
-  const [enviado, setEnviado] =
-    useState(false);
+  const [errores, setErrores] = useState<ErroresReserva>({});
+  const [enviando, setEnviando] = useState(false);
+  const [mensajeError, setMensajeError] = useState<string | null>(null);
+  const [enviado, setEnviado] = useState(false);
   const [comprobante, setComprobante] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  const primerCampoRef =
-    useRef<HTMLInputElement>(null);
+  const primerCampoRef = useRef<HTMLInputElement>(null);
   const comprobanteRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -121,12 +114,15 @@ export default function FormularioReserva({
 
   useEffect(() => {
     return () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
     };
   }, [previewUrl]);
 
   function seleccionarComprobante(archivo: File | null) {
     setComprobante(archivo);
+
     setPreviewUrl(
       archivo?.type.startsWith('image/')
         ? URL.createObjectURL(archivo)
@@ -143,22 +139,18 @@ export default function FormularioReserva({
     }
   }
 
-  function actualizarCampo(
-    campo: CampoReserva,
-    valor: string,
-  ) {
+  function actualizarCampo(campo: CampoReserva, valor: string) {
     setFormulario((actual) => ({
       ...actual,
       [campo]: valor,
     }));
 
     setErrores((actuales) => {
-      if (!actuales[campo]) return actuales;
+      if (!actuales[campo]) {
+        return actuales;
+      }
 
-      const siguientes = {
-        ...actuales,
-      };
-
+      const siguientes = { ...actuales };
       delete siguientes[campo];
 
       return siguientes;
@@ -170,27 +162,23 @@ export default function FormularioReserva({
   function validar(): ErroresReserva {
     const siguientes: ErroresReserva = {};
 
-    const fechaNacimiento =
-      fechaLocalValida(
-        formulario.fechaNacimiento,
-      );
+    const fechaNacimiento = fechaLocalValida(
+      formulario.fechaNacimiento,
+    );
 
     if (!formulario.nombreCompleto.trim()) {
-      siguientes.nombreCompleto =
-        'Completa este campo.';
+      siguientes.nombreCompleto = 'Completa este campo.';
     }
 
     if (!fechaNacimiento) {
-      siguientes.fechaNacimiento =
-        'Ingresa una fecha válida.';
+      siguientes.fechaNacimiento = 'Ingresa una fecha válida.';
     } else if (fechaNacimiento > new Date()) {
       siguientes.fechaNacimiento =
         'La fecha no puede estar en el futuro.';
     }
 
     if (!formulario.numeroIdentificacion.trim()) {
-      siguientes.numeroIdentificacion =
-        'Completa este campo.';
+      siguientes.numeroIdentificacion = 'Completa este campo.';
     } else if (
       !validarIdentificacion(
         formulario.tipoIdentificacion,
@@ -202,15 +190,13 @@ export default function FormularioReserva({
     }
 
     if (!formulario.correo.trim()) {
-      siguientes.correo =
-        'Completa este campo.';
+      siguientes.correo = 'Completa este campo.';
     } else if (
       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
         formulario.correo.trim(),
       )
     ) {
-      siguientes.correo =
-        'Ingresa un correo válido.';
+      siguientes.correo = 'Ingresa un correo válido.';
     }
 
     if (
@@ -222,11 +208,11 @@ export default function FormularioReserva({
     }
 
     if (fechaNacimiento) {
-      const edad =
-        calcularEdad(fechaNacimiento);
+      const edad = calcularEdad(fechaNacimiento);
 
       if (
         evento.edadMinima !== null &&
+        evento.edadMinima !== undefined &&
         edad < evento.edadMinima
       ) {
         siguientes.fechaNacimiento =
@@ -235,6 +221,7 @@ export default function FormularioReserva({
 
       if (
         evento.edadMaxima !== null &&
+        evento.edadMaxima !== undefined &&
         edad > evento.edadMaxima
       ) {
         siguientes.fechaNacimiento =
@@ -245,13 +232,10 @@ export default function FormularioReserva({
     return siguientes;
   }
 
-  async function manejarEnvio(
-    event: FormEvent<HTMLFormElement>,
-  ) {
+  async function manejarEnvio(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const siguientes = validar();
-
     setErrores(siguientes);
 
     if (Object.keys(siguientes).length > 0) {
@@ -259,7 +243,9 @@ export default function FormularioReserva({
     }
 
     if (evento.esPago && !reservaInicial && !comprobante) {
-      setMensajeError('Adjunta el comprobante de pago para completar la pre-reserva.');
+      setMensajeError(
+        'Adjunta el comprobante de pago para completar la pre-reserva.',
+      );
       return;
     }
 
@@ -268,24 +254,15 @@ export default function FormularioReserva({
 
     try {
       const resultado = reservaInicial
-        ? await editarReserva(
-            evento.id,
-            formulario,
-          )
-        : await crearReserva(
-            evento.id,
-            formulario,
-          );
+        ? await editarReserva(evento.id, formulario)
+        : await crearReserva(evento.id, formulario);
 
       if (evento.esPago && !reservaInicial && comprobante) {
         await subirComprobanteReserva(resultado.id, comprobante);
       }
 
       setEnviado(true);
-
-      onSuccess(
-        resultado.cuposDisponibles,
-      );
+      onSuccess(resultado.cuposDisponibles);
     } catch (error) {
       setMensajeError(
         error instanceof Error
@@ -299,9 +276,7 @@ export default function FormularioReserva({
     }
   }
 
-  function mensajeCampo(
-    campo: CampoReserva,
-  ) {
+  function mensajeCampo(campo: CampoReserva) {
     return errores[campo] ? (
       <p
         className="mt-1 text-xs font-semibold text-red-700"
@@ -351,8 +326,7 @@ export default function FormularioReserva({
             </h2>
 
             <p className="mt-2 text-sm text-slate-600">
-              {evento.nombre ??
-                'Actividad seleccionada'}
+              {evento.nombre ?? 'Actividad seleccionada'}
             </p>
           </div>
 
@@ -417,32 +391,59 @@ export default function FormularioReserva({
                   autoComplete="name"
                 />
 
-                {mensajeCampo(
-                  'nombreCompleto',
-                )}
+                {mensajeCampo('nombreCompleto')}
               </label>
 
+              {/* Fecha de nacimiento */}
               <label>
                 <span className={LABEL_CLASS}>
                   Fecha de nacimiento
                 </span>
 
                 <DatePickerCampo
+                  id="fechaNacimiento"
                   className={INPUT_CLASS}
-                  value={
-                    formulario.fechaNacimiento
-                  }
+                  value={formulario.fechaNacimiento}
                   onChange={(valor) =>
-                    actualizarCampo(
-                      'fechaNacimiento',
-                      valor,
-                    )
+                    actualizarCampo('fechaNacimiento', valor)
                   }
                   disabled={enviando}
+                  max={(() => {
+                    const hoy = new Date();
+                    const anio = hoy.getFullYear();
+                    const mes = String(
+                      hoy.getMonth() + 1,
+                    ).padStart(2, '0');
+                    const dia = String(
+                      hoy.getDate(),
+                    ).padStart(2, '0');
+
+                    return `${anio}-${mes}-${dia}`;
+                  })()}
+                  ariaInvalid={Boolean(errores.fechaNacimiento)}
+                  ariaDescribedBy={
+                    errores.fechaNacimiento
+                      ? 'error-fechaNacimiento'
+                      : 'ayuda-fechaNacimiento'
+                  }
                 />
 
-                {mensajeCampo(
-                  'fechaNacimiento',
+                <p
+                  id="ayuda-fechaNacimiento"
+                  className="mt-1 text-xs text-slate-500"
+                >
+                  Seleccioná una fecha en el calendario o escribila
+                  en formato día/mes/año.
+                </p>
+
+                {errores.fechaNacimiento && (
+                  <p
+                    id="error-fechaNacimiento"
+                    className="mt-1 text-xs font-semibold text-red-700"
+                    role="alert"
+                  >
+                    {errores.fechaNacimiento}
+                  </p>
                 )}
               </label>
 
@@ -453,9 +454,7 @@ export default function FormularioReserva({
 
                 <select
                   className={INPUT_CLASS}
-                  value={
-                    formulario.tipoIdentificacion
-                  }
+                  value={formulario.tipoIdentificacion}
                   onChange={(event) =>
                     actualizarCampo(
                       'tipoIdentificacion',
@@ -467,14 +466,8 @@ export default function FormularioReserva({
                   <option value="cedula">
                     Cédula de identidad
                   </option>
-
-                  <option value="dimex">
-                    DIMEX
-                  </option>
-
-                  <option value="pasaporte">
-                    Pasaporte
-                  </option>
+                  <option value="dimex">DIMEX</option>
+                  <option value="pasaporte">Pasaporte</option>
                 </select>
               </label>
 
@@ -485,9 +478,7 @@ export default function FormularioReserva({
 
                 <input
                   className={INPUT_CLASS}
-                  value={
-                    formulario.numeroIdentificacion
-                  }
+                  value={formulario.numeroIdentificacion}
                   onChange={(event) =>
                     actualizarCampo(
                       'numeroIdentificacion',
@@ -498,9 +489,7 @@ export default function FormularioReserva({
                   autoComplete="off"
                 />
 
-                {mensajeCampo(
-                  'numeroIdentificacion',
-                )}
+                {mensajeCampo('numeroIdentificacion')}
               </label>
 
               <label>
@@ -513,10 +502,7 @@ export default function FormularioReserva({
                   className={INPUT_CLASS}
                   value={formulario.correo}
                   onChange={(event) =>
-                    actualizarCampo(
-                      'correo',
-                      event.target.value,
-                    )
+                    actualizarCampo('correo', event.target.value)
                   }
                   disabled={enviando}
                   autoComplete="email"
@@ -526,31 +512,19 @@ export default function FormularioReserva({
               </label>
 
               <label>
-                <span className={LABEL_CLASS}>
-                  Teléfono
-                </span>
+                <span className={LABEL_CLASS}>Teléfono</span>
 
                 <PhoneInput
                   international
                   defaultCountry="CR"
                   labels={es}
-                  countrySelectComponent={
-                    CountrySelectPersonalizado
-                  }
-                  value={
-                    formulario.telefono ||
-                    undefined
-                  }
+                  countrySelectComponent={CountrySelectPersonalizado}
+                  value={formulario.telefono || undefined}
                   onChange={(valor) =>
-                    actualizarCampo(
-                      'telefono',
-                      valor ?? '',
-                    )
+                    actualizarCampo('telefono', valor ?? '')
                   }
                   disabled={enviando}
-                  aria-invalid={Boolean(
-                    errores.telefono,
-                  )}
+                  aria-invalid={Boolean(errores.telefono)}
                   className={INPUT_CLASS}
                   placeholder="8888 7777"
                 />
@@ -562,13 +536,22 @@ export default function FormularioReserva({
             {evento.esPago && !reservaInicial && (
               <div className="mt-5 rounded-xl border border-sky-200 bg-sky-50/80 p-4 dark:border-sky-400/20 dark:bg-sky-950/30">
                 <p className="text-sm font-bold text-sky-900">
-                  Actividad de pago — ₡{(evento.precio ?? 0).toLocaleString('es-CR')}
+                  Actividad de pago — ₡
+                  {(evento.precio ?? 0).toLocaleString('es-CR')}
                 </p>
+
                 <p className="mt-1 text-xs text-sky-800 dark:text-sky-200">
-                  Realiza el pago mediante {evento.tipoPago === 'sinpe_movil' ? 'SINPE Móvil' : 'transferencia bancaria'} y adjunta el comprobante para revisión administrativa.
+                  Realiza el pago mediante{' '}
+                  {evento.tipoPago === 'sinpe_movil'
+                    ? 'SINPE Móvil'
+                    : 'transferencia bancaria'}{' '}
+                  y adjunta el comprobante para revisión administrativa.
                 </p>
+
                 <label className="mt-3 block text-sm font-semibold text-sky-900 dark:text-sky-100">
-                  Comprobante de pago <span aria-hidden="true">*</span>
+                  Comprobante de pago{' '}
+                  <span aria-hidden="true">*</span>
+
                   <input
                     ref={comprobanteRef}
                     type="file"
@@ -577,7 +560,9 @@ export default function FormularioReserva({
                     className="mt-1 block w-full text-sm"
                     disabled={enviando}
                     onChange={(event) =>
-                      seleccionarComprobante(event.target.files?.[0] ?? null)
+                      seleccionarComprobante(
+                        event.target.files?.[0] ?? null,
+                      )
                     }
                   />
                 </label>
@@ -589,13 +574,30 @@ export default function FormularioReserva({
                       alt="Vista previa del comprobante de pago"
                       className="mx-auto max-h-48 rounded-xl border border-emerald-500/30 object-contain"
                     />
+
                     <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                       <span className="min-w-0 truncate text-xs font-medium text-slate-600 dark:text-slate-300">
                         {comprobante.name}
                       </span>
+
                       <div className="flex gap-2">
-                        <button type="button" onClick={() => comprobanteRef.current?.click()} disabled={enviando} className="rounded-lg border border-sky-500/30 px-3 py-1.5 text-xs font-bold text-sky-800 transition hover:bg-sky-500/10 disabled:opacity-50 dark:text-sky-200">Cambiar imagen</button>
-                        <button type="button" onClick={quitarComprobante} disabled={enviando} className="rounded-lg border border-rose-500/30 px-3 py-1.5 text-xs font-bold text-rose-700 transition hover:bg-rose-500/10 disabled:opacity-50 dark:text-rose-200">Quitar</button>
+                        <button
+                          type="button"
+                          onClick={() => comprobanteRef.current?.click()}
+                          disabled={enviando}
+                          className="rounded-lg border border-sky-500/30 px-3 py-1.5 text-xs font-bold text-sky-800 transition hover:bg-sky-500/10 disabled:opacity-50 dark:text-sky-200"
+                        >
+                          Cambiar imagen
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={quitarComprobante}
+                          disabled={enviando}
+                          className="rounded-lg border border-rose-500/30 px-3 py-1.5 text-xs font-bold text-rose-700 transition hover:bg-rose-500/10 disabled:opacity-50 dark:text-rose-200"
+                        >
+                          Quitar
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -604,12 +606,49 @@ export default function FormularioReserva({
                 {comprobante?.type === 'application/pdf' && (
                   <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose-500/25 bg-white/60 p-3 dark:bg-slate-950/20">
                     <div className="flex min-w-0 items-center gap-2 text-rose-700 dark:text-rose-200">
-                      <svg className="h-8 w-8 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M14.25 2.75H6.5A1.75 1.75 0 0 0 4.75 4.5v15A1.75 1.75 0 0 0 6.5 21.25h11A1.75 1.75 0 0 0 19.25 19.5V7.75l-5-5Z" /><path strokeLinecap="round" strokeLinejoin="round" d="M14 2.75v5h5M8 16.5h8M8 13.5h5" /></svg>
-                      <span className="truncate text-xs font-bold">{comprobante.name}</span>
+                      <svg
+                        className="h-8 w-8 shrink-0"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={1.8}
+                        aria-hidden="true"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M14.25 2.75H6.5A1.75 1.75 0 0 0 4.75 4.5v15A1.75 1.75 0 0 0 6.5 21.25h11A1.75 1.75 0 0 0 19.25 19.5V7.75l-5-5Z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M14 2.75v5h5M8 16.5h8M8 13.5h5"
+                        />
+                      </svg>
+
+                      <span className="truncate text-xs font-bold">
+                        {comprobante.name}
+                      </span>
                     </div>
+
                     <div className="flex gap-2">
-                      <button type="button" onClick={() => comprobanteRef.current?.click()} disabled={enviando} className="rounded-lg border border-sky-500/30 px-3 py-1.5 text-xs font-bold text-sky-800 transition hover:bg-sky-500/10 disabled:opacity-50 dark:text-sky-200">Cambiar archivo</button>
-                      <button type="button" onClick={quitarComprobante} disabled={enviando} className="rounded-lg border border-rose-500/30 px-3 py-1.5 text-xs font-bold text-rose-700 transition hover:bg-rose-500/10 disabled:opacity-50 dark:text-rose-200">Quitar</button>
+                      <button
+                        type="button"
+                        onClick={() => comprobanteRef.current?.click()}
+                        disabled={enviando}
+                        className="rounded-lg border border-sky-500/30 px-3 py-1.5 text-xs font-bold text-sky-800 transition hover:bg-sky-500/10 disabled:opacity-50 dark:text-sky-200"
+                      >
+                        Cambiar archivo
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={quitarComprobante}
+                        disabled={enviando}
+                        className="rounded-lg border border-rose-500/30 px-3 py-1.5 text-xs font-bold text-rose-700 transition hover:bg-rose-500/10 disabled:opacity-50 dark:text-rose-200"
+                      >
+                        Quitar
+                      </button>
                     </div>
                   </div>
                 )}
