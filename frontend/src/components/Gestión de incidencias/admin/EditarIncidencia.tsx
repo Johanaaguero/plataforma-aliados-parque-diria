@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -218,7 +219,7 @@ function InfoItem({
 }
 
 /* =========================================================
-   SELECT ADMINISTRATIVO
+   SELECT ADMINISTRATIVO (DESPLEGABLE PERSONALIZADO)
 ========================================================= */
 
 function SelectAdministrativo<T extends string>({
@@ -236,27 +237,173 @@ function SelectAdministrativo<T extends string>({
   onChange: (valor: T) => void;
   disabled?: boolean;
 }) {
+  const [abierto, setAbierto] = useState(false);
+  const [indiceActivo, setIndiceActivo] = useState(0);
+
+  const contenedorRef = useRef<HTMLDivElement | null>(null);
+  const idEtiqueta = useId();
+  const idLista = useId();
+
+  // Cerrar al hacer clic fuera
+  useEffect(() => {
+    if (!abierto) return;
+
+    const cerrarFuera = (event: MouseEvent | TouchEvent) => {
+      if (
+        contenedorRef.current &&
+        !contenedorRef.current.contains(event.target as Node)
+      ) {
+        setAbierto(false);
+      }
+    };
+
+    document.addEventListener('mousedown', cerrarFuera);
+    document.addEventListener('touchstart', cerrarFuera);
+
+    return () => {
+      document.removeEventListener('mousedown', cerrarFuera);
+      document.removeEventListener('touchstart', cerrarFuera);
+    };
+  }, [abierto]);
+
+  // Cerrar si el campo se bloquea
+  useEffect(() => {
+    if (disabled) setAbierto(false);
+  }, [disabled]);
+
+  const abrir = () => {
+    if (disabled) return;
+    setIndiceActivo(Math.max(0, opciones.indexOf(valor)));
+    setAbierto(true);
+  };
+
+  const seleccionar = (opcion: T) => {
+    onChange(opcion);
+    setAbierto(false);
+  };
+
+  const manejarTeclado = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (disabled) return;
+
+    if (!abierto) {
+      if (['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(event.key)) {
+        event.preventDefault();
+        abrir();
+      }
+      return;
+    }
+
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        setIndiceActivo((i) => (i + 1) % opciones.length);
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        setIndiceActivo((i) => (i - 1 + opciones.length) % opciones.length);
+        break;
+      case 'Home':
+        event.preventDefault();
+        setIndiceActivo(0);
+        break;
+      case 'End':
+        event.preventDefault();
+        setIndiceActivo(opciones.length - 1);
+        break;
+      case 'Enter':
+      case ' ':
+        event.preventDefault();
+        seleccionar(opciones[indiceActivo]);
+        break;
+      case 'Escape':
+        event.preventDefault();
+        setAbierto(false);
+        break;
+      case 'Tab':
+        setAbierto(false);
+        break;
+    }
+  };
+
   return (
-    <label className="block">
-      <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#60776C] dark:text-[#9AAEA6]">
+    <div
+      ref={contenedorRef}
+      className={`relative ${abierto ? 'z-30' : 'z-0'}`}
+    >
+      <span
+        id={idEtiqueta}
+        className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#60776C] dark:text-[#9AAEA6]"
+      >
         {etiqueta}
       </span>
 
-      <select
-        value={valor}
+      <button
+        type="button"
         disabled={disabled}
-        onChange={(event) => {
-          onChange(event.target.value as T);
-        }}
-        className="mt-2 h-12 w-full rounded-[1rem] border border-white/70 bg-white/58 px-4 text-sm font-semibold text-[#304B40] shadow-[0_7px_20px_rgba(7,63,49,0.035)] backdrop-blur-xl outline-none transition-all duration-200 hover:bg-white/75 focus:border-[#8DC63F]/65 focus:bg-white/75 focus:ring-4 focus:ring-[#8DC63F]/10 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-[#102B23]/80 dark:text-[#D9E8E2] dark:hover:bg-[#15382E] dark:focus:border-[#8DC63F]/60 dark:focus:bg-[#15382E] dark:disabled:bg-[#17261F] dark:disabled:text-[#73877E]"
+        onClick={() => (abierto ? setAbierto(false) : abrir())}
+        onKeyDown={manejarTeclado}
+        aria-haspopup="listbox"
+        aria-expanded={abierto}
+        aria-controls={idLista}
+        aria-labelledby={idEtiqueta}
+        className={`mt-2 flex h-12 w-full items-center justify-between gap-3 rounded-[1rem] border bg-white/58 px-4 text-left text-sm font-semibold text-[#304B40] shadow-[0_7px_20px_rgba(7,63,49,0.035)] backdrop-blur-xl outline-none transition-all duration-200 hover:bg-white/75 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-[#102B23]/80 dark:text-[#D9E8E2] dark:hover:bg-[#15382E] dark:disabled:bg-[#17261F] dark:disabled:text-[#73877E] ${
+          abierto
+            ? 'border-[#8DC63F]/65 bg-white/75 ring-4 ring-[#8DC63F]/10 dark:border-[#8DC63F]/60 dark:bg-[#15382E]'
+            : 'border-white/70 dark:border-white/10'
+        }`}
       >
-        {opciones.map((opcion) => (
-          <option key={opcion} value={opcion}>
-            {etiquetas[opcion]}
-          </option>
-        ))}
-      </select>
-    </label>
+        <span className="truncate">{etiquetas[valor]}</span>
+
+        <Icon
+          className={`h-4 w-4 shrink-0 text-[#60776C] transition-transform duration-200 dark:text-[#9AAEA6] ${
+            abierto ? 'rotate-180' : ''
+          }`}
+        >
+          <path d="m6 9 6 6 6-6" />
+        </Icon>
+      </button>
+
+      {abierto && (
+        <ul
+          id={idLista}
+          role="listbox"
+          aria-labelledby={idEtiqueta}
+          className="absolute left-0 right-0 top-full z-40 mt-2 max-h-72 overflow-y-auto rounded-[1.1rem] border border-white/70 bg-white/92 p-1.5 shadow-[0_18px_44px_rgba(7,63,49,0.18)] backdrop-blur-2xl dark:border-white/10 dark:bg-[#0F2B23]/95 dark:shadow-[0_18px_44px_rgba(0,0,0,0.45)]"
+        >
+          {opciones.map((opcion, indice) => {
+            const seleccionada = opcion === valor;
+            const activa = indice === indiceActivo;
+
+            return (
+              <li
+                key={opcion}
+                role="option"
+                aria-selected={seleccionada}
+                onMouseEnter={() => setIndiceActivo(indice)}
+                onClick={() => seleccionar(opcion)}
+                className={`flex cursor-pointer items-center justify-between gap-3 rounded-[0.8rem] px-3.5 py-2.5 text-sm transition-colors ${
+                  seleccionada
+                    ? 'font-bold text-[#095540] dark:text-[#8DC63F]'
+                    : 'font-semibold text-[#304B40] dark:text-[#D9E8E2]'
+                } ${
+                  activa
+                    ? 'bg-[#8DC63F]/15 dark:bg-[#8DC63F]/12'
+                    : 'bg-transparent'
+                }`}
+              >
+                <span className="truncate">{etiquetas[opcion]}</span>
+
+                {seleccionada && (
+                  <Icon className="h-4 w-4 shrink-0 text-[#095540] dark:text-[#8DC63F]">
+                    <path d="m5 12.5 4.5 4.5L19 7.5" />
+                  </Icon>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
   );
 }
 
@@ -1250,7 +1397,7 @@ export default function EditarIncidencia({
             <div className="rounded-[1.9rem] border border-white/55 bg-white/30 p-5 shadow-[0_12px_32px_rgba(9,85,64,0.045)] backdrop-blur-2xl dark:border-white/10 dark:bg-white/[0.035] sm:p-6">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div><p className="text-[9px] font-bold uppercase tracking-[0.18em] text-[#00AEEF]">Historial inmutable</p><h2 className="mt-2 text-2xl font-bold text-[#174D3B] dark:text-white">Seguimiento de la incidencia</h2><p className="mt-1 text-sm text-[#73867D] dark:text-[#9BAEA7]">Los registros se conservan en orden cronológico y no se pueden editar ni eliminar.</p></div>
-                {tipoHistorial === 'privado' && <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-amber-400/35 bg-amber-400/10 px-3 py-1.5 text-xs font-bold text-amber-800 dark:text-amber-200"><span aria-hidden="true">🔒</span> Solo Admin</span>}
+                {tipoHistorial === 'privado' && <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-amber-400/35 bg-amber-400/10 px-3 py-1.5 text-xs font-bold text-amber-800 dark:text-amber-200"><span aria-hidden="true"></span> Solo Admin</span>}
               </div>
               <div className="mt-5 flex gap-2 rounded-2xl border border-white/45 bg-white/25 p-1.5 dark:border-white/10 dark:bg-white/5">
                 <button type="button" onClick={() => setTipoHistorial('publico')} className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-bold transition ${tipoHistorial === 'publico' ? 'bg-emerald-700 text-white shadow-sm' : 'text-[#547368] hover:bg-white/45 dark:text-slate-300 dark:hover:bg-white/10'}`}>Seguimiento Público</button>
