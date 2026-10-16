@@ -1,4 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { createPortal } from 'react-dom';
 import type { ReactNode } from 'react';
 
@@ -12,7 +16,8 @@ import type {
 import {
   actualizarVisibilidadIncidencia,
   compartirIncidencia,
-  listarIncidencias,
+  listarIncidenciasPaginadas,
+  obtenerDetalleIncidencia,
 } from '../../../services/incidenciaServices';
 
 import EditarIncidencia from './EditarIncidencia';
@@ -49,6 +54,8 @@ const prioridades: PrioridadIncidencia[] = [
   'alta',
   'critica',
 ];
+
+const INCIDENCIAS_POR_PAGINA = 20;
 
 const etiquetasEstado: Record<EstadoIncidencia, string> = {
   pendiente: 'Pendiente',
@@ -304,8 +311,18 @@ export default function IncidenciasAdmin({
     useState<Incidencia | null>(null);
 
   const [cargando, setCargando] = useState(true);
+  const [cargandoMas, setCargandoMas] = useState(false);
+  const [paginaActual, setPaginaActual] = useState(1);
+  const [totalPaginas, setTotalPaginas] = useState(1);
   const [error, setError] = useState<string | null>(null);
+  const [errorCargaAdicional, setErrorCargaAdicional] =
+    useState<string | null>(null);
+  const solicitudListaRef = useRef(0);
+  const listaCambiandoRef = useRef(false);
+  const cargandoMasRef = useRef(false);
   const [actualizandoVisibilidad, setActualizandoVisibilidad] =
+    useState<number | null>(null);
+  const [abriendoIncidencia, setAbriendoIncidencia] =
     useState<number | null>(null);
 
   const [filtroEstado, setFiltroEstado] =
@@ -347,37 +364,88 @@ export default function IncidenciasAdmin({
 
   useEffect(() => {
     let activo = true;
+    const solicitudLista = ++solicitudListaRef.current;
+    listaCambiandoRef.current = true;
+    cargandoMasRef.current = false;
+    const filtros = {
+      ...(busqueda.trim()
+        ? { buscar: busqueda.trim() }
+        : {}),
+      ...(filtroEstado ? { estado: filtroEstado } : {}),
+      ...(filtroCategoria
+        ? { categoria: filtroCategoria }
+        : {}),
+      ...(filtroPrioridad
+        ? { prioridad: filtroPrioridad }
+        : {}),
+    };
 
     const cargarIncidencias = async () => {
       try {
         setCargando(true);
         setError(null);
+        setErrorCargaAdicional(null);
+        setPaginaActual(1);
+        setTotalPaginas(1);
+        setCargandoMas(false);
+        cargandoMasRef.current = false;
 
         const incidenciasObtenidas =
-          await listarIncidencias();
+          await listarIncidenciasPaginadas(
+            filtros,
+            1,
+            INCIDENCIAS_POR_PAGINA,
+          );
 
-        if (activo) {
-          setIncidencias(incidenciasObtenidas);
+        if (
+          activo &&
+          solicitudLista === solicitudListaRef.current
+        ) {
+          setIncidencias(
+            incidenciasObtenidas.incidencias,
+          );
+          setPaginaActual(
+            incidenciasObtenidas.pagina,
+          );
+          setTotalPaginas(
+            incidenciasObtenidas.totalPaginas,
+          );
         }
       } catch {
-        if (activo) {
+        if (
+          activo &&
+          solicitudLista === solicitudListaRef.current
+        ) {
           setError(
             'No se pudieron cargar las incidencias.',
           );
         }
       } finally {
-        if (activo) {
+        if (
+          activo &&
+          solicitudLista === solicitudListaRef.current
+        ) {
+          listaCambiandoRef.current = false;
           setCargando(false);
         }
       }
     };
 
-    void cargarIncidencias();
+    const temporizador = window.setTimeout(
+      () => void cargarIncidencias(),
+      busqueda.trim() ? 250 : 0,
+    );
 
     return () => {
       activo = false;
+      window.clearTimeout(temporizador);
     };
-  }, []);
+  }, [
+    busqueda,
+    filtroCategoria,
+    filtroEstado,
+    filtroPrioridad,
+  ]);
 
   /* =======================================================
      MODO EDICIÓN
@@ -407,40 +475,82 @@ export default function IncidenciasAdmin({
      FILTRAR
   ======================================================= */
 
-  const incidenciasFiltradas = useMemo(() => {
-    return incidencias.filter((incidencia) => {
-      const coincideEstado =
-        filtroEstado === '' ||
-        incidencia.estado === filtroEstado;
+  const cargarMasIncidencias = async () => {
+    if (
+      cargando ||
+      listaCambiandoRef.current ||
+      cargandoMasRef.current ||
+      paginaActual >= totalPaginas
+    ) {
+      return;
+    }
 
-      const coincideCategoria =
-        filtroCategoria === '' ||
-        incidencia.categoria === filtroCategoria;
+    const solicitudLista =
+      solicitudListaRef.current;
+    const siguientePagina = paginaActual + 1;
+    const filtros = {
+      ...(busqueda.trim()
+        ? { buscar: busqueda.trim() }
+        : {}),
+      ...(filtroEstado ? { estado: filtroEstado } : {}),
+      ...(filtroCategoria
+        ? { categoria: filtroCategoria }
+        : {}),
+      ...(filtroPrioridad
+        ? { prioridad: filtroPrioridad }
+        : {}),
+    };
 
-      const coincidePrioridad =
-        filtroPrioridad === '' ||
-        incidencia.prioridad === filtroPrioridad;
+    cargandoMasRef.current = true;
+    setCargandoMas(true);
+    setErrorCargaAdicional(null);
 
-      const termino = busqueda.trim().toLowerCase();
-      const coincideBusqueda =
-        !termino ||
-        formatearCodigoIncidencia(incidencia.codigo).toLowerCase().includes(termino) ||
-        String(incidencia.id).includes(termino);
+    try {
+      const resultado =
+        await listarIncidenciasPaginadas(
+          filtros,
+          siguientePagina,
+          INCIDENCIAS_POR_PAGINA,
+        );
 
-      return (
-        coincideEstado &&
-        coincideCategoria &&
-        coincidePrioridad &&
-        coincideBusqueda
-      );
-    });
-  }, [
-    incidencias,
-    filtroEstado,
-    filtroCategoria,
-    filtroPrioridad,
-    busqueda,
-  ]);
+      if (
+        solicitudLista !== solicitudListaRef.current
+      ) {
+        return;
+      }
+
+      setIncidencias((actuales) => {
+        const idsExistentes = new Set(
+          actuales.map((incidencia) => incidencia.id),
+        );
+        const nuevas = resultado.incidencias.filter(
+          (incidencia) =>
+            !idsExistentes.has(incidencia.id),
+        );
+
+        return [...actuales, ...nuevas];
+      });
+      setPaginaActual(resultado.pagina);
+      setTotalPaginas(resultado.totalPaginas);
+    } catch (errorCapturado) {
+      if (
+        solicitudLista === solicitudListaRef.current
+      ) {
+        setErrorCargaAdicional(
+          errorCapturado instanceof Error
+            ? errorCapturado.message
+            : 'No se pudieron cargar más incidencias.',
+        );
+      }
+    } finally {
+      if (
+        solicitudLista === solicitudListaRef.current
+      ) {
+        cargandoMasRef.current = false;
+        setCargandoMas(false);
+      }
+    }
+  };
 
   /* =======================================================
      GUARDAR
@@ -458,6 +568,37 @@ export default function IncidenciasAdmin({
     );
 
     setSeleccionada(actualizada);
+  };
+
+  const abrirGestionIncidencia = async (
+    incidencia: Incidencia,
+  ) => {
+    setAbriendoIncidencia(incidencia.id);
+    setError(null);
+
+    try {
+      const actualizada =
+        await obtenerDetalleIncidencia(
+          incidencia.id,
+        );
+
+      setIncidencias((actuales) =>
+        actuales.map((actual) =>
+          actual.id === actualizada.id
+            ? actualizada
+            : actual,
+        ),
+      );
+      setSeleccionada(actualizada);
+    } catch (errorCapturado) {
+      setError(
+        errorCapturado instanceof Error
+          ? errorCapturado.message
+          : 'No se pudo actualizar la incidencia antes de gestionarla.',
+      );
+    } finally {
+      setAbriendoIncidencia(null);
+    }
   };
 
   const cambiarVisibilidad = async (incidencia: Incidencia) => {
@@ -859,7 +1000,7 @@ export default function IncidenciasAdmin({
 
             {!cargando &&
               !error &&
-              incidenciasFiltradas.length === 0 && (
+              incidencias.length === 0 && (
                 <div className="rounded-[1.8rem] border border-white/55 bg-white/25 p-12 text-center backdrop-blur-xl dark:border-slate-700/60 dark:bg-slate-800/30">
 
                   <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#8DC63F]/10 text-[#64842F] dark:bg-[#8DC63F]/10 dark:text-[#A8D66D]">
@@ -883,10 +1024,24 @@ export default function IncidenciasAdmin({
 
             {!cargando &&
               !error &&
-              incidenciasFiltradas.length > 0 && (
-                <div className="custom-scrollbar max-h-[calc(100vh-200px)] space-y-4 overflow-y-auto pr-2">
+              incidencias.length > 0 && (
+                <div
+                  className="custom-scrollbar max-h-[calc(100vh-200px)] space-y-4 overflow-y-auto pr-2"
+                  onScroll={(event) => {
+                    const lista = event.currentTarget;
+                    const cercaDelFinal =
+                      lista.scrollHeight -
+                        lista.scrollTop -
+                        lista.clientHeight <
+                      200;
 
-                  {incidenciasFiltradas.map(
+                    if (cercaDelFinal) {
+                      void cargarMasIncidencias();
+                    }
+                  }}
+                >
+
+                  {incidencias.map(
                     (incidencia) => {
                       const yaCompartida =
                         incidencia.esPublica === true;
@@ -1044,25 +1199,6 @@ export default function IncidenciasAdmin({
                                     </span>
                                   </div>
 
-                                  {/* OBSERVACIÓN */}
-
-                                  <div className="flex items-center gap-2.5">
-                                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#D9D823]/10 text-[#777616] dark:bg-[#D9D823]/10 dark:text-[#E6E56A]">
-                                      <Icon className="h-4 w-4">
-                                        <path d="M4 6h16M4 12h16M4 18h10" />
-                                      </Icon>
-                                    </span>
-
-                                    <span>
-                                      <strong className="font-bold text-[#50675C] dark:text-slate-200">
-                                        Observación:
-                                      </strong>{' '}
-                                      {incidencia.observacionesAdmin
-                                        ? 'Disponible'
-                                        : 'No disponible'}
-                                    </span>
-                                  </div>
-
                                 </div>
 
                                 {/* CHIPS */}
@@ -1119,32 +1255,6 @@ export default function IncidenciasAdmin({
 
                                 </div>
 
-                                {/* OBSERVACIÓN ADMINISTRATIVA */}
-
-                                {incidencia.observacionesAdmin && (
-                                  <div className="mt-5 flex items-start gap-3 rounded-[1.35rem] border border-white/55 bg-white/30 px-4 py-3.5 shadow-[0_8px_24px_rgba(7,63,49,0.035)] backdrop-blur-xl transition-all duration-200 hover:bg-white/38 dark:border-slate-700/60 dark:bg-slate-800/40 dark:hover:bg-slate-800/60">
-
-                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#8DC63F]/14 text-[#648A30] dark:bg-[#8DC63F]/10 dark:text-[#A8D66D]">
-                                      <Icon className="h-4 w-4">
-                                        <path d="M5 5h14v14H5z" />
-                                        <path d="M8 9h8M8 13h6" />
-                                      </Icon>
-                                    </div>
-
-                                    <div className="min-w-0 pt-0.5">
-
-                                      <p className="text-[9px] font-bold tracking-[0.08em] text-[#71867B] dark:text-slate-400">
-                                        Observación administrativa
-                                      </p>
-
-                                      <p className="mt-1 text-sm font-medium leading-6 text-[#4E665B] dark:text-slate-200">
-                                        {incidencia.observacionesAdmin}
-                                      </p>
-
-                                    </div>
-                                  </div>
-                                )}
-
                               </div>
 
                               {/* BOTONES */}
@@ -1155,7 +1265,15 @@ export default function IncidenciasAdmin({
                                   type="button"
                                   role="switch"
                                   aria-checked={incidencia.esPublica === true}
-                                  disabled={actualizandoVisibilidad === incidencia.id}
+                                  disabled={
+                                    actualizandoVisibilidad ===
+                                      incidencia.id ||
+                                    incidencia.estado === 'resuelta' ||
+                                    incidencia.estado === 'cerrada' ||
+                                    (incidencia.estado === 'en_revision' &&
+                                      incidencia.conformidadUsuario ===
+                                        'pendiente')
+                                  }
                                   onClick={() => void cambiarVisibilidad(incidencia)}
                                   className="inline-flex w-full items-center justify-between rounded-full border border-[#095540]/20 bg-white/60 px-3 py-2 text-xs font-bold text-[#095540] shadow-sm backdrop-blur-md transition hover:bg-white/90 disabled:cursor-wait disabled:opacity-60 dark:border-slate-600 dark:bg-slate-800/70 dark:text-[#A8D66D]"
                                 >
@@ -1167,19 +1285,26 @@ export default function IncidenciasAdmin({
 
                                 <button
                                   type="button"
-                                  onClick={() => {
-                                    setSeleccionada(
+                                  disabled={
+                                    abriendoIncidencia ===
+                                    incidencia.id
+                                  }
+                                  onClick={() =>
+                                    void abrirGestionIncidencia(
                                       incidencia,
-                                    );
-                                  }}
-                                  className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#095540] px-5 py-3 text-sm font-bold text-white shadow-[0_10px_25px_rgba(9,85,64,0.16)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#009444] hover:shadow-[0_15px_30px_rgba(0,148,68,0.20)] active:scale-[0.98]"
+                                    )
+                                  }
+                                  className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#095540] px-5 py-3 text-sm font-bold text-white shadow-[0_10px_25px_rgba(9,85,64,0.16)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#009444] hover:shadow-[0_15px_30px_rgba(0,148,68,0.20)] active:scale-[0.98] disabled:cursor-wait disabled:opacity-60"
                                 >
                                   <Icon className="h-4 w-4">
                                     <path d="M12 20h9" />
                                     <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
                                   </Icon>
 
-                                  Gestionar incidencia
+                                  {abriendoIncidencia ===
+                                  incidencia.id
+                                    ? 'Cargando incidencia…'
+                                    : 'Gestionar incidencia'}
                                 </button>
 
                                 {sinOpcionesParaCompartir ? (
@@ -1248,6 +1373,24 @@ export default function IncidenciasAdmin({
                         </article>
                       );
                     },
+                  )}
+
+                  {errorCargaAdicional && (
+                    <p
+                      className="rounded-xl border border-[#C85B52]/25 bg-[#C85B52]/10 p-3 text-center text-xs font-semibold text-[#AA4139] dark:text-[#F3A29B]"
+                      role="alert"
+                    >
+                      {errorCargaAdicional}
+                    </p>
+                  )}
+
+                  {cargandoMas && (
+                    <p
+                      className="py-3 text-center text-xs font-semibold text-[#71847A] dark:text-slate-300"
+                      aria-live="polite"
+                    >
+                      Cargando más incidencias...
+                    </p>
                   )}
 
                 </div>

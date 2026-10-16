@@ -122,6 +122,33 @@ export class NotificacionEmprendimientoService {
     await notificacionRepo.save(notificaciones);
   }
 
+
+  async notificarGestionEmprendimientoAlAsociado(
+  emprendimiento: Emprendimiento,
+  titulo: string,
+  mensaje: string,
+  manager?: EntityManager,
+): Promise<void> {
+  const asociadoId = emprendimiento.asociado?.id;
+
+  if (!asociadoId) return;
+
+  const notificacionRepo =
+    manager?.getRepository(Notificacion) ?? this.notificacionRepo;
+
+  const notificacion = notificacionRepo.create({
+    usuarioId: asociadoId,
+    tipo: TipoNotificacion.NUEVO_EMPRENDIMIENTO,
+    titulo,
+    mensaje,
+    leida: false,
+    referenciaId: emprendimiento.id,
+    referenciaTipo: 'emprendimiento',
+  });
+
+  await notificacionRepo.save(notificacion);
+}
+
   /**
    * Obtiene las notificaciones de emprendimientos
    * correspondientes al usuario autenticado.

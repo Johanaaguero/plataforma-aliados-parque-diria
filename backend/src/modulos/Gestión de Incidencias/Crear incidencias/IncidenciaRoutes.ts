@@ -7,6 +7,7 @@ import {
   obtenerDetalleIncidencia,
   actualizarIncidenciaAdmin,
   actualizarVisibilidadPublica,
+  finalizarSeguimientoAdmin,
   cerrarMiIncidencia,
   compartirIncidencia,
   agregarComentarioIncidencia,
@@ -73,6 +74,12 @@ router.patch(
   verificarToken,
   autorizarRoles('administrador'),
   (req, res) => actualizarIncidenciaAdmin(req, res),
+);
+router.post(
+  '/:id/finalizar-seguimiento',
+  verificarToken,
+  autorizarRoles('administrador'),
+  (req, res) => finalizarSeguimientoAdmin(req, res),
 );
 router.post(
   '/:id/compartir',

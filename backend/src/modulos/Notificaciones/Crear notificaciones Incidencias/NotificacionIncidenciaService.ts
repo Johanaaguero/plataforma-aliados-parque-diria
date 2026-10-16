@@ -122,11 +122,12 @@ export class NotificacionIncidenciaService {
   }
 
   /**
-   * Notifica al usuario que registró la incidencia
-   * cuando el administrador registra un nuevo seguimiento.
+   * Notifica al reportante de un comentario público o
+   * de la finalización del seguimiento.
    */
   async notificarSeguimientoAlUsuario(
     incidencia: Incidencia,
+    solicitarConformidad = false,
   ): Promise<void> {
     if (!incidencia.usuarioReporta?.id) {
       return;
@@ -136,13 +137,12 @@ export class NotificacionIncidenciaService {
       this.notificacionRepo.create({
         usuarioId: incidencia.usuarioReporta.id,
         tipo: TipoNotificacion.SEGUIMIENTO_INCIDENCIA,
-        titulo: 'Seguimiento de incidencia',
-        mensaje:
-          `El administrador ha dado seguimiento a tu ` +
-          `incidencia "${incidencia.titulo}". ` +
-          `Puedes consultar la incidencia para revisar ` +
-          `la solución registrada y responder si estás ` +
-          `satisfecho o no con la atención recibida.`,
+        titulo: solicitarConformidad
+          ? 'Seguimiento finalizado'
+          : 'Nuevo seguimiento de incidencia',
+        mensaje: solicitarConformidad
+          ? `El administrador finalizó el seguimiento de tu incidencia "${incidencia.titulo}". Puedes revisar el historial e indicar si estás satisfecho con la atención recibida.`
+          : `El administrador agregó un comentario público al seguimiento de tu incidencia "${incidencia.titulo}". Puedes consultar la actualización en Mis incidencias.`,
         leida: false,
         referenciaId: incidencia.id,
         referenciaTipo: 'incidencia',

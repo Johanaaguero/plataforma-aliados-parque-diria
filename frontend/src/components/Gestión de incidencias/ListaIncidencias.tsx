@@ -302,21 +302,6 @@ function TarjetaIncidencia({
 
           </div>
 
-          {/* Observaciones */}
-          {incidencia.observacionesAdmin && (
-            <div className="mt-3 rounded-xl border border-slate-200/80 bg-slate-50 p-3 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300">
-
-              <strong>
-                Observaciones del administrador:
-              </strong>
-
-              <p className="mt-1">
-                {incidencia.observacionesAdmin}
-              </p>
-
-            </div>
-          )}
-
           {/* Evidencias restantes */}
           {restoEvidencias.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-2">
@@ -490,16 +475,6 @@ function DetalleIncidenciaModal({
               <p className="text-sm text-slate-600 dark:text-slate-300">
                 <strong>Ubicación:</strong> {incidencia.ubicacion}
               </p>
-            )}
-            {incidencia.observacionesAdmin && (
-              <article className="rounded-2xl border border-white/50 bg-white/55 p-4 backdrop-blur-md dark:border-white/10 dark:bg-slate-800/50">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                  Observaciones administrativas
-                </h3>
-                <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700 dark:text-slate-200">
-                  {incidencia.observacionesAdmin}
-                </p>
-              </article>
             )}
           </div>
 

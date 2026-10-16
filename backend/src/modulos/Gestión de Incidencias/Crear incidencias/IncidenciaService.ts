@@ -140,13 +140,34 @@ export interface FiltrosIncidenciaDTO {
   soloPublicas?: boolean;
 }
 
+export interface PaginacionIncidenciasDTO {
+  pagina: number;
+  limite: number;
+}
+
+export interface ResultadoIncidenciasPaginadas {
+  incidencias: Incidencia[];
+  total: number;
+  pagina: number;
+  limite: number;
+  totalPaginas: number;
+}
+
 export interface ActualizarIncidenciaAdministrativaDTO {
   categoria?: CategoriaIncidencia;
   prioridad?: PrioridadIncidencia;
   estado?: EstadoIncidencia;
-  observacionesAdmin?: string | null;
   adminId: number;
 }
+
+const incidenciaBloqueaEscrituraAdministrativa = (
+  incidencia: Incidencia,
+): boolean =>
+  incidencia.estado === EstadoIncidencia.RESUELTA ||
+  incidencia.estado === EstadoIncidencia.CERRADA ||
+  (incidencia.estado ===
+    EstadoIncidencia.EN_REVISION &&
+    incidencia.conformidadUsuario === 'pendiente');
 
 /**
  * Actualizar si una incidencia es pública o privada.
@@ -166,6 +187,12 @@ export const actualizarVisibilidadIncidencia = async (
 
   if (!incidencia) {
     throw new Error('Incidencia no encontrada.');
+  }
+
+  if (incidenciaBloqueaEscrituraAdministrativa(incidencia)) {
+    throw new Error(
+      'No se puede modificar una incidencia durante la revisión de conformidad o después de resolverla.',
+    );
   }
 
   incidencia.esPublica = esPublica;
@@ -282,7 +309,10 @@ export const crearIncidencia = async (
  */
 export const obtenerIncidencias = async (
   filtros?: FiltrosIncidenciaDTO,
-): Promise<Incidencia[]> => {
+  paginacion?: PaginacionIncidenciasDTO,
+): Promise<
+  Incidencia[] | ResultadoIncidenciasPaginadas
+> => {
   const consulta = incidenciaRepository
     .createQueryBuilder('incidencia')
     .leftJoinAndSelect('incidencia.usuarioReporta', 'usuarioReporta')
@@ -320,6 +350,28 @@ export const obtenerIncidencias = async (
       '(incidencia.codigo LIKE :termino OR CAST(incidencia.id AS CHAR) LIKE :termino)',
       { termino },
     );
+  }
+
+  if (paginacion) {
+    consulta
+      .skip(
+        (paginacion.pagina - 1) *
+          paginacion.limite,
+      )
+      .take(paginacion.limite);
+
+    const [incidencias, total] =
+      await consulta.getManyAndCount();
+
+    return {
+      incidencias,
+      total,
+      pagina: paginacion.pagina,
+      limite: paginacion.limite,
+      totalPaginas: Math.ceil(
+        total / paginacion.limite,
+      ),
+    };
   }
 
   return consulta.getMany();
@@ -415,6 +467,7 @@ export const cerrarIncidenciaPorUsuario =
               .createQueryBuilder(
                 'incidencia',
               )
+              .setLock('pessimistic_write')
               .leftJoinAndSelect(
                 'incidencia.usuarioReporta',
                 'usuarioReporta',
@@ -820,16 +873,8 @@ const normalizarValorHistorial = (
 };
 
 /**
- * Actualización administrativa.
- *
- * Una nueva observación del administrador
- * se considera un nuevo seguimiento/solución.
- *
- * En ese caso:
- * - La incidencia pasa a EN_REVISION.
- * - Se reinicia el plazo de 5 días.
- * - Se reinicia la conformidad.
- * - Se notifica al usuario reportante.
+ * Actualiza la clasificación administrativa sin iniciar la revisión
+ * de conformidad.
  */
 export const actualizarIncidenciaAdministrativa =
   async (
@@ -854,11 +899,14 @@ export const actualizarIncidenciaAdministrativa =
           );
 
         const incidencia =
-          await incidenciaRepo.findOne({
-            where: {
-              id,
-            },
-          });
+          await incidenciaRepo
+            .createQueryBuilder('incidencia')
+            .setLock('pessimistic_write')
+            .where(
+              'incidencia.id = :id',
+              { id },
+            )
+            .getOne();
 
         if (!incidencia) {
           throw new Error(
@@ -867,11 +915,18 @@ export const actualizarIncidenciaAdministrativa =
         }
 
         if (
-          incidencia.estado ===
-          EstadoIncidencia.CERRADA
+          incidenciaBloqueaEscrituraAdministrativa(
+            incidencia,
+          )
         ) {
           throw new Error(
-            'No se puede modificar una incidencia cerrada.',
+            'No se puede modificar una incidencia durante la revisión de conformidad o después de resolverla.',
+          );
+        }
+
+        if (datos.estado !== undefined) {
+          throw new Error(
+            'El estado no se puede modificar desde la actualización administrativa.',
           );
         }
 
@@ -908,18 +963,6 @@ export const actualizarIncidenciaAdministrativa =
 
           prioridad:
             incidencia.prioridad,
-
-          estado:
-            incidencia.estado,
-
-          observacionesAdmin:
-            incidencia.observacionesAdmin,
-
-          conformidadUsuario:
-            incidencia.conformidadUsuario,
-
-          fechaLimiteRespuesta:
-            incidencia.fechaLimiteRespuesta,
         };
 
         if (
@@ -944,79 +987,6 @@ export const actualizarIncidenciaAdministrativa =
           incidencia.prioridad =
             datos.prioridad;
         }
-
-        let nuevaSolucionRegistrada =
-          false;
-
-        if (
-          datos.observacionesAdmin !==
-          undefined
-        ) {
-          const nuevaObservacion =
-            datos.observacionesAdmin?.trim() ||
-            null;
-
-          const solucionAnterior =
-            incidencia.observacionesAdmin?.trim() ||
-            null;
-
-          incidencia.observacionesAdmin =
-            nuevaObservacion;
-
-          /*
-           * Si realmente existe una nueva
-           * observación/solución, se inicia
-           * un nuevo seguimiento.
-           */
-          if (
-            nuevaObservacion &&
-            nuevaObservacion !==
-              solucionAnterior
-          ) {
-            nuevaSolucionRegistrada =
-              true;
-
-            incidencia.estado =
-              EstadoIncidencia.EN_REVISION;
-
-            const ahora = new Date();
-
-            const fechaLimite =
-              new Date(ahora);
-
-            fechaLimite.setDate(
-              fechaLimite.getDate() + 5,
-            );
-
-            incidencia.fechaResolucion =
-              ahora;
-
-            incidencia.fechaLimiteRespuesta =
-              fechaLimite;
-
-            incidencia.conformidadUsuario =
-              'pendiente';
-
-            incidencia.observacionesUsuario =
-              null;
-
-            incidencia.fechaRespuestaUsuario =
-              null;
-
-            incidencia.fechaCierreProgramado =
-              null;
-          }
-        }
-
-        /*
-         * Se mantiene la lógica actual:
-         * el estado enviado directamente
-         * por el administrador no se aplica.
-         *
-         * if (datos.estado !== undefined) {
-         *   incidencia.estado = datos.estado;
-         * }
-         */
 
         incidencia.adminActualiza =
           administrador;
@@ -1098,32 +1068,6 @@ export const actualizarIncidenciaAdministrativa =
           incidenciaActualizada.prioridad,
         );
 
-        agregarCambioHistorial(
-          'estado',
-          valoresOriginales.estado,
-          incidenciaActualizada.estado,
-        );
-
-        agregarCambioHistorial(
-          'observaciones_admin',
-          valoresOriginales.observacionesAdmin,
-          incidenciaActualizada.observacionesAdmin,
-        );
-
-        if (nuevaSolucionRegistrada) {
-          agregarCambioHistorial(
-            'conformidad_usuario',
-            valoresOriginales.conformidadUsuario,
-            incidenciaActualizada.conformidadUsuario,
-          );
-
-          agregarCambioHistorial(
-            'fecha_limite_respuesta',
-            valoresOriginales.fechaLimiteRespuesta,
-            incidenciaActualizada.fechaLimiteRespuesta,
-          );
-        }
-
         if (
           cambiosHistorial.length > 0
         ) {
@@ -1150,29 +1094,180 @@ export const actualizarIncidenciaAdministrativa =
           );
         }
 
-        /*
-         * NOTIFICACIÓN:
-         *
-         * Solo se envía cuando el administrador
-         * realmente registra una nueva solución
-         * o seguimiento.
-         *
-         * Si la incidencia es anónima,
-         * el servicio no envía notificación
-         * porque no existe usuario destinatario.
-         */
-        if (
-          nuevaSolucionRegistrada
-        ) {
-          await notificacionIncidenciaService
-            .notificarSeguimientoAlUsuario(
-              incidenciaConRelaciones,
-            );
-        }
-
         return incidenciaConRelaciones;
       },
     );
+  };
+
+export const finalizarSeguimientoIncidencia =
+  async (
+    id: number,
+    adminId: number,
+  ): Promise<Incidencia> => {
+    const incidenciaActualizada =
+      await AppDataSource.transaction(
+        async (manager) => {
+          const incidenciaRepo =
+            manager.getRepository(Incidencia);
+          const usuarioRepo =
+            manager.getRepository(Usuario);
+          const historialRepo =
+            manager.getRepository(
+              IncidenciaHistorial,
+            );
+
+          const incidencia =
+            await incidenciaRepo
+              .createQueryBuilder('incidencia')
+              .setLock('pessimistic_write')
+              .where(
+                'incidencia.id = :id',
+                { id },
+              )
+              .getOne();
+
+          if (!incidencia) {
+            throw new Error(
+              'Incidencia no encontrada.',
+            );
+          }
+
+          if (
+            incidenciaBloqueaEscrituraAdministrativa(
+              incidencia,
+            ) ||
+            incidencia.estado ===
+              EstadoIncidencia.EN_REVISION
+          ) {
+            throw new Error(
+              'La incidencia no está disponible para finalizar el seguimiento.',
+            );
+          }
+
+          const administrador =
+            await usuarioRepo.findOne({
+              where: { id: adminId },
+            });
+
+          if (!administrador) {
+            throw new Error(
+              'El administrador no existe.',
+            );
+          }
+
+          const estadoAnterior =
+            incidencia.estado;
+          const conformidadAnterior =
+            incidencia.conformidadUsuario;
+          const fechaLimiteAnterior =
+            incidencia.fechaLimiteRespuesta;
+          const ahora = new Date();
+          const fechaLimite = new Date(ahora);
+          fechaLimite.setDate(
+            fechaLimite.getDate() + 5,
+          );
+
+          incidencia.estado =
+            EstadoIncidencia.EN_REVISION;
+          incidencia.conformidadUsuario =
+            'pendiente';
+          incidencia.fechaResolucion = ahora;
+          incidencia.fechaLimiteRespuesta =
+            fechaLimite;
+          incidencia.observacionesUsuario = null;
+          incidencia.fechaRespuestaUsuario = null;
+          incidencia.fechaCierreProgramado = null;
+          incidencia.adminActualiza =
+            administrador;
+          incidencia.fechaActualizacion = ahora;
+
+          const guardada =
+            await incidenciaRepo.save(incidencia);
+
+          const historial = [
+            {
+              campoModificado: 'estado',
+              valorAnterior: estadoAnterior,
+              valorNuevo: guardada.estado,
+            },
+            {
+              campoModificado:
+                'conformidad_usuario',
+              valorAnterior: conformidadAnterior,
+              valorNuevo:
+                guardada.conformidadUsuario,
+            },
+            {
+              campoModificado:
+                'fecha_limite_respuesta',
+              valorAnterior: fechaLimiteAnterior,
+              valorNuevo:
+                guardada.fechaLimiteRespuesta,
+            },
+          ]
+            .filter(
+              ({ valorAnterior, valorNuevo }) =>
+                normalizarValorHistorial(
+                  valorAnterior,
+                ) !==
+                normalizarValorHistorial(
+                  valorNuevo,
+                ),
+            )
+            .map(
+              ({
+                campoModificado,
+                valorAnterior,
+                valorNuevo,
+              }) =>
+                historialRepo.create({
+                  incidencia: guardada,
+                  incidenciaId: guardada.id,
+                  usuario: administrador,
+                  usuarioId: administrador.id,
+                  campoModificado,
+                  valorAnterior:
+                    normalizarValorHistorial(
+                      valorAnterior,
+                    ),
+                  valorNuevo:
+                    normalizarValorHistorial(
+                      valorNuevo,
+                    ),
+                }),
+            );
+
+          if (historial.length > 0) {
+            await historialRepo.save(historial);
+          }
+
+          const incidenciaConRelaciones =
+            await incidenciaRepo.findOne({
+              where: { id: guardada.id },
+              relations: {
+                usuarioReporta: true,
+                adminActualiza: true,
+                evidencias: true,
+              },
+            });
+
+          if (!incidenciaConRelaciones) {
+            throw new Error(
+              'Incidencia no encontrada.',
+            );
+          }
+
+          return incidenciaConRelaciones;
+        },
+      );
+
+    await notificacionIncidenciaService
+      .notificarSeguimientoAlUsuario(
+        incidenciaActualizada,
+        true,
+      );
+
+    return incidenciaActualizada;
   };
 
 /**
