@@ -12,7 +12,6 @@ import {
 } from '../../../services/notificacionesService';
 import useNotificacionToast from '../../../hooks/useNotificacionToast';
 import NotificacionToast from '../../Notificaciones/NotificacionToast';
-import GestionPreguntasFrecuentes from '../../GestionPreguntasFrecuentes';
 
 interface DashboardAdministradorProps {
   onIrRoles: () => void;
@@ -302,6 +301,7 @@ export default function DashboardAdministrador({
   onIrIncidencias,
   onIrReportes,
   onIrComunicados,
+  onIrPreguntasFrecuentes,
   onCerrarSesion,
 }: DashboardAdministradorProps) {
   const navigate = useNavigate();
@@ -311,7 +311,6 @@ export default function DashboardAdministrador({
   const [estado, setEstado] = useState<EstadoCarga>('cargando');
   const [mensajeError, setMensajeError] = useState('');
   const [intento, setIntento] = useState(0);
-  const [vistaPreguntasFrecuentes, setVistaPreguntasFrecuentes] = useState(false);
   const [noLeidas, setNoLeidas] = useState(0);
   const { notificacionActual, procesarNotificaciones, cerrarActual } =
     useNotificacionToast();
@@ -380,7 +379,7 @@ export default function DashboardAdministrador({
     { etiqueta: 'Inscripciones', icono: iconos.inscripciones, accion: onIrInscripciones },
     { etiqueta: 'Incidencias', icono: iconos.incidencias, accion: onIrIncidencias },
     { etiqueta: 'Comunicados', icono: iconos.comunicados, accion: onIrComunicados },
-    { etiqueta: 'Preguntas frecuentes', icono: iconos.preguntasFrecuentes, accion: () => setVistaPreguntasFrecuentes(true) },
+    { etiqueta: 'Preguntas frecuentes', icono: iconos.preguntasFrecuentes, accion: onIrPreguntasFrecuentes },
     { etiqueta: 'Reportes y estadísticas', icono: iconos.reportes, accion: onIrReportes },
   ];
 
@@ -663,19 +662,6 @@ export default function DashboardAdministrador({
           <div className="pointer-events-none absolute left-1/2 top-0 h-px w-[65%] -translate-x-1/2 bg-gradient-to-r from-transparent via-white to-transparent opacity-80" />
 
           <div className="flex flex-1 flex-col p-5 sm:p-7 lg:min-h-0 lg:overflow-y-auto lg:p-[clamp(2rem,3vw,3.5rem)] lg:pt-[clamp(3.75rem,7vh,6rem)]">
-            {vistaPreguntasFrecuentes ? (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setVistaPreguntasFrecuentes(false)}
-                  className="mb-5 w-fit rounded-full border border-[#0b6849]/15 bg-white/60 px-4 py-2 font-brand text-sm font-semibold text-[#0b6849] transition-colors hover:bg-white dark:border-white/10 dark:bg-white/[0.06] dark:text-[#c9ead8] dark:hover:bg-white/10"
-                >
-                  ← Volver al dashboard
-                </button>
-                <GestionPreguntasFrecuentes />
-              </>
-            ) : (
-              <>
             <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
               <div className="max-w-4xl">
                 <h1 className="text-5xl font-black tracking-tight text-emerald-950 dark:text-white">
@@ -784,8 +770,6 @@ export default function DashboardAdministrador({
                 </p>
               </div>
             </footer>
-              </>
-            )}
           </div>
         </section>
       </div>
