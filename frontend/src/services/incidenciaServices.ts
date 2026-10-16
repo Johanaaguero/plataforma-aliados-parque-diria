@@ -100,7 +100,6 @@ export interface FiltrosIncidencia {
 }
 
 export interface ActualizarIncidenciaAdministrativa {
-  estado?: EstadoIncidencia;
   categoria?: CategoriaIncidencia;
   prioridad?: PrioridadIncidencia;
 }
@@ -176,6 +175,19 @@ interface RespuestaLista {
   incidencias: Incidencia[];
 }
 
+export interface ResultadoIncidenciasPaginadas {
+  incidencias: Incidencia[];
+  total: number;
+  pagina: number;
+  limite: number;
+  totalPaginas: number;
+}
+
+interface RespuestaListaPaginada
+  extends ResultadoIncidenciasPaginadas {
+  mensaje: string;
+}
+
 interface RespuestaDetalle {
   mensaje: string;
   incidencia: Incidencia;
@@ -205,9 +217,9 @@ interface RespuestaComentariosIncidencia {
 // LISTAR
 // ============================================================
 
-export async function listarIncidencias(
+function crearParametrosFiltros(
   filtros?: FiltrosIncidencia,
-): Promise<Incidencia[]> {
+): URLSearchParams {
   const params = new URLSearchParams();
 
   if (filtros?.buscar?.trim()) {
@@ -238,6 +250,14 @@ export async function listarIncidencias(
     params.append('soloPublicas', 'true');
   }
 
+  return params;
+}
+
+export async function listarIncidencias(
+  filtros?: FiltrosIncidencia,
+): Promise<Incidencia[]> {
+  const params = crearParametrosFiltros(filtros);
+
   const query = params.toString();
 
   const ruta = `/incidencias${
@@ -259,6 +279,30 @@ export async function listarIncidencias(
     );
 
   return respuesta.incidencias;
+}
+
+export async function listarIncidenciasPaginadas(
+  filtros: FiltrosIncidencia,
+  pagina: number,
+  limite: number,
+): Promise<ResultadoIncidenciasPaginadas> {
+  const params = crearParametrosFiltros(filtros);
+  params.append('pagina', String(pagina));
+  params.append('limite', String(limite));
+
+  const respuesta =
+    await api.solicitar<RespuestaListaPaginada>(
+      `/incidencias?${params.toString()}`,
+      { method: 'GET' },
+      {
+        incluirAuth: false,
+        desempaquetarData: false,
+        mensajeError:
+          'No se pudieron cargar las incidencias',
+      },
+    );
+
+  return respuesta;
 }
 
 // ============================================================
@@ -311,6 +355,23 @@ export async function actualizarIncidenciaAdministrativa(
     respuesta.incidenciaActualizada ??
     respuesta.incidencia
   );
+}
+
+export async function finalizarSeguimientoIncidencia(
+  id: number,
+): Promise<Incidencia> {
+  const respuesta =
+    await api.solicitar<RespuestaDetalle>(
+      `/incidencias/${id}/finalizar-seguimiento`,
+      { method: 'POST' },
+      {
+        desempaquetarData: false,
+        mensajeError:
+          'No se pudo finalizar el seguimiento.',
+      },
+    );
+
+  return respuesta.incidencia;
 }
 
 // ============================================================

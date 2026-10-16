@@ -171,6 +171,10 @@ export default function EdicionEventoCapacitacion({
   const colorAcento = esCapacitacion ? '#00AEEF' : '#8DC63F';
   const colorAcentoOscuro = esCapacitacion ? '#0B7FB0' : '#009444';
   const tipoActividadBloqueado = evento.estado === 'publicado';
+  const camposBloqueados =
+    estado === 'cargando' ||
+    segundosRestantes !== null ||
+    tipoActividadBloqueado;
 
   // Precargar los campos con los datos actuales cada vez que se abre con un evento nuevo
   useEffect(() => {
@@ -338,6 +342,19 @@ export default function EdicionEventoCapacitacion({
       nuevosErrores.cupoMinimo = 'El cupo mínimo no puede ser mayor que el cupo máximo';
     }
 
+    if (tipoActividadBloqueado) {
+      if (evento.cupoMaximo === null) {
+        nuevosErrores.cupoMaximo =
+          'No hay un cupo máximo actual que se pueda aumentar';
+      } else if (
+        cupoMaximoValor === null ||
+        cupoMaximoValor <= evento.cupoMaximo
+      ) {
+        nuevosErrores.cupoMaximo =
+          `Debe ser mayor al cupo máximo actual (${evento.cupoMaximo})`;
+      }
+    }
+
     if (
       edadMinimaValor !== null &&
       edadMaximaValor !== null &&
@@ -410,26 +427,28 @@ export default function EdicionEventoCapacitacion({
     }
 
     try {
-      const body: Record<string, unknown> = {
-        nombre: nombre.trim() || null,
-        descripcion: descripcion.trim() || null,
-        fecha: fecha || null,
-        hora: hora || null,
-        lugar: lugar.trim() || null,
-        cupoMinimo: cupoMinimo.trim() ? Number(cupoMinimo) : null,
-        cupoMaximo: cupoMaximo.trim() ? Number(cupoMaximo) : null,
-        edadMinima: edadMinima.trim() ? Number(edadMinima) : null,
-        edadMaxima: edadMaxima.trim() ? Number(edadMaxima) : null,
-        temporada: temporada || null,
-        esPago,
-        precio: esPago ? Number(precio) : 0,
-        tipoPago: esPago ? tipoPago : null,
-        politicasCancelacion: esPago ? politicasCancelacion.trim() || null : null,
-      };
+      const body: Record<string, unknown> = tipoActividadBloqueado
+        ? {
+            cupoMaximo: cupoMaximo.trim() ? Number(cupoMaximo) : null,
+          }
+        : {
+            nombre: nombre.trim() || null,
+            descripcion: descripcion.trim() || null,
+            fecha: fecha || null,
+            hora: hora || null,
+            lugar: lugar.trim() || null,
+            cupoMinimo: cupoMinimo.trim() ? Number(cupoMinimo) : null,
+            cupoMaximo: cupoMaximo.trim() ? Number(cupoMaximo) : null,
+            edadMinima: edadMinima.trim() ? Number(edadMinima) : null,
+            edadMaxima: edadMaxima.trim() ? Number(edadMaxima) : null,
+            temporada: temporada || null,
+            esPago,
+            precio: esPago ? Number(precio) : 0,
+            tipoPago: esPago ? tipoPago : null,
+            politicasCancelacion: esPago ? politicasCancelacion.trim() || null : null,
+          };
 
-      // Solo mandamos tipoActividad si el usuario lo pudo cambiar
-      // (si el evento ya está publicado, el backend lo rechaza igual,
-      // pero evitamos mandar un cambio que ni se ofreció en la UI)
+      // Una actividad publicada solo admite cambios en sus cupos.
       if (!tipoActividadBloqueado) {
         body.tipoActividad = tipoActividad;
       }
@@ -593,7 +612,7 @@ return createPortal(
                     setTemporada('seca');
                     limpiarError('temporada');
                   }}
-                  disabled={estado === 'cargando' || segundosRestantes !== null}
+                  disabled={camposBloqueados}
                   className={`rounded-2xl border px-4 py-3 text-sm font-bold ${
                     temporada === 'seca' ? 'border-[#8DC63F] bg-[#8DC63F]/15' : 'border-[#095540]/15 bg-white/80'
                   }`}
@@ -606,7 +625,7 @@ return createPortal(
                     setTemporada('lluviosa');
                     limpiarError('temporada');
                   }}
-                  disabled={estado === 'cargando' || segundosRestantes !== null}
+                  disabled={camposBloqueados}
                   className={`rounded-2xl border px-4 py-3 text-sm font-bold ${
                     temporada === 'lluviosa' ? 'border-[#00AEEF] bg-[#00AEEF]/10' : 'border-[#095540]/15 bg-white/80'
                   }`}
@@ -629,7 +648,7 @@ return createPortal(
                   setNombre(e.target.value);
                   limpiarError('nombre');
                 }}
-                disabled={estado === 'cargando' || segundosRestantes !== null}
+                disabled={camposBloqueados}
               />
               {errores.nombre && <span className={ERROR_CLASS} role="alert">{errores.nombre}</span>}
             </div>
@@ -645,7 +664,7 @@ return createPortal(
                   setDescripcion(e.target.value);
                   limpiarError('descripcion');
                 }}
-                disabled={estado === 'cargando' || segundosRestantes !== null}
+                disabled={camposBloqueados}
               />
               {errores.descripcion && <span className={ERROR_CLASS} role="alert">{errores.descripcion}</span>}
             </div>
@@ -662,7 +681,7 @@ return createPortal(
                     setFecha(valor);
                     limpiarError('fecha');
                   }}
-                  disabled={estado === 'cargando' || segundosRestantes !== null}
+                  disabled={camposBloqueados}
                 />
                 {errores.fecha && <span className={ERROR_CLASS} role="alert">{errores.fecha}</span>}
               </div>
@@ -678,7 +697,7 @@ return createPortal(
                     setHora(e.target.value);
                     limpiarError('hora');
                   }}
-                  disabled={estado === 'cargando' || segundosRestantes !== null}
+                  disabled={camposBloqueados}
                 />
                 {errores.hora && <span className={ERROR_CLASS} role="alert">{errores.hora}</span>}
               </div>
@@ -697,15 +716,15 @@ return createPortal(
                     setLugar(e.target.value);
                     limpiarError('lugar');
                   }}
-                  disabled={estado === 'cargando' || segundosRestantes !== null}
+                  disabled={camposBloqueados}
                 />
                 {errores.lugar && <span className={ERROR_CLASS} role="alert">{errores.lugar}</span>}
               </div>
             </div>
 
             <div className="mt-5 rounded-2xl border border-[#095540]/15 bg-emerald-50/50 p-4">
-              <label className="flex items-center gap-3 text-sm font-semibold text-[#095540]"><input type="checkbox" checked={esPago} onChange={(e) => setEsPago(e.target.checked)} disabled={estado === 'cargando' || segundosRestantes !== null} /> Es actividad de pago</label>
-              {esPago && <div className="mt-3 grid gap-3 sm:grid-cols-2"><label className={LABEL_CLASS}>Precio (₡)<input type="number" min={1} className={`${INPUT_BASE_CLASS} ${INPUT_DEFAULT_CLASS}`} value={precio} onChange={(e) => setPrecio(e.target.value)} /></label><label className={LABEL_CLASS}>Políticas de cancelación<textarea className={`${INPUT_BASE_CLASS} ${INPUT_DEFAULT_CLASS}`} value={politicasCancelacion} onChange={(e) => setPoliticasCancelacion(e.target.value)} /></label></div>}
+              <label className="flex items-center gap-3 text-sm font-semibold text-[#095540]"><input type="checkbox" checked={esPago} onChange={(e) => setEsPago(e.target.checked)} disabled={camposBloqueados} /> Es actividad de pago</label>
+              {esPago && <div className="mt-3 grid gap-3 sm:grid-cols-2"><label className={LABEL_CLASS}>Precio (₡)<input type="number" min={1} className={`${INPUT_BASE_CLASS} ${INPUT_DEFAULT_CLASS}`} value={precio} onChange={(e) => setPrecio(e.target.value)} disabled={camposBloqueados} /></label><label className={LABEL_CLASS}>Políticas de cancelación<textarea className={`${INPUT_BASE_CLASS} ${INPUT_DEFAULT_CLASS}`} value={politicasCancelacion} onChange={(e) => setPoliticasCancelacion(e.target.value)} disabled={camposBloqueados} /></label></div>}
             </div>
 
             <div className="mt-4 sm:mt-5">
@@ -728,7 +747,7 @@ return createPortal(
                       limpiarError('cupoMinimo');
                     }}
                     placeholder="Opcional"
-                    disabled={estado === 'cargando' || segundosRestantes !== null}
+                    disabled={camposBloqueados}
                   />
                   {errores.cupoMinimo && (
                     <span id="cupoMinimo-error" className={ERROR_CLASS} role="alert">
@@ -784,7 +803,7 @@ return createPortal(
                       limpiarError('edadMinima');
                     }}
                     placeholder="Opcional"
-                    disabled={estado === 'cargando' || segundosRestantes !== null}
+                    disabled={camposBloqueados}
                   />
                   {errores.edadMinima && (
                     <span id="edadMinima-error" className={ERROR_CLASS} role="alert">
@@ -809,7 +828,7 @@ return createPortal(
                       limpiarError('edadMaxima');
                     }}
                     placeholder="Opcional"
-                    disabled={estado === 'cargando' || segundosRestantes !== null}
+                    disabled={camposBloqueados}
                   />
                   {errores.edadMaxima && (
                     <span id="edadMaxima-error" className={ERROR_CLASS} role="alert">
@@ -840,7 +859,7 @@ return createPortal(
                     <button
                       type="button"
                       onClick={() => handleEliminarImagenExistente(img.id)}
-                      disabled={imagenesEliminando.includes(img.id) || estado === 'cargando'}
+                      disabled={imagenesEliminando.includes(img.id) || camposBloqueados}
                       className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white disabled:opacity-50"
                       aria-label="Eliminar imagen"
                     >
@@ -856,7 +875,7 @@ return createPortal(
                   <ImageDropzone
                     value={imagenesNuevas}
                     onChange={setImagenesNuevas}
-                    disabled={estado === 'cargando' || segundosRestantes !== null}
+                    disabled={camposBloqueados}
                   />
                 </div>
               </div>

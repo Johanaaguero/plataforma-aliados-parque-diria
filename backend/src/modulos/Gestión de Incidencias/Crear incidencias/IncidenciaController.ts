@@ -6,6 +6,7 @@ import {
   obtenerIncidenciaPorId,
   actualizarIncidenciaAdministrativa,
   actualizarVisibilidadIncidencia,
+  finalizarSeguimientoIncidencia,
   cerrarIncidenciaPorUsuario,
   obtenerMisIncidencias,
   FiltrosIncidenciaDTO,
@@ -48,11 +49,114 @@ export const agregarComentarioIncidencia = async (req: Request, res: Response): 
   const esAdministrador = req.usuario?.rol === 'administrador' || req.usuario?.rol === 'super_admin';
   if (esNotaPrivada && !esAdministrador) { res.status(403).json({ mensaje: 'Solo administración puede registrar notas privadas.' }); return; }
   try {
-    const repositorio = AppDataSource.getRepository(ComentarioIncidencia);
-    const creado = await repositorio.save({ incidenciaId, autorId: req.usuario?.id ?? null, texto, esNotaPrivada, esDatoSensible });
-    const comentario = await repositorio.findOne({ where: { id: creado.id }, relations: { autor: true } });
-    res.status(201).json({ comentario: serializarComentario(comentario ?? creado) });
-  } catch { res.status(500).json({ mensaje: 'No se pudo registrar el comentario.' }); }
+    const { incidencia, comentario } =
+      await AppDataSource.transaction(
+        async (manager) => {
+          const incidenciaRepo =
+            manager.getRepository(Incidencia);
+          const incidencia =
+            await incidenciaRepo
+              .createQueryBuilder('incidencia')
+              .setLock('pessimistic_write')
+              .leftJoinAndSelect(
+                'incidencia.usuarioReporta',
+                'usuarioReporta',
+              )
+              .where(
+                'incidencia.id = :incidenciaId',
+                { incidenciaId },
+              )
+              .getOne();
+
+          if (!incidencia) {
+            throw new Error(
+              'Incidencia no encontrada.',
+            );
+          }
+
+          if (
+            incidencia.estado ===
+              EstadoIncidencia.RESUELTA ||
+            incidencia.estado ===
+              EstadoIncidencia.CERRADA ||
+            (incidencia.estado ===
+              EstadoIncidencia.EN_REVISION &&
+              incidencia.conformidadUsuario ===
+                'pendiente')
+          ) {
+            throw new Error(
+              'No se pueden agregar comentarios durante la revisión de conformidad o después de resolver la incidencia.',
+            );
+          }
+
+          const comentarioRepo =
+            manager.getRepository(
+              ComentarioIncidencia,
+            );
+          const creado =
+            await comentarioRepo.save({
+              incidenciaId,
+              autorId: req.usuario?.id ?? null,
+              texto,
+              esNotaPrivada,
+              esDatoSensible,
+            });
+          const comentario =
+            await comentarioRepo.findOne({
+              where: { id: creado.id },
+              relations: { autor: true },
+            });
+
+          return {
+            incidencia,
+            comentario: comentario ?? creado,
+          };
+        },
+      );
+
+    if (
+      !esNotaPrivada &&
+      !esDatoSensible &&
+      incidencia.usuarioReporta
+    ) {
+      try {
+        await notificacionIncidenciaService
+          .notificarSeguimientoAlUsuario(
+            incidencia,
+          );
+      } catch (error) {
+        console.error(
+          'No se pudo notificar el comentario público de la incidencia:',
+          error,
+        );
+      }
+    }
+
+    res.status(201).json({
+      comentario: serializarComentario(comentario),
+    });
+  } catch (error) {
+    const mensaje =
+      error instanceof Error
+        ? error.message
+        : 'No se pudo registrar el comentario.';
+
+    console.error(
+      'Error al registrar el comentario de incidencia:',
+      error,
+    );
+    res.status(
+      mensaje === 'Incidencia no encontrada.'
+        ? 404
+        : mensaje.startsWith(
+              'No se pueden agregar comentarios',
+            )
+          ? 409
+          : 500,
+    ).json({
+      mensaje,
+    });
+  }
 };
 
 export const obtenerComentariosIncidencia = async (req: Request, res: Response): Promise<void> => {
@@ -512,9 +616,43 @@ export const listarIncidencias = async (
       fechaHasta,
       buscar,
       soloPublicas,
+      pagina,
+      limite,
     } = req.query;
 
     const filtros: FiltrosIncidenciaDTO = {};
+    let paginacion:
+      | { pagina: number; limite: number }
+      | undefined;
+
+    if (
+      pagina !== undefined ||
+      limite !== undefined
+    ) {
+      const paginaNumero = Number(pagina);
+      const limiteNumero = Number(limite);
+
+      if (
+        typeof pagina !== 'string' ||
+        typeof limite !== 'string' ||
+        !Number.isSafeInteger(paginaNumero) ||
+        paginaNumero < 1 ||
+        !Number.isSafeInteger(limiteNumero) ||
+        limiteNumero < 1 ||
+        limiteNumero > 100
+      ) {
+        res.status(400).json({
+          mensaje:
+            'Los parámetros de paginación no son válidos.',
+        });
+        return;
+      }
+
+      paginacion = {
+        pagina: paginaNumero,
+        limite: limiteNumero,
+      };
+    }
 
     if (soloPublicas !== undefined) {
       if (soloPublicas !== 'true') {
@@ -650,14 +788,29 @@ export const listarIncidencias = async (
       return;
     }
 
-    const incidencias =
-      await obtenerIncidencias(filtros);
+    const resultado =
+      await obtenerIncidencias(
+        filtros,
+        paginacion,
+      );
+
+    if (!Array.isArray(resultado)) {
+      res.status(200).json({
+        mensaje:
+          'Incidencias obtenidas correctamente.',
+        ...resultado,
+        incidencias: resultado.incidencias.map(
+          serializarIncidencia,
+        ),
+      });
+      return;
+    }
 
     res.status(200).json({
       mensaje:
         'Incidencias obtenidas correctamente.',
       incidencias:
-        incidencias.map(
+        resultado.map(
           serializarIncidencia,
         ),
     });
@@ -765,17 +918,28 @@ export const actualizarIncidenciaAdmin =
         return;
       }
 
+      if (
+        Object.prototype.hasOwnProperty.call(
+          req.body,
+          'observacionesAdmin',
+        )
+      ) {
+        res.status(400).json({
+          mensaje:
+            'Los comentarios y notas deben registrarse en el historial de seguimiento.',
+        });
+        return;
+      }
+
       const {
         categoria,
         estado,
-        observacionesAdmin,
         prioridad,
       } = req.body;
 
       if (
         categoria === undefined &&
         estado === undefined &&
-        observacionesAdmin === undefined &&
         prioridad === undefined
       ) {
         res.status(400).json({
@@ -824,28 +988,12 @@ export const actualizarIncidenciaAdmin =
         return;
       }
 
-      if (
-        observacionesAdmin !== undefined &&
-        observacionesAdmin !== null &&
-        typeof observacionesAdmin !==
-          'string'
-      ) {
-        res.status(400).json({
-          mensaje:
-            'Las observaciones no son validas.',
-        });
-        return;
-      }
-
       const datosActualizacion = {
         adminId,
       } as {
         categoria?: CategoriaIncidencia;
         prioridad?: PrioridadIncidencia;
         estado?: EstadoIncidencia;
-        observacionesAdmin?:
-          | string
-          | null;
         adminId: number;
       };
 
@@ -862,14 +1010,6 @@ export const actualizarIncidenciaAdmin =
       if (estado !== undefined) {
         datosActualizacion.estado =
           estado;
-      }
-
-      if (
-        observacionesAdmin !==
-        undefined
-      ) {
-        datosActualizacion.observacionesAdmin =
-          observacionesAdmin;
       }
 
       const incidencia =
@@ -921,9 +1061,16 @@ export const actualizarIncidenciaAdmin =
         return;
       }
 
-      res.status(500).json({
-        mensaje:
-          'No se pudo actualizar la incidencia.',
+      const conflicto =
+        mensaje.includes('No se puede modificar') ||
+        mensaje.includes(
+          'El estado no se puede modificar',
+        );
+
+      res.status(conflicto ? 409 : 500).json({
+        mensaje: conflicto
+          ? mensaje
+          : 'No se pudo actualizar la incidencia.',
       });
     }
   };
@@ -987,9 +1134,75 @@ export const actualizarVisibilidadPublica =
           mensaje ===
             'Incidencia no encontrada.'
             ? 404
+            : mensaje.includes('No se puede modificar')
+              ? 409
             : 500,
         )
         .json({ mensaje });
+    }
+  };
+
+export const finalizarSeguimientoAdmin =
+  async (
+    req: Request,
+    res: Response,
+  ): Promise<void> => {
+    const id = Number(req.params.id);
+    const adminId = req.usuario?.id;
+
+    if (!Number.isSafeInteger(id) || id <= 0) {
+      res.status(400).json({
+        mensaje: 'El ID de la incidencia no es válido.',
+      });
+      return;
+    }
+
+    if (!adminId) {
+      res.status(401).json({
+        mensaje: 'Usuario autenticado no encontrado.',
+      });
+      return;
+    }
+
+    try {
+      const incidencia =
+        await finalizarSeguimientoIncidencia(
+          id,
+          adminId,
+        );
+
+      res.status(200).json({
+        mensaje: 'Seguimiento finalizado correctamente.',
+        incidencia: serializarIncidencia(incidencia),
+      });
+    } catch (error) {
+      const mensaje =
+        error instanceof Error
+          ? error.message
+          : 'No se pudo finalizar el seguimiento.';
+
+      console.error(
+        'Error al finalizar el seguimiento de incidencia:',
+        error,
+      );
+
+      const estadoHttp =
+        mensaje === 'Incidencia no encontrada.'
+          ? 404
+          : mensaje === 'El administrador no existe.'
+            ? 401
+            : mensaje.startsWith(
+                  'La incidencia no está disponible',
+                )
+              ? 409
+              : 500;
+
+      res.status(estadoHttp).json({
+        mensaje:
+          estadoHttp === 500
+            ? 'No se pudo finalizar el seguimiento.'
+            : mensaje,
+      });
     }
   };
 

@@ -74,65 +74,65 @@ const categorias: {
 }[] = [
   {
     value: 'seguridad',
-    nombre: 'Seguridad',
+    nombre: 'Riesgos para las personas',
     descripcion:
-      'Situaciones que puedan afectar a visitantes.',
+      'Situaciones que ponen en riesgo la seguridad de las personas visitantes.',
     activeColor:
       'border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400',
   },
   {
     value: 'incendio',
-    nombre: 'Incendio',
+    nombre: 'Posibles Incendios',
     descripcion:
-      'Incendios, humo o riesgo de fuego.',
+      'Posible presencia de fuego, humo o situaciones con riesgo de incendio.',
     activeColor:
       'border-red-500 bg-red-500/10 text-red-600 dark:text-red-400',
   },
   {
     value: 'flora_fauna',
-    nombre: 'Flora y fauna',
+    nombre: 'Animales o Vegetación afectadas',
     descripcion:
-      'Afectaciones a animales o vegetación.',
+      'Animales en peligro, animales heridos o daños a la vegetación.',
     activeColor:
       'border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
   },
   {
     value: 'ambiental',
-    nombre: 'Ambiental',
+    nombre: 'Basura y contaminación',
     descripcion:
-      'Contaminación u otros problemas ambientales.',
+      'Contaminación, acumulación de residuos u otros daños al ambiente.',
     activeColor:
       'border-teal-500 bg-teal-500/10 text-teal-600 dark:text-teal-400',
   },
   {
     value: 'infraestructura',
-    nombre: 'Infraestructura',
+    nombre: 'Daños en instalaciones',
     descripcion:
-      'Daños en instalaciones o estructuras.',
+      'Daños en edificios, instalaciones, mobiliario u otras estructuras.',
     activeColor:
       'border-indigo-500 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400',
   },
   {
     value: 'senderos',
-    nombre: 'Senderos',
+    nombre: 'Senderos obstruidos o dañados',
     descripcion:
-      'Problemas, daños u obstrucciones.',
+      'Senderos bloqueados, dañados o con obstáculos que dificultan el paso.',
     activeColor:
       'border-lime-600 bg-lime-500/10 text-lime-600 dark:text-lime-400',
   },
   {
     value: 'servicios',
-    nombre: 'Servicios',
+    nombre: 'Fallas en los servicios',
     descripcion:
-      'Problemas relacionados con servicios.',
+      'Problemas con los servicios ofrecidos a las personas visitantes.',
     activeColor:
       'border-sky-500 bg-sky-500/10 text-sky-600 dark:text-sky-400',
   },
   {
     value: 'otro',
-    nombre: 'Otro',
+    nombre: 'Otra',
     descripcion:
-      'Situaciones que no corresponden a otra categoría.',
+      'Situaciones que no corresponden a ninguna de las categorías anteriores.',
     activeColor:
       'border-slate-500 bg-slate-500/10 text-slate-700 dark:text-slate-300',
   },

@@ -263,12 +263,6 @@ export default function MisIncidencias() {
             const puedeResponder =
   incidencia.estado === 'en_revision' &&
   incidencia.conformidadUsuario === 'pendiente';
-  console.log('INCIDENCIA:', {
-  id: incidencia.id,
-  estado: incidencia.estado,
-  conformidadUsuario: incidencia.conformidadUsuario,
-  puedeResponder,
-});
 
             return <article key={incidencia.id} className="rounded-3xl border border-white/55 bg-white/60 p-5 shadow-[0_12px_32px_rgba(11,58,39,0.06)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/55 sm:p-6">
              <div className="flex flex-col gap-5">
@@ -293,17 +287,6 @@ export default function MisIncidencias() {
       {incidencia.categoria.replace('_', ' ')} · Registrada el{' '}
       {formatearFechaHora(incidencia.fechaRegistro)}
     </p>
-
-    <div className="mt-4 w-full rounded-2xl border border-white/55 bg-white/45 px-4 py-3 text-sm leading-6 text-emerald-950/75 backdrop-blur-lg dark:border-white/10 dark:bg-white/5 dark:text-white/75">
-      <span className="font-bold">
-        Observación administrativa:{' '}
-      </span>
-
-      <span className="break-words">
-        {incidencia.observacionesAdmin ??
-          'Aún no hay observaciones administrativas.'}
-      </span>
-    </div>
 
     <section className="mt-4 rounded-2xl border border-emerald-500/15 bg-emerald-500/[0.05] p-4 backdrop-blur-xl dark:border-emerald-400/15 dark:bg-emerald-400/[0.05]">
       <h3 className="text-sm font-extrabold text-emerald-900 dark:text-emerald-100">Historial de Seguimiento</h3>

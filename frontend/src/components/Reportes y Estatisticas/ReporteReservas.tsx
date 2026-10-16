@@ -1823,7 +1823,7 @@ const contenedorFechasRef =
                 </p>
 
                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                  Fecha de generaciÃ³n:{' '}
+                  Fecha de generación:{' '}
                   {datos.informacionGeneral
                     ?.fechaGeneracion
                     ? new Date(

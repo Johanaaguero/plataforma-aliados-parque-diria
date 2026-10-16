@@ -14,6 +14,11 @@ import {
   Participantes,
 } from '../../../models/Participantes';
 
+import {
+  Reserva,
+  EstadoReserva as EstadoReservaPago,
+} from '../../../models/Reserva';
+
 import { In, Repository, type EntityManager } from 'typeorm';
 
 import { calcularCuposDisponibles } from '../cuposDisponibles';
@@ -87,6 +92,8 @@ export class EventosCapacitacionesService {
 
   private participantesRepo: Repository<Participantes>;
 
+  private reservasRepo: Repository<Reserva>;
+
   constructor(manager?: EntityManager) {
     this.manager = manager;
     this.repo =
@@ -100,6 +107,10 @@ export class EventosCapacitacionesService {
     this.participantesRepo =
       manager?.getRepository(Participantes) ??
       AppDataSource.getRepository(Participantes);
+
+    this.reservasRepo =
+      manager?.getRepository(Reserva) ??
+      AppDataSource.getRepository(Reserva);
   }
 
   private validar(
@@ -725,30 +736,78 @@ export class EventosCapacitacionesService {
     return imagen;
   }
 
+  private async obtenerUsuariosActivosPorEvento(
+    eventoCapacitacionIds: number[],
+  ): Promise<Map<number, Set<number>>> {
+    const [participantesActivos, reservasActivas] =
+      await Promise.all([
+        this.participantesRepo.find({
+          select: {
+            eventoCapacitacionId: true,
+            usuarioId: true,
+          },
+          where: {
+            eventoCapacitacionId: In(
+              eventoCapacitacionIds,
+            ),
+            estado: In([
+              EstadoReserva.PENDIENTE,
+              EstadoReserva.CONFIRMADA,
+            ]),
+          },
+        }),
+        this.reservasRepo.find({
+          select: {
+            eventoCapacitacionId: true,
+            usuarioId: true,
+          },
+          where: {
+            eventoCapacitacionId: In(
+              eventoCapacitacionIds,
+            ),
+            estado: In([
+              EstadoReservaPago.PENDIENTE,
+              EstadoReservaPago.APROBADA,
+            ]),
+          },
+        }),
+      ]);
+
+    const usuariosPorEvento =
+      new Map<number, Set<number>>();
+
+    for (const { eventoCapacitacionId, usuarioId } of [
+      ...participantesActivos,
+      ...reservasActivas,
+    ]) {
+      let usuarios =
+        usuariosPorEvento.get(eventoCapacitacionId);
+
+      if (!usuarios) {
+        usuarios = new Set<number>();
+        usuariosPorEvento.set(
+          eventoCapacitacionId,
+          usuarios,
+        );
+      }
+
+      usuarios.add(usuarioId);
+    }
+
+    return usuariosPorEvento;
+  }
+
   private async obtenerCantidadInscritos(
     eventoCapacitacionId: number,
   ): Promise<number> {
-    const resultado =
-      await this.participantesRepo
-        .createQueryBuilder('participante')
-        .where(
-          'participante.eventoCapacitacionId = :eventoCapacitacionId',
-          {
-            eventoCapacitacionId,
-          },
-        )
-        .andWhere(
-          'participante.estado IN (:...estadosActivos)',
-          {
-            estadosActivos: [
-              EstadoReserva.PENDIENTE,
-              EstadoReserva.CONFIRMADA,
-            ],
-          },
-        )
-        .getCount();
+    const usuariosPorEvento =
+      await this.obtenerUsuariosActivosPorEvento([
+        eventoCapacitacionId,
+      ]);
 
-    return resultado;
+    return usuariosPorEvento.get(
+      eventoCapacitacionId,
+    )?.size ?? 0;
   }
 
   private async actualizarCuposDisponibles(
@@ -933,6 +992,40 @@ export class EventosCapacitacionesService {
     }
 
     this.validar(data, true);
+
+    if (
+      registro.estado ===
+      EstadoEventoCapacitacion.PUBLICADO
+    ) {
+      if (
+        Object.keys(data).some(
+          (campo) => campo !== 'cupoMaximo',
+        )
+      ) {
+        const err = new Error(
+          'Una actividad publicada solo permite aumentar su cupo máximo.',
+        );
+
+        err.name = 'ValidationError';
+
+        throw err;
+      }
+
+      if (
+        data.cupoMaximo === undefined ||
+        data.cupoMaximo === null ||
+        registro.cupoMaximo === null ||
+        data.cupoMaximo <= registro.cupoMaximo
+      ) {
+        const err = new Error(
+          'El cupo máximo de una actividad publicada debe ser mayor al valor actual.',
+        );
+
+        err.name = 'ValidationError';
+
+        throw err;
+      }
+    }
 
     if (
       data.tipoActividad !== undefined &&
@@ -1213,52 +1306,9 @@ export class EventosCapacitacionesService {
         (registro) => registro.id,
       );
 
-    const conteos =
-      await this.participantesRepo
-        .createQueryBuilder('participante')
-        .select(
-          'participante.eventoCapacitacionId',
-          'eventoCapacitacionId',
-        )
-        .addSelect(
-          'COUNT(*)',
-          'inscritos',
-        )
-        .where(
-          'participante.eventoCapacitacionId IN (:...idsEventos)',
-          { idsEventos },
-        )
-        .andWhere(
-          'participante.estado IN (:...estadosActivos)',
-          {
-            estadosActivos: [
-              EstadoReserva.PENDIENTE,
-              EstadoReserva.CONFIRMADA,
-            ],
-          },
-        )
-        .groupBy(
-          'participante.eventoCapacitacionId',
-        )
-        .getRawMany<{
-          eventoCapacitacionId:
-            | string
-            | number;
-
-          inscritos: string | number;
-        }>();
-
-    const inscritosPorEvento =
-      new Map(
-        conteos.map((conteo) => [
-          Number(
-            conteo.eventoCapacitacionId,
-          ),
-
-          Number(
-            conteo.inscritos,
-          ),
-        ]),
+    const usuariosPorEvento =
+      await this.obtenerUsuariosActivosPorEvento(
+        idsEventos,
       );
 
     return registros.map((registro) => {
@@ -1266,9 +1316,9 @@ export class EventosCapacitacionesService {
         calcularCuposDisponibles(
           registro.cupoMaximo,
 
-          inscritosPorEvento.get(
+          usuariosPorEvento.get(
             registro.id,
-          ) ?? 0,
+          )?.size ?? 0,
         );
 
       registro.cuposDisponibles =
@@ -1434,9 +1484,22 @@ export class EventosCapacitacionesService {
 
     data: ImagenUploadDTO,
   ) {
-    await this.obtenerOFallar(
+    const evento = await this.obtenerOFallar(
       eventoCapacitacionId,
     );
+
+    if (
+      evento.estado ===
+      EstadoEventoCapacitacion.PUBLICADO
+    ) {
+      const err = new Error(
+        'No se pueden modificar las imágenes de una actividad publicada.',
+      );
+
+      err.name = 'ValidationError';
+
+      throw err;
+    }
 
     this.validarImagen(data);
 
@@ -1505,6 +1568,23 @@ export class EventosCapacitacionesService {
 
     imagenId: number,
   ) {
+    const evento = await this.obtenerOFallar(
+      eventoCapacitacionId,
+    );
+
+    if (
+      evento.estado ===
+      EstadoEventoCapacitacion.PUBLICADO
+    ) {
+      const err = new Error(
+        'No se pueden modificar las imágenes de una actividad publicada.',
+      );
+
+      err.name = 'ValidationError';
+
+      throw err;
+    }
+
     const imagen =
       await this.obtenerImagenOFallar(
         imagenId,

@@ -1611,15 +1611,16 @@ const contenedorFechasRef =
                     : obtenerTextoPeriodo()}
                 </p>
 
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                  Fecha de generaciÃ³n:{' '}
-                  {datos.informacionGeneral
-                    ?.fechaGeneracion
-                    ? new Date(
-                        datos.informacionGeneral.fechaGeneracion,
-                      ).toLocaleString('es-CR')
-                    : 'No aplica'}
-                </p>
+               
+<p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+  Fecha de generación:{' '}
+  {datos.informacionGeneral?.fechaGeneracion
+    ? new Date(
+        datos.informacionGeneral.fechaGeneracion,
+      ).toLocaleString('es-CR')
+    : 'No aplica'}
+</p>
+
               </div>
 
               <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">

@@ -4,6 +4,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { createPortal } from 'react-dom';
 
 import type { ReactNode } from 'react';
 
@@ -18,6 +19,7 @@ import {
   actualizarIncidenciaAdministrativa,
   actualizarVisibilidadIncidencia,
   agregarComentarioIncidencia,
+  finalizarSeguimientoIncidencia,
   obtenerComentariosIncidencia,
   urlArchivoEvidencia,
 } from '../../../services/incidenciaServices';
@@ -267,9 +269,15 @@ export default function EditarIncidencia({
   onCancelar,
   onGuardar,
 }: EditarIncidenciaProps) {
+  const conformidadPendiente =
+    incidencia.estado === 'en_revision' &&
+    incidencia.conformidadUsuario === 'pendiente';
+
   const incidenciaNoGestionable =
     incidencia.estado === 'resuelta' ||
     incidencia.estado === 'cerrada';
+  const incidenciaBloqueada =
+    incidenciaNoGestionable || conformidadPendiente;
 
   const [categoria, setCategoria] =
     useState<CategoriaIncidencia>(incidencia.categoria);
@@ -303,7 +311,18 @@ export default function EditarIncidencia({
   const [tipoHistorial, setTipoHistorial] = useState<'publico' | 'privado'>('publico');
   const [cargandoComentarios, setCargandoComentarios] = useState(true);
   const [guardandoComentario, setGuardandoComentario] = useState(false);
+  const [finalizandoSeguimiento, setFinalizandoSeguimiento] =
+    useState(false);
+  const [confirmacionFinalizarAbierta, setConfirmacionFinalizarAbierta] =
+    useState(false);
   const [errorComentario, setErrorComentario] = useState<string | null>(null);
+
+  const botonFinalizarRef =
+    useRef<HTMLButtonElement | null>(null);
+  const cancelarFinalizacionRef =
+    useRef<HTMLButtonElement | null>(null);
+  const dialogoFinalizarRef =
+    useRef<HTMLElement | null>(null);
 
   const carruselEvidenciasRef =
     useRef<HTMLDivElement | null>(null);
@@ -453,11 +472,11 @@ export default function EditarIncidencia({
   const guardarCambios = async () => {
     setMensajeError(null);
 
-    if (incidenciaNoGestionable) {
+    if (incidenciaBloqueada) {
       setEstadoGuardado('error');
 
       setMensajeError(
-        'Esta incidencia ya no puede ser gestionada porque está resuelta o cerrada.',
+        'Esta incidencia no puede modificarse durante la revisión de conformidad ni después de resolverse.',
       );
 
       return;
@@ -533,7 +552,7 @@ export default function EditarIncidencia({
   const formularioBloqueado =
     guardando ||
     cambiosGuardados ||
-    incidenciaNoGestionable;
+    incidenciaBloqueada;
 
   const comentariosVisibles = comentarios.filter((comentario) =>
     tipoHistorial === 'privado' ? comentario.esNotaPrivada : !comentario.esNotaPrivada,
@@ -541,7 +560,11 @@ export default function EditarIncidencia({
 
   const registrarComentario = async () => {
     const texto = textoComentario.trim();
-    if (!texto || guardandoComentario) return;
+    if (
+      !texto ||
+      guardandoComentario ||
+      incidenciaBloqueada
+    ) return;
     setGuardandoComentario(true);
     setErrorComentario(null);
     try {
@@ -555,12 +578,109 @@ export default function EditarIncidencia({
     }
   };
 
+  const finalizarSeguimiento = async () => {
+    if (
+      incidenciaBloqueada ||
+      finalizandoSeguimiento
+    ) {
+      return;
+    }
+
+    setConfirmacionFinalizarAbierta(false);
+    setFinalizandoSeguimiento(true);
+    setMensajeError(null);
+
+    try {
+      const actualizada =
+        await finalizarSeguimientoIncidencia(
+          incidencia.id,
+        );
+
+      onGuardar({
+        ...incidencia,
+        ...actualizada,
+        evidencias:
+          actualizada.evidencias ??
+          incidencia.evidencias,
+      });
+    } catch (error) {
+      setMensajeError(
+        error instanceof Error
+          ? error.message
+          : 'No se pudo finalizar el seguimiento.',
+      );
+      setEstadoGuardado('error');
+    } finally {
+      setFinalizandoSeguimiento(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!confirmacionFinalizarAbierta) {
+      return;
+    }
+
+    cancelarFinalizacionRef.current?.focus();
+
+    const cerrarConEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !finalizandoSeguimiento) {
+        setConfirmacionFinalizarAbierta(false);
+        botonFinalizarRef.current?.focus();
+        return;
+      }
+
+      if (event.key === 'Tab') {
+        const botones = dialogoFinalizarRef.current?.querySelectorAll<HTMLButtonElement>(
+          'button:not(:disabled)',
+        );
+        const primero = botones?.[0];
+        const ultimo = botones?.[botones.length - 1];
+
+        if (!primero || !ultimo) {
+          return;
+        }
+
+        if (
+          event.shiftKey &&
+          document.activeElement === primero
+        ) {
+          event.preventDefault();
+          ultimo.focus();
+        } else if (
+          !event.shiftKey &&
+          document.activeElement === ultimo
+        ) {
+          event.preventDefault();
+          primero.focus();
+        }
+      }
+    };
+
+    document.addEventListener(
+      'keydown',
+      cerrarConEscape,
+    );
+
+    return () => {
+      document.removeEventListener(
+        'keydown',
+        cerrarConEscape,
+      );
+    };
+  }, [
+    confirmacionFinalizarAbierta,
+    finalizandoSeguimiento,
+  ]);
+
   const formatearFechaComentario = (fecha: string) => new Intl.DateTimeFormat('es-CR', {
     day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true,
   }).format(new Date(fecha));
 
   const cambiarVisibilidad = async () => {
-    if (actualizandoVisibilidad) return;
+    if (
+      actualizandoVisibilidad ||
+      incidenciaBloqueada
+    ) return;
     setActualizandoVisibilidad(true);
     setMensajeError(null);
     try {
@@ -579,6 +699,7 @@ export default function EditarIncidencia({
   ======================================================= */
 
   return (
+    <>
     <main className="relative min-h-screen w-full overflow-x-hidden text-[#17382B] dark:text-[#E8F3EE] [font-family:'Montserrat',sans-serif]">
 
       {/* =====================================================
@@ -1044,7 +1165,7 @@ export default function EditarIncidencia({
 
                   <section className="rounded-[1.25rem] border border-white/60 bg-white/28 p-4 shadow-[0_7px_20px_rgba(9,85,64,0.025)] backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04]">
                     <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#60776C] dark:text-[#9AAEA6]">Visibilidad y clasificación pública</p>
-                    <div className="mt-3 flex items-center justify-between gap-4"><div><p className="text-sm font-bold text-[#174D3B] dark:text-white">Publicar en Novedades del Inicio</p><p className="mt-1 text-xs leading-5 text-[#73867D] dark:text-slate-300">{esPublica ? 'Visible para visitantes en el inicio.' : 'Uso exclusivamente administrativo.'}</p></div><button type="button" role="switch" aria-checked={esPublica} disabled={actualizandoVisibilidad} onClick={() => void cambiarVisibilidad()} className={`relative h-7 w-12 shrink-0 rounded-full transition disabled:cursor-wait disabled:opacity-60 ${esPublica ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-600'}`}><span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition ${esPublica ? 'left-6' : 'left-1'}`} /></button></div>
+                    <div className="mt-3 flex items-center justify-between gap-4"><div><p className="text-sm font-bold text-[#174D3B] dark:text-white">Publicar en Novedades del Inicio</p><p className="mt-1 text-xs leading-5 text-[#73867D] dark:text-slate-300">{esPublica ? 'Visible para visitantes en el inicio.' : 'Uso exclusivamente administrativo.'}</p></div><button type="button" role="switch" aria-checked={esPublica} disabled={actualizandoVisibilidad || incidenciaBloqueada} onClick={() => void cambiarVisibilidad()} className={`relative h-7 w-12 shrink-0 rounded-full transition disabled:cursor-not-allowed disabled:opacity-60 ${esPublica ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-600'}`}><span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition ${esPublica ? 'left-6' : 'left-1'}`} /></button></div>
                   </section>
 
                   <section className="rounded-[1.25rem] border border-white/60 bg-white/28 p-4 shadow-[0_7px_20px_rgba(9,85,64,0.025)] backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04]">
@@ -1141,7 +1262,73 @@ export default function EditarIncidencia({
                 {comentariosVisibles.map((comentario) => <article key={comentario.id} className="rounded-2xl border border-white/55 bg-white/32 p-4 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/25"><div className="flex flex-wrap items-center justify-between gap-2"><p className="font-bold text-[#174D3B] dark:text-white">{comentario.nombreAutor}</p><time className="text-xs font-semibold text-[#73867D] dark:text-slate-300" dateTime={comentario.fechaHora}>{formatearFechaComentario(comentario.fechaHora)}</time></div><p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-[#456257] dark:text-slate-200">{comentario.texto}</p></article>)}
               </div>
               {errorComentario && <p className="mt-4 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-700 dark:text-rose-200">{errorComentario}</p>}
-              <div className="mt-5 border-t border-white/35 pt-5 dark:border-white/10"><label className="block text-sm font-bold text-[#174D3B] dark:text-white">{tipoHistorial === 'privado' ? 'Agregar nota privada' : 'Agregar comentario público'}<textarea value={textoComentario} onChange={(event) => setTextoComentario(event.target.value)} rows={3} maxLength={5000} placeholder={tipoHistorial === 'privado' ? 'Visible solo para administración…' : 'Visible para la persona reportante…'} className="mt-2 w-full resize-y rounded-2xl border border-white/60 bg-white/45 px-4 py-3 text-sm text-[#304B40] outline-none backdrop-blur-xl focus:border-emerald-400 focus:ring-4 focus:ring-emerald-500/10 dark:border-white/10 dark:bg-slate-950/35 dark:text-white" /></label><div className="mt-3 flex justify-end"><button type="button" onClick={() => void registrarComentario()} disabled={!textoComentario.trim() || guardandoComentario} className="rounded-full bg-emerald-700 px-5 py-2.5 text-sm font-bold text-white shadow-md transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50">{guardandoComentario ? 'Guardando…' : tipoHistorial === 'privado' ? 'Guardar nota privada' : 'Publicar seguimiento'}</button></div></div>
+              <div className="mt-5 border-t border-white/35 pt-5 dark:border-white/10">
+                <label className="block text-sm font-bold text-[#174D3B] dark:text-white">
+                  {tipoHistorial === 'privado'
+                    ? 'Agregar nota privada'
+                    : 'Agregar comentario público'}
+                  <textarea
+                    value={textoComentario}
+                    onChange={(event) =>
+                      setTextoComentario(event.target.value)
+                    }
+                    rows={3}
+                    maxLength={5000}
+                    disabled={
+                      incidenciaBloqueada ||
+                      guardandoComentario
+                    }
+                    placeholder={
+                      tipoHistorial === 'privado'
+                        ? 'Visible solo para administración…'
+                        : 'Visible para la persona reportante…'
+                    }
+                    className="mt-2 w-full resize-y rounded-2xl border border-white/60 bg-white/45 px-4 py-3 text-sm text-[#304B40] outline-none backdrop-blur-xl focus:border-emerald-400 focus:ring-4 focus:ring-emerald-500/10 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-slate-950/35 dark:text-white"
+                  />
+                </label>
+                <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:justify-between">
+                  {!incidenciaNoGestionable && (
+                    <button
+                      ref={botonFinalizarRef}
+                      type="button"
+                      onClick={() =>
+                        setConfirmacionFinalizarAbierta(
+                          true,
+                        )
+                      }
+                      disabled={
+                        incidenciaBloqueada ||
+                        incidencia.estado === 'en_revision' ||
+                        finalizandoSeguimiento ||
+                        guardandoComentario
+                      }
+                      className="rounded-full border border-[#095540]/20 bg-white/60 px-5 py-2.5 text-sm font-bold text-[#095540] shadow-sm transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:text-[#A8D66D] dark:hover:bg-white/10"
+                    >
+                      {finalizandoSeguimiento
+                        ? 'Finalizando…'
+                        : 'Finalizar seguimiento'}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void registrarComentario()
+                    }
+                    disabled={
+                      !textoComentario.trim() ||
+                      guardandoComentario ||
+                      incidenciaBloqueada
+                    }
+                    className="rounded-full bg-emerald-700 px-5 py-2.5 text-sm font-bold text-white shadow-md transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {guardandoComentario
+                      ? 'Guardando…'
+                      : tipoHistorial === 'privado'
+                        ? 'Guardar nota privada'
+                        : 'Publicar seguimiento'}
+                  </button>
+                </div>
+              </div>
             </div>
           </section>
 
@@ -1236,5 +1423,83 @@ export default function EditarIncidencia({
       )}
 
     </main>
+    {confirmacionFinalizarAbierta &&
+      createPortal(
+        <div
+          className="fixed inset-0 z-[10000] flex items-end justify-center bg-[#09241C]/65 p-3 backdrop-blur-md sm:items-center sm:p-4"
+          onMouseDown={(event) => {
+            if (
+              event.target === event.currentTarget &&
+              !finalizandoSeguimiento
+            ) {
+              setConfirmacionFinalizarAbierta(false);
+              botonFinalizarRef.current?.focus();
+            }
+          }}
+        >
+          <section
+            ref={dialogoFinalizarRef}
+            className="max-h-[calc(100dvh-1.5rem)] w-full max-w-md overflow-y-auto rounded-[2rem] border border-white/60 bg-[#fffef9] p-5 shadow-2xl dark:border-white/10 dark:bg-[#102d21] sm:max-h-[calc(100dvh-2rem)] sm:p-7"
+            role="alertdialog"
+            tabIndex={-1}
+            aria-modal="true"
+            aria-labelledby="titulo-finalizar-seguimiento"
+            aria-describedby="detalle-finalizar-seguimiento"
+          >
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-300">
+              <Icon className="h-6 w-6">
+                <path d="m9 12.75 2.25 2.25L15 9.75" />
+                <circle cx="12" cy="12" r="9" />
+              </Icon>
+            </div>
+
+            <h2
+              id="titulo-finalizar-seguimiento"
+              className="text-xl font-bold text-[#174D3B] dark:text-white"
+            >
+              ¿Finalizar el seguimiento?
+            </h2>
+
+            <p
+              id="detalle-finalizar-seguimiento"
+              className="mt-2 text-sm leading-relaxed text-[#60776C] dark:text-slate-300"
+            >
+              La persona reportante recibirá una notificación
+              y podrá indicar si está satisfecha con la
+              atención recibida.
+            </p>
+
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row">
+              <button
+                ref={cancelarFinalizacionRef}
+                type="button"
+                onClick={() => {
+                  setConfirmacionFinalizarAbierta(false);
+                  botonFinalizarRef.current?.focus();
+                }}
+                disabled={finalizandoSeguimiento}
+                className="flex-1 rounded-2xl border border-stone-300 bg-white px-4 py-2.5 text-sm font-bold text-stone-700 transition-colors hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/15 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  void finalizarSeguimiento()
+                }
+                disabled={finalizandoSeguimiento}
+                className="flex-1 rounded-2xl bg-emerald-800 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60 dark:bg-emerald-700 dark:hover:bg-emerald-600"
+              >
+                {finalizandoSeguimiento
+                  ? 'Finalizando...'
+                  : 'Sí, finalizar'}
+              </button>
+            </div>
+          </section>
+        </div>,
+        document.body,
+      )}
+    </>
   );
 }

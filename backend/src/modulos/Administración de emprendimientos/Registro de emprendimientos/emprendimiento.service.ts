@@ -1014,6 +1014,32 @@ export class EmprendimientoService {
         );
     }
 
+    if (estadoActual !== nuevoEstado) {
+  let titulo = '';
+  let mensaje = '';
+
+  if (nuevoEstado === EstadoPublicacion.PUBLICADO) {
+    titulo = 'Tu emprendimiento ha sido publicado';
+    mensaje = `El administrador ha publicado tu emprendimiento "${emprendimientoActualizado.nombre}".`;
+  } else if (nuevoEstado === EstadoPublicacion.NO_PUBLICADO) {
+    titulo = 'Tu emprendimiento ha sido despublicado';
+    mensaje = `El administrador ha despublicado tu emprendimiento "${emprendimientoActualizado.nombre}".`;
+  } else if (nuevoEstado === EstadoPublicacion.DESACTIVADO) {
+    titulo = 'Tu emprendimiento ha sido desactivado';
+    mensaje = `El administrador ha desactivado tu emprendimiento "${emprendimientoActualizado.nombre}".`;
+  }
+
+  if (titulo && mensaje) {
+    await notificacionEmprendimientoService
+      .notificarGestionEmprendimientoAlAsociado(
+        emprendimientoActualizado,
+        titulo,
+        mensaje,
+        manager,
+      );
+  }
+}
+
     await registrarAuditoriaEmprendimiento(
       usuarioId,
       'CAMBIAR_ESTADO_EMPRENDIMIENTO',
@@ -1518,6 +1544,16 @@ export class EmprendimientoService {
           manager,
         );
     }
+
+  if (rolUsuario === 'administrador') {
+  await notificacionEmprendimientoService
+    .notificarGestionEmprendimientoAlAsociado(
+      resultado,
+      'Tu emprendimiento ha sido actualizado',
+      `El administrador ha actualizado tu emprendimiento "${resultado.nombre}".`,
+      manager,
+    );
+}
 
     await registrarAuditoriaEmprendimiento(
       usuarioIdNumero,
