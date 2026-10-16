@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { api } from '../../../services/api';
-import GestionPreguntasFrecuentes from '../../GestionPreguntasFrecuentes';
 import GestionContenidoVisual from '../../Super_admin/GestionContenidoVisual';
 
 import logo from '../../../assets/logo.png';
@@ -128,6 +127,7 @@ export default function DashboardSuper_admin({
   onIrCuentasBloqueadas,
   onCerrarSesion,
   onIrComunicados,
+  onIrPreguntasFrecuentes,
 }: DashboardSuperAdminProps) {
   const [sidebarAbierto, setSidebarAbierto] = useState(true);
   const [menuMovilAbierto, setMenuMovilAbierto] = useState(false);
@@ -135,7 +135,6 @@ export default function DashboardSuper_admin({
   const [cuentasBloqueadas, setCuentasBloqueadas] = useState<number | null>(null);
   const [cargandoActividad, setCargandoActividad] = useState(true);
   const [errorActividad, setErrorActividad] = useState<string | null>(null);
-  const [vistaPreguntasFrecuentes, setVistaPreguntasFrecuentes] = useState(false);
   const [vistaContenidoVisual, setVistaContenidoVisual] = useState(false);
 
   useEffect(() => {
@@ -442,7 +441,7 @@ export default function DashboardSuper_admin({
             type="button"
             onClick={(event) => {
               event.stopPropagation();
-              setVistaPreguntasFrecuentes(true);
+              onIrPreguntasFrecuentes();
             }}
             title={!sidebarAbierto ? 'Preguntas frecuentes' : undefined}
             className={`
@@ -681,7 +680,7 @@ export default function DashboardSuper_admin({
               type="button"
               onClick={() => {
                 setMenuMovilAbierto(false);
-                setVistaPreguntasFrecuentes(true);
+                onIrPreguntasFrecuentes();
               }}
               className="flex min-h-11 items-center gap-3 rounded-2xl bg-white/60 px-4 py-3 text-left font-brand text-sm font-semibold text-[#21473a] transition-colors hover:bg-white dark:bg-white/[0.05] dark:text-[#e4f3ea] dark:hover:bg-white/[0.08]"
             >
@@ -747,17 +746,6 @@ export default function DashboardSuper_admin({
 
           {vistaContenidoVisual ? (
             <div className="flex h-full min-h-0 flex-col overflow-y-auto"><GestionContenidoVisual /></div>
-          ) : vistaPreguntasFrecuentes ? (
-            <div className="flex h-full min-h-0 flex-col overflow-y-auto p-4 sm:p-6 lg:p-8">
-              <button
-                type="button"
-                onClick={() => setVistaPreguntasFrecuentes(false)}
-                className="mb-5 w-fit rounded-full border border-[#0b6849]/15 bg-white/60 px-4 py-2 font-brand text-sm font-semibold text-[#0b6849] transition-colors hover:bg-white dark:border-white/10 dark:bg-white/[0.06] dark:text-[#c9ead8] dark:hover:bg-white/10"
-              >
-                ← Volver al dashboard
-              </button>
-              <GestionPreguntasFrecuentes />
-            </div>
           ) : (
           <div className="flex min-h-[calc(100dvh-7rem)] flex-col p-3.5 min-[360px]:p-4 sm:min-h-[calc(100dvh-7.5rem)] sm:p-6 md:p-7 lg:min-h-0 lg:p-[clamp(2rem,3vw,3.5rem)] lg:pt-[clamp(3.75rem,7vh,6rem)]">
             {/* CABECERA */}

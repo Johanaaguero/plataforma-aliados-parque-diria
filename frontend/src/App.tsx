@@ -820,7 +820,7 @@ useEffect(() => {
     }
 
     return (
-      <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef] pt-20 sm:pt-24">
+      <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef]">
         <BotonVolverInicio
           texto={
             vieneDelDashboard
@@ -932,7 +932,7 @@ useEffect(() => {
     }
 
     return (
-      <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef] pt-20 sm:pt-24">
+      <section className="relative min-h-screen overflow-x-clip bg-[#f5f7ef]">
         <BotonVolverInicio texto="Volver al Dashboard" onClick={() => navigate(rolAutenticado === 'super_admin' ? '/super-admin/dashboard' : '/admin/dashboard')} />
         <GestionComunicados />
       </section>
@@ -946,8 +946,11 @@ useEffect(() => {
     }
 
     return (
-      <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef] pt-20 sm:pt-24">
-        <BotonVolverInicio texto="Volver al Dashboard" onClick={() => navigate(rolAutenticado === 'super_admin' ? '/super-admin/dashboard' : '/admin/dashboard')} />
+      <section className="relative min-h-screen overflow-x-clip bg-transparent">
+        <BotonVolverInicio
+          texto="Volver al Dashboard"
+          onClick={() => navigate(rolAutenticado === 'super_admin' ? '/super-admin/dashboard' : '/admin/dashboard')}
+        />
         <GestionPreguntasFrecuentes />
       </section>
     );
