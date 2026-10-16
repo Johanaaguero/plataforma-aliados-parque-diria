@@ -229,7 +229,7 @@ function Navbar({
       aria-label="Navegación principal"
     >
       <div
-        className={`mx-auto max-w-7xl overflow-visible border border-white/70 bg-white/90 backdrop-blur-xl motion-safe:transition-all motion-safe:duration-300 motion-reduce:transition-none ${
+        className={`mx-auto max-w-7xl overflow-visible border border-white/70 bg-white/90 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/60 dark:shadow-2xl motion-safe:transition-all motion-safe:duration-300 motion-reduce:transition-none ${
           menuAbierto
             ? 'rounded-[1.75rem] xl:rounded-full'
             : 'rounded-full'

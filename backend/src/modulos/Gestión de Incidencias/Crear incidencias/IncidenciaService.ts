@@ -137,6 +137,7 @@ export interface FiltrosIncidenciaDTO {
   estado?: EstadoIncidencia;
   fechaDesde?: Date;
   fechaHasta?: Date;
+  soloPublicas?: boolean;
 }
 
 export interface ActualizarIncidenciaAdministrativaDTO {
@@ -307,6 +308,10 @@ export const obtenerIncidencias = async (
 
   if (filtros?.fechaHasta) {
     consulta.andWhere('incidencia.fechaRegistro <= :fechaHasta', { fechaHasta: filtros.fechaHasta });
+  }
+
+  if (filtros?.soloPublicas) {
+    consulta.andWhere('incidencia.esPublica = :soloPublicas', { soloPublicas: true });
   }
 
   if (filtros?.buscar?.trim()) {

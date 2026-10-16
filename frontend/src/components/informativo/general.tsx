@@ -115,8 +115,8 @@ function Informativo() {
       />
 
       <div className="relative mx-auto max-w-7xl">
-        <ScrollReveal className="grid grid-cols-1 items-center gap-10 px-6 py-12 md:grid-cols-2">
-            <div className="sigtad-image-reveal relative h-[400px] w-full overflow-hidden rounded-3xl bg-[#095540] shadow-xl md:h-[480px]">
+        <ScrollReveal className="grid grid-cols-1 items-stretch gap-10 px-6 py-12 md:grid-cols-2">
+            <div className="sigtad-image-reveal relative min-h-[360px] w-full overflow-hidden rounded-3xl bg-[#095540] shadow-xl md:min-h-[420px]">
             {imagenesParque.map((imagen, index) => (
               <img
                 key={imagen.src}
@@ -190,35 +190,24 @@ function Informativo() {
               {CONTENIDO_PARQUE.comunidad}
             </p>
 
-            <div className="mt-6 rounded-[1.5rem] border border-white/30 bg-white/70 p-5 shadow-[0_12px_34px_rgba(7,63,49,0.08)] backdrop-blur-md dark:border-white/10 dark:bg-slate-900/70">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#009444] dark:text-[#8dc63f]">
-                Asociación Aliados del Parque Nacional Diriá
-              </p>
-              <h3 className="mt-2 text-xl font-bold text-[#095540] dark:text-white">
-                Aliados que conservan y hacen comunidad.
-              </h3>
-              <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
-                La Asociación Aliados del Parque Nacional Diriá impulsa el turismo rural, la conservación comunitaria y oportunidades sostenibles para las familias cercanas al parque.
-              </p>
-            </div>
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              <article className="rounded-[1.5rem] border border-white/40 bg-white/75 p-5 shadow-[0_12px_34px_rgba(7,63,49,0.08)] backdrop-blur-md dark:border-white/10 dark:bg-slate-900/70">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#009444] dark:text-[#8dc63f]">
+                  Nuestra misión
+                </p>
+                <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                  Impulsar negocios de turismo rural comunitario que propicien encadenamientos productivos en las comunidades aledañas al Parque Nacional Diriá, promoviendo la conservación de los recursos naturales y culturales de la región.
+                </p>
+              </article>
 
-            <div className="mt-8 flex items-center gap-3 rounded-[1.5rem] border border-[#095540]/15 bg-white/80 p-4 shadow-sm backdrop-blur-sm sm:p-5">
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#8dc63f]/15 text-[#095540]">
-                <svg
-                  viewBox="0 0 24 24"
-                  className="h-6 w-6"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  aria-hidden="true"
-                >
-                  <path d="M12 21c5-3.2 8-7.1 8-11a8 8 0 0 0-16 0c0 3.9 3 7.8 8 11Z" />
-                  <path d="M8 13c4 0 7-2.5 8-6-4 0-7 2.5-8 6Z" />
-                </svg>
-              </span>
-              <p className="text-sm font-semibold leading-6 text-slate-700 sm:text-base">
-                {CONTENIDO_PARQUE.mensaje}
-              </p>
+              <article className="rounded-[1.5rem] border border-white/40 bg-white/75 p-5 shadow-[0_12px_34px_rgba(7,63,49,0.08)] backdrop-blur-md dark:border-white/10 dark:bg-slate-900/70">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#009444] dark:text-[#8dc63f]">
+                  Nuestra visión
+                </p>
+                <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                  Ser un referente a nivel mundial en Turismo Rural Comunitario, ofreciendo experiencias diferenciadas de aprovechamiento sostenible de los recursos naturales y culturales.
+                </p>
+              </article>
             </div>
           </div>
         </ScrollReveal>

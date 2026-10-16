@@ -30,6 +30,7 @@ import { mostrarDespedidaLogout } from './components/ui/LogoutWelcomeOverlay';
 
 import RegistroIncidencia from './components/Gestión de incidencias/RegistroIncidencia';
 import ListaIncidencias from './components/Gestión de incidencias/ListaIncidencias';
+import parqueHero from './assets/parque-hero.jpg';
 
 import IncidenciasAdmin from './components/Gestión de incidencias/admin/IncidenciasAdmin';
 
@@ -1295,13 +1296,29 @@ useEffect(() => {
           }
         />
 
-<main className="min-h-[80vh] overflow-x-hidden bg-transparent pt-24 sm:pt-28">
+<main className={`relative isolate min-h-[80vh] w-full max-w-full overflow-x-hidden bg-transparent pt-24 sm:pt-28 ${mostrarRegistroIncidencia ? '' : '-mb-20'}`}>
+  {!mostrarRegistroIncidencia && (
+    <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden" aria-hidden="true">
+      <img
+        src={parqueHero}
+        alt=""
+        className="h-full w-full scale-105 object-cover blur-sm"
+      />
+      <div className="absolute inset-0 bg-slate-950/35" />
+    </div>
+  )}
   {mostrarRegistroIncidencia ? (
     <RegistroIncidencia onClose={() => setMostrarRegistroIncidencia(false)} />
   ) : (
-    <div className="px-4 pb-12 sm:px-6">
-      <div className="mx-auto flex max-w-7xl justify-end pt-4">
-        <button type="button" onClick={() => setMostrarRegistroIncidencia(true)} className="rounded-2xl border border-emerald-500/20 bg-white/70 px-5 py-3 text-sm font-bold text-emerald-900 shadow-lg backdrop-blur-md transition hover:bg-emerald-500/10 dark:bg-slate-900/70 dark:text-emerald-100">+ Registrar nueva incidencia</button>
+    <div className="relative z-10 w-full px-4 pb-24 sm:px-6 sm:pb-32 lg:pb-40">
+      <div className="mx-auto flex max-w-7xl justify-center py-6">
+        <button
+          type="button"
+          onClick={() => setMostrarRegistroIncidencia(true)}
+          className="rounded-full bg-orange-500/85 px-8 py-3 text-base font-semibold text-white shadow-lg backdrop-blur-sm transition-all hover:bg-orange-600/90 focus:outline-none focus:ring-4 focus:ring-orange-300/50"
+        >
+          Registrar incidencia
+        </button>
       </div>
       <ListaIncidencias />
     </div>

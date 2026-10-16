@@ -511,9 +511,22 @@ export const listarIncidencias = async (
       fechaDesde,
       fechaHasta,
       buscar,
+      soloPublicas,
     } = req.query;
 
     const filtros: FiltrosIncidenciaDTO = {};
+
+    if (soloPublicas !== undefined) {
+      if (soloPublicas !== 'true') {
+        res.status(400).json({
+          mensaje:
+            'El filtro de visibilidad pública no es válido.',
+        });
+        return;
+      }
+
+      filtros.soloPublicas = true;
+    }
 
     if (typeof buscar === 'string' && buscar.trim()) {
       filtros.buscar = buscar.trim();

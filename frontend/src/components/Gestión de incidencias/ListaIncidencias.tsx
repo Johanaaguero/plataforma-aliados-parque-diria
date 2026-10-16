@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
+import type { MouseEvent as ReactMouseEvent } from 'react';
 import type { ReactNode } from 'react';
 
 import {
   listarIncidencias,
+  obtenerComentariosIncidencia,
+  obtenerDetalleIncidencia,
   ETIQUETAS_ESTADO,
   urlArchivoEvidencia,
 } from '../../services/incidenciaServices';
@@ -13,6 +16,7 @@ import type {
   CategoriaIncidencia,
   PrioridadIncidencia,
   EstadoIncidencia,
+  ComentarioIncidencia,
 } from '../../services/incidenciaServices';
 
 function Icon({
@@ -93,6 +97,13 @@ const estadoBadge: Record<EstadoIncidencia, string> = {
   cerrada: 'bg-slate-500/10 text-slate-700 dark:text-slate-300',
 };
 
+const etiquetasPrioridad: Record<PrioridadIncidencia, string> = {
+  baja: 'Baja',
+  media: 'Media',
+  alta: 'Alta',
+  critica: 'Crítica',
+};
+
 function EstadoBadge({ estado }: { estado: EstadoIncidencia }) {
   return (
     <span
@@ -106,9 +117,11 @@ function EstadoBadge({ estado }: { estado: EstadoIncidencia }) {
 function TarjetaEvidenciaChica({
   id,
   tipo,
+  onClick,
 }: {
   id: number;
   tipo: 'foto' | 'video';
+  onClick: (event: ReactMouseEvent<HTMLAnchorElement>) => void;
 }) {
   const url = urlArchivoEvidencia(id);
 
@@ -117,6 +130,7 @@ function TarjetaEvidenciaChica({
       href={url}
       target="_blank"
       rel="noopener noreferrer"
+      onClick={onClick}
       className="block h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800"
     >
       {tipo === 'video' ? (
@@ -138,8 +152,10 @@ function TarjetaEvidenciaChica({
 
 function TarjetaIncidencia({
   incidencia,
+  onAbrir,
 }: {
   incidencia: Incidencia;
+  onAbrir: () => void;
 }) {
   const infoCategoria = categoriasInfo[incidencia.categoria];
 
@@ -147,7 +163,19 @@ function TarjetaIncidencia({
   const restoEvidencias = incidencia.evidencias?.slice(1) ?? [];
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-white/40 bg-white/70 shadow-lg backdrop-blur-lg transition-all hover:shadow-2xl dark:border-white/10 dark:bg-slate-800/70">
+    <div
+      role="button"
+      tabIndex={0}
+      aria-label={`Ver detalle de la incidencia: ${incidencia.titulo}`}
+      onClick={onAbrir}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onAbrir();
+        }
+      }}
+      className="cursor-pointer overflow-hidden rounded-2xl border border-white/40 bg-white/70 shadow-lg backdrop-blur-md transition-all hover:shadow-2xl focus:outline-none focus:ring-4 focus:ring-emerald-500/30 dark:border-white/10 dark:bg-slate-800/70"
+    >
 
       <div className="flex flex-col sm:flex-row">
 
@@ -298,6 +326,7 @@ function TarjetaIncidencia({
                   key={evidencia.id}
                   id={evidencia.id}
                   tipo={evidencia.tipo}
+                  onClick={(event) => event.stopPropagation()}
                 />
               ))}
 
@@ -306,6 +335,235 @@ function TarjetaIncidencia({
 
         </div>
       </div>
+    </div>
+  );
+}
+
+function DetalleIncidenciaModal({
+  incidenciaInicial,
+  onClose,
+}: {
+  incidenciaInicial: Incidencia;
+  onClose: () => void;
+}) {
+  const [incidencia, setIncidencia] = useState(incidenciaInicial);
+  const [comentarios, setComentarios] = useState<ComentarioIncidencia[]>([]);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState('');
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  useEffect(() => {
+    let cancelado = false;
+    const overflowAnterior = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const cerrarConEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onCloseRef.current();
+    };
+    document.addEventListener('keydown', cerrarConEscape);
+
+    const cargarDetalle = async () => {
+      setCargando(true);
+      setError('');
+
+      try {
+        const [detalle, historial] = await Promise.all([
+          obtenerDetalleIncidencia(incidenciaInicial.id),
+          obtenerComentariosIncidencia(incidenciaInicial.id),
+        ]);
+
+        if (!cancelado) {
+          setIncidencia(detalle);
+          setComentarios(
+            historial.filter(
+              (comentario) =>
+                !comentario.esNotaPrivada && !comentario.esDatoSensible,
+            ),
+          );
+        }
+      } catch (errorSolicitud) {
+        if (!cancelado) {
+          setError(
+            errorSolicitud instanceof Error
+              ? errorSolicitud.message
+              : 'No se pudo cargar el detalle de la incidencia.',
+          );
+        }
+      } finally {
+        if (!cancelado) setCargando(false);
+      }
+    };
+
+    void cargarDetalle();
+
+    return () => {
+      cancelado = true;
+      document.body.style.overflow = overflowAnterior;
+      document.removeEventListener('keydown', cerrarConEscape);
+    };
+  }, [incidenciaInicial.id]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center overflow-y-auto bg-slate-950/65 p-3 backdrop-blur-sm sm:p-6"
+      role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="detalle-incidencia-titulo"
+        className="my-auto max-h-[95vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-white/30 bg-white/85 p-5 shadow-2xl backdrop-blur-md dark:border-white/10 dark:bg-slate-900/90 sm:p-8"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+              Detalle de la incidencia
+            </p>
+            <h2
+              id="detalle-incidencia-titulo"
+              className="mt-1 text-2xl font-bold text-slate-900 dark:text-white"
+            >
+              {incidencia.titulo}
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="shrink-0 rounded-full border border-white/40 bg-white/60 px-4 py-2 text-sm font-bold text-slate-700 shadow-sm backdrop-blur-md transition hover:bg-white dark:border-white/10 dark:bg-slate-800/70 dark:text-white dark:hover:bg-slate-700"
+          >
+            Volver
+          </button>
+        </div>
+
+        {cargando && (
+          <p className="mt-6 text-sm text-slate-600 dark:text-slate-300" role="status">
+            Cargando información completa...
+          </p>
+        )}
+        {error && (
+          <p className="mt-6 rounded-xl border border-red-300/60 bg-red-50/80 p-4 text-sm text-red-800 dark:border-red-500/30 dark:bg-red-950/40 dark:text-red-200" role="alert">
+            {error}
+          </p>
+        )}
+
+        <div className="mt-6 flex flex-wrap items-center gap-2">
+          <span className="rounded-full bg-slate-500/10 px-3 py-1 text-xs font-bold text-slate-700 dark:text-slate-200">
+            {incidencia.codigo}
+          </span>
+          <span className={`rounded-full px-3 py-1 text-xs font-bold ${categoriasInfo[incidencia.categoria].badge}`}>
+            {categoriasInfo[incidencia.categoria].nombre}
+          </span>
+          <EstadoBadge estado={incidencia.estado} />
+          <span className="rounded-full bg-orange-500/10 px-3 py-1 text-xs font-bold text-orange-800 dark:text-orange-200">
+            Prioridad {etiquetasPrioridad[incidencia.prioridad]}
+          </span>
+          <span className="text-xs text-slate-500 dark:text-slate-400">
+            Registrada el {new Date(incidencia.fechaRegistro).toLocaleDateString('es-CR', {
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric',
+            })}
+          </span>
+        </div>
+        {incidencia.usuarioReporta && (
+          <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
+            <strong>Reportada por:</strong> {incidencia.usuarioReporta.nombre}
+          </p>
+        )}
+
+        <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(240px,0.7fr)]">
+          <div className="space-y-4">
+            <article className="rounded-2xl border border-white/50 bg-white/55 p-4 backdrop-blur-md dark:border-white/10 dark:bg-slate-800/50">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">Descripción</h3>
+              <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-slate-700 dark:text-slate-200">
+                {incidencia.descripcion}
+              </p>
+            </article>
+            {incidencia.ubicacion && (
+              <p className="text-sm text-slate-600 dark:text-slate-300">
+                <strong>Ubicación:</strong> {incidencia.ubicacion}
+              </p>
+            )}
+            {incidencia.observacionesAdmin && (
+              <article className="rounded-2xl border border-white/50 bg-white/55 p-4 backdrop-blur-md dark:border-white/10 dark:bg-slate-800/50">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                  Observaciones administrativas
+                </h3>
+                <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700 dark:text-slate-200">
+                  {incidencia.observacionesAdmin}
+                </p>
+              </article>
+            )}
+          </div>
+
+          <section>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+              Evidencias ({incidencia.evidencias.length})
+            </h3>
+            {incidencia.evidencias.length === 0 ? (
+              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                No hay imágenes ni videos adjuntos.
+              </p>
+            ) : (
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                {incidencia.evidencias.map((evidencia) => {
+                  const url = urlArchivoEvidencia(evidencia.id);
+                  return (
+                    <a
+                      key={evidencia.id}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="overflow-hidden rounded-xl border border-white/50 bg-white/45 dark:border-white/10 dark:bg-slate-800/50"
+                      aria-label={`Abrir ${evidencia.tipo === 'video' ? 'video' : 'imagen'} de evidencia`}
+                    >
+                      {evidencia.tipo === 'video' ? (
+                        <video src={url} controls className="aspect-video w-full object-cover" />
+                      ) : (
+                        <img src={url} alt={`Evidencia de ${incidencia.titulo}`} className="aspect-video w-full object-cover" />
+                      )}
+                    </a>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        </div>
+
+        <section className="mt-7 border-t border-slate-200/70 pt-5 dark:border-slate-700/70">
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+            Comentarios públicos
+          </h3>
+          {cargando && <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">Cargando comentarios...</p>}
+          {!cargando && !error && comentarios.length === 0 && (
+            <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
+              Aún no hay comentarios públicos para esta incidencia.
+            </p>
+          )}
+          <div className="mt-3 space-y-3">
+            {comentarios.map((comentario) => (
+              <article key={comentario.id} className="rounded-xl border border-white/50 bg-white/55 p-4 backdrop-blur-md dark:border-white/10 dark:bg-slate-800/50">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-sm font-bold text-slate-900 dark:text-white">{comentario.nombreAutor}</p>
+                  <time className="text-xs text-slate-500 dark:text-slate-400" dateTime={comentario.fechaHora}>
+                    {new Date(comentario.fechaHora).toLocaleString('es-CR')}
+                  </time>
+                </div>
+                <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-slate-700 dark:text-slate-200">
+                  {comentario.texto}
+                </p>
+              </article>
+            ))}
+          </div>
+        </section>
+      </section>
     </div>
   );
 }
@@ -332,6 +590,8 @@ export default function ListaIncidencias() {
 
   const [indiceActual, setIndiceActual] =
     useState(0);
+  const [incidenciaSeleccionada, setIncidenciaSeleccionada] =
+    useState<Incidencia | null>(null);
 
   /*
    * Cargar incidencias
@@ -358,6 +618,8 @@ export default function ListaIncidencias() {
       if (filtroEstado) {
         filtros.estado = filtroEstado;
       }
+
+      filtros.soloPublicas = true;
 
       try {
 
@@ -450,22 +712,6 @@ if (!cancelado) {
   const hayVarias =
     incidencias.length > 1;
 
-  const anterior = hayVarias
-    ? incidencias[
-        indiceActual === 0
-          ? incidencias.length - 1
-          : indiceActual - 1
-      ]
-    : null;
-
-  const siguiente = hayVarias
-    ? incidencias[
-        indiceActual === incidencias.length - 1
-          ? 0
-          : indiceActual + 1
-      ]
-    : null;
-
   /*
    * Animación
    */
@@ -492,16 +738,16 @@ if (!cancelado) {
     w-full
     rounded-3xl
     border
-    border-white/30
-    bg-white/40
-    shadow-xl
-    backdrop-blur-md
+    border-white/20
+    bg-white/70
+    shadow-[0_8px_32px_0_rgba(0,0,0,0.2)]
+    backdrop-blur-xl
     px-4
     py-16
     sm:px-6
     lg:px-8
     dark:border-white/10
-    dark:bg-slate-900/20
+    dark:bg-slate-900/60
   "
 >
 
@@ -661,65 +907,7 @@ if (!cancelado) {
 
               <div className="relative">
 
-                <div className="relative flex min-h-[430px] snap-x snap-mandatory items-center justify-center overflow-x-auto scroll-smooth py-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-
-                  {/* =================================
-                      TARJETA ANTERIOR
-                  ================================== */}
-                  {anterior && (
-                    <div
-                      className="
-                        pointer-events-none
-                        absolute
-                        left-0
-                        z-0
-                        w-[85%]
-                        max-w-2xl
-                        -translate-x-[72%]
-                        scale-[0.88]
-                        opacity-25
-                        blur-[1px]
-                        transition-all
-                        duration-500
-                        ease-in-out
-                      "
-                    >
-
-                      <TarjetaIncidencia
-                        incidencia={anterior}
-                      />
-
-                    </div>
-                  )}
-
-                  {/* =================================
-                      TARJETA SIGUIENTE
-                  ================================== */}
-                  {siguiente && (
-                    <div
-                      className="
-                        pointer-events-none
-                        absolute
-                        right-0
-                        z-0
-                        w-[85%]
-                        max-w-2xl
-                        translate-x-[72%]
-                        scale-[0.88]
-                        opacity-25
-                        blur-[1px]
-                        transition-all
-                        duration-500
-                        ease-in-out
-                      "
-                    >
-
-                      <TarjetaIncidencia
-                        incidencia={siguiente}
-                      />
-
-                    </div>
-                  )}
+                <div className="relative flex min-h-[430px] items-center justify-center py-8">
 
                   {/* =================================
                       TARJETA PRINCIPAL
@@ -729,7 +917,6 @@ if (!cancelado) {
                     className="
                       relative
                       z-10
-                      snap-center
                       w-full
                       max-w-2xl
                     "
@@ -743,6 +930,7 @@ if (!cancelado) {
                       incidencia={
                         incidencias[indiceActual]
                       }
+                      onAbrir={() => setIncidenciaSeleccionada(incidencias[indiceActual])}
                     />
 
                   </div>
@@ -841,39 +1029,10 @@ if (!cancelado) {
                     INDICADORES
                 ================================== */}
                 {hayVarias && (
-                  <div className="mt-4 flex items-center justify-center gap-1.5">
-
-                    {incidencias.map(
-                      (incidencia, index) => (
-
-                        <button
-                          key={incidencia.id}
-                          type="button"
-                          onClick={() =>
-                            setIndiceActual(index)
-                          }
-                          aria-label={`Ir a la incidencia ${
-                            index + 1
-                          }`}
-                          aria-current={
-                            index === indiceActual
-                          }
-                          className={`
-                            h-2
-                            rounded-full
-                            transition-all
-                            duration-300
-                            ${
-                              index === indiceActual
-                                ? 'w-6 bg-[#095540]'
-                                : 'w-2 bg-slate-300 hover:bg-slate-400 dark:bg-slate-700'
-                            }
-                          `}
-                        />
-
-                      )
-                    )}
-
+                  <div className="mt-4 flex items-center justify-center">
+                    <span className="rounded-full border border-white/40 bg-white/70 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm backdrop-blur-md dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-200" aria-live="polite">
+                      {indiceActual + 1} de {incidencias.length}
+                    </span>
                   </div>
                 )}
 
@@ -884,6 +1043,12 @@ if (!cancelado) {
         </div>
 
       </section>
+      {incidenciaSeleccionada && (
+        <DetalleIncidenciaModal
+          incidenciaInicial={incidenciaSeleccionada}
+          onClose={() => setIncidenciaSeleccionada(null)}
+        />
+      )}
     </>
   );
 }

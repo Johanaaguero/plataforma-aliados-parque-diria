@@ -63,7 +63,7 @@ export default function SeccionPreguntasFrecuentes() {
               return (
                 <article
                   key={pregunta.id}
-                  className="overflow-hidden rounded-2xl border border-emerald-900/10 bg-white/75 shadow-[0_10px_28px_rgba(5,84,64,.07)] backdrop-blur-md dark:border-white/10 dark:bg-white/5"
+                  className="overflow-hidden rounded-2xl border border-emerald-500/20 bg-white/50 shadow-lg backdrop-blur-md transition-all duration-300 hover:border-emerald-500/40 md:rounded-3xl dark:border-white/10 dark:bg-slate-900/50"
                 >
                   <h3>
                     <button

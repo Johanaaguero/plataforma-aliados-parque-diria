@@ -20,6 +20,7 @@ import {
 
 import type { EventoCapacitacion } from '../../services/eventosCapacitacionesService';
 import { formatearFechaActividad } from '../../utils/fechas';
+import parqueHero from '../../assets/parque-hero.jpg';
 
 type FiltroTipo = 'todas' | 'evento' | 'capacitacion';
 
@@ -191,11 +192,11 @@ export default function MisInscripciones() {
         <button type="button" onClick={() => setTipoDevolucion('transferencia_bancaria')} className={`rounded-xl border px-3 py-2 text-xs font-bold transition ${tipoDevolucion === 'transferencia_bancaria' ? 'border-emerald-500 bg-emerald-500/15 text-emerald-800 dark:text-emerald-200' : 'border-slate-200 text-slate-600 dark:border-white/10 dark:text-slate-300'}`}>Transferencia</button>
       </div>
       {tipoDevolucion === 'sinpe_movil' ? (
-        <input value={telefonoDevolucion} onChange={(event) => setTelefonoDevolucion(event.target.value)} placeholder="Número de teléfono SINPE" className="mt-3 w-full rounded-xl border border-slate-200 bg-white/80 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-emerald-500 dark:border-white/10 dark:bg-slate-950/40 dark:text-white" />
+        <input value={telefonoDevolucion} onChange={(event) => setTelefonoDevolucion(event.target.value)} placeholder="Número de teléfono SINPE" className="mt-3 w-full rounded-xl border border-slate-200 bg-white/80 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-emerald-500 dark:border-emerald-500/20 dark:bg-emerald-950/40 dark:text-white" />
       ) : (
         <div className="mt-3 grid gap-2">
-          <input value={ibanDevolucion} onChange={(event) => setIbanDevolucion(event.target.value)} placeholder="Cuenta IBAN" className="w-full rounded-xl border border-slate-200 bg-white/80 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-emerald-500 dark:border-white/10 dark:bg-slate-950/40 dark:text-white" />
-          <input value={bancoDevolucion} onChange={(event) => setBancoDevolucion(event.target.value)} placeholder="Banco o entidad financiera" className="w-full rounded-xl border border-slate-200 bg-white/80 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-emerald-500 dark:border-white/10 dark:bg-slate-950/40 dark:text-white" />
+          <input value={ibanDevolucion} onChange={(event) => setIbanDevolucion(event.target.value)} placeholder="Cuenta IBAN" className="w-full rounded-xl border border-slate-200 bg-white/80 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-emerald-500 dark:border-emerald-500/20 dark:bg-emerald-950/40 dark:text-white" />
+          <input value={bancoDevolucion} onChange={(event) => setBancoDevolucion(event.target.value)} placeholder="Banco o entidad financiera" className="w-full rounded-xl border border-slate-200 bg-white/80 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-emerald-500 dark:border-emerald-500/20 dark:bg-emerald-950/40 dark:text-white" />
         </div>
       )}
     </>
@@ -555,13 +556,17 @@ const registrosVisibles = useMemo(() => {
     `rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-200 ${
       activo
         ? 'bg-[#095540] text-white shadow-md shadow-[#095540]/15 dark:bg-[#8dc63f] dark:text-[#071c16] dark:shadow-[#8dc63f]/10'
-        : 'bg-slate-50 text-slate-600 hover:bg-[#eef7e7] hover:text-[#095540] dark:bg-white/5 dark:text-slate-300 dark:hover:bg-[#8dc63f]/10 dark:hover:text-[#b7e86c]'
+        : 'border border-white/30 bg-white/50 text-slate-600 backdrop-blur-md hover:bg-white/70 hover:text-[#095540] dark:border-emerald-500/20 dark:bg-emerald-950/50 dark:text-slate-300 dark:hover:bg-emerald-950/70 dark:hover:text-[#b7e86c]'
     }`;
 
   return (
-    <section className="min-h-screen overflow-x-clip bg-[#f5f7f1] px-4 py-8 font-sans transition-colors duration-300 dark:bg-[#071a15] sm:px-6 lg:px-10">
-      <div className="mx-auto max-w-5xl">
-        <div className="relative mb-6 overflow-hidden rounded-3xl border border-[#b9d6af] bg-[#fffef9]/95 px-6 py-6 text-[#073f31] shadow-[0_14px_34px_rgba(7,63,49,0.10)] backdrop-blur-md sm:px-8 sm:py-7 dark:border-white/10 dark:bg-emerald-950/40 dark:text-white">
+    <section className="relative isolate flex min-h-screen w-full flex-col overflow-x-hidden bg-transparent px-4 py-8 font-sans transition-colors duration-300 sm:px-6 lg:px-10">
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
+        <img src={parqueHero} alt="" className="absolute inset-0 h-full w-full scale-105 object-cover opacity-80 blur-sm brightness-90" />
+        <div className="absolute inset-0 bg-white/20 dark:bg-slate-950/30" />
+      </div>
+      <div className="relative z-10 mx-auto max-w-5xl">
+        <div className="relative mb-6 overflow-hidden rounded-3xl border border-white/40 bg-white/70 px-6 py-6 text-[#073f31] shadow-xl backdrop-blur-xl sm:px-8 sm:py-7 dark:border-emerald-500/20 dark:bg-emerald-950/70 dark:text-white">
           <div
             className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-[#8dc63f]/[0.12] blur-3xl"
             aria-hidden="true"
@@ -653,7 +658,7 @@ const registrosVisibles = useMemo(() => {
         </div>
 
         {cargando && (
-          <div className="rounded-3xl border border-emerald-100 bg-white p-12 text-center shadow-sm transition-colors dark:border-white/10 dark:bg-[#0d241d]">
+          <div className="rounded-3xl border border-white/40 bg-white/70 p-12 text-center shadow-xl backdrop-blur-xl transition-colors dark:border-emerald-500/20 dark:bg-emerald-950/70">
             <div className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-4 border-emerald-100 border-t-[#095540] dark:border-white/10 dark:border-t-[#8dc63f]" />
 
             <p className="text-sm font-semibold text-[#095540] dark:text-emerald-200">
@@ -668,7 +673,7 @@ const registrosVisibles = useMemo(() => {
 
         {!cargando && error && (
           <div
-            className="rounded-3xl border border-rose-200 bg-white p-6 shadow-sm dark:border-rose-400/20 dark:bg-[#241317]"
+            className="rounded-3xl border border-white/40 bg-white/70 p-6 shadow-xl backdrop-blur-xl dark:border-emerald-500/20 dark:bg-emerald-950/70"
             role="alert"
           >
             <div className="flex items-start gap-4">
@@ -703,7 +708,7 @@ const registrosVisibles = useMemo(() => {
         )}
 
         {!cargando && !error && (
-          <div className="overflow-hidden rounded-[28px] border border-[#095540]/10 bg-white shadow-[0_16px_44px_rgba(9,85,64,0.07)] transition-colors dark:border-white/10 dark:bg-[#0d241d] dark:shadow-[0_16px_44px_rgba(0,0,0,0.25)]">
+          <div className="relative overflow-hidden rounded-3xl border border-white/40 bg-white/70 shadow-xl backdrop-blur-xl transition-colors dark:border-emerald-500/20 dark:bg-emerald-950/70">
             <div className="border-b border-slate-100 px-5 py-5 dark:border-white/10 sm:px-7">
               <div className="flex flex-col gap-4">
                 <div>
@@ -907,7 +912,7 @@ const registrosVisibles = useMemo(() => {
                 </p>
               </div>
             ) : (
-              <ul className="divide-y divide-slate-100 dark:divide-white/10">
+              <ul className="space-y-3 p-4">
                 {registrosVisibles.map((inscripcion) => {
                   const acentoTipo =
                     obtenerAcentoTipo(
@@ -960,7 +965,7 @@ const registrosVisibles = useMemo(() => {
                   return (
                     <li
                       key={inscripcion.id}
-                      className="group px-5 py-5 transition-colors duration-200 hover:bg-[#f9fbf7] dark:hover:bg-white/[0.035] sm:px-7"
+                      className="group rounded-3xl border border-white/40 bg-white/70 p-5 shadow-xl backdrop-blur-xl transition-colors duration-200 hover:bg-white/80 dark:border-emerald-500/20 dark:bg-emerald-950/70 dark:hover:bg-emerald-950/80 sm:p-7"
                     >
                       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                         <div className="flex min-w-0 gap-4">
@@ -1164,7 +1169,7 @@ const registrosVisibles = useMemo(() => {
                                     limpiarDatosDevolucion();
                                     setReservaParaDevolucion(inscripcion);
                                   }}
-                                  className="rounded-lg border border-amber-500/30 bg-white/70 px-3 py-1.5 text-xs font-bold text-amber-800 transition hover:bg-white dark:bg-slate-900/50 dark:text-amber-200"
+                                  className="rounded-lg border border-amber-500/30 bg-white/70 px-3 py-1.5 text-xs font-bold text-amber-800 transition hover:bg-white dark:border-emerald-500/20 dark:bg-emerald-950/50 dark:text-amber-200"
                                 >
                                   Ingresar datos de devolución
                                 </button>
@@ -1245,7 +1250,7 @@ const registrosVisibles = useMemo(() => {
                       </div>
 
                       {expandido && tieneDetalle && (
-                        <div className="mt-4 rounded-2xl border border-[#095540]/8 bg-[#f7faf5] p-5 dark:border-white/10 dark:bg-[#091d17]">
+                        <div className="mt-4 rounded-2xl border border-white/30 bg-white/45 p-5 backdrop-blur-md dark:border-emerald-500/20 dark:bg-emerald-950/45">
                           {inscripcion.descripcion && (
                             <div>
                               <p className="text-xs font-bold uppercase tracking-wider text-[#095540]/60 dark:text-emerald-200/70">
@@ -1260,7 +1265,7 @@ const registrosVisibles = useMemo(() => {
 
                           <dl className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
                             {inscripcion.ubicacion && (
-                              <div className="rounded-xl bg-white p-3.5 text-center shadow-sm dark:bg-white/[0.04] dark:shadow-none">
+                              <div className="rounded-xl border border-white/30 bg-white/50 p-3.5 text-center shadow-sm backdrop-blur-md dark:border-emerald-500/20 dark:bg-emerald-950/50 dark:shadow-none">
                                 <dt className="text-xs font-medium text-slate-400 dark:text-slate-500">
                                   Ubicación
                                 </dt>
@@ -1272,7 +1277,7 @@ const registrosVisibles = useMemo(() => {
                             )}
 
                             {inscripcion.horaInicio && (
-                              <div className="rounded-xl bg-white p-3.5 text-center shadow-sm dark:bg-white/[0.04] dark:shadow-none">
+                              <div className="rounded-xl border border-white/30 bg-white/50 p-3.5 text-center shadow-sm backdrop-blur-md dark:border-emerald-500/20 dark:bg-emerald-950/50 dark:shadow-none">
                                 <dt className="text-xs font-medium text-slate-400 dark:text-slate-500">
                                   Horario
                                 </dt>
@@ -1296,7 +1301,7 @@ const registrosVisibles = useMemo(() => {
             )}
 
             {registrosVisibles.length > 0 && (
-              <div className="border-t border-slate-100 bg-slate-50/60 px-5 py-3.5 dark:border-white/10 dark:bg-black/10 sm:px-7">
+              <div className="border-t border-white/30 bg-white/40 px-5 py-3.5 backdrop-blur-md dark:border-emerald-500/20 dark:bg-emerald-950/40 sm:px-7">
                 <p className="text-xs font-medium text-slate-400 dark:text-slate-500">
                   Mostrando{' '}
                   <span className="font-bold text-slate-600 dark:text-slate-300">
@@ -1382,7 +1387,7 @@ const registrosVisibles = useMemo(() => {
                 <>
                   <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-300/20 dark:bg-amber-500/10 dark:text-amber-100">{reservaACancelar.politicasCancelacion || 'Las actividades de pago solo pueden cancelarse con al menos 48 horas de anticipación.'}</p>
                   {reservaACancelar.origen === 'reserva' && (
-                    <div className="mt-3 rounded-2xl border border-white/20 bg-white/60 p-4 backdrop-blur-md dark:border-white/10 dark:bg-slate-900/60">
+                    <div className="mt-3 rounded-2xl border border-white/20 bg-white/60 p-4 backdrop-blur-md dark:border-emerald-500/20 dark:bg-emerald-950/60">
                       <p className="text-sm font-bold text-slate-800 dark:text-white">Datos para la devolución</p>
                       <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">Indica cómo debe procesarse la devolución si la cancelación cumple el plazo de 48 horas.</p>
                       {camposDevolucion()}
@@ -1423,7 +1428,7 @@ const registrosVisibles = useMemo(() => {
 
         {reservaParaDevolucion && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="titulo-devolucion">
-            <div className="w-full max-w-md rounded-[28px] border border-white/20 bg-white/80 p-6 shadow-xl backdrop-blur-md dark:bg-slate-900/80">
+            <div className="w-full max-w-md rounded-[28px] border border-white/20 bg-white/80 p-6 shadow-xl backdrop-blur-md dark:border-emerald-500/20 dark:bg-emerald-950/80">
               <h2 id="titulo-devolucion" className="text-lg font-bold text-slate-900 dark:text-white">Datos para devolución</h2>
               <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">Ingresa los datos para procesar la devolución de “{reservaParaDevolucion.nombreActividad}”.</p>
               {camposDevolucion()}

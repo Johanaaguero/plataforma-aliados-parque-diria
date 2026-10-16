@@ -12,6 +12,7 @@ import {
   obtenerNotificacionesIncidencias,
   type Notificacion,
 } from '../../services/notificacionesService';
+import parqueHero from '../../assets/parque-hero.jpg';
 
 type Filtro =
   | 'todas'
@@ -366,9 +367,13 @@ export default function ListaNotificaciones({
   }
 
   return (
-    <section className="sigtad-notificaciones min-h-screen bg-gradient-to-b from-[#f5f8f6] via-[#f5f8f6] to-[#eaf2ed] px-4 py-12 text-[#17372c] transition-colors dark:from-[#071c14] dark:via-[#0b241b] dark:to-[#0d2b20] dark:text-[#edf8f1] sm:px-6 lg:px-8">
-      <div className="mx-auto w-full max-w-none">
-        <header className="mb-7 flex flex-col gap-5 rounded-[1.75rem] border border-white/70 bg-white/75 p-5 shadow-[0_16px_45px_rgba(7,63,49,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.05] sm:flex-row sm:items-center sm:justify-between sm:p-7">
+    <section className="sigtad-notificaciones relative isolate flex min-h-screen w-full flex-col overflow-x-hidden bg-transparent px-4 py-12 text-[#17372c] transition-colors dark:text-[#edf8f1] sm:px-6 lg:px-8">
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
+        <img src={parqueHero} alt="" className="absolute inset-0 h-full w-full scale-105 object-cover opacity-80 blur-sm brightness-90" />
+        <div className="absolute inset-0 bg-white/20 dark:bg-slate-950/30" />
+      </div>
+      <div className="relative z-10 mx-auto w-full max-w-none">
+        <header className="mb-7 flex flex-col gap-5 rounded-3xl border border-white/40 bg-white/70 p-5 shadow-xl backdrop-blur-xl dark:border-emerald-500/20 dark:bg-emerald-950/70 sm:flex-row sm:items-center sm:justify-between sm:p-7">
           <div>
             <p className="mb-1 text-xs font-bold uppercase tracking-[0.18em] text-[#009444] dark:text-[#a9d779]">
               Centro de actividad
@@ -416,7 +421,7 @@ export default function ListaNotificaciones({
         </header>
 
         <div
-          className="mb-6 flex w-full gap-1.5 overflow-x-auto rounded-2xl border border-slate-200/80 bg-white/80 p-1.5 shadow-sm backdrop-blur-md dark:border-white/10 dark:bg-white/[0.05]"
+          className="mb-6 flex w-full gap-1.5 overflow-x-auto rounded-3xl border border-white/40 bg-white/70 p-1.5 shadow-xl backdrop-blur-xl dark:border-emerald-500/20 dark:bg-emerald-950/70"
           role="group"
           aria-label="Filtro de notificaciones"
         >
@@ -442,7 +447,7 @@ export default function ListaNotificaciones({
 
         {exito && (
           <div
-            className="mb-4 rounded-xl border border-green-200 bg-white p-4 text-sm text-green-700"
+            className="mb-4 rounded-3xl border border-white/40 bg-white/70 p-4 text-sm text-green-700 shadow-xl backdrop-blur-xl dark:border-emerald-500/20 dark:bg-emerald-950/70"
             role="status"
           >
             {exito}
@@ -451,7 +456,7 @@ export default function ListaNotificaciones({
 
         {error && (
           <div
-            className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-red-200 bg-white p-4 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200"
+            className="mb-4 flex items-center justify-between gap-3 rounded-3xl border border-white/40 bg-white/70 p-4 text-sm text-red-700 shadow-xl backdrop-blur-xl dark:border-emerald-500/20 dark:bg-emerald-950/70 dark:text-red-200"
             role="alert"
           >
             <span>{error}</span>
@@ -475,14 +480,14 @@ export default function ListaNotificaciones({
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="h-28 animate-pulse rounded-2xl border border-white/60 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/[0.06]"
+                className="h-28 animate-pulse rounded-2xl border border-white/40 bg-white/70 shadow-xl backdrop-blur-xl dark:border-emerald-500/20 dark:bg-emerald-950/70"
               />
             ))}
           </div>
         )}
 
         {!cargando && !error && visibles.length === 0 && (
-          <div className="rounded-[1.75rem] border border-slate-200/80 bg-white/75 px-6 py-14 text-center shadow-sm backdrop-blur-md dark:border-white/10 dark:bg-white/[0.04]">
+          <div className="rounded-3xl border border-white/40 bg-white/70 px-6 py-14 text-center shadow-xl backdrop-blur-xl dark:border-emerald-500/20 dark:bg-emerald-950/70">
             <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#eaf5df] text-[#095540] dark:bg-[#8DC63F]/15 dark:text-[#b8e68c]">
               <IconoTipoNotificacion tipo="general" />
             </span>
@@ -509,12 +514,12 @@ export default function ListaNotificaciones({
                 key={n.id}
                 className={`group relative flex items-start gap-3 overflow-hidden rounded-2xl border p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-lg sm:gap-4 sm:p-5 ${
                   !n.leida && colorNotificacion(n.tipo) === 'rojo'
-                    ? 'border-red-400 bg-red-50 shadow-[0_10px_30px_rgba(220,38,38,.15)] dark:border-red-500/50 dark:bg-red-950/30'
+                    ? 'border-red-400 bg-red-50/70 shadow-[0_10px_30px_rgba(220,38,38,.15)] backdrop-blur-md dark:border-red-500/50 dark:bg-emerald-950/40'
                     : !n.leida && colorNotificacion(n.tipo) === 'azul'
-                      ? 'border-blue-400 bg-blue-50 shadow-[0_10px_30px_rgba(37,99,235,.15)] dark:border-blue-500/50 dark:bg-blue-950/30'
+                      ? 'border-blue-400 bg-blue-50/70 shadow-[0_10px_30px_rgba(37,99,235,.15)] backdrop-blur-md dark:border-blue-500/50 dark:bg-emerald-950/40'
                       : n.leida
-                        ? 'border-slate-200/80 bg-white/75 hover:border-slate-300 dark:border-white/10 dark:bg-white/[0.045] dark:hover:border-white/20'
-                        : 'border-[#8DC63F]/55 bg-white shadow-[0_10px_30px_rgba(141,198,63,.10)] hover:border-[#8DC63F] dark:border-[#8DC63F]/35 dark:bg-[#102f24]/80 dark:shadow-[0_10px_30px_rgba(0,0,0,.12)]'
+                        ? 'border-white/40 bg-white/70 backdrop-blur-xl hover:border-slate-300 dark:border-emerald-500/20 dark:bg-emerald-950/70 dark:hover:border-emerald-500/30'
+                        : 'border-[#8DC63F]/55 bg-white/70 shadow-[0_10px_30px_rgba(141,198,63,.10)] backdrop-blur-xl hover:border-[#8DC63F] dark:border-emerald-500/20 dark:bg-emerald-950/70 dark:shadow-[0_10px_30px_rgba(0,0,0,.12)]'
                 }`}
               >
                 {!n.leida && (
@@ -649,7 +654,7 @@ export default function ListaNotificaciones({
           }}
         >
           <div
-            className="w-full max-w-md rounded-3xl border border-white/60 bg-white/80 p-6 shadow-[0_24px_70px_rgba(5,84,64,.28)] backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/85 sm:p-7"
+            className="w-full max-w-md rounded-3xl border border-white/60 bg-white/80 p-6 shadow-[0_24px_70px_rgba(5,84,64,.28)] backdrop-blur-2xl dark:border-emerald-500/20 dark:bg-emerald-950/85 sm:p-7"
             role="dialog"
             aria-modal="true"
             aria-labelledby="titulo-confirmar-vaciado"

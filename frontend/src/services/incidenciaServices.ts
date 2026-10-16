@@ -96,6 +96,7 @@ export interface FiltrosIncidencia {
   estado?: EstadoIncidencia;
   fechaDesde?: string;
   fechaHasta?: string;
+  soloPublicas?: boolean;
 }
 
 export interface ActualizarIncidenciaAdministrativa {
@@ -231,6 +232,10 @@ export async function listarIncidencias(
 
   if (filtros?.fechaHasta) {
     params.append('fechaHasta', filtros.fechaHasta);
+  }
+
+  if (filtros?.soloPublicas) {
+    params.append('soloPublicas', 'true');
   }
 
   const query = params.toString();
