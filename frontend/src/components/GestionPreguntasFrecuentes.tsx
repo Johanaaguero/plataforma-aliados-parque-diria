@@ -132,16 +132,12 @@ export default function GestionPreguntasFrecuentes() {
     }
   };
 
-  const publicadas = preguntas.filter((pregunta) => pregunta.publicada).length;
-  const borradores = preguntas.length - publicadas;
   const preguntasFiltradas = preguntas.filter((pregunta) => {
     const consulta = busqueda.trim().toLocaleLowerCase('es');
     return !consulta || `${pregunta.pregunta} ${pregunta.respuesta}`.toLocaleLowerCase('es').includes(consulta);
   });
   const totalPaginas = Math.max(1, Math.ceil(preguntasFiltradas.length / PREGUNTAS_POR_PAGINA));
   const paginaSegura = Math.min(paginaActual, totalPaginas);
-  const indiceInicio = preguntasFiltradas.length === 0 ? 0 : (paginaSegura - 1) * PREGUNTAS_POR_PAGINA + 1;
-  const indiceFin = Math.min(paginaSegura * PREGUNTAS_POR_PAGINA, preguntasFiltradas.length);
   const preguntasPaginadas = preguntasFiltradas.slice(
     (paginaSegura - 1) * PREGUNTAS_POR_PAGINA,
     paginaSegura * PREGUNTAS_POR_PAGINA,
@@ -217,74 +213,38 @@ export default function GestionPreguntasFrecuentes() {
             </div>
           )}
 
-          <section aria-label="Resumen de preguntas frecuentes" className="mt-7 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
-            <article className="relative overflow-hidden rounded-2xl border border-white/70 bg-white/65 p-4 shadow-[0_12px_30px_rgba(11,58,39,0.06)] backdrop-blur-2xl transition-colors dark:border-white/[0.09] dark:bg-white/[0.045] sm:p-5">
-              <div className="absolute inset-y-0 left-0 w-1 bg-[#009443]" />
-              <div className="flex items-center justify-between gap-3 pl-1">
-                <div>
-                  <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#648074] dark:text-[#a9c1b4]">Total de preguntas</p>
-                  <p className="mt-2 text-3xl font-black tracking-tight text-[#174c38] dark:text-[#e8f7ee]">{preguntas.length}</p>
-                </div>
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#009443]/10 text-[#008b40] dark:bg-[#009443]/15 dark:text-[#6dd6a3]">
-                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12" /><circle cx="4" cy="6" r=".7" fill="currentColor" /><circle cx="4" cy="12" r=".7" fill="currentColor" /><circle cx="4" cy="18" r=".7" fill="currentColor" /></svg>
-                </span>
-              </div>
-              <p className="mt-3 border-t border-[#173d2e]/[0.07] pt-3 pl-1 text-xs text-[#73877d] dark:border-white/[0.08] dark:text-[#a8bdb1]">Entradas registradas</p>
-            </article>
-
-            <article className="relative overflow-hidden rounded-2xl border border-emerald-200/70 bg-emerald-50/55 p-4 shadow-[0_12px_30px_rgba(11,58,39,0.04)] backdrop-blur-2xl dark:border-emerald-300/15 dark:bg-emerald-400/[0.06] sm:p-5">
-              <div className="absolute inset-y-0 left-0 w-1 bg-[#009443]" />
-              <div className="flex items-center justify-between gap-3 pl-1">
-                <div>
-                  <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#43856d] dark:text-[#8bc8ae]">Publicadas</p>
-                  <p className="mt-2 text-3xl font-black tracking-tight text-[#087343] dark:text-[#83e0af]">{publicadas}</p>
-                </div>
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#009443]/10 text-[#008b40] dark:bg-[#009443]/15 dark:text-[#6dd6a3]">
-                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6" /><circle cx="12" cy="12" r="9" /></svg>
-                </span>
-              </div>
-              <p className="mt-3 border-t border-emerald-900/[0.07] pt-3 pl-1 text-xs text-[#648b78] dark:border-white/[0.08] dark:text-[#9acdb5]">Visibles para visitantes</p>
-            </article>
-
-            <article className="relative overflow-hidden rounded-2xl border border-amber-200/80 bg-amber-50/55 p-4 shadow-[0_12px_30px_rgba(95,65,9,0.04)] backdrop-blur-2xl dark:border-amber-300/15 dark:bg-amber-300/[0.055] sm:p-5">
-              <div className="absolute inset-y-0 left-0 w-1 bg-[#d9a514]" />
-              <div className="flex items-center justify-between gap-3 pl-1">
-                <div>
-                  <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#936c16] dark:text-[#e5c66f]">Borradores</p>
-                  <p className="mt-2 text-3xl font-black tracking-tight text-[#79570b] dark:text-[#f0d47d]">{borradores}</p>
-                </div>
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-400/15 text-[#99700d] dark:bg-amber-300/10 dark:text-[#f0d47d]">
-                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 8v4l2.5 1.5" /><circle cx="12" cy="12" r="9" /></svg>
-                </span>
-              </div>
-              <p className="mt-3 border-t border-amber-900/[0.08] pt-3 pl-1 text-xs text-[#8b784e] dark:border-white/[0.08] dark:text-[#c9b77f]">Pendientes de publicación</p>
-            </article>
-          </section>
-
-          <section className="mt-8 overflow-hidden rounded-[1.9rem] border border-white/55 bg-white/[0.25] shadow-[0_18px_45px_rgba(7,63,49,0.045)] backdrop-blur-xl dark:border-white/10 dark:bg-[#09261E]/[0.42] dark:shadow-[0_18px_50px_rgba(0,0,0,0.24)]">
-            <div className="flex flex-col gap-5 border-b border-white/60 px-5 py-5 sm:flex-row sm:items-end sm:justify-between sm:px-7 dark:border-white/[0.07]">
+          {/* Panel independiente de título y búsqueda, siguiendo la distribución de Comunicados. */}
+          <section
+            aria-label="Herramientas de preguntas frecuentes"
+            className="mt-8 rounded-[1.9rem] border border-white/55 bg-white/[0.25] shadow-[0_18px_45px_rgba(7,63,49,0.045)] backdrop-blur-xl dark:border-white/10 dark:bg-[#09261E]/[0.42] dark:shadow-[0_18px_50px_rgba(0,0,0,0.24)]"
+          >
+            <div className="p-5 sm:p-7">
               <div>
                 <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#43856d] dark:text-[#8bc8ae]">Base de conocimiento</p>
                 <h2 className="mt-1 text-2xl font-extrabold tracking-tight text-[#174c38] dark:text-[#e8f7ee] sm:text-[1.7rem]">Listado de preguntas</h2>
                 <p className="mt-1 text-sm text-[#71847a] dark:text-[#aebfb5]">Administra las respuestas que orientan a los visitantes.</p>
               </div>
-              <label className="relative block w-full sm:max-w-sm lg:w-[24rem]">
-                <span className="sr-only">Buscar por pregunta o respuesta</span>
-                <svg viewBox="0 0 24 24" className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-emerald-700/70 dark:text-emerald-200/65" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8" /><path d="m16 16 4 4" /></svg>
-                <input
-                  value={busqueda}
-                  onChange={(evento) => { setBusqueda(evento.target.value); setPaginaActual(1); }}
-                  placeholder="Buscar por pregunta o respuesta..."
-                  className="min-h-12 w-full rounded-[1rem] border border-white/30 bg-white/65 py-3 pl-12 pr-4 text-sm font-semibold text-[#304B40] shadow-inner shadow-white/40 outline-none backdrop-blur-xl transition-[border-color,background-color,box-shadow] duration-200 placeholder:text-[#82938B] focus-visible:border-[#009444] focus-visible:bg-white/[0.78] focus-visible:ring-4 focus-visible:ring-[#009444]/[0.15] dark:border-white/[0.10] dark:bg-[#09261E]/[0.58] dark:text-[#F0FAF4] dark:placeholder:text-[#8EA69B] dark:shadow-inner dark:shadow-black/20 dark:focus-visible:border-[#8DC63F] dark:focus-visible:bg-[#0F3529]/[0.72]"
-                />
-              </label>
-            </div>
 
-            <div className="flex flex-col gap-2 border-b border-white/45 px-5 py-4 text-sm sm:flex-row sm:items-center sm:justify-between sm:px-7 dark:border-white/[0.06]">
-              <p className="text-slate-500 dark:text-emerald-100/55">Mostrando <span className="font-bold text-[#145341] dark:text-emerald-100">{indiceInicio}–{indiceFin}</span> de <span className="font-bold text-[#145341] dark:text-emerald-100">{preguntasFiltradas.length}</span> preguntas</p>
-              <p className="text-xs font-medium text-slate-400 dark:text-emerald-100/45">{busqueda.trim() ? 'Resultados de búsqueda' : 'Todas las preguntas'}</p>
+              <div className="mt-6 max-w-3xl">
+                <label className="block w-full">
+                  <span className="mb-2 block text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#648074] dark:text-[#a9c1b4]">Buscar pregunta</span>
+                  <span className="relative block">
+                    <svg viewBox="0 0 24 24" className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-emerald-700/70 dark:text-emerald-200/65" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8" /><path d="m16 16 4 4" /></svg>
+                    <input
+                      value={busqueda}
+                      onChange={(evento) => { setBusqueda(evento.target.value); setPaginaActual(1); }}
+                      placeholder="Buscar por pregunta o respuesta..."
+                      aria-label="Buscar por pregunta o respuesta"
+                      className="min-h-12 w-full rounded-[1rem] border border-white/30 bg-white/65 py-3 pl-12 pr-4 text-sm font-semibold text-[#304B40] shadow-inner shadow-white/40 outline-none backdrop-blur-xl transition-[border-color,background-color,box-shadow] duration-200 placeholder:text-[#82938B] focus-visible:border-[#009444] focus-visible:bg-white/[0.78] focus-visible:ring-4 focus-visible:ring-[#009444]/[0.15] dark:border-white/[0.10] dark:bg-[#09261E]/[0.58] dark:text-[#F0FAF4] dark:placeholder:text-[#8EA69B] dark:shadow-inner dark:shadow-black/20 dark:focus-visible:border-[#8DC63F] dark:focus-visible:bg-[#0F3529]/[0.72]"
+                    />
+                  </span>
+                </label>
+              </div>
             </div>
+          </section>
 
+          {/* El listado se presenta en un panel separado. */}
+          <section className="mt-7 overflow-hidden rounded-[1.9rem] border border-white/55 bg-white/[0.25] shadow-[0_18px_45px_rgba(7,63,49,0.045)] backdrop-blur-xl dark:border-white/10 dark:bg-[#09261E]/[0.42] dark:shadow-[0_18px_50px_rgba(0,0,0,0.24)]">
             {cargando ? (
               <div className="custom-scrollbar h-[min(60dvh,640px)] min-h-[220px] space-y-3 overflow-y-auto p-5 sm:p-6 lg:p-7" aria-live="polite" aria-label="Cargando preguntas frecuentes">
                 {Array.from({ length: PREGUNTAS_POR_PAGINA }, (_, elemento) => (
