@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 
-import { useLocation, useNavigate } from 'react-router-dom';
+import {
+  Navigate,
+  useLocation,
+  useNavigate,
+} from 'react-router-dom';
 
 import Registro from './components/Registro';
 
@@ -539,24 +543,28 @@ const irAMisEmprendimientos = () => {
     }
   };
 
-  const cerrarSesionPorInactividad = () => {
-    setRolAutenticado(null);
-    setNombreUsuario(null);
-    setUsuarioId(null);
-    setMostrarGestionRoles(false);
-    setMostrarCuentasBloqueadas(false);
-    setMostrarLogin(false);
-    setMostrarRegistro(false);
-    setMostrarErrorModal(false);
-    setErrorAutenticacion(null);
-    setEmprendimientoEditar(null);
-    setSeccionActual('inicio');
-  };
+const cerrarSesionPorInactividad = () => {
+  setRolAutenticado(null);
+  setNombreUsuario(null);
+  setUsuarioId(null);
+  setMostrarGestionRoles(false);
+  setMostrarCuentasBloqueadas(false);
+  setMostrarLogin(false);
+  setMostrarRegistro(false);
+  setErrorAutenticacion({
+    code: 'SESSION_TIMEOUT',
+    message: 'Sesión expirada por inactividad',
+    status: 401,
+  });
+  setMostrarErrorModal(true);
+  setEmprendimientoEditar(null);
+  setSeccionActual('inicio');
+};
 
   useInactividad({
     activo: rolAutenticado !== null,
-    tiempoInactividad: 15 * 60 * 1000,
-    onLogout: cerrarSesionPorInactividad,
+  tiempoInactividad: 30 * 60 * 1000,   
+ onLogout: cerrarSesionPorInactividad,
   });
 
   const cerrarErrorModal = () => {
@@ -694,8 +702,7 @@ useEffect(() => {
 
   if (rutaActual === '/super-admin/dashboard') {
     if (rolAutenticado !== 'super_admin') {
-      navigate('/');
-      return null;
+      return <Navigate to="/" replace />;
     }
 
     if (mostrarCuentasBloqueadas) {
@@ -736,8 +743,7 @@ useEffect(() => {
 
   if (rutaActual === '/admin/dashboard') {
     if (rolAutenticado !== 'administrador') {
-      navigate('/');
-      return null;
+      return <Navigate to="/" replace />;
     }
 
     return (
@@ -792,8 +798,7 @@ useEffect(() => {
 
   if (rutaActual === '/notificaciones') {
   if (!rolAutenticado) {
-    navigate('/');
-    return null;
+    return <Navigate to="/" replace />;
   }
 
   const rutaVolver =
@@ -813,32 +818,32 @@ useEffect(() => {
 <ListaNotificaciones esAdministrador={rolAutenticado === 'administrador'} />    </section>
   );
 }
-  if (rutaActual === '/admin/roles') {
-    if (rolAutenticado !== 'administrador') {
-      navigate('/');
-      return null;
-    }
-
-    return (
-      <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef]">
-        <BotonVolverInicio
-          texto={
-            vieneDelDashboard
-              ? 'Volver al Dashboard'
-              : 'Volver al inicio'
-          }
-          onClick={volverDesdeModuloAdministrativo}
-        />
-
-        <GestionRoles />
-      </section>
-    );
+ 
+if (rutaActual === '/admin/roles') {
+  if (rolAutenticado !== 'administrador') {
+    return <Navigate to="/" replace />;
   }
+
+  return (
+    <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef]">
+      <BotonVolverInicio
+        texto={
+          vieneDelDashboard
+            ? 'Volver al Dashboard'
+            : 'Volver al inicio'
+        }
+        onClick={volverDesdeModuloAdministrativo}
+      />
+
+      <GestionRoles />
+    </section>
+  );
+}
+
 
   if (rutaActual === '/admin/inscripciones') {
     if (rolAutenticado !== 'administrador') {
-      navigate('/');
-      return null;
+      return <Navigate to="/" replace />;
     }
 
     return (
@@ -859,8 +864,7 @@ useEffect(() => {
 
   if (rutaActual === '/admin/reportes') {
   if (rolAutenticado !== 'administrador') {
-    navigate('/');
-    return null;
+    return <Navigate to="/" replace />;
   }
 
   return (
@@ -880,8 +884,7 @@ useEffect(() => {
 }
   if (rutaActual === '/admin/incidencias') {
     if (rolAutenticado !== 'administrador') {
-      navigate('/');
-      return null;
+      return <Navigate to="/" replace />;
     }
 
     return (
@@ -910,8 +913,7 @@ useEffect(() => {
 
   if (rutaActual === '/mis-inscripciones') {
     if (!rolAutenticado) {
-      navigate('/');
-      return null;
+      return <Navigate to="/" replace />;
     }
 
     return (
@@ -927,8 +929,7 @@ useEffect(() => {
 
   if (rutaActual === '/admin/comunicados') {
     if (rolAutenticado !== 'administrador' && rolAutenticado !== 'super_admin') {
-      navigate('/');
-      return null;
+      return <Navigate to="/" replace />;
     }
 
     return (
@@ -941,8 +942,7 @@ useEffect(() => {
 
   if (rutaActual === '/admin/preguntas-frecuentes') {
     if (rolAutenticado !== 'administrador' && rolAutenticado !== 'super_admin') {
-      navigate('/');
-      return null;
+      return <Navigate to="/" replace />;
     }
 
     return (
@@ -961,8 +961,7 @@ useEffect(() => {
       rolAutenticado !== 'visitante' &&
       rolAutenticado !== 'asociado'
     ) {
-      navigate('/');
-      return null;
+      return <Navigate to="/" replace />;
     }
 
     return <MisIncidencias />;
@@ -1046,8 +1045,7 @@ useEffect(() => {
       'administrador';
 
     if (!esAdministrador) {
-      window.location.href = '/';
-      return null;
+      return <Navigate to="/" replace />;
     }
 
     return (
@@ -1113,8 +1111,7 @@ useEffect(() => {
         'asociado';
 
     if (!puedeRegistrar) {
-      window.location.href = '/';
-      return null;
+      return <Navigate to="/" replace />;
     }
 
     return (
