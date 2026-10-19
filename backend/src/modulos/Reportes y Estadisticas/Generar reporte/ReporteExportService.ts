@@ -387,23 +387,126 @@ export class ReporteExportService {
     });
   }
 
-  private async generarExcel(reporte: Reporte, contenido: Record<string, unknown>): Promise<ArchivoExportado> {
-    const libro = new ExcelJS.Workbook();
-    const hoja = libro.addWorksheet('Reporte');
-    hoja.addRow([contenido.nombre ? texto(contenido.nombre) : tituloTipo(reporte.tipoReporte)]);
-    hoja.addRow(['Tipo', reporte.tipoReporte, 'Fecha de creación', reporte.fechaGeneracion.toLocaleString('es-CR')]);
-    hoja.addRow([]);
-    hoja.addRow(['Resumen']);
-    resumen(contenido).forEach(([clave, valor]) => hoja.addRow([clave, valor]));
-    const filas = filasDeContenido(contenido);
-    if (filas.length > 0) {
-      hoja.addRow([]);
-      const columnas = Object.keys(filas[0] ?? {});
-      hoja.addRow(columnas);
-      filas.forEach((fila) => hoja.addRow(columnas.map((columna) => texto(fila[columna]))));
-    }
-    hoja.columns.forEach((columna) => { columna.width = 22; });
-    const datos = await libro.xlsx.writeBuffer();
-    return { buffer: Buffer.from(datos), contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', extension: 'xlsx' };
+private async generarExcel(reporte: Reporte, contenido: Record<string, unknown>): Promise<ArchivoExportado> {
+  const libro = new ExcelJS.Workbook();
+  const hoja = libro.addWorksheet('Reporte', {
+    views: [{ showGridLines: false }],
+  });
+
+  const verdeOscuro = 'FF064E3B';
+  const verde = 'FF047857';
+  const verdeClaro = 'FFECFDF5';
+  const borde = { style: 'thin' as const, color: { argb: 'FFE5E7EB' } };
+
+  const ultimaColumna = 6;
+
+  // Título
+  hoja.mergeCells(1, 1, 1, ultimaColumna);
+  const titulo = hoja.getCell('A1');
+  titulo.value = contenido.nombre ? texto(contenido.nombre) : tituloTipo(reporte.tipoReporte);
+  titulo.font = { name: 'Calibri', size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
+  titulo.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: verdeOscuro } };
+  titulo.alignment = { vertical: 'middle', indent: 1 };
+  hoja.getRow(1).height = 30;
+
+  // Datos generales
+  const datosGenerales: Array<[string, string]> = [
+    ['Tipo', reporte.tipoReporte.toUpperCase()],
+    ['Fecha de generación', fechaHoraCostaRica(reporte.fechaGeneracion)],
+    ['Rango', reporte.tipoReporte === 'eventos' ? periodoEventosLegible(contenido) : periodoLegible(contenido)],
+  ];
+  datosGenerales.forEach(([etiqueta, valor], i) => {
+    const fila = hoja.getRow(3 + i);
+    fila.getCell(1).value = etiqueta;
+    fila.getCell(1).font = { bold: true, color: { argb: 'FF334155' } };
+    fila.getCell(2).value = valor;
+  });
+
+  // Resumen (mismas métricas que el PDF)
+  let filaActual = 7;
+  hoja.getCell(filaActual, 1).value = 'Resumen del reporte';
+  hoja.getCell(filaActual, 1).font = { bold: true, size: 12, color: { argb: verdeOscuro } };
+  filaActual += 1;
+
+  metricasDelReporte(reporte.tipoReporte, contenido).forEach(([etiqueta, valor]) => {
+    const celdaEtiqueta = hoja.getCell(filaActual, 1);
+    const celdaValor = hoja.getCell(filaActual, 2);
+    celdaEtiqueta.value = etiqueta;
+    celdaEtiqueta.font = { bold: true, color: { argb: 'FF047857' } };
+    celdaEtiqueta.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: verdeClaro } };
+    celdaValor.value = typeof valor === 'number' ? valor : Number(valor) || texto(valor);
+    celdaValor.font = { bold: true, color: { argb: verdeOscuro } };
+    celdaValor.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: verdeClaro } };
+    celdaValor.alignment = { horizontal: 'left' };
+    filaActual += 1;
+  });
+
+  // Tabla de detalle
+  const filas = reporte.tipoReporte === 'emprendimientos' && Array.isArray(contenido.emprendimientos)
+    ? (contenido.emprendimientos as Fila[])
+    : filasDeContenido(contenido);
+
+  if (filas.length > 0) {
+    filaActual += 1;
+    hoja.getCell(filaActual, 1).value = 'Datos detallados';
+    hoja.getCell(filaActual, 1).font = { bold: true, size: 12, color: { argb: verdeOscuro } };
+    filaActual += 1;
+
+    const columnas = Object.keys(filas[0] ?? {});
+    const filaEncabezado = hoja.getRow(filaActual);
+    columnas.forEach((columna, i) => {
+      const celda = filaEncabezado.getCell(i + 1);
+      celda.value = columna.replace(/([A-Z])/g, ' $1').toUpperCase();
+      celda.font = { bold: true, size: 10, color: { argb: 'FFFFFFFF' } };
+      celda.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: verde } };
+      celda.alignment = { vertical: 'middle' };
+    });
+    filaEncabezado.height = 22;
+    const filaEncabezadoNumero = filaActual;
+    filaActual += 1;
+
+    filas.forEach((fila, indice) => {
+      const filaExcel = hoja.getRow(filaActual);
+      columnas.forEach((columna, i) => {
+        const valor = fila[columna];
+        const celda = filaExcel.getCell(i + 1);
+        const esFecha = typeof valor === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(valor);
+        celda.value = esFecha ? fechaHoraCostaRica(valor) : (typeof valor === 'number' ? valor : texto(valor));
+        celda.alignment = { vertical: 'middle', horizontal: 'left' };
+        celda.border = { bottom: borde };
+        if (indice % 2 === 1) {
+          celda.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF9FAFB' } };
+        }
+      });
+      filaActual += 1;
+    });
+
+    hoja.autoFilter = {
+      from: { row: filaEncabezadoNumero, column: 1 },
+      to: { row: filaEncabezadoNumero, column: columnas.length },
+    };
+
+    // Ancho según el contenido
+    columnas.forEach((columna, i) => {
+      const mayor = Math.max(
+        columna.length + 2,
+        ...filas.map((fila) => {
+          const v = fila[columna];
+          return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(v) ? 22 : texto(v).length;
+        }),
+      );
+      hoja.getColumn(i + 1).width = Math.min(Math.max(mayor + 2, 14), 40);
+    });
+  } else {
+    hoja.getColumn(1).width = 26;
+    hoja.getColumn(2).width = 28;
   }
+
+  const datos = await libro.xlsx.writeBuffer();
+  return {
+    buffer: Buffer.from(datos),
+    contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    extension: 'xlsx',
+  };
+}
 }
