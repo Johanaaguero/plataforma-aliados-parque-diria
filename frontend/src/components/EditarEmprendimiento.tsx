@@ -416,8 +416,8 @@ function EditarEmprendimiento({
     setImagenesNuevas,
   ] = useState<ImagenNueva[]>([]);
 
-  const [portadaNueva, setPortadaNueva] =
-    useState(false);
+const [portadaNuevaIndex, setPortadaNuevaIndex] =
+  useState<number | null>(null);
 
   const [isDragging, setIsDragging] =
     useState(false);
@@ -610,8 +610,7 @@ function EditarEmprendimiento({
         );
 
         setImagenesNuevas([]);
-        setPortadaNueva(false);
-
+        setPortadaNuevaIndex(null);
         setImagenActual(
           emprendimiento.imagen ?? null,
         );
@@ -888,6 +887,7 @@ function EditarEmprendimiento({
     indice: number,
   ) => {
     setImagenesNuevas(
+
       (actuales) => {
         const imagen =
           actuales[indice];
@@ -910,6 +910,13 @@ function EditarEmprendimiento({
         return restantes;
       },
     );
+    setPortadaNuevaIndex((actual) => {
+  if (actual === null || actual === indice) {
+    return null;
+  }
+
+  return actual > indice ? actual - 1 : actual;
+});
   };
 
   const handleRemoveCurrentImage = (
@@ -1023,13 +1030,23 @@ function EditarEmprendimiento({
         ),
       );
 
-      imagenesNuevas.forEach(
-        ({ archivo }) =>
-          formData.append(
-            'imagenes',
-            archivo,
-          ),
-      );
+     const imagenNuevaPortada =
+  portadaNuevaIndex !== null
+    ? imagenesNuevas[portadaNuevaIndex]
+    : undefined;
+
+const imagenesNuevasOrdenadas = imagenNuevaPortada
+  ? [
+      imagenNuevaPortada,
+      ...imagenesNuevas.filter(
+        (_, indice) => indice !== portadaNuevaIndex,
+      ),
+    ]
+  : imagenesNuevas;
+
+imagenesNuevasOrdenadas.forEach(({ archivo }) =>
+  formData.append('imagenes', archivo),
+);
 
       const portadaExistente =
         imagenesExistentes.find(
@@ -1037,10 +1054,7 @@ function EditarEmprendimiento({
             imagen.esPortada,
         );
 
-      if (
-        portadaNueva &&
-        imagenesNuevas.length > 0
-      ) {
+     if (imagenNuevaPortada) {
         formData.append(
           'portadaNueva',
           'true',
@@ -1705,33 +1719,28 @@ function EditarEmprendimiento({
                     className="aspect-square h-full w-full object-cover"
                   />
 
-                  {imagen.esPortada && (
-                    <span className="absolute left-2 top-2 rounded-full bg-[#095540]/90 px-2 py-1 text-[10px] font-bold text-white">
-                      Portada
-                    </span>
-                  )}
+                  {imagen.esPortada &&
+                    portadaNuevaIndex === null && (
+                      <span className="absolute left-2 top-2 rounded-full bg-[#095540]/90 px-2 py-1 text-[10px] font-bold text-white">
+                        Portada
+                      </span>
+                    )}
 
-                  {!imagen.esPortada &&
+                  {(!imagen.esPortada ||
+                    portadaNuevaIndex !== null) &&
                     imagen.id > 0 && (
                       <button
                         type="button"
-                        onClick={() =>
-                          setImagenesExistentes(
-                            (
-                              actuales,
-                            ) =>
-                              actuales.map(
-                                (
-                                  actual,
-                                ) => ({
-                                  ...actual,
-                                  esPortada:
-                                    actual.id ===
-                                    imagen.id,
-                                }),
-                              ),
-                          )
-                        }
+                        onClick={() => {
+                          setPortadaNuevaIndex(null);
+
+                          setImagenesExistentes((actuales) =>
+                            actuales.map((actual) => ({
+                              ...actual,
+                              esPortada: actual.id === imagen.id,
+                            })),
+                          );
+                        }}
                         className="absolute bottom-2 left-2 rounded-lg bg-white/90 px-2 py-1 text-[10px] font-bold text-[#095540] backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444]"
                       >
                         Hacer portada
@@ -1779,21 +1788,16 @@ function EditarEmprendimiento({
                     className="aspect-square h-full w-full object-cover"
                   />
 
-                  {portadaNueva &&
-                    indice === 0 && (
-                      <span className="absolute left-2 top-2 rounded-full bg-[#095540]/90 px-2 py-1 text-[10px] font-bold text-white">
-                        Portada
-                      </span>
-                    )}
+                  {portadaNuevaIndex === indice && (
+                    <span className="absolute left-2 top-2 rounded-full bg-[#095540]/90 px-2 py-1 text-[10px] font-bold text-white">
+                      Portada
+                    </span>
+                  )}
 
-                  {!portadaNueva && (
+                  {portadaNuevaIndex !== indice && (
                     <button
                       type="button"
-                      onClick={() =>
-                        setPortadaNueva(
-                          true,
-                        )
-                      }
+                      onClick={() => setPortadaNuevaIndex(indice)}
                       className="absolute bottom-2 left-2 rounded-lg bg-white/90 px-2 py-1 text-[10px] font-bold text-[#095540] backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444]"
                     >
                       Hacer portada

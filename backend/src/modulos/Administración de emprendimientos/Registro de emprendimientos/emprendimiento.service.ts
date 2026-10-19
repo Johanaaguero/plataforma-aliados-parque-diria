@@ -1446,6 +1446,7 @@ export class EmprendimientoService {
     // ========================================================
     // GUARDAR
     // ========================================================
+delete (emprendimiento as { imagenes?: EmprendimientoImagen[] }).imagenes;
 
     const actualizado =
       await emprendimientoRepository.save(
@@ -1490,6 +1491,7 @@ export class EmprendimientoService {
       dto.portadaNueva &&
       imagenesNuevas.length > 0
     ) {
+      
       const imagenes =
         await imagenRepository.find({
           where: {
@@ -1511,7 +1513,13 @@ export class EmprendimientoService {
       actualizado.imagen =
         imagenesNuevas[0]!.imagen;
     }
-
+// Guardar en la tabla principal la portada seleccionada.
+if (
+  dto.portadaImagenId !== undefined ||
+  (dto.portadaNueva && imagenesNuevas.length > 0)
+) {
+  await emprendimientoRepository.save(actualizado);
+}
     // ========================================================
     // DEVOLVER CON RELACIONES ACTUALIZADAS
     // ========================================================
