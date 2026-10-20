@@ -651,6 +651,12 @@ describe('Task 4075 - aplicacion de filtros en reportes estadisticos', () => {
     assertIncluyeId(body.detalleIncidencias, enero1.id);
     assertIncluyeId(body.detalleIncidencias, enero2.id);
     assertExcluyeId(body.detalleIncidencias, marzo.id);
+    assert.deepEqual(body.periodo, {
+      fechaInicio: '2020-01-01',
+      fechaFin: '2020-01-31',
+    });
+    assert.equal(body.fechaInicio, '2020-01-01');
+    assert.equal(body.fechaFin, '2020-01-31');
   });
 
   test('incidencias filtra por categoria', async () => {

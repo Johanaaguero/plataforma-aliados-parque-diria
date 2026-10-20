@@ -439,6 +439,7 @@ describe('Task 4072 - contenido de tablas de reportes estadisticos', () => {
     assert.ok('detalleIncidencias' in body);
     const fila = encontrarPorId(body.detalleIncidencias, incidencia.id);
 
+    assert.equal(fila.codigo, incidencia.codigo);
     assert.equal(fila.titulo, incidencia.titulo);
     assert.equal(fila.descripcion, incidencia.descripcion);
     assert.equal(fila.categoria, incidencia.categoria);
