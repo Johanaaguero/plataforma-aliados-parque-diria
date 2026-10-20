@@ -46,6 +46,29 @@ const metricasDelReporte = (tipo: string, contenido: Record<string, unknown>): A
     claves.map((clave) => contenido[clave]).find((valor) => valor !== undefined) ?? 0,
   ]);
 
+const etiquetasEstadoIncidencia: Record<string, string> = {
+  pendiente: 'Pendiente',
+  en_revision: 'En revisión',
+  en_proceso: 'En proceso',
+  resuelta: 'Resuelta',
+  rechazada: 'Rechazada',
+  cerrada: 'Cerrada',
+};
+
+const etiquetaEstadoIncidencia = (valor: unknown): string => {
+  if (typeof valor !== 'string' || !valor) return 'No disponible';
+  return Object.prototype.hasOwnProperty.call(etiquetasEstadoIncidencia, valor)
+    ? etiquetasEstadoIncidencia[valor] ?? valor
+    : valor;
+};
+
+const codigoIncidenciaLegible = (valor: unknown): string => {
+  if (typeof valor !== 'string' || !valor) return 'No disponible';
+  if (/^#?INC-/i.test(valor)) return `#INC-${valor.replace(/^#?INC-/i, '')}`;
+  if (/^\d+$/.test(valor)) return `#INC-${valor}`;
+  return valor;
+};
+
 const fechaLegible = (valor: unknown): string | null => {
   if (typeof valor !== 'string' || !/^\d{4}-\d{2}-\d{2}/.test(valor)) return null;
 
@@ -112,11 +135,31 @@ const periodoEventosLegible = (contenido: Record<string, unknown>): string => {
 const esObjeto = (valor: unknown): valor is Record<string, unknown> =>
   typeof valor === 'object' && valor !== null && !Array.isArray(valor);
 
+const periodoIncidenciasLegible = (contenido: Record<string, unknown>): string => {
+  const informacionGeneral = esObjeto(contenido.informacionGeneral)
+    ? contenido.informacionGeneral
+    : {};
+  const filtros = esObjeto(contenido.filtros)
+    ? contenido.filtros
+    : esObjeto(informacionGeneral.filtros)
+      ? informacionGeneral.filtros
+      : {};
+  const periodo = contenido.periodo ?? informacionGeneral.periodo;
+  const rango = esObjeto(periodo) ? periodo : {};
+  const inicio = fechaLegible(contenido.fechaInicio ?? filtros.fechaInicio ?? rango.fechaInicio);
+  const fin = fechaLegible(contenido.fechaFin ?? filtros.fechaFin ?? rango.fechaFin);
+
+  if (inicio && fin) return `${inicio} al ${fin}`;
+  if (inicio) return `Desde: ${inicio}`;
+  if (fin) return `Hasta: ${fin}`;
+  return 'Histórico completo';
+};
+
 const filtrosPdfLegibles = (
   tipo: string,
   contenido: Record<string, unknown>,
 ): Array<[string, string]> | null => {
-  if (tipo !== 'eventos' && tipo !== 'emprendimientos') return null;
+  if (tipo !== 'eventos' && tipo !== 'emprendimientos' && tipo !== 'incidencias') return null;
 
   const informacionGeneral = esObjeto(contenido.informacionGeneral)
     ? contenido.informacionGeneral
@@ -126,13 +169,57 @@ const filtrosPdfLegibles = (
     : esObjeto(informacionGeneral.filtros)
       ? informacionGeneral.filtros
       : {};
-  const periodo = contenido.periodo;
+  const periodo = tipo === 'incidencias'
+    ? contenido.periodo ?? informacionGeneral.periodo
+    : contenido.periodo;
   const rango = esObjeto(periodo) ? periodo : {};
   const fechaInicio = contenido.fechaInicio ?? filtros.fechaInicio ?? rango.fechaInicio;
   const fechaFin = contenido.fechaFin ?? filtros.fechaFin ?? rango.fechaFin;
   const filas: Array<[string, string]> = [];
 
-  if (tipo === 'eventos') {
+  if (tipo === 'incidencias') {
+    filas.push(['Período', periodoIncidenciasLegible(contenido)]);
+
+    const categorias: Record<string, string> = {
+      seguridad: 'Seguridad',
+      incendio: 'Incendio',
+      flora_fauna: 'Flora y fauna',
+      ambiental: 'Ambiental',
+      infraestructura: 'Infraestructura',
+      senderos: 'Senderos',
+      servicios: 'Servicios',
+      otro: 'Otro',
+    };
+    const prioridades: Record<string, string> = {
+      baja: 'Baja',
+      media: 'Media',
+      alta: 'Alta',
+      critica: 'Crítica',
+    };
+    const agregarFiltro = (
+      clave: string,
+      etiqueta: string,
+      valores: Record<string, string>,
+      formatear: (valor: string) => string = (valor) => valor,
+    ) => {
+      const valor = filtros[clave];
+      if (typeof valor !== 'string' || !valor) return;
+      const valorLegible = Object.prototype.hasOwnProperty.call(valores, valor)
+        ? valores[valor] ?? valor
+        : formatear(valor);
+      filas.push([etiqueta, valorLegible]);
+    };
+
+    agregarFiltro('categoria', 'Categoría', categorias, (valor) =>
+      valor.replace(/_/g, ' '),
+    );
+    agregarFiltro('prioridad', 'Prioridad', prioridades, (valor) =>
+      valor.replace(/_/g, ' '),
+    );
+    agregarFiltro('estado', 'Estado', etiquetasEstadoIncidencia, (valor) =>
+      valor.replace(/_/g, ' '),
+    );
+  } else if (tipo === 'eventos') {
     const inicio = fechaLegible(fechaInicio);
     const fin = fechaLegible(fechaFin);
     const periodoValor = inicio || fin
@@ -234,6 +321,11 @@ export class ReporteExportService {
       documento.on('end', () => resolve({ buffer: Buffer.concat(partes), contentType: 'application/pdf', extension: 'pdf' }));
 
       const ancho = documento.page.width - 84;
+      const periodoCabecera = reporte.tipoReporte === 'eventos'
+        ? periodoEventosLegible(contenido)
+        : reporte.tipoReporte === 'incidencias'
+          ? periodoIncidenciasLegible(contenido)
+          : periodoLegible(contenido);
       documento.rect(0, 0, documento.page.width, 122).fill('#064e3b');
       documento.fillColor('#ffffff').font('Helvetica-Bold').fontSize(19)
         .text('Plataforma SIGTAD', 42, 33);
@@ -247,7 +339,7 @@ export class ReporteExportService {
       documento.font('Helvetica').fontSize(8).fillColor('#d1fae5')
         .text(`Fecha de generación  ${reporte.fechaGeneracion.toLocaleString('es-CR')}`, 330, 38, { width: 224, align: 'right' })
         .text(`TIPO  ${reporte.tipoReporte.toUpperCase()}`, 370, 53, { width: 184, align: 'right' })
-        .text(`RANGO  ${reporte.tipoReporte === 'eventos' ? periodoEventosLegible(contenido) : periodoLegible(contenido)}`, 370, 68, { width: 184, align: 'right' });
+        .text(`RANGO  ${periodoCabecera}`, 370, 68, { width: 184, align: 'right' });
       documento.rect(330, 34, 224, 14).fill('#064e3b');
       documento.font('Helvetica').fontSize(8).fillColor('#d1fae5')
         .text(`Fecha de generación  ${reporte.fechaGeneracion.toLocaleString('es-CR')}`, 330, 38, { width: 224, align: 'right' });
@@ -298,18 +390,22 @@ export class ReporteExportService {
           : []
         : filasDeContenido(contenido);
       if (filas.length > 0) {
-        const columnasDetalle = Object.keys(filas[0] ?? {})
-          .filter((columna) =>
-            reporte.tipoReporte !== 'emprendimientos' ||
-            columna.toLowerCase() !== 'id',
-          )
-          .slice(0, 5);
+        const columnasDetalle = reporte.tipoReporte === 'incidencias'
+          ? ['codigo', 'estado', 'titulo', 'latitud', 'longitud']
+          : Object.keys(filas[0] ?? {})
+            .filter((columna) =>
+              reporte.tipoReporte !== 'emprendimientos' ||
+              columna.toLowerCase() !== 'id',
+            )
+            .slice(0, 5);
         const columnas = reporte.tipoReporte === 'eventos' &&
           filas.some((fila) => 'temporada' in fila) &&
           !columnasDetalle.includes('temporada')
           ? [...columnasDetalle, 'temporada']
           : columnasDetalle;
-        const etiquetas = columnas.map((columna) => columna.replace(/([A-Z])/g, ' $1').toUpperCase());
+        const etiquetas = reporte.tipoReporte === 'incidencias'
+          ? ['Código de incidencia', 'Estado', 'Título', 'Latitud', 'Longitud']
+          : columnas.map((columna) => columna.replace(/([A-Z])/g, ' $1').toUpperCase());
         const anchoColumna = ancho / columnas.length;
         documento.font('Helvetica-Bold').fontSize(11).fillColor('#064e3b').text('Datos detallados', 42, inicioTabla - 22);
         documento.rect(42, inicioTabla, ancho, 25).fill('#047857');
@@ -320,10 +416,21 @@ export class ReporteExportService {
           documento.rect(42, y, ancho, 24).fill(indice % 2 === 0 ? '#ffffff' : '#f9fafb');
           documento.moveTo(42, y + 24).lineTo(42 + ancho, y + 24).strokeColor('#e5e7eb').stroke();
           columnas.forEach((columna, columnaIndice) => {
-            const valor = reporte.tipoReporte === 'emprendimientos' &&
-              columna === 'fechaCreacion'
-              ? fechaHoraCostaRica(fila[columna])
-              : texto(fila[columna]);
+            const dato = fila[columna];
+            const valor = reporte.tipoReporte === 'incidencias'
+              ? columna === 'estado'
+                ? etiquetaEstadoIncidencia(dato)
+                : columna === 'latitud' || columna === 'longitud'
+                  ? dato === null || dato === undefined || dato === ''
+                    ? 'No disponible'
+                    : String(dato)
+                  : columna === 'codigo'
+                    ? codigoIncidenciaLegible(dato)
+                    : texto(dato)
+              : reporte.tipoReporte === 'emprendimientos' &&
+                  columna === 'fechaCreacion'
+                ? fechaHoraCostaRica(dato)
+                : texto(dato);
             const x = 48 + columnaIndice * anchoColumna;
             if (reporte.tipoReporte === 'emprendimientos' && columna === 'estado') {
               const estado = fila[columna];
@@ -375,6 +482,9 @@ export class ReporteExportService {
           });
           y += 24;
         });
+      } else if (reporte.tipoReporte === 'incidencias') {
+        documento.font('Helvetica').fontSize(8).fillColor('#64748b')
+          .text('No se encontraron incidencias para los filtros aplicados.', 42, inicioTabla + 6, { width: ancho });
       }
       const paginas = documento.bufferedPageRange();
       for (let pagina = 0; pagina < paginas.count; pagina += 1) {

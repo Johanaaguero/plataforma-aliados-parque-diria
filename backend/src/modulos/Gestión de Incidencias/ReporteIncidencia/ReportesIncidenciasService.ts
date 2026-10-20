@@ -93,6 +93,12 @@ export class ReportesIncidenciasService {
       fechaFin = hoy;
     }
 
+    const fechaInicioAplicada =
+      filtros.fechaInicio ?? '2000-01-01';
+    const fechaFinAplicada =
+      filtros.fechaFin ??
+      `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+
     /*
      * CONSULTA BASE
      *
@@ -157,6 +163,7 @@ export class ReportesIncidenciasService {
         await query
         .select([
           'incidencia.id AS id',
+          'incidencia.codigo AS codigo',
           'incidencia.titulo AS titulo',
           'incidencia.descripcion AS descripcion',
           'incidencia.categoria AS categoria',
@@ -367,6 +374,9 @@ export class ReportesIncidenciasService {
             incidencia.id,
           ),
 
+          codigo:
+            incidencia.codigo ?? null,
+
           titulo:
             incidencia.titulo ??
             'Sin título',
@@ -469,10 +479,8 @@ export class ReportesIncidenciasService {
           'Reporte de incidencias',
         tipo: TipoReporte.INCIDENCIAS,
         periodo: {
-          fechaInicio:
-            filtros.fechaInicio ?? null,
-          fechaFin:
-            filtros.fechaFin ?? null,
+          fechaInicio: fechaInicioAplicada,
+          fechaFin: fechaFinAplicada,
         },
         filtros: {
           categoria:
@@ -500,14 +508,12 @@ export class ReportesIncidenciasService {
       },
 
       periodo: {
-        fechaInicio:
-          filtros.fechaInicio ??
-          null,
-
-        fechaFin:
-          filtros.fechaFin ??
-          null,
+        fechaInicio: fechaInicioAplicada,
+        fechaFin: fechaFinAplicada,
       },
+
+      fechaInicio: fechaInicioAplicada,
+      fechaFin: fechaFinAplicada,
 
       filtros: {
         categoria:
