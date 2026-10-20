@@ -1,26 +1,25 @@
+
 import { Router } from 'express';
 
 import { ReporteController } from '../Generar reporte/ReporteController';
-
-import { verificarTokenOpcional} from '../../../middlewares/verificarTokenOpcional';
+import { verificarToken } from '../../../middlewares/auth.middleware';
 import { autorizarRoles } from '../../../middlewares/authorization.middleware';
 
 const router = Router();
-
 const reporteController = new ReporteController();
 
-// Obtener todos los reportes
+// Consultar todos los reportes: solo administrador autenticado
 router.get(
   '/',
-  verificarTokenOpcional,
+  verificarToken,
   autorizarRoles('administrador'),
   reporteController.obtenerTodos.bind(reporteController)
 );
 
-// Obtener un reporte por ID
+// Consultar un reporte por ID
 router.get(
   '/:id',
-  verificarTokenOpcional,
+  verificarToken,
   autorizarRoles('administrador'),
   reporteController.obtenerPorId.bind(reporteController)
 );
@@ -28,7 +27,7 @@ router.get(
 // Generar un reporte
 router.post(
   '/',
-  verificarTokenOpcional,
+  verificarToken,
   autorizarRoles('administrador'),
   reporteController.crear.bind(reporteController)
 );
@@ -36,7 +35,7 @@ router.post(
 // Eliminar un reporte
 router.delete(
   '/:id',
-  verificarTokenOpcional,
+  verificarToken,
   autorizarRoles('administrador'),
   reporteController.eliminar.bind(reporteController)
 );
