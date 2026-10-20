@@ -469,12 +469,26 @@ export class ReporteExportService {
           ? ['Código de incidencia', 'Estado', 'Título', 'Latitud', 'Longitud']
           : columnas.map((columna) => columna.replace(/([A-Z])/g, ' $1').toUpperCase());
         const anchoColumna = ancho / columnas.length;
+
+        // Encabezado de la tabla: se dibuja en la primera página y se repite en cada página nueva.
+        const dibujarEncabezadoTabla = (yEncabezado: number) => {
+          documento.rect(42, yEncabezado, ancho, 25).fill('#047857');
+          etiquetas.forEach((etiqueta, indice) => documento.font('Helvetica-Bold').fontSize(7).fillColor('#ffffff')
+            .text(etiqueta, 48 + indice * anchoColumna, yEncabezado + 9, { width: anchoColumna - 10 }));
+        };
+
+        // Límite inferior del contenido (el pie de página se dibuja en y = 795).
+        const limiteInferior = 780;
+
         documento.font('Helvetica-Bold').fontSize(11).fillColor('#064e3b').text('Datos detallados', 42, inicioTabla - 22);
-        documento.rect(42, inicioTabla, ancho, 25).fill('#047857');
-        etiquetas.forEach((etiqueta, indice) => documento.fontSize(7).fillColor('#ffffff')
-          .text(etiqueta, 48 + indice * anchoColumna, inicioTabla + 9, { width: anchoColumna - 10 }));
+        dibujarEncabezadoTabla(inicioTabla);
         let y = inicioTabla + 25;
-        filas.slice(0, 18).forEach((fila, indice) => {
+        filas.forEach((fila, indice) => {
+          if (y + 24 > limiteInferior) {
+            documento.addPage();
+            dibujarEncabezadoTabla(42);
+            y = 42 + 25;
+          }
           documento.rect(42, y, ancho, 24).fill(indice % 2 === 0 ? '#ffffff' : '#f9fafb');
           documento.moveTo(42, y + 24).lineTo(42 + ancho, y + 24).strokeColor('#e5e7eb').stroke();
           columnas.forEach((columna, columnaIndice) => {
@@ -551,6 +565,8 @@ export class ReporteExportService {
       const paginas = documento.bufferedPageRange();
       for (let pagina = 0; pagina < paginas.count; pagina += 1) {
         documento.switchToPage(pagina);
+        // Evita que el pie de página (y = 803) fuerce la creación de páginas en blanco.
+        documento.page.margins.bottom = 0;
         documento.moveTo(42, 795).lineTo(553, 795).strokeColor('#a7f3d0').stroke();
         documento.font('Helvetica').fontSize(7).fillColor('#64748b')
           .text(`Documento generado automáticamente por la Plataforma Web Aliados Parque Nacional Diría - Página ${pagina + 1} de ${paginas.count}`, 42, 803, { width: ancho, align: 'center' });
