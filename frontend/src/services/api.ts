@@ -174,25 +174,30 @@ console.error('Error en solicitud API:', {
     return this.handleResponse(response);
   }
 
-  // CORRECCIÓN 3: ya no lanza error si no hay token; siempre limpia el storage.
-  async logout(): Promise<void> {
-    const token = this.getToken();
+ 
+async logout(): Promise<void> {
+  const token = this.getToken();
 
-    if (token) {
-      try {
-        await fetch(`${this.baseUrl}/auth/logout`, {
-          method: 'POST',
-          headers: this.getHeaders(true),
-        });
-      } catch (error) {
-        console.warn('Error al cerrar sesión en el servidor:', error);
-      }
+  // Eliminar la sesión del navegador inmediatamente.
+  sessionStorage.removeItem('token');
+  localStorage.removeItem('token');
+
+  // Intentar invalidar también el token en el servidor.
+  if (token) {
+    try {
+      await fetch(`${this.baseUrl}/auth/logout`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+    } catch (error) {
+      console.warn('Error al cerrar sesión en el servidor:', error);
     }
-
-    // Limpiar token del cliente sin importar si el servidor falla
-    sessionStorage.removeItem('token');
-    localStorage.removeItem('token');
   }
+}
+
 
   async registro(datos: {
     nombreUsuario: string;
