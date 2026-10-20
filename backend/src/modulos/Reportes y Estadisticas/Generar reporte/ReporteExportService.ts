@@ -32,19 +32,81 @@ const tituloTipo = (tipo: string): string => ({
   incidencias: 'Reporte de incidencias',
 }[tipo] ?? `Reporte de ${tipo}`);
 
-const metricasPorTipo: Record<string, Array<[string, string[]]>> = {
-  usuarios: [['TOTAL USUARIOS', ['total']], ['ADMINISTRADORES', ['administradores']], ['ASOCIADOS', ['asociados']], ['VISITANTES', ['visitantes']]],
-  reservas: [['TOTAL RESERVAS', ['total', 'totalReservas']], ['PENDIENTES', ['pendientes']], ['APROBADAS', ['aprobadas', 'confirmadas']], ['RECHAZADAS', ['rechazadas']]],
-  emprendimientos: [['TOTAL EMPRENDIMIENTOS', ['total', 'totalEmprendimientos']], ['PUBLICADOS', ['publicados']], ['BORRADORES', ['borradores']], ['NO PUBLICADOS', ['noPublicados']]],
-  eventos: [['TOTAL ACTIVIDADES', ['total', 'totalActividades']], ['EVENTOS', ['eventos']], ['CAPACITACIONES', ['capacitaciones']], ['PUBLICADAS', ['publicados']]],
-  incidencias: [['TOTAL INCIDENCIAS', ['total', 'totalIncidencias']], ['PENDIENTES', ['pendientes']], ['EN PROCESO', ['enProceso']], ['RESUELTAS', ['resueltas']]],
+type Metrica = { etiqueta: string; claves: string[]; estados?: string[] };
+
+const metricasPorTipo: Record<string, Metrica[]> = {
+  usuarios: [
+    { etiqueta: 'TOTAL USUARIOS', claves: ['total'] },
+    { etiqueta: 'ADMINISTRADORES', claves: ['administradores'], estados: ['administrador'] },
+    { etiqueta: 'ASOCIADOS', claves: ['asociados'], estados: ['asociado'] },
+    { etiqueta: 'VISITANTES', claves: ['visitantes'], estados: ['visitante'] },
+    { etiqueta: 'SUPER ADMIN', claves: ['superAdmins', 'superAdministradores', 'superAdmin'], estados: ['super_admin', 'superadmin', 'super_administrador'] },
+  ],
+  reservas: [
+    { etiqueta: 'TOTAL RESERVAS', claves: ['total', 'totalReservas'] },
+    { etiqueta: 'PENDIENTES', claves: ['pendientes', 'pendiente'], estados: ['pendiente'] },
+    { etiqueta: 'APROBADAS', claves: ['aprobadas', 'confirmadas', 'aprobada', 'confirmada'], estados: ['aprobada', 'aprobado', 'confirmada', 'confirmado'] },
+    { etiqueta: 'RECHAZADAS', claves: ['rechazadas', 'rechazada'], estados: ['rechazada', 'rechazado'] },
+  ],
+  emprendimientos: [
+    { etiqueta: 'TOTAL EMPRENDIMIENTOS', claves: ['total', 'totalEmprendimientos'] },
+    { etiqueta: 'PUBLICADOS', claves: ['publicados', 'publicado'], estados: ['publicado'] },
+    { etiqueta: 'BORRADORES', claves: ['borradores', 'borrador'], estados: ['borrador'] },
+    { etiqueta: 'NO PUBLICADOS', claves: ['noPublicados', 'no_publicado'], estados: ['no_publicado'] },
+  ],
+  eventos: [
+    { etiqueta: 'TOTAL ACTIVIDADES', claves: ['total', 'totalActividades'] },
+    { etiqueta: 'EVENTOS', claves: ['eventos', 'evento'], estados: ['evento'] },
+    { etiqueta: 'CAPACITACIONES', claves: ['capacitaciones', 'capacitacion'], estados: ['capacitacion'] },
+    { etiqueta: 'PUBLICADAS', claves: ['publicados', 'publicadas'], estados: ['publicado', 'publicada'] },
+  ],
+  incidencias: [
+    { etiqueta: 'TOTAL INCIDENCIAS', claves: ['total', 'totalIncidencias'] },
+    { etiqueta: 'PENDIENTES', claves: ['pendientes', 'pendiente'], estados: ['pendiente'] },
+    { etiqueta: 'EN PROCESO', claves: ['enProceso', 'en_proceso', 'proceso'], estados: ['en_proceso', 'enproceso'] },
+    { etiqueta: 'RESUELTAS', claves: ['resueltas', 'resuelta'], estados: ['resuelta', 'resuelto'] },
+  ],
 };
 
-const metricasDelReporte = (tipo: string, contenido: Record<string, unknown>): Array<[string, unknown]> =>
-  (metricasPorTipo[tipo] ?? []).map(([etiqueta, claves]) => [
-    etiqueta,
-    claves.map((clave) => contenido[clave]).find((valor) => valor !== undefined) ?? 0,
-  ]);
+const normalizar = (valor: unknown): string =>
+  String(valor ?? '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[\s-]+/g, '_')
+    .trim();
+
+const CONTENEDORES_METRICAS = ['resumen', 'estadisticas', 'totales', 'porEstado', 'informacionGeneral'];
+
+const buscarClave = (contenido: Record<string, unknown>, claves: string[]): unknown => {
+  const niveles = [
+    contenido,
+    ...CONTENEDORES_METRICAS.map((contenedor) => contenido[contenedor]).filter(esObjeto),
+  ];
+  for (const nivel of niveles) {
+    for (const clave of claves) {
+      if (nivel[clave] !== undefined && nivel[clave] !== null) return nivel[clave];
+    }
+  }
+  return undefined;
+};
+
+const metricasDelReporte = (tipo: string, contenido: Record<string, unknown>): Array<[string, unknown]> => {
+  const filas = filasDeContenido(contenido);
+  return (metricasPorTipo[tipo] ?? []).map(({ etiqueta, claves, estados }): [string, unknown] => {
+    const directo = buscarClave(contenido, claves);
+    if (directo !== undefined) return [etiqueta, directo];
+    if (estados) {
+      return [
+        etiqueta,
+        filas.filter((fila) =>
+          [fila.estado, fila.tipo, fila.tipoActividad, fila.rol].some((valor) => estados.includes(normalizar(valor))),
+        ).length,
+      ];
+    }
+    return [etiqueta, filas.length];
+  });
+};
 
 const fechaLegible = (valor: unknown): string | null => {
   if (typeof valor !== 'string' || !/^\d{4}-\d{2}-\d{2}/.test(valor)) return null;
@@ -255,12 +317,15 @@ export class ReporteExportService {
       documento.y = 146;
       documento.font('Helvetica-Bold').fontSize(11).fillColor('#064e3b').text('Resumen del reporte');
       const metricas = metricasDelReporte(reporte.tipoReporte, contenido);
+      const tarjetasMuchas = metricas.length > 4;
+      const anchoTarjeta = tarjetasMuchas ? (ancho - 8 * (metricas.length - 1)) / metricas.length : 116;
+      const pasoTarjeta = tarjetasMuchas ? anchoTarjeta + 8 : 128;
       metricas.forEach(([etiqueta, valor], indice) => {
-        const x = 42 + indice * 128;
-        documento.roundedRect(x, 169, 116, 66, 9).fill('#ecfdf5');
-        documento.roundedRect(x, 169, 116, 66, 9).lineWidth(1).strokeColor('#a7f3d0').stroke();
-        documento.font('Helvetica-Bold').fontSize(7).fillColor('#047857').text(etiqueta, x + 11, 181, { width: 94 });
-        documento.fontSize(22).fillColor('#064e3b').text(texto(valor ?? 0), x + 11, 198, { width: 94 });
+        const x = 42 + indice * pasoTarjeta;
+        documento.roundedRect(x, 169, anchoTarjeta, 66, 9).fill('#ecfdf5');
+        documento.roundedRect(x, 169, anchoTarjeta, 66, 9).lineWidth(1).strokeColor('#a7f3d0').stroke();
+        documento.font('Helvetica-Bold').fontSize(7).fillColor('#047857').text(etiqueta, x + 11, 181, { width: anchoTarjeta - 22 });
+        documento.fontSize(22).fillColor('#064e3b').text(texto(valor ?? 0), x + 11, 198, { width: anchoTarjeta - 22 });
       });
 
       documento.font('Helvetica-Bold').fontSize(11).fillColor('#064e3b').text('Filtros aplicados', 42, 255);
@@ -282,11 +347,8 @@ export class ReporteExportService {
         });
         inicioTabla = Math.max(inicioTabla, 272 + filasFiltros * 16 + 22);
       } else {
-        const filtros = Object.entries(contenido).filter(([clave, valor]) =>
-          ['periodo', 'periodoTexto', 'fechaInicio', 'fechaFin'].includes(clave) && !Array.isArray(valor),
-        );
         documento.font('Helvetica').fontSize(8).fillColor('#475569')
-          .text(filtros.map(([clave, valor]) => `${clave}: ${texto(valor)}`).join('   ·   ') || 'Sin filtros adicionales', 42, 272, { width: ancho });
+          .text(`Período: ${periodoLegible(contenido)}`, 42, 272, { width: ancho });
       }
       const emprendimientos = contenido.emprendimientos;
       const filas = reporte.tipoReporte === 'emprendimientos'
@@ -366,9 +428,9 @@ export class ReporteExportService {
               documento.font('Helvetica').fontSize(7).fillColor('#334155')
                 .text(valor, x + 14, y + 9, { width: anchoColumna - 24, ellipsis: true });
             } else if (columna.toLowerCase() === 'rol') {
-              const color = valor === 'administrador' ? '#047857' : valor === 'asociado' ? '#2563eb' : '#7c3aed';
+              const color = valor === 'administrador' ? '#047857' : valor === 'super_admin' ? '#d97706' : valor === 'asociado' ? '#2563eb' : '#7c3aed';
               documento.roundedRect(x, y + 6, Math.min(anchoColumna - 10, 58), 12, 6).fill(color);
-              documento.font('Helvetica-Bold').fontSize(6).fillColor('#ffffff').text(valor.toUpperCase(), x + 5, y + 9, { width: 48 });
+              documento.font('Helvetica-Bold').fontSize(6).fillColor('#ffffff').text(valor === 'super_admin' ? 'SUPER ADMIN' : valor.toUpperCase(), x + 5, y + 9, { width: 48 });
             } else {
               documento.font('Helvetica').fontSize(7).fillColor('#334155').text(valor, x, y + 9, { width: anchoColumna - 10, ellipsis: true });
             }
@@ -471,7 +533,11 @@ private async generarExcel(reporte: Reporte, contenido: Record<string, unknown>)
         const valor = fila[columna];
         const celda = filaExcel.getCell(i + 1);
         const esFecha = typeof valor === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(valor);
-        celda.value = esFecha ? fechaHoraCostaRica(valor) : (typeof valor === 'number' ? valor : texto(valor));
+        celda.value = esFecha
+          ? fechaHoraCostaRica(valor)
+          : columna === 'rol' && valor === 'super_admin'
+            ? 'super administrador'
+            : (typeof valor === 'number' ? valor : texto(valor));
         celda.alignment = { vertical: 'middle', horizontal: 'left' };
         celda.border = { bottom: borde };
         if (indice % 2 === 1) {
