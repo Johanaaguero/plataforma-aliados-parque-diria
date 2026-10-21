@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { listarInscripcionesAdministrativas, actualizarEstadoReserva } from './inscripcionesAdmin.service';
+import { listarInscripcionesAdministrativas, actualizarEstadoReserva, registrarDevolucionProcesada } from './inscripcionesAdmin.service';
 import { EstadoReserva } from '../../../models/Reserva';
 
 export const getInscripcionesAdministrativas = async (
@@ -64,6 +64,9 @@ const cambiarEstadoReserva = (estado: 'aprobada' | 'rechazada') => async (req: R
         message: error.message,
       });
     }
+    if (error instanceof Error && (error.name === 'ReservationExpiredError' || error.name === 'PaymentProofRequiredError')) {
+      return res.status(409).json({ ok: false, code: error.name === 'ReservationExpiredError' ? 'RESERVATION_EXPIRED' : 'PAYMENT_PROOF_REQUIRED', message: error.message });
+    }
 
     return res.status(500).json({
       ok: false,
@@ -75,4 +78,46 @@ const cambiarEstadoReserva = (estado: 'aprobada' | 'rechazada') => async (req: R
 };
 
 export const aprobarReserva = cambiarEstadoReserva('aprobada');
+
+export const marcarDevolucionProcesada = async (req: Request, res: Response) => {
+  try {
+    const id = Number(req.params.id);
+    const referencia = typeof req.body?.referencia === 'string'
+      ? req.body.referencia
+      : '';
+
+    if (!Number.isSafeInteger(id) || id <= 0) {
+      return res.status(400).json({
+        ok: false,
+        code: 'INVALID_ID',
+        message: 'El id de la reserva no es válido.',
+      });
+    }
+
+    const reserva = await registrarDevolucionProcesada(
+      id,
+      referencia,
+      req.usuario?.id ?? null,
+    );
+
+    return res.status(200).json({
+      ok: true,
+      message: 'Devolución registrada como procesada; no se realizó un pago automático.',
+      data: {
+        id: reserva.id,
+        devolucionProcesadaEn: reserva.devolucionProcesadaEn,
+        referenciaDevolucion: reserva.referenciaDevolucion,
+      },
+    });
+  } catch (error) {
+    const nombre = error instanceof Error ? error.name : '';
+    return res.status(nombre === 'NotFoundError' ? 404 : 409).json({
+      ok: false,
+      code: nombre || 'REFUND_ERROR',
+      message: error instanceof Error
+        ? error.message
+        : 'No se pudo registrar la devolución.',
+    });
+  }
+};
 export const rechazarReserva = cambiarEstadoReserva('rechazada');
