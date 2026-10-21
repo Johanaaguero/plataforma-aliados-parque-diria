@@ -1,6 +1,6 @@
 import { AppDataSource } from '../../../data-source';
 
-import { EntityManager } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 
 import { Usuario } from '../../../models/Usuario';
 
@@ -26,8 +26,12 @@ import { Participantes } from '../../../models/Participantes';
 import { enviarCorreoReserva } from '././Correo/reserva.correo.service';
 
 export class NotificacionService {
-  private repositorio =
-    AppDataSource.getRepository(Notificacion);
+  private readonly repositorio: Repository<Notificacion>;
+
+  constructor(repositorio?: Repository<Notificacion>) {
+    this.repositorio =
+      repositorio ?? AppDataSource.getRepository(Notificacion);
+  }
 
   // =========================================================
   // OBTENER TODAS LAS NOTIFICACIONES DE UN USUARIO

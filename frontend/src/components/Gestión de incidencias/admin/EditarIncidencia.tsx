@@ -18,15 +18,19 @@ import type {
 
 import {
   actualizarIncidenciaAdministrativa,
-  actualizarVisibilidadIncidencia,
   agregarComentarioIncidencia,
   finalizarSeguimientoIncidencia,
   obtenerComentariosIncidencia,
-  urlArchivoEvidencia,
+  obtenerHistorialCambiosIncidencia,
+  iniciarProcesoIncidencia,
 } from '../../../services/incidenciaServices';
-import type { ComentarioIncidencia } from '../../../services/incidenciaServices';
+import type {
+  ComentarioIncidencia,
+  HistorialCambioIncidencia,
+} from '../../../services/incidenciaServices';
 
 import parqueHero from '../../../assets/parque-hero.jpg';
+import EvidenciaMedia from '../EvidenciaMedia';
 
 interface EditarIncidenciaProps {
   incidencia: Incidencia;
@@ -431,15 +435,14 @@ export default function EditarIncidencia({
 
   const [prioridad, setPrioridad] =
     useState<PrioridadIncidencia>(incidencia.prioridad);
+  const [estadoActual, setEstadoActual] =
+    useState<EstadoIncidencia>(incidencia.estado);
 
   const [ultimaActualizacion, setUltimaActualizacion] =
     useState(incidencia.fechaActualizacion);
 
   const [actualizadoPor, setActualizadoPor] =
     useState(incidencia.adminActualiza);
-
-  const [esPublica, setEsPublica] = useState(incidencia.esPublica === true);
-  const [actualizandoVisibilidad, setActualizandoVisibilidad] = useState(false);
 
   const [estadoGuardado, setEstadoGuardado] =
     useState<EstadoGuardado>('inicial');
@@ -454,6 +457,12 @@ export default function EditarIncidencia({
     useState<EvidenciaIncidencia | null>(null);
 
   const [comentarios, setComentarios] = useState<ComentarioIncidencia[]>([]);
+  const [historialCambios, setHistorialCambios] =
+    useState<HistorialCambioIncidencia[]>([]);
+  const [cargandoHistorialCambios, setCargandoHistorialCambios] =
+    useState(true);
+  const [iniciandoProceso, setIniciandoProceso] = useState(false);
+  const [errorEstado, setErrorEstado] = useState<string | null>(null);
   const [textoComentario, setTextoComentario] = useState('');
   const [tipoHistorial, setTipoHistorial] = useState<'publico' | 'privado'>('publico');
   const [cargandoComentarios, setCargandoComentarios] = useState(true);
@@ -477,10 +486,39 @@ export default function EditarIncidencia({
   useEffect(() => {
     let activo = true;
     setCargandoComentarios(true);
+    setCargandoHistorialCambios(true);
     obtenerComentariosIncidencia(incidencia.id)
-      .then((historial) => { if (activo) setComentarios(historial); })
-      .catch((error) => { if (activo) setErrorComentario(error instanceof Error ? error.message : 'No se pudo cargar el historial.'); })
-      .finally(() => { if (activo) setCargandoComentarios(false); });
+      .then((historial) => {
+        if (activo) setComentarios(historial);
+      })
+      .catch((error) => {
+        if (activo) {
+          setErrorComentario(
+            error instanceof Error
+              ? error.message
+              : 'No se pudo cargar el historial de seguimiento.',
+          );
+        }
+      })
+      .finally(() => {
+        if (activo) setCargandoComentarios(false);
+      });
+    obtenerHistorialCambiosIncidencia(incidencia.id)
+      .then((historial) => {
+        if (activo) setHistorialCambios(historial);
+      })
+      .catch((error) => {
+        if (activo) {
+          setErrorComentario(
+            error instanceof Error
+              ? error.message
+              : 'No se pudo cargar el historial de cambios.',
+          );
+        }
+      })
+      .finally(() => {
+        if (activo) setCargandoHistorialCambios(false);
+      });
     return () => { activo = false; };
   }, [incidencia.id]);
 
@@ -564,10 +602,6 @@ export default function EditarIncidencia({
     incidencia.adminActualiza,
     incidencia.fechaActualizacion,
   ]);
-
-  useEffect(() => {
-    setEsPublica(incidencia.esPublica === true);
-  }, [incidencia.esPublica]);
 
   /* =======================================================
      FECHAS
@@ -679,6 +713,17 @@ export default function EditarIncidencia({
       );
 
       onGuardar(incidenciaParaGuardar);
+      try {
+        setHistorialCambios(
+          await obtenerHistorialCambiosIncidencia(incidencia.id),
+        );
+      } catch (error) {
+        setErrorComentario(
+          error instanceof Error
+            ? error.message
+            : 'Los cambios se guardaron, pero no se pudo actualizar su historial.',
+        );
+      }
 
       setCambiosGuardados(false);
       setEstadoGuardado('exito');
@@ -690,6 +735,32 @@ export default function EditarIncidencia({
           ? error.message
           : 'No se pudo guardar la incidencia. Inténtalo nuevamente.',
       );
+    }
+  };
+
+  const iniciarProceso = async () => {
+    if (estadoActual !== 'pendiente' || iniciandoProceso) return;
+    setIniciandoProceso(true);
+    setErrorEstado(null);
+    try {
+      const actualizada = await iniciarProcesoIncidencia(incidencia.id);
+      setEstadoActual(actualizada.estado);
+      onGuardar({
+        ...incidencia,
+        ...actualizada,
+        evidencias: actualizada.evidencias ?? incidencia.evidencias,
+      });
+      setHistorialCambios(
+        await obtenerHistorialCambiosIncidencia(incidencia.id),
+      );
+    } catch (error) {
+      setErrorEstado(
+        error instanceof Error
+          ? error.message
+          : 'No se pudo iniciar el proceso de la incidencia.',
+      );
+    } finally {
+      setIniciandoProceso(false);
     }
   };
 
@@ -822,24 +893,6 @@ export default function EditarIncidencia({
   const formatearFechaComentario = (fecha: string) => new Intl.DateTimeFormat('es-CR', {
     day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true,
   }).format(new Date(fecha));
-
-  const cambiarVisibilidad = async () => {
-    if (
-      actualizandoVisibilidad ||
-      incidenciaBloqueada
-    ) return;
-    setActualizandoVisibilidad(true);
-    setMensajeError(null);
-    try {
-      const actualizada = await actualizarVisibilidadIncidencia(incidencia.id, !esPublica);
-      setEsPublica(actualizada.esPublica === true);
-      onGuardar({ ...incidencia, ...actualizada, evidencias: actualizada.evidencias ?? incidencia.evidencias });
-    } catch (error) {
-      setMensajeError(error instanceof Error ? error.message : 'No se pudo actualizar la visibilidad pública.');
-    } finally {
-      setActualizandoVisibilidad(false);
-    }
-  };
 
   /* =======================================================
      VISTA
@@ -987,11 +1040,6 @@ export default function EditarIncidencia({
                 >
                   {incidencia.evidencias.map(
                     (evidencia) => {
-                      const url =
-                        urlArchivoEvidencia(
-                          evidencia.id,
-                        );
-
                       return (
                         <div
                           key={evidencia.id}
@@ -1012,8 +1060,9 @@ export default function EditarIncidencia({
                             >
                               <div className="relative overflow-hidden">
 
-                                <img
-                                  src={url}
+                                <EvidenciaMedia
+                                  evidenciaId={evidencia.id}
+                                  tipo={evidencia.tipo}
                                   alt={
                                     evidencia.nombreArchivo ??
                                     'Evidencia de la incidencia'
@@ -1032,8 +1081,10 @@ export default function EditarIncidencia({
 
                             <div>
 
-                              <video
-                                src={url}
+                              <EvidenciaMedia
+                                evidenciaId={evidencia.id}
+                                tipo={evidencia.tipo}
+                                alt={evidencia.nombreArchivo ?? 'Video de evidencia'}
                                 controls
                                 className="h-48 w-full object-cover"
                               />
@@ -1311,14 +1362,25 @@ export default function EditarIncidencia({
                   />
 
                   <section className="rounded-[1.25rem] border border-white/60 bg-white/28 p-4 shadow-[0_7px_20px_rgba(9,85,64,0.025)] backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04]">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#60776C] dark:text-[#9AAEA6]">Visibilidad y clasificación pública</p>
-                    <div className="mt-3 flex items-center justify-between gap-4"><div><p className="text-sm font-bold text-[#174D3B] dark:text-white">Publicar en Novedades del Inicio</p><p className="mt-1 text-xs leading-5 text-[#73867D] dark:text-slate-300">{esPublica ? 'Visible para visitantes en el inicio.' : 'Uso exclusivamente administrativo.'}</p></div><button type="button" role="switch" aria-checked={esPublica} disabled={actualizandoVisibilidad || incidenciaBloqueada} onClick={() => void cambiarVisibilidad()} className={`relative h-7 w-12 shrink-0 rounded-full transition disabled:cursor-not-allowed disabled:opacity-60 ${esPublica ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-600'}`}><span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition ${esPublica ? 'left-6' : 'left-1'}`} /></button></div>
-                  </section>
-
-                  <section className="rounded-[1.25rem] border border-white/60 bg-white/28 p-4 shadow-[0_7px_20px_rgba(9,85,64,0.025)] backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04]">
                     <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#60776C] dark:text-[#9AAEA6]">Acciones rápidas / asignación</p>
                     <div className="mt-3 rounded-xl border border-white/50 bg-white/30 px-3 py-3 dark:border-white/10 dark:bg-slate-950/20"><p className="text-xs font-semibold text-[#73867D] dark:text-slate-300">Encargado registrado</p><p className="mt-1 text-sm font-bold text-[#174D3B] dark:text-white">{actualizadoPor?.nombre ?? 'Se asigna automáticamente al guardar cambios'}</p></div>
-                    <div className="mt-3 rounded-xl border border-white/50 bg-white/30 px-3 py-3 dark:border-white/10 dark:bg-slate-950/20"><p className="text-xs font-semibold text-[#73867D] dark:text-slate-300">Estado actual de la incidencia</p><p className="mt-1 text-sm font-bold text-[#174D3B] dark:text-white">{etiquetasEstado[incidencia.estado]}</p><p className="mt-1 text-xs leading-5 text-[#73867D] dark:text-slate-300">El estado conserva el flujo de resolución y cierre establecido por el sistema.</p></div>
+                    <div className="mt-3 rounded-xl border border-white/50 bg-white/30 px-3 py-3 dark:border-white/10 dark:bg-slate-950/20"><p className="text-xs font-semibold text-[#73867D] dark:text-slate-300">Estado actual de la incidencia</p><p className="mt-1 text-sm font-bold text-[#174D3B] dark:text-white">{etiquetasEstado[estadoActual]}</p><p className="mt-1 text-xs leading-5 text-[#73867D] dark:text-slate-300">El estado conserva el flujo de resolución y cierre establecido por el sistema.</p>
+                      {estadoActual === 'pendiente' && (
+                        <button
+                          type="button"
+                          onClick={() => void iniciarProceso()}
+                          disabled={iniciandoProceso || incidenciaBloqueada}
+                          className="mt-3 rounded-xl bg-emerald-700 px-4 py-2 text-xs font-bold text-white transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {iniciandoProceso ? 'Iniciando…' : 'Iniciar proceso'}
+                        </button>
+                      )}
+                      {errorEstado && (
+                        <p role="alert" className="mt-2 text-xs font-semibold text-rose-700 dark:text-rose-200">
+                          {errorEstado}
+                        </p>
+                      )}
+                    </div>
                   </section>
 
                 </div>
@@ -1394,6 +1456,66 @@ export default function EditarIncidencia({
           </div>
 
           <section className="border-t border-white/30 px-7 py-8 dark:border-white/10 sm:px-10 lg:px-14">
+            <div className="mb-6 rounded-[1.9rem] border border-white/55 bg-white/30 p-5 shadow-[0_12px_32px_rgba(9,85,64,0.045)] backdrop-blur-2xl dark:border-white/10 dark:bg-white/[0.035] sm:p-6">
+              <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-[#00AEEF]">
+                Auditoría administrativa
+              </p>
+              <h2 className="mt-2 text-2xl font-bold text-[#174D3B] dark:text-white">
+                Cambios de la incidencia
+              </h2>
+              {cargandoHistorialCambios && (
+                <p className="mt-4 text-sm text-[#73867D] dark:text-slate-300">
+                  Cargando cambios…
+                </p>
+              )}
+              {!cargandoHistorialCambios && historialCambios.length === 0 && (
+                <p className="mt-4 text-sm text-[#73867D] dark:text-slate-300">
+                  Aún no hay cambios administrativos registrados.
+                </p>
+              )}
+              <div className="mt-4 max-h-80 space-y-3 overflow-y-auto">
+                {historialCambios.map((cambio) => {
+                  const actor =
+                    cambio.tipoActor === 'reportante'
+                      ? 'Reportante'
+                      : cambio.tipoActor === 'cierre_automatico'
+                        ? 'Cierre automático del sistema'
+                        : cambio.tipoActor === 'sistema'
+                          ? 'Sistema'
+                          : 'Administrador';
+
+                  return (
+                    <article
+                      key={cambio.id}
+                      className="rounded-2xl border border-white/55 bg-white/40 p-4 dark:border-white/10 dark:bg-slate-950/25"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="font-bold text-[#174D3B] dark:text-white">
+                          {cambio.campoEtiqueta}
+                        </p>
+                        <time
+                          className="text-xs font-semibold text-[#73867D] dark:text-slate-300"
+                          dateTime={cambio.fecha}
+                        >
+                          {formatearFechaComentario(cambio.fecha)}
+                        </time>
+                      </div>
+                      <p className="mt-2 text-sm text-[#456257] dark:text-slate-200">
+                        {cambio.valorAnteriorEtiqueta} →{' '}
+                        {cambio.valorNuevoEtiqueta}
+                      </p>
+                      <p className="mt-1 text-xs text-[#73867D] dark:text-slate-300">
+                        {actor}:{' '}
+                        {cambio.tipoActor === 'cierre_automatico' ||
+                        cambio.tipoActor === 'sistema'
+                          ? 'Automático'
+                          : cambio.usuario?.nombre ?? 'No disponible'}
+                      </p>
+                    </article>
+                  );
+                })}
+              </div>
+            </div>
             <div className="rounded-[1.9rem] border border-white/55 bg-white/30 p-5 shadow-[0_12px_32px_rgba(9,85,64,0.045)] backdrop-blur-2xl dark:border-white/10 dark:bg-white/[0.035] sm:p-6">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div><p className="text-[9px] font-bold uppercase tracking-[0.18em] text-[#00AEEF]">Historial inmutable</p><h2 className="mt-2 text-2xl font-bold text-[#174D3B] dark:text-white">Seguimiento de la incidencia</h2><p className="mt-1 text-sm text-[#73867D] dark:text-[#9BAEA7]">Los registros se conservan en orden cronológico y no se pueden editar ni eliminar.</p></div>
@@ -1541,10 +1663,9 @@ export default function EditarIncidencia({
 
             {evidenciaAmpliada.tipo === 'foto' ? (
 
-              <img
-                src={urlArchivoEvidencia(
-                  evidenciaAmpliada.id,
-                )}
+              <EvidenciaMedia
+                evidenciaId={evidenciaAmpliada.id}
+                tipo={evidenciaAmpliada.tipo}
                 alt={
                   evidenciaAmpliada.nombreArchivo ??
                   'Evidencia de la incidencia'
@@ -1554,10 +1675,13 @@ export default function EditarIncidencia({
 
             ) : (
 
-              <video
-                src={urlArchivoEvidencia(
-                  evidenciaAmpliada.id,
-                )}
+              <EvidenciaMedia
+                evidenciaId={evidenciaAmpliada.id}
+                tipo={evidenciaAmpliada.tipo}
+                alt={
+                  evidenciaAmpliada.nombreArchivo ??
+                  'Video de evidencia de la incidencia'
+                }
                 controls
                 className="max-h-[80vh] w-full rounded-[1.3rem]"
               />

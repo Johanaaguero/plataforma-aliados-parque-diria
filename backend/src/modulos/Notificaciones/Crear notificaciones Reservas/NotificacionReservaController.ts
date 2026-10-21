@@ -4,8 +4,8 @@ import { NotificacionService } from './NotificacionReservaService';
 export class NotificacionController {
   private service: NotificacionService;
 
-  constructor() {
-    this.service = new NotificacionService();
+  constructor(service?: NotificacionService) {
+    this.service = service ?? new NotificacionService();
   }
 
   // GET /api/notificaciones

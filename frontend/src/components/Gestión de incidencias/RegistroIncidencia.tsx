@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import SelectorUbicacion from '../SelectorUbicacion';
 import { useLanguage } from '../../i18n/LanguageContext';
 import paisajeParque from '../../assets/parque-hero.jpg';
+import { parsePhoneNumberFromString } from 'libphonenumber-js';
 
 import type {
   ChangeEvent,
@@ -55,6 +56,12 @@ type Categoria =
   | 'senderos'
   | 'servicios'
   | 'otro';
+
+type Prioridad =
+  | 'baja'
+  | 'media'
+  | 'alta'
+  | 'critica';
 
 interface ArchivoPreview {
   id: string;
@@ -293,6 +300,7 @@ export default function RegistroIncidencia({
     useState('');
   const [categoria, setCategoria] =
     useState<Categoria | ''>('');
+  const [prioridad, setPrioridad] = useState<Prioridad | ''>('');
   const [ubicacion, setUbicacion] =
     useState('');
   const [latitud, setLatitud] =
@@ -320,6 +328,11 @@ export default function RegistroIncidencia({
   const [exito, setExito] =
     useState('');
   const [codigoRegistrado, setCodigoRegistrado] = useState('');
+  const [incidenciaPendiente, setIncidenciaPendiente] = useState<{
+    id: number;
+    codigo: string;
+  } | null>(null);
+  const [evidenciasSubidas, setEvidenciasSubidas] = useState<string[]>([]);
 
   const cerrarExito = () => {
     setExito('');
@@ -355,6 +368,15 @@ export default function RegistroIncidencia({
 
   const archivoArrastrado =
     useRef<number | null>(null);
+  const objectUrls = useRef(new Set<string>());
+
+  useEffect(
+    () => () => {
+      objectUrls.current.forEach((url) => URL.revokeObjectURL(url));
+      objectUrls.current.clear();
+    },
+    [],
+  );
 
   const irAElemento = (
     elemento: HTMLElement | null,
@@ -432,14 +454,20 @@ export default function RegistroIncidencia({
       [];
 
     for (const archivo of nuevos) {
-      const esImagen =
-        archivo.type.startsWith('image/');
+      const extensionesPorMime: Record<string, string[]> = {
+        'image/jpeg': ['.jpg', '.jpeg'],
+        'image/png': ['.png'],
+        'image/webp': ['.webp'],
+        'application/pdf': ['.pdf'],
+      };
+      const extensiones = extensionesPorMime[archivo.type];
+      const extension = archivo.name
+        .slice(archivo.name.lastIndexOf('.'))
+        .toLowerCase();
 
-      const esPdf = archivo.type === 'application/pdf';
-
-      if (!esImagen && !esPdf) {
+      if (!extensiones || !extensiones.includes(extension)) {
         setError(
-          'Solo se permiten imágenes JPG, JPEG, PNG y documentos PDF.',
+          'Solo se permiten archivos JPG, JPEG, PNG, WebP y documentos PDF con extensión coincidente.',
         );
         continue;
       }
@@ -449,16 +477,17 @@ export default function RegistroIncidencia({
         20 * 1024 * 1024
       ) {
         setError(
-          `El archivo "${archivo.name}" supera el límite de 20 MB.`,
+          `El archivo "${archivo.name}" supera el límite de 20 MiB.`,
         );
         continue;
       }
 
+      const preview = URL.createObjectURL(archivo);
+      objectUrls.current.add(preview);
       archivosValidos.push({
         id: `${Date.now()}-${Math.random()}`,
         file: archivo,
-        preview:
-          URL.createObjectURL(archivo),
+        preview,
       });
     }
 
@@ -509,6 +538,7 @@ export default function RegistroIncidencia({
         URL.revokeObjectURL(
           archivo.preview,
         );
+        objectUrls.current.delete(archivo.preview);
       }
 
       return actuales.filter(
@@ -595,9 +625,42 @@ export default function RegistroIncidencia({
         return;
       }
 
+      if (reporteAnonimo && !nombreContacto.trim()) {
+        setError('El nombre de contacto es obligatorio para un reporte anónimo.');
+        return;
+      }
+
+      if (reporteAnonimo && !telefonoContacto.trim()) {
+        setError('El teléfono de contacto es obligatorio para un reporte anónimo.');
+        return;
+      }
+
+      if (reporteAnonimo) {
+        const telefono = parsePhoneNumberFromString(
+          telefonoContacto.trim(),
+          'CR',
+        );
+        if (!telefono?.isValid() || telefono.country !== 'CR') {
+          setError('Ingrese un número telefónico válido de Costa Rica.');
+          return;
+        }
+      }
+
       setCargando(true);
 
       try {
+        let incidenciaId = incidenciaPendiente?.id;
+        let codigoIncidencia = incidenciaPendiente?.codigo ?? '';
+        let datos: {
+          mensaje?: string;
+          message?: string;
+          error?: string;
+          incidencia?: { id?: number; codigo?: string };
+          id?: number;
+          data?: { id?: number };
+        } = {};
+
+        if (incidenciaId === undefined) {
         const headers: HeadersInit = {
           'Content-Type':
             'application/json',
@@ -620,6 +683,7 @@ export default function RegistroIncidencia({
                 descripcion:
                   descripcion.trim(),
                 categoria,
+                prioridad: prioridad || undefined,
                 ubicacion:
                   ubicacion.trim(),
                 latitud,
@@ -639,8 +703,6 @@ export default function RegistroIncidencia({
         const texto =
           await respuesta.text();
 
-        let datos: any = {};
-
         try {
           datos = texto
             ? JSON.parse(texto)
@@ -659,7 +721,7 @@ export default function RegistroIncidencia({
           );
         }
 
-        const incidenciaId =
+        incidenciaId =
           datos.incidencia?.id ||
           datos.id ||
           datos.data?.id;
@@ -670,7 +732,18 @@ export default function RegistroIncidencia({
           );
         }
 
+        codigoIncidencia = datos.incidencia?.codigo ?? '';
+        setIncidenciaPendiente({
+          id: incidenciaId,
+          codigo: codigoIncidencia,
+        });
+        setCodigoRegistrado(codigoIncidencia);
+        }
+
         for (const archivo of archivos) {
+          if (evidenciasSubidas.includes(archivo.id)) {
+            continue;
+          }
           const base64 =
             await convertirArchivoABase64(
               archivo.file,
@@ -710,10 +783,27 @@ export default function RegistroIncidencia({
           if (
             !respuestaEvidencia.ok
           ) {
+            const textoError = await respuestaEvidencia.text();
+            let mensajeError = textoError;
+            try {
+              const datosError = JSON.parse(textoError) as {
+                mensaje?: string;
+                message?: string;
+              };
+              mensajeError =
+                datosError.mensaje || datosError.message || textoError;
+            } catch {
+              mensajeError = textoError;
+            }
             throw new Error(
-              'La incidencia se registró, pero no se pudo subir una evidencia.',
+              `La incidencia ${codigoIncidencia} ya fue registrada, pero no se pudo subir "${archivo.file.name}": ${mensajeError || `HTTP ${respuestaEvidencia.status}`}. Vuelva a intentar; no se creará otra incidencia.`,
             );
           }
+          setEvidenciasSubidas((actuales) =>
+            actuales.includes(archivo.id)
+              ? actuales
+              : [...actuales, archivo.id],
+          );
         }
 
         setExito(
@@ -721,7 +811,7 @@ export default function RegistroIncidencia({
             ? 'La incidencia fue registrada de forma anónima correctamente.'
             : 'La incidencia fue registrada correctamente.',
         );
-        setCodigoRegistrado(datos.incidencia?.codigo ?? '');
+        setCodigoRegistrado(codigoIncidencia);
 
         setTitulo('');
         setDescripcion('');
@@ -732,11 +822,16 @@ export default function RegistroIncidencia({
         setEsAnonimo(false);
         setNombreContacto('');
         setTelefonoContacto('');
+        setIncidenciaPendiente(null);
+        setEvidenciasSubidas([]);
 
         archivos.forEach((archivo) =>
           URL.revokeObjectURL(
             archivo.preview,
           ),
+        );
+        archivos.forEach((archivo) =>
+          objectUrls.current.delete(archivo.preview),
         );
 
         setArchivos([]);
@@ -970,6 +1065,34 @@ export default function RegistroIncidencia({
           </section>
 
           <section className="space-y-4">
+            <div>
+              <label
+                htmlFor="prioridad-incidencia"
+                className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300"
+              >
+                Prioridad (opcional)
+              </label>
+              <select
+                id="prioridad-incidencia"
+                value={prioridad}
+                onChange={(event) =>
+                  setPrioridad(event.target.value as Prioridad | '')
+                }
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 dark:border-slate-800 dark:bg-slate-900/50 dark:text-white"
+              >
+                <option value="">Automática según la categoría</option>
+                <option value="baja">Baja</option>
+                <option value="media">Media</option>
+                <option value="alta">Alta</option>
+                <option value="critica">Crítica</option>
+              </select>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                Si no selecciona una prioridad, se asignará automáticamente según la categoría.
+              </p>
+            </div>
+          </section>
+
+          <section className="space-y-4">
             <div className="border-b border-slate-100 pb-2 dark:border-slate-800">
               <h3 className="text-sm font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
                 3. Ubicación del Incidente{' '}
@@ -1124,7 +1247,7 @@ export default function RegistroIncidencia({
               <input
                 ref={inputArchivoRef}
                 type="file"
-                accept="image/png,image/jpeg,application/pdf"
+                accept="image/png,image/jpeg,image/webp,application/pdf"
                 multiple
                 hidden
                 onChange={
@@ -1335,7 +1458,9 @@ export default function RegistroIncidencia({
               </>
             ) : (
               <span>
-                Registrar Incidencia
+                {incidenciaPendiente
+                  ? `Reintentar evidencias de ${incidenciaPendiente.codigo}`
+                  : 'Registrar Incidencia'}
               </span>
             )}
           </button>

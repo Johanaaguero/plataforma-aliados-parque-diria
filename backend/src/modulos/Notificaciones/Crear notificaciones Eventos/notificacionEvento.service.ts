@@ -12,7 +12,8 @@ import {
   EstadoNotificacion,
   TipoNotificacion,
 } from '../../../models/Notificacion';
-import type { EntityManager } from 'typeorm';
+import { In, type EntityManager } from 'typeorm';
+import { seleccionarDestinatariosEvento } from './notificacionEvento.utils';
 
 export class NotificacionEventoService {
   private readonly notificacionRepo =
@@ -22,8 +23,8 @@ export class NotificacionEventoService {
     AppDataSource.getRepository(Usuario);
 
   /**
-   * Crea las notificaciones para todos los visitantes y asociados
-   * cuando se registra un nuevo evento o capacitación.
+   * Crea notificaciones para los usuarios destinatarios cuando se publica
+   * un nuevo evento o capacitación.
    */
   async notificarNuevoEvento(
     evento: EventosCapacitaciones,
@@ -33,15 +34,13 @@ export class NotificacionEventoService {
       manager?.getRepository(Usuario) ?? this.usuarioRepo;
     const notificacionRepo =
       manager?.getRepository(Notificacion) ?? this.notificacionRepo;
-    const usuarios = await usuarioRepo
-      .createQueryBuilder('usuario')
-      .leftJoinAndSelect('usuario.rol', 'rol')
-      .where('rol.nombre IN (:...roles)', {
-        roles: ['visitante', 'asociado'],
-      })
-      .getMany();
+    const usuarios = await usuarioRepo.find({
+      relations: { rol: true },
+    });
+    const usuariosDestinatarios =
+      seleccionarDestinatariosEvento(usuarios, new Set());
 
-    if (usuarios.length === 0) {
+    if (usuariosDestinatarios.length === 0) {
       return;
     }
 
@@ -51,6 +50,24 @@ export class NotificacionEventoService {
     const tipoNotificacion = esCapacitacion
       ? TipoNotificacion.NUEVA_CAPACITACION
       : TipoNotificacion.NUEVO_EVENTO;
+
+    const usuariosYaNotificados = await notificacionRepo.find({
+      select: { usuarioId: true },
+      where: {
+        usuarioId: In(usuariosDestinatarios.map((usuario) => usuario.id)),
+        tipo: tipoNotificacion,
+        referenciaId: evento.id,
+        referenciaTipo: 'evento_capacitacion',
+      },
+    });
+    const destinatarios = seleccionarDestinatariosEvento(
+      usuariosDestinatarios,
+      new Set(usuariosYaNotificados.map(({ usuarioId }) => usuarioId)),
+    );
+
+    if (destinatarios.length === 0) {
+      return;
+    }
 
     const titulo = esCapacitacion
       ? 'Nueva capacitación disponible'
@@ -65,13 +82,14 @@ export class NotificacionEventoService {
       `Fecha: ${evento.fecha}. Hora: ${evento.hora}. ` +
       `Lugar: ${evento.lugar}.`;
 
-    const notificaciones = usuarios.map((usuario) =>
+    const notificaciones = destinatarios.map((usuario) =>
       notificacionRepo.create({
         usuarioId: usuario.id,
         tipo: tipoNotificacion,
         titulo,
         mensaje,
         leida: false,
+        estado: EstadoNotificacion.ACTIVA,
         referenciaId: evento.id,
         referenciaTipo: 'evento_capacitacion',
       }),

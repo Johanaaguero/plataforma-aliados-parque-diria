@@ -1,4 +1,4 @@
-import { api } from './api';
+import { api, notificarErrorAuth } from './api';
 
 const API_URL =
   import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -7,6 +7,36 @@ export function urlArchivoEvidencia(
   evidenciaId: number,
 ): string {
   return `${API_URL}/api/incidencias/evidencias/${evidenciaId}/archivo`;
+}
+
+export async function cargarArchivoEvidencia(
+  evidenciaId: number,
+  signal?: AbortSignal,
+): Promise<Blob> {
+  const token =
+    sessionStorage.getItem('token') ??
+    localStorage.getItem('token');
+  const respuesta = await fetch(urlArchivoEvidencia(evidenciaId), {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    signal,
+  });
+
+  if (!respuesta.ok) {
+    if (respuesta.status === 401 || respuesta.status === 403) {
+      notificarErrorAuth({
+        code: respuesta.status === 401 ? 'UNAUTHORIZED' : 'FORBIDDEN',
+        message:
+          respuesta.status === 401
+            ? 'Tu sesión no es válida. Inicia sesión nuevamente.'
+            : 'No tienes permiso para consultar esta evidencia.',
+        status: respuesta.status,
+      });
+    }
+
+    throw new Error('No se pudo cargar la evidencia.');
+  }
+
+  return respuesta.blob();
 }
 
 // ============================================================
@@ -127,6 +157,22 @@ export interface ComentarioIncidencia {
   esDatoSensible: boolean;
 }
 
+export interface HistorialCambioIncidencia {
+  id: number;
+  campoModificado: string;
+  campoEtiqueta: string;
+  valorAnterior: string | null;
+  valorAnteriorEtiqueta: string;
+  valorNuevo: string | null;
+  valorNuevoEtiqueta: string;
+  fecha: string;
+  tipoActor: 'reportante' | 'administrador' | 'cierre_automatico' | 'sistema';
+  usuario: {
+    id: number;
+    nombre: string;
+  } | null;
+}
+
 // ============================================================
 // COMPARTIR INCIDENCIA
 // ============================================================
@@ -213,6 +259,10 @@ interface RespuestaComentariosIncidencia {
   comentarios: ComentarioIncidencia[];
 }
 
+interface RespuestaHistorialCambiosIncidencia {
+  historial: HistorialCambioIncidencia[];
+}
+
 // ============================================================
 // LISTAR
 // ============================================================
@@ -295,7 +345,7 @@ export async function listarIncidenciasPaginadas(
       `/incidencias?${params.toString()}`,
       { method: 'GET' },
       {
-        incluirAuth: false,
+        incluirAuth: true,
         desempaquetarData: false,
         mensajeError:
           'No se pudieron cargar las incidencias',
@@ -319,7 +369,7 @@ export async function obtenerDetalleIncidencia(
         method: 'GET',
       },
       {
-        incluirAuth: false,
+        incluirAuth: true,
         desempaquetarData: false,
         mensajeError:
           'No se pudo cargar el detalle de la incidencia',
@@ -460,6 +510,34 @@ export async function obtenerComentariosIncidencia(id: number): Promise<Comentar
     { desempaquetarData: false, mensajeError: 'No se pudo cargar el historial de seguimiento.' },
   );
   return respuesta.comentarios;
+}
+
+export async function obtenerHistorialCambiosIncidencia(
+  id: number,
+): Promise<HistorialCambioIncidencia[]> {
+  const respuesta = await api.solicitar<RespuestaHistorialCambiosIncidencia>(
+    `/incidencias/${id}/historial-cambios`,
+    { method: 'GET' },
+    {
+      desempaquetarData: false,
+      mensajeError: 'No se pudo cargar el historial de cambios administrativos.',
+    },
+  );
+  return respuesta.historial;
+}
+
+export async function iniciarProcesoIncidencia(
+  id: number,
+): Promise<Incidencia> {
+  const respuesta = await api.solicitar<RespuestaDetalle>(
+    `/incidencias/${id}/iniciar-proceso`,
+    { method: 'PATCH' },
+    {
+      desempaquetarData: false,
+      mensajeError: 'No se pudo iniciar el proceso de la incidencia.',
+    },
+  );
+  return respuesta.incidencia;
 }
 
 export async function agregarComentarioIncidencia(

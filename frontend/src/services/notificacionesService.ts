@@ -1,10 +1,26 @@
+import { notificarErrorAuth } from './api';
+
+export type TipoNotificacion =
+  | 'nuevo_evento'
+  | 'nueva_capacitacion'
+  | 'nuevo_emprendimiento'
+  | 'nuevo_comunicado'
+  | 'reserva_realizada'
+  | 'nueva_reserva_admin'
+  | 'reserva_aprobada'
+  | 'reserva_rechazada'
+  | 'nueva_incidencia'
+  | 'seguimiento_incidencia'
+  | 'incidencia_compartida';
+
 export interface Notificacion {
   id: number;
   usuarioId: number;
-  tipo: string;
+  tipo: TipoNotificacion;
   titulo: string;
   mensaje: string;
   leida: boolean;
+  estado: 'activa' | 'eliminada';
   referenciaId: number | null;
   referenciaTipo: string | null;
   /**
@@ -85,8 +101,27 @@ async function solicitar<T>(
   }
 
   if (!respuesta.ok) {
+    const mensaje =
+      cuerpo?.mensaje ??
+      cuerpo?.message ??
+      `Error del servidor. Código: ${respuesta.status}`;
+
+    if (respuesta.status === 401) {
+      notificarErrorAuth({
+        code:
+          typeof cuerpo?.code === 'string'
+            ? cuerpo.code
+            : 'UNAUTHORIZED',
+        message:
+          typeof mensaje === 'string'
+            ? mensaje
+            : 'Tu sesión no es válida. Inicia sesión nuevamente.',
+        status: respuesta.status,
+      });
+    }
+
     throw new Error(
-      cuerpo?.mensaje ?? `Error del servidor. Código: ${respuesta.status}`,
+      mensaje,
     );
   }
 

@@ -7,7 +7,6 @@ import {
   obtenerComentariosIncidencia,
   obtenerDetalleIncidencia,
   ETIQUETAS_ESTADO,
-  urlArchivoEvidencia,
 } from '../../services/incidenciaServices';
 
 import type {
@@ -18,6 +17,7 @@ import type {
   EstadoIncidencia,
   ComentarioIncidencia,
 } from '../../services/incidenciaServices';
+import EvidenciaMedia from './EvidenciaMedia';
 
 function Icon({
   children,
@@ -123,30 +123,17 @@ function TarjetaEvidenciaChica({
   tipo: 'foto' | 'video';
   onClick: (event: ReactMouseEvent<HTMLAnchorElement>) => void;
 }) {
-  const url = urlArchivoEvidencia(id);
-
   return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
+    <EvidenciaMedia
+      evidenciaId={id}
+      tipo={tipo}
+      alt="Evidencia"
+      className="h-full w-full object-cover"
+      muted
+      abrirEnlace
       onClick={onClick}
-      className="block h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800"
-    >
-      {tipo === 'video' ? (
-        <video
-          src={url}
-          className="h-full w-full object-cover"
-          muted
-        />
-      ) : (
-        <img
-          src={url}
-          alt="Evidencia"
-          className="h-full w-full object-cover"
-        />
-      )}
-    </a>
+      claseEnlace="block h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800"
+    />
   );
 }
 
@@ -183,19 +170,13 @@ function TarjetaIncidencia({
         <div className="relative h-52 w-full shrink-0 bg-slate-200 sm:h-60 sm:w-56 dark:bg-slate-800">
 
           {primeraEvidencia ? (
-            primeraEvidencia.tipo === 'video' ? (
-              <video
-                src={urlArchivoEvidencia(primeraEvidencia.id)}
-                className="h-full w-full object-cover"
-                muted
-              />
-            ) : (
-              <img
-                src={urlArchivoEvidencia(primeraEvidencia.id)}
-                alt={incidencia.titulo}
-                className="h-full w-full object-cover"
-              />
-            )
+            <EvidenciaMedia
+              evidenciaId={primeraEvidencia.id}
+              tipo={primeraEvidencia.tipo}
+              alt={incidencia.titulo}
+              className="h-full w-full object-cover"
+              muted
+            />
           ) : (
             <div className="flex h-full w-full items-center justify-center text-slate-400 dark:text-slate-600">
               <Icon className="h-8 w-8">
@@ -489,22 +470,17 @@ function DetalleIncidenciaModal({
             ) : (
               <div className="mt-3 grid grid-cols-2 gap-3">
                 {incidencia.evidencias.map((evidencia) => {
-                  const url = urlArchivoEvidencia(evidencia.id);
                   return (
-                    <a
+                    <EvidenciaMedia
                       key={evidencia.id}
-                      href={url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="overflow-hidden rounded-xl border border-white/50 bg-white/45 dark:border-white/10 dark:bg-slate-800/50"
-                      aria-label={`Abrir ${evidencia.tipo === 'video' ? 'video' : 'imagen'} de evidencia`}
-                    >
-                      {evidencia.tipo === 'video' ? (
-                        <video src={url} controls className="aspect-video w-full object-cover" />
-                      ) : (
-                        <img src={url} alt={`Evidencia de ${incidencia.titulo}`} className="aspect-video w-full object-cover" />
-                      )}
-                    </a>
+                      evidenciaId={evidencia.id}
+                      tipo={evidencia.tipo}
+                      alt={`Evidencia de ${incidencia.titulo}`}
+                      className="aspect-video w-full object-cover"
+                      controls={evidencia.tipo === 'video'}
+                      abrirEnlace
+                      claseEnlace="overflow-hidden rounded-xl border border-white/50 bg-white/45 dark:border-white/10 dark:bg-slate-800/50"
+                    />
                   );
                 })}
               </div>

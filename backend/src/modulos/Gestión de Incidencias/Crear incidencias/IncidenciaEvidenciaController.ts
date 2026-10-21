@@ -1,9 +1,12 @@
 import { Request, Response } from 'express';
 import {crearEvidencia, obtenerEvidenciaPorId, } from './IncidenciaEvidenciaService';
+import { obtenerActorIncidencia } from './IncidenciaService';
+import { prepararRespuestaEvidencia } from './IncidenciaAccess';
 
 import {
   TipoEvidenciaIncidencia,
 } from '../../../models/IncidenciaEvidencia';
+import { ErrorValidacionEvidencia } from './IncidenciaEvidenciaValidation';
 
 export const registrarEvidencia = async (
   req: Request,
@@ -109,8 +112,9 @@ export const registrarEvidencia = async (
       const tamano = Number(tamanoBytes);
 
       if (
-        Number.isNaN(tamano) ||
-        tamano < 0
+        !Number.isSafeInteger(tamano) ||
+          !Number.isSafeInteger(tamano) ||
+          tamano < 0
       ) {
         res.status(400).json({
           mensaje: 'El tamaño del archivo no es válido.',
@@ -159,6 +163,14 @@ export const registrarEvidencia = async (
       },
     });
   } catch (error) {
+    if (error instanceof ErrorValidacionEvidencia) {
+      res.status(error.status).json({
+        mensaje: error.message,
+        codigo: error.status === 413 ? 'FILE_TOO_LARGE' : 'INVALID_FILE',
+      });
+      return;
+    }
+
     console.error(
       'Error al registrar evidencia:',
       error,
@@ -199,8 +211,24 @@ export const obtenerArchivoEvidencia = async (
 
     const evidencia = await obtenerEvidenciaPorId(id);
 
-    res.set('Content-Type', evidencia.tipoMime);
-    res.send(evidencia.archivo);
+    const actor = await obtenerActorIncidencia(req.usuario?.id);
+    const respuesta = prepararRespuestaEvidencia(
+      evidencia.incidencia,
+      actor,
+      evidencia.archivo,
+      evidencia.tipoMime,
+    );
+    if (!respuesta) {
+      res.status(404).json({
+        mensaje: 'La evidencia no está disponible.',
+      });
+      return;
+    }
+
+    for (const [nombre, valor] of Object.entries(respuesta.headers)) {
+      res.set(nombre, valor);
+    }
+    res.send(respuesta.archivo);
   } catch (error) {
     console.error('Error al obtener el archivo de evidencia:', error);
 

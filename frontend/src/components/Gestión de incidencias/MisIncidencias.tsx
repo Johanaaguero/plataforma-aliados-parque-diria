@@ -264,7 +264,7 @@ export default function MisIncidencias() {
   incidencia.estado === 'en_revision' &&
   incidencia.conformidadUsuario === 'pendiente';
 
-            return <article key={incidencia.id} className="rounded-3xl border border-white/55 bg-white/60 p-5 shadow-[0_12px_32px_rgba(11,58,39,0.06)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/55 sm:p-6">
+            return <article key={incidencia.id} className="min-w-0 max-w-full overflow-hidden rounded-3xl border border-white/55 bg-white/60 p-5 shadow-[0_12px_32px_rgba(11,58,39,0.06)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/55 sm:p-6">
              <div className="flex flex-col gap-5">
   <div className="min-w-0 w-full">
     <div className="flex flex-wrap items-center gap-2">
@@ -279,21 +279,21 @@ export default function MisIncidencias() {
       </span>
     </div>
 
-    <h2 className="mt-4 text-xl font-extrabold text-emerald-950 dark:text-white">
+    <h2 className="mt-4 max-w-full break-words [overflow-wrap:anywhere] text-xl font-extrabold text-emerald-950 dark:text-white">
       {incidencia.titulo}
     </h2>
 
-    <p className="mt-2 text-sm font-medium text-emerald-950/65 dark:text-white/65">
+    <p className="mt-2 max-w-full break-words [overflow-wrap:anywhere] text-sm font-medium text-emerald-950/65 dark:text-white/65">
       {incidencia.categoria.replace('_', ' ')} · Registrada el{' '}
       {formatearFechaHora(incidencia.fechaRegistro)}
     </p>
 
-    <section className="mt-4 rounded-2xl border border-emerald-500/15 bg-emerald-500/[0.05] p-4 backdrop-blur-xl dark:border-emerald-400/15 dark:bg-emerald-400/[0.05]">
+    <section className="mt-4 min-w-0 max-w-full rounded-2xl border border-emerald-500/15 bg-emerald-500/[0.05] p-4 backdrop-blur-xl dark:border-emerald-400/15 dark:bg-emerald-400/[0.05]">
       <h3 className="text-sm font-extrabold text-emerald-900 dark:text-emerald-100">Historial de Seguimiento</h3>
       <div className="mt-3 space-y-3">
         {cargandoHistoriales && <p className="text-sm text-emerald-900/60 dark:text-white/60">Cargando seguimiento…</p>}
         {!cargandoHistoriales && !(historiales[incidencia.id]?.length) && <p className="text-sm text-emerald-900/60 dark:text-white/60">Aún no hay actualizaciones públicas.</p>}
-        {historiales[incidencia.id]?.filter((comentario) => !comentario.esNotaPrivada && !comentario.esDatoSensible).map((comentario) => <article key={comentario.id} className="rounded-xl border border-white/50 bg-white/45 p-3 dark:border-white/10 dark:bg-slate-950/25"><div className="flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-bold text-emerald-950 dark:text-white">{comentario.nombreAutor}</p><time className="text-xs font-semibold text-emerald-900/55 dark:text-white/60" dateTime={comentario.fechaHora}>{formatearFechaComentario(comentario.fechaHora)}</time></div><p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-emerald-950/75 dark:text-white/75">{comentario.texto}</p></article>)}
+        {historiales[incidencia.id]?.filter((comentario) => !comentario.esNotaPrivada && !comentario.esDatoSensible).map((comentario) => <article key={comentario.id} className="min-w-0 max-w-full rounded-xl border border-white/50 bg-white/45 p-3 dark:border-white/10 dark:bg-slate-950/25"><div className="flex flex-wrap items-center justify-between gap-2"><p className="min-w-0 max-w-full break-words [overflow-wrap:anywhere] text-sm font-bold text-emerald-950 dark:text-white">{comentario.nombreAutor}</p><time className="max-w-full break-words [overflow-wrap:anywhere] text-xs font-semibold text-emerald-900/55 dark:text-white/60" dateTime={comentario.fechaHora}>{formatearFechaComentario(comentario.fechaHora)}</time></div><p className="mt-2 max-w-full whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-sm leading-6 text-emerald-950/75 dark:text-white/75">{comentario.texto}</p></article>)}
       </div>
     </section>
   </div>

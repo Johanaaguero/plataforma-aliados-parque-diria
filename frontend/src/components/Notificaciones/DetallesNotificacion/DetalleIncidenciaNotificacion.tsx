@@ -1,9 +1,7 @@
 
 import type { Notificacion } from '../../../services/notificacionesService';
-import {
-  urlArchivoEvidencia,
-  type Incidencia,
-} from '../../../services/incidenciaServices';
+import type { Incidencia } from '../../../services/incidenciaServices';
+import EvidenciaMedia from '../../Gestión de incidencias/EvidenciaMedia';
 
 interface Props {
   notificacion: Notificacion;
@@ -213,32 +211,31 @@ export default function DetalleIncidenciaNotificacion({
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {incidencia.evidencias.map((evidencia) => {
-                  const url = urlArchivoEvidencia(evidencia.id);
-                  const esImagen = evidencia.tipoMime.startsWith('image/');
+                  const esImagen = evidencia.tipo === 'foto';
 
                   return (
                     <div
                       key={evidencia.id}
                       className="overflow-hidden rounded-xl border border-slate-200 dark:border-white/10"
                     >
-                      {esImagen && (
-                        <a
-                          href={url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="block"
-                        >
-                          <img
-                            src={url}
-                            alt={
-                              evidencia.nombreArchivo ??
-                              'Evidencia de la incidencia'
-                            }
-                            className="h-44 w-full object-cover"
-                            loading="lazy"
-                          />
-                        </a>
-                      )}
+                      <EvidenciaMedia
+                        evidenciaId={evidencia.id}
+                        tipo={evidencia.tipo}
+                        alt={
+                          evidencia.nombreArchivo ??
+                          'Evidencia de la incidencia'
+                        }
+                        className={
+                          esImagen
+                            ? 'h-44 w-full object-cover'
+                            : 'hidden'
+                        }
+                        abrirEnlace
+                        textoEnlace={
+                          esImagen ? 'Abrir evidencia' : 'Ver archivo'
+                        }
+                        claseEnlace="block"
+                      />
 
                       <div className="p-3">
                         <p className="truncate text-sm font-medium text-slate-700 dark:text-slate-200">
@@ -246,14 +243,6 @@ export default function DetalleIncidenciaNotificacion({
                             `Evidencia ${evidencia.id}`}
                         </p>
 
-                        <a
-                          href={url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="mt-2 inline-flex text-sm font-bold text-[#009444] hover:underline dark:text-[#a9d779]"
-                        >
-                          {esImagen ? 'Abrir evidencia' : 'Ver archivo'}
-                        </a>
                       </div>
                     </div>
                   );
