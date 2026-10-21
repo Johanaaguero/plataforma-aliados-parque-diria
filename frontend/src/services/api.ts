@@ -200,8 +200,7 @@ async solicitarBlob(
             : mensajeError,
       status: response.status,
     };
-
-    this.notificarErrorAuth(error);
+notificarErrorAuth(error);
 
     const solicitudError = new Error(error.message);
     Object.assign(solicitudError, error);
