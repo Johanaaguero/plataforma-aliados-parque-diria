@@ -760,9 +760,6 @@ export default function IncidenciasAdmin({
   const modalYaPublicada =
     incidenciaCompartir?.esPublica === true;
 
-  const modalTieneCorreo =
-    incidenciaCompartir?.tieneCorreoUsuario === true;
-
   return (
     <main className="relative min-h-screen w-full overflow-x-hidden text-[#17382B] [font-family:'Montserrat',sans-serif] dark:text-slate-100">
 

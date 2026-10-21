@@ -163,6 +163,55 @@ console.error('Error en solicitud API:', {
 
     return data as T;
   }
+async solicitarBlob(
+  ruta: string,
+  opciones: RequestInit = {},
+  mensajeError = 'No se pudo completar la solicitud',
+): Promise<Blob> {
+  const headers = new Headers(this.getHeaders(true, false));
+
+  new Headers(opciones.headers).forEach((valor, clave) => {
+    headers.set(clave, valor);
+  });
+
+  let response: Response;
+
+  try {
+    response = await fetch(`${this.baseUrl}${ruta}`, {
+      ...opciones,
+      headers,
+    });
+  } catch {
+    throw new Error(mensajeError);
+  }
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => null);
+    const respuesta = data as Record<string, unknown> | null;
+
+    const error: ApiError = {
+      code:
+        typeof respuesta?.code === 'string'
+          ? respuesta.code
+          : 'UNKNOWN_ERROR',
+      message:
+        typeof respuesta?.message === 'string'
+          ? respuesta.message
+          : typeof respuesta?.mensaje === 'string'
+            ? respuesta.mensaje
+            : mensajeError,
+      status: response.status,
+    };
+
+    this.notificarErrorAuth(error);
+
+    const solicitudError = new Error(error.message);
+    Object.assign(solicitudError, error);
+    throw solicitudError;
+  }
+
+  return response.blob();
+}
 
   async login(identificador: string, password: string): Promise<{ token: string; usuario: unknown }> {
     const response = await fetch(`${this.baseUrl}/auth/login`, {
