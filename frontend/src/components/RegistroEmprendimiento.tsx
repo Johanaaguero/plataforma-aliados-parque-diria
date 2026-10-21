@@ -36,6 +36,7 @@ interface FormState {
   longitud: string;
   correoElectronico: string;
   telefono: string;
+  imagenes?: string;
 }
 
 type FormErrors = Partial<Record<keyof FormState, string>>;
@@ -102,7 +103,9 @@ const validarFormulario = (
   }
 
   // DESCRIPCIÓN
-  if (form.descripcion.trim().length > 500) {
+  if (!form.descripcion.trim()) {
+    errores.descripcion = 'La descripción es obligatoria.';
+  } else if (form.descripcion.trim().length > 500) {
     errores.descripcion = 'La descripción no puede superar los 500 caracteres.';
   }
 
@@ -594,6 +597,10 @@ function RegistroEmprendimiento({ onExito }: Props) {
         return siguientes;
       });
 
+      setErrores((prev) => ({
+        ...prev,
+        imagenes: undefined,
+      }));
       setError(null);
     }
   };
@@ -656,6 +663,10 @@ function RegistroEmprendimiento({ onExito }: Props) {
     setExito(false);
 
     const erroresFormulario = validarFormulario(form, esBorrador);
+
+     if (!esBorrador && imagenes.length === 0) {
+      erroresFormulario.imagenes = 'Debe agregar al menos una imagen para registrar el emprendimiento.';
+    } 
 
     setErrores(erroresFormulario);
 
@@ -750,6 +761,9 @@ function RegistroEmprendimiento({ onExito }: Props) {
         esBorrador
           ? 'El borrador del emprendimiento se guardó correctamente.'
           : 'El emprendimiento se registró correctamente.',
+        esBorrador
+          ? 'Borrador de emprendimiento guardado correctamente'
+          : '¡Emprendimiento registrado con éxito!',
       );
       // Al guardar un borrador se conserva la categoría elegida para que el
       // usuario pueda seguir completándolo sin tener que seleccionarla otra vez.
@@ -962,8 +976,7 @@ function RegistroEmprendimiento({ onExito }: Props) {
 
             {/* CATEGORÍA */}
 
-            <div ref={categoriaRef} className="flex flex-col gap-2">
-              <label
+<div ref={categoriaRef} className="flex flex-col gap-2">              <label
                 htmlFor="categoriaId"
                 className="text-sm font-semibold text-[#095540] dark:text-emerald-100"
               >
@@ -1037,8 +1050,7 @@ function RegistroEmprendimiento({ onExito }: Props) {
               </button>
 
               {categoriaAbierta && (
-                <div className="max-h-80 overflow-y-auto rounded-2xl border border-white/70 bg-white/90 p-2 shadow-[0_18px_45px_rgba(9,85,64,0.16)] backdrop-blur-xl">
-                  <div
+<div className="max-h-80 overflow-y-auto rounded-2xl border border-white/70 bg-white/90 p-2 shadow-[0_18px_45px_rgba(9,85,64,0.16)] backdrop-blur-xl">                  <div
                     role="listbox"
                     aria-label="Categorías disponibles"
                     className="space-y-1"
@@ -1113,8 +1125,7 @@ function RegistroEmprendimiento({ onExito }: Props) {
 
             <label className={labelClase}>
               <span>
-                Descripción{' '}
-                <span className="font-normal text-stone-400">(opcional)</span>
+                Descripción *
               </span>
 
               <textarea
@@ -1249,6 +1260,12 @@ function RegistroEmprendimiento({ onExito }: Props) {
                 ))}
               </div>
             )}
+
+              {/* --- AGREGA ESTO AQUÍ --- */}
+            <MensajeError mensaje={errores.imagenes} />
+            {/* ------------------------ */}
+
+
           </Seccion>
 
           {/* ================== UBICACIÓN ================== */}
@@ -1280,8 +1297,48 @@ function RegistroEmprendimiento({ onExito }: Props) {
               />
             </div>
 
-            <MensajeError mensaje={errores.latitud} />
-            <MensajeError mensaje={errores.longitud} />
+            
+        
+
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <label className={labelClase}>
+                Latitud *
+
+                <input
+                  name="latitud"
+                  type="number"
+                  step="any"
+                  min="-90"
+                  max="90"
+                  value={form.latitud}
+                  onChange={handleChange}
+                  required
+                  placeholder="Ej. 10.620651"
+                  className={obtenerClaseInput('latitud')}
+                />
+
+                <MensajeError mensaje={errores.latitud} />
+              </label>
+
+              <label className={labelClase}>
+                Longitud *
+
+                <input
+                  name="longitud"
+                  type="number"
+                  step="any"
+                  min="-180"
+                  max="180"
+                  value={form.longitud}
+                  onChange={handleChange}
+                  required
+                  placeholder="Ej. -85.586673"
+                  className={obtenerClaseInput('longitud')}
+                />
+
+                <MensajeError mensaje={errores.longitud} />
+              </label>
+            </div>
 
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
 

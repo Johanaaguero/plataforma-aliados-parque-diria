@@ -302,6 +302,7 @@ export default function MisInscripciones() {
       mostrarFeedback(
         'registro',
         'Reserva cancelada correctamente.',
+        'Reserva cancelada correctamente.',
       );
     } catch (errorSolicitud: unknown) {
       mostrarFeedback(
@@ -339,7 +340,11 @@ export default function MisInscripciones() {
       ));
       setReservaParaDevolucion(null);
       limpiarDatosDevolucion();
-      mostrarFeedback('registro', 'Tus datos de devolución fueron enviados correctamente.');
+      mostrarFeedback(
+        'registro',
+        'Tus datos de devolución fueron enviados correctamente.',
+        'Datos de devolución enviados correctamente.',
+      );
     } catch (errorSolicitud: unknown) {
       mostrarFeedback(
         'error',
@@ -1373,6 +1378,7 @@ const registrosVisibles = useMemo(() => {
 
               mostrarFeedback(
                 'registro',
+                'Reserva actualizada correctamente.',
                 'Reserva actualizada correctamente.',
               );
             }}
