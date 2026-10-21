@@ -30,13 +30,28 @@ interface Mensaje {
   hora: Date;
   whatsappUrl?: string;
   error?: boolean;
+  modoRespaldo?: boolean;
 }
+
+type FaqId =
+  | 'ubicacion'
+  | 'servicios'
+  | 'emprendimientos'
+  | 'eventos'
+  | 'reservas'
+  | 'incidencias'
+  | 'contacto'
+  | 'informacion_parque'
+  | 'asociacion'
+  | 'objetivo_asociacion'
+  | 'como_llegar';
 
 interface RespuestaChatbot {
   respuesta: string;
   estado: string;
   conversacionId: number;
   whatsapp: { url: string } | null;
+  fallbackActivado?: boolean;
 }
 
 /* ------------------------------------------------------------------ */
@@ -130,6 +145,7 @@ const OPCIONES = [
     texto: 'Ubicación',
     detalle: 'Cómo llegar al parque',
     pregunta: '¿Dónde está ubicado el Parque Nacional Diriá?',
+    faqId: 'ubicacion',
     Icono: IconoUbicacion,
   },
 
@@ -137,21 +153,24 @@ const OPCIONES = [
     texto: 'Servicios y actividades',
     detalle: 'Qué puedes hacer en tu visita',
     pregunta: '¿Qué servicios y actividades ofrecen?',
+    faqId: 'servicios',
     Icono: IconoServicios,
   },
   {
     texto: 'Contacto',
     detalle: 'Teléfonos y correo',
     pregunta: '¿Cómo puedo comunicarme con ustedes?',
+    faqId: 'contacto',
     Icono: IconoTelefono,
   },
   {
     texto: 'Hablar con un administrador',
     detalle: 'Te conectamos por WhatsApp',
     pregunta: 'Quiero hablar con un administrador',
+    faqId: undefined,
     Icono: IconoPersona,
   },
-];
+] as const;
 
 const BIENVENIDA = (): Mensaje[] => [
   {
@@ -248,7 +267,10 @@ const Chatbot = () => {
     []
   );
 
-  const enviarMensaje = async (preguntaPersonalizada?: string) => {
+  const enviarMensaje = async (
+    preguntaPersonalizada?: string,
+    faqId?: FaqId,
+  ) => {
     const texto = (preguntaPersonalizada ?? mensaje).trim().slice(0, MAX_CARACTERES);
     if (!texto || cargando) return;
 
@@ -282,6 +304,7 @@ const Chatbot = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           mensaje: texto,
+          ...(faqId ? { faqId } : {}),
 
           // NUEVO: enviar la consulta anterior cuando solicita administrador
           consultaAnterior: esSolicitudAdministrador
@@ -305,6 +328,7 @@ const Chatbot = () => {
         tipo: 'bot',
         texto: datos.respuesta,
         whatsappUrl: datos.whatsapp?.url ?? undefined,
+        modoRespaldo: datos.fallbackActivado,
       });
     } catch (error) {
       const agotado = error instanceof DOMException && error.name === 'AbortError';
@@ -470,6 +494,12 @@ const Chatbot = () => {
                     </a>
                   )}
 
+                  {m.modoRespaldo && (
+                    <span className="mt-1 px-1 text-[10px] text-amber-700">
+                      Respuesta con búsqueda local
+                    </span>
+                  )}
+
                   <span className="mt-1 px-1 text-[11px] text-stone-400">
                     {formatearHora(m.hora)}
                   </span>
@@ -504,10 +534,10 @@ const Chatbot = () => {
               <p className="px-1 text-xs font-medium text-stone-500">
                 Preguntas frecuentes
               </p>
-              {OPCIONES.map(({ texto, detalle, pregunta, Icono: Ico }) => (
+              {OPCIONES.map(({ texto, detalle, pregunta, faqId, Icono: Ico }) => (
                 <button
                   key={texto}
-                  onClick={() => enviarMensaje(pregunta)}
+                  onClick={() => enviarMensaje(pregunta, faqId)}
                   className="
                     group flex w-full items-center gap-3 rounded-xl
                     border border-white/70 bg-white/60 px-3.5 py-3 text-left shadow-sm backdrop-blur-md

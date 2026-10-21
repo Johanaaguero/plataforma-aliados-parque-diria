@@ -6,7 +6,7 @@ export class ChatbotController {
 
   async procesarPregunta(req: Request, res: Response) {
     try {
-      const { mensaje, consultaAnterior } = req.body;
+      const { mensaje, consultaAnterior, faqId } = req.body;
 
       if (!mensaje || typeof mensaje !== 'string') {
         return res.status(400).json({
@@ -19,6 +19,7 @@ export class ChatbotController {
       const resultado = await this.service.procesarPregunta(
         mensaje,
         usuarioId,
+        typeof faqId === 'string' ? faqId : undefined,
       );
 
       let whatsapp = null;
@@ -34,6 +35,7 @@ export class ChatbotController {
         estado: resultado.estado,
         conversacionId: resultado.conversacionId,
         whatsapp,
+        fallbackActivado: resultado.fallbackActivado,
       });
     } catch (error) {
       console.error('Error en chatbot:', error);

@@ -96,10 +96,13 @@ describe('GeminiFaqClassifier con SDK simulado', () => {
     assert.equal(await local.classify('¿Cuál es el horario de hoy?'), null);
   });
 
-  test('reconoce solo 429, 503 y errores de timeout para activar el respaldo', () => {
+  test('reconoce errores transitorios de proveedor, red y respuestas inválidas', () => {
     assert.equal(shouldUseLocalFaqFallback({ status: 429 }), true);
     assert.equal(shouldUseLocalFaqFallback({ status: 503 }), true);
     assert.equal(shouldUseLocalFaqFallback(Object.assign(new Error(), { name: 'TimeoutError' })), true);
+    assert.equal(shouldUseLocalFaqFallback(Object.assign(new Error(), { code: 'ECONNRESET' })), true);
+    assert.equal(shouldUseLocalFaqFallback(Object.assign(new Error(), { code: 'ENOTFOUND' })), true);
+    assert.equal(shouldUseLocalFaqFallback(new TypeError('fetch failed')), true);
     assert.equal(shouldUseLocalFaqFallback({ status: 401 }), false);
   });
 
@@ -129,6 +132,25 @@ describe('GeminiFaqClassifier con SDK simulado', () => {
 
       assert.equal(await sdk.clasificador.classify('consulta'), 'eventos');
       assert.equal(sdk.llamadas, 2);
+    });
+  });
+
+  test('reintenta una sola vez 429, timeout y fallo de conexión', async () => {
+    await conClaveDePrueba(async () => {
+      const errores = [
+        Object.assign(new Error('quota'), { status: 429 }),
+        Object.assign(new Error('timeout'), { name: 'TimeoutError' }),
+        Object.assign(new Error('connection'), { code: 'ECONNRESET' }),
+      ];
+
+      for (const error of errores) {
+        const sdk = crearClasificadorSimulado(
+          '{"faqId":"contacto"}',
+          [error],
+        );
+        assert.equal(await sdk.clasificador.classify('consulta'), 'contacto');
+        assert.equal(sdk.llamadas, 2);
+      }
     });
   });
 
@@ -182,7 +204,7 @@ describe('GeminiFaqClassifier con SDK simulado', () => {
     });
   });
 
-  test('rechaza identificadores no permitidos y JSON inválido', async () => {
+  test('rechaza identificadores no permitidos y JSON inválido para activar fallback', async () => {
     await conClaveDePrueba(async () => {
       const idNoPermitido = crearClasificadorSimulado(
         '{"faqId":"respuesta_inventada"}',
@@ -193,8 +215,8 @@ describe('GeminiFaqClassifier con SDK simulado', () => {
       console.info = (...args: unknown[]) => registros.push(args);
 
       try {
-        assert.equal(await idNoPermitido.clasificador.classify('consulta privada'), null);
-        assert.equal(await jsonInvalido.clasificador.classify('consulta privada'), null);
+        await assert.rejects(idNoPermitido.clasificador.classify('consulta privada'));
+        await assert.rejects(jsonInvalido.clasificador.classify('consulta privada'));
       } finally {
         console.info = infoOriginal;
       }

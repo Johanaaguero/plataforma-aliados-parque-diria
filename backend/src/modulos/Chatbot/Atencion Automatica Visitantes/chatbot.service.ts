@@ -7,6 +7,7 @@ import type { Repository } from 'typeorm';
 import { emprendimientoService } from '../../Administración de emprendimientos/Registro de emprendimientos/emprendimiento.service';
 import { EventosService } from '../../Gestión de Eventos y Capacitaciones/Visualización de Eventos y Capacitaciones/eventos.service';
 import {
+  FAQ_IDS,
   GeminiFaqClassifier,
   getSafeGeminiErrorMetadata,
   LocalFaqClassifier,
@@ -81,7 +82,9 @@ const RESPUESTAS_FAQ: Record<FaqId, string> = {
 };
 
 const MENSAJE_NO_ENCONTRADO =
-  'No encontré una respuesta específica para esa consulta. Puedo ayudarte con información general sobre la Asociación Aliados del Parque Nacional Diriá, el parque, emprendimientos, eventos, capacitaciones, reservas, incidencias, ubicación y contacto.';
+  'No encontré una respuesta específica para esa consulta. Prueba una de las preguntas frecuentes sobre ubicación, servicios, emprendimientos, eventos, reservas o contacto, o comunícate con un administrador por WhatsApp: https://wa.me/50687223373.';
+const MENSAJE_GEMINI_INDISPONIBLE =
+  'El asistente está teniendo dificultades temporalmente y no pudo confirmar una respuesta. Prueba una de las preguntas frecuentes sobre ubicación, servicios, emprendimientos, eventos, reservas o contacto, o comunícate con un administrador por WhatsApp: https://wa.me/50687223373.';
 
 const normalizarTexto = (texto: string) =>
   texto
@@ -152,10 +155,17 @@ export class ChatbotService {
     };
   }
 
-  async procesarPregunta(mensaje: string, usuarioId?: number) {
+  async procesarPregunta(
+    mensaje: string,
+    usuarioId?: number,
+    faqSeleccionada?: string,
+  ) {
+    const inicio = Date.now();
     const pregunta = normalizarTexto(mensaje);
     let respuesta: string;
     let estado = EstadoConversacionChatbot.RESUELTA;
+    let fallbackActivado = false;
+    let errorType: string | undefined;
 
     if (
       pregunta === 'hola' ||
@@ -184,20 +194,29 @@ export class ChatbotService {
       respuesta =
         '¡Con mucho gusto! Gracias por utilizar el asistente virtual de la Asociación Aliados del Parque Nacional Diriá.';
     } else {
-      try {
-        const faqId = await this.faqClassifier.classify(mensaje);
-        respuesta = await this.responderPorCategoria(faqId, mensaje);
-      } catch (error) {
-        // Evita registrar errores del proveedor, que podrían incluir datos sensibles.
-        console.warn(
-          'Falló Gemini; se intenta la clasificación FAQ local.',
-          getSafeGeminiErrorMetadata(error),
-        );
-        if (shouldUseLocalFaqFallback(error)) {
-          const faqId = await this.localFaqClassifier.classify(mensaje);
+      const faqIdSeleccionada = FAQ_IDS.find((id) => id === faqSeleccionada);
+      const faqLocal = faqIdSeleccionada ??
+        await this.localFaqClassifier.classify(mensaje);
+
+      if (faqLocal) {
+        respuesta = await this.responderPorCategoria(faqLocal, mensaje);
+      } else {
+        try {
+          const faqId = await this.faqClassifier.classify(mensaje);
           respuesta = await this.responderPorCategoria(faqId, mensaje);
-        } else {
-          respuesta = MENSAJE_NO_ENCONTRADO;
+        } catch (error) {
+          const metadata = getSafeGeminiErrorMetadata(error);
+          errorType = metadata.errorType;
+          fallbackActivado = shouldUseLocalFaqFallback(error);
+          console.warn('Gemini classification failed', metadata);
+          if (fallbackActivado) {
+            const faqId = await this.localFaqClassifier.classify(mensaje);
+            respuesta = faqId
+              ? await this.responderPorCategoria(faqId, mensaje)
+              : MENSAJE_GEMINI_INDISPONIBLE;
+          } else {
+            respuesta = MENSAJE_GEMINI_INDISPONIBLE;
+          }
         }
       }
     }
@@ -212,10 +231,17 @@ export class ChatbotService {
 
     await this.repo.save(conversacion);
 
+    console.info('Chatbot request completed', {
+      durationMs: Date.now() - inicio,
+      errorType,
+      fallbackActivated: fallbackActivado,
+    });
+
     return {
       respuesta,
       estado,
       conversacionId: conversacion.id,
+      fallbackActivado,
     };
   }
 
