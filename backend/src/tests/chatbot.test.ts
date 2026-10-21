@@ -83,7 +83,7 @@ describe('ChatbotService: intenciones estáticas y persistencia', () => {
       const resultado = await servicio.procesarPregunta(categoria.consulta, 42);
 
       assert.match(resultado.respuesta, categoria.respuestaIncluye);
-      assert.deepEqual(consultasClasificadas, [categoria.consulta]);
+      assert.deepEqual(consultasClasificadas, []);
       assert.equal(resultado.estado, 'RESUELTA');
       assert.equal(resultado.conversacionId, 1);
       assert.equal(guardadas.length, 1);
@@ -513,7 +513,7 @@ describe('ChatbotService: intenciones estáticas y persistencia', () => {
     }
   });
 
-  test('usa el clasificador local cuando Gemini alcanza la cuota', async () => {
+  test('responde preguntas frecuentes locales sin solicitar Gemini', async () => {
     let llamadasGemini = 0;
     const { servicio } = await crearServicio(async () => {
       llamadasGemini++;
@@ -525,36 +525,17 @@ describe('ChatbotService: intenciones estáticas y persistencia', () => {
       });
     });
 
-    const registros: unknown[][] = [];
-    const consoleWarnOriginal = console.warn;
-    console.warn = (...args: unknown[]) => registros.push(args);
-
-    let resultado: Awaited<ReturnType<typeof servicio.procesarPregunta>>;
-    try {
-      resultado = await servicio.procesarPregunta(
-        '¿Qué emprendimientos hay en el parque?',
-      );
-    } finally {
-      console.warn = consoleWarnOriginal;
-    }
+    const resultado = await servicio.procesarPregunta(
+      '¿Qué emprendimientos hay en el parque?',
+    );
 
     assert.match(resultado.respuesta, /no hay emprendimientos publicados/i);
-    assert.equal(llamadasGemini, 1);
+    assert.equal(llamadasGemini, 0);
     assert.doesNotMatch(resultado.respuesta, /detalle privado/);
-    assert.deepEqual(registros, [
-      [
-        'Falló Gemini; se intenta la clasificación FAQ local.',
-        {
-          errorType: 'ApiError',
-          httpStatus: 429,
-          errorCode: 'RESOURCE_EXHAUSTED',
-        },
-      ],
-    ]);
-    assert.doesNotMatch(JSON.stringify(registros), /credencial|authorization|privada/);
+    assert.equal(resultado.fallbackActivado, false);
   });
 
-  test('usa FAQ local ante 503 para una pregunta de ubicacion', async () => {
+  test('responde la ubicación localmente sin depender de Gemini', async () => {
     let llamadasGemini = 0;
     const { servicio } = await crearServicio(async () => {
       llamadasGemini++;
@@ -567,13 +548,13 @@ describe('ChatbotService: intenciones estáticas y persistencia', () => {
         'Donde esta ubicado el Parque Nacional Diria?',
       );
       assert.match(respuesta.respuesta, /Guanacaste/);
-      assert.equal(llamadasGemini, 1);
+      assert.equal(llamadasGemini, 0);
     } finally {
       console.warn = original;
     }
   });
 
-  test('usa FAQ local ante timeout y devuelve una respuesta valida', async () => {
+  test('responde información local del parque sin depender de Gemini', async () => {
     let llamadasGemini = 0;
     const { servicio } = await crearServicio(async () => {
       llamadasGemini++;
@@ -584,13 +565,13 @@ describe('ChatbotService: intenciones estáticas y persistencia', () => {
     try {
       const respuesta = await servicio.procesarPregunta('Que animales hay en el parque?');
       assert.match(respuesta.respuesta, /silvestre protegida/);
-      assert.equal(llamadasGemini, 1);
+      assert.equal(llamadasGemini, 0);
     } finally {
       console.warn = original;
     }
   });
 
-  test('devuelve respuesta general si Gemini falla y la pregunta no se reconoce localmente', async () => {
+  test('distingue una pregunta desconocida de una indisponibilidad de Gemini', async () => {
     let llamadasGemini = 0;
     const { servicio } = await crearServicio(async () => {
       llamadasGemini++;
@@ -600,11 +581,110 @@ describe('ChatbotService: intenciones estáticas y persistencia', () => {
     console.warn = () => undefined;
     try {
       const respuesta = await servicio.procesarPregunta('Cual es el horario de hoy?');
-      assert.match(respuesta.respuesta, /No encontr/);
+      assert.match(respuesta.respuesta, /dificultades temporalmente/);
+      assert.match(respuesta.respuesta, /wa\.me\/50687223373/);
       assert.equal(llamadasGemini, 1);
+      assert.equal(respuesta.fallbackActivado, true);
     } finally {
       console.warn = original;
     }
+  });
+
+  test('usa el identificador de la pregunta elegida y solo acepta categorías del catálogo', async () => {
+    let llamadasGemini = 0;
+    const { servicio } = await crearServicio(async () => {
+      llamadasGemini++;
+      return null;
+    });
+
+    const elegida = await servicio.procesarPregunta('consulta seleccionada', undefined, 'contacto');
+    const identificadorInvalido = await servicio.procesarPregunta(
+      '¿Cuál es el horario de hoy?',
+      undefined,
+      'respuesta_inventada',
+    );
+
+    assert.match(elegida.respuesta, /\+506 8722 3373/);
+    assert.match(identificadorInvalido.respuesta, /No encontré/);
+    assert.equal(llamadasGemini, 1);
+  });
+
+  test('responde de forma clara ante timeout, 429 y fallos de conexión no reconocidos localmente', async () => {
+    const errores = [
+      Object.assign(new Error('rate limit'), { status: 429 }),
+      Object.assign(new Error('timed out'), { name: 'TimeoutError' }),
+      Object.assign(new Error('connection failed'), { code: 'ECONNRESET' }),
+    ];
+    const consoleWarnOriginal = console.warn;
+    const consoleInfoOriginal = console.info;
+    console.warn = () => undefined;
+    console.info = () => undefined;
+
+    try {
+      for (const error of errores) {
+        const { servicio } = await crearServicio(async () => {
+          throw error;
+        });
+        const resultado = await servicio.procesarPregunta('¿Cuál es el horario de hoy?');
+        assert.match(resultado.respuesta, /dificultades temporalmente/);
+        assert.equal(resultado.fallbackActivado, true);
+      }
+    } finally {
+      console.warn = consoleWarnOriginal;
+      console.info = consoleInfoOriginal;
+    }
+  });
+
+  test('trata una clasificación inválida como indisponibilidad, no como pregunta desconocida', async () => {
+    const { servicio } = await crearServicio(async () => {
+      throw Object.assign(new Error('invalid response'), {
+        name: 'GeminiFaqClassificationError',
+      });
+    });
+    const consoleWarnOriginal = console.warn;
+    const consoleInfoOriginal = console.info;
+    console.warn = () => undefined;
+    console.info = () => undefined;
+
+    try {
+      const resultado = await servicio.procesarPregunta('¿Cuál es el horario de hoy?');
+      assert.match(resultado.respuesta, /dificultades temporalmente/);
+      assert.equal(resultado.fallbackActivado, true);
+    } finally {
+      console.warn = consoleWarnOriginal;
+      console.info = consoleInfoOriginal;
+    }
+  });
+
+  test('mantiene respuestas y usuarios separados en consultas consecutivas y concurrentes', async () => {
+    const { servicio, guardadas } = await crearServicio(async (message) => {
+      await new Promise((resolve) =>
+        setTimeout(resolve, message.includes('uno') ? 20 : 1),
+      );
+      return message.includes('uno') ? 'ubicacion' : 'contacto';
+    });
+    const [primera, segunda] = await Promise.all([
+      servicio.procesarPregunta('consulta uno', 11),
+      servicio.procesarPregunta('consulta dos', 22),
+    ]);
+    const tercera = await servicio.procesarPregunta('consulta uno', 11);
+
+    assert.match(primera.respuesta, /Guanacaste/);
+    assert.match(segunda.respuesta, /\+506 8722 3373/);
+    assert.match(tercera.respuesta, /Guanacaste/);
+    assert.equal(guardadas.length, 3);
+    assert.deepEqual(
+      guardadas.map((registro) => ({
+        pregunta: registro.mensajeUsuario,
+        respuesta: registro.respuestaChatbot,
+        usuario: (registro.usuario as { id: number }).id,
+      })),
+      [
+        { pregunta: 'consulta dos', respuesta: segunda.respuesta, usuario: 22 },
+        { pregunta: 'consulta uno', respuesta: primera.respuesta, usuario: 11 },
+        { pregunta: 'consulta uno', respuesta: tercera.respuesta, usuario: 11 },
+      ],
+    );
   });
 
   test('conserva saludos y despedidas como respuestas deterministas', async () => {

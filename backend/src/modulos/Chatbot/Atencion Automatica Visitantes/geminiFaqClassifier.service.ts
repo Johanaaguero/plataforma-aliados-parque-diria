@@ -19,6 +19,13 @@ export interface FaqClassifier {
   classify(message: string): Promise<FaqId | null>;
 }
 
+export class GeminiFaqClassificationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'GeminiFaqClassificationError';
+  }
+}
+
 export interface SafeGeminiErrorMetadata {
   errorType: string;
   httpStatus?: number;
@@ -62,7 +69,7 @@ export const getSafeGeminiErrorMetadata = (
   };
 };
 
-/** Only temporary provider failures use the local FAQ classifier. */
+/** Transient provider failures and invalid classifications activate local fallback. */
 export const shouldUseLocalFaqFallback = (error: unknown): boolean => {
   const metadata = getSafeGeminiErrorMetadata(error);
   if (metadata.httpStatus === 429 || metadata.httpStatus === 503) return true;
@@ -73,11 +80,40 @@ export const shouldUseLocalFaqFallback = (error: unknown): boolean => {
   const name = typeof details.name === 'string' ? details.name.toLowerCase() : '';
   const code = typeof details.code === 'string' ? details.code.toUpperCase() : '';
   return (
+    name === 'geminifaqclassificationerror' ||
     name.includes('timeout') ||
     name === 'aborterror' ||
     code.includes('TIMEOUT') ||
     code === 'ETIMEDOUT' ||
-    code === 'ABORT_ERR'
+    code === 'ABORT_ERR' ||
+    code === 'ECONNRESET' ||
+    code === 'ECONNREFUSED' ||
+    code === 'ENOTFOUND' ||
+    code === 'EAI_AGAIN' ||
+    code === 'ECONNABORTED' ||
+    name === 'typeerror' && /fetch|network|connect/i.test(
+      typeof details.message === 'string' ? details.message : '',
+    )
+  );
+};
+
+const debeReintentarErrorGemini = (error: unknown): boolean => {
+  const metadata = getSafeGeminiErrorMetadata(error);
+  if (metadata.httpStatus === 429 || metadata.httpStatus === 503) return true;
+  const details = typeof error === 'object' && error !== null
+    ? error as Record<string, unknown>
+    : {};
+  const code = typeof details.code === 'string' ? details.code.toUpperCase() : '';
+  const name = typeof details.name === 'string' ? details.name.toLowerCase() : '';
+  return (
+    shouldUseLocalFaqFallback(error) &&
+    (name.includes('timeout') ||
+      name === 'aborterror' ||
+      name === 'typeerror' ||
+      code.startsWith('ECONN') ||
+      code === 'ENOTFOUND' ||
+      code === 'EAI_AGAIN' ||
+      code === 'ABORT_ERR')
   );
 };
 
@@ -92,15 +128,15 @@ const normalizarConsulta = (texto: string) => texto
 const REGLAS_FAQ: Array<{ id: FaqId; patrones: RegExp[] }> = [
   { id: 'objetivo_asociacion', patrones: [/\b(objetivo|proposito|meta|mision|labor|funcion)\b/, /\b(para que|que busca|que pretende)\b/] },
   { id: 'como_llegar', patrones: [/\b(como llego|como llegar|llegar|ruta|camino|carretera|indicaciones|direccion|por donde se va|mapa)\b/] },
-  { id: 'ubicacion', patrones: [/\b(donde (queda|esta|se encuentra|se ubica)|ubicacion|ubicado|ubicada|provincia|canton|sector|zona|arado|guanacaste)\b/] },
+  { id: 'ubicacion', patrones: [/\b(donde (queda|esta|se encuentra|se ubica)|ubicacion|ubicado|ubicada|provincia|canton|arado|guanacaste)\b/] },
   { id: 'reservas', patrones: [/\b(reserv|apartar|cupo|disponibilidad)\w*\b/] },
-  { id: 'incidencias', patrones: [/\b(incidencia|reportar|reporte|denunciar|problema|situacion|dano|basura|tala)\w*\b/] },
+  { id: 'incidencias', patrones: [/\b(incidencia|reportar|reporte|denunciar|dano|basura|tala)\w*\b/, /\b(problema|situacion)\w*\b.*\b(parque|ambiental|sendero|basura|arbol)\b/] },
   { id: 'contacto', patrones: [/\b(contact|telefono|numero|llamar|comunicar|whatsapp|correo|email)\w*\b/, /\b(como los localizo|como me comunico)\b/] },
   { id: 'emprendimientos', patrones: [/\b(emprendimiento|negocio|producto|artesania|vendedor|emprendedor)\w*\b/] },
   { id: 'eventos', patrones: [/\b(evento|actividad|capacitacion|taller|charla)\w*\b/] },
-  { id: 'servicios', patrones: [/\b(servicio|opciones|plataforma|sistema|ofrece|funciones)\w*\b/] },
+  { id: 'servicios', patrones: [/\b(servicio|plataforma)\w*\b/, /\b(opciones?|funciones?)\b.*\b(ofrece|sistema|plataforma|servicios?)\b/, /\b(ofrece|ofrecen)\b.*\b(plataforma|sistema|servicios?)\b/] },
   { id: 'asociacion', patrones: [/\b(asociacion|aliados)\b/, /\b(quienes son|que es la asociacion)\b/] },
-  { id: 'informacion_parque', patrones: [/\b(parque|flora|fauna|sendero|naturaleza|animales|plantas|silvestre|conservacion)\w*\b/] },
+  { id: 'informacion_parque', patrones: [/\b(flora|fauna|sendero|naturaleza|animales|plantas|silvestre|conservacion)\w*\b/, /\b(parque nacional|informacion del parque|sobre el parque)\b/] },
 ];
 
 /** Classifies only recognized intents; callers must use the approved FAQ answer catalog. */
@@ -131,7 +167,9 @@ export class GeminiFaqClassifier implements FaqClassifier {
 
   async classify(message: string): Promise<FaqId | null> {
     const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) return null;
+    if (!apiKey) {
+      throw new GeminiFaqClassificationError('Gemini API key is unavailable');
+    }
 
     const client = this.createClient({
       apiKey,
@@ -177,7 +215,7 @@ export class GeminiFaqClassifier implements FaqClassifier {
       try {
         result = await generarContenido();
       } catch (error) {
-        if (getSafeGeminiErrorMetadata(error).httpStatus !== 503) throw error;
+        if (!debeReintentarErrorGemini(error)) throw error;
         await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
         result = await generarContenido();
       }
@@ -194,7 +232,7 @@ export class GeminiFaqClassifier implements FaqClassifier {
       parsed = JSON.parse(result.text ?? '');
     } catch {
       console.info('Gemini classification diagnostic', { outcome: 'format_error' });
-      return null;
+      throw new GeminiFaqClassificationError('Gemini returned an invalid classification');
     }
 
     if (
@@ -204,7 +242,7 @@ export class GeminiFaqClassifier implements FaqClassifier {
       typeof parsed.faqId !== 'string'
     ) {
       console.info('Gemini classification diagnostic', { outcome: 'format_error' });
-      return null;
+      throw new GeminiFaqClassificationError('Gemini returned an invalid classification');
     }
     if (parsed.faqId === 'ninguna') {
       console.info('Gemini classification diagnostic', { outcome: 'none' });
@@ -212,7 +250,7 @@ export class GeminiFaqClassifier implements FaqClassifier {
     }
     if (!FAQ_IDS.includes(parsed.faqId as FaqId)) {
       console.info('Gemini classification diagnostic', { outcome: 'invalid_identifier' });
-      return null;
+      throw new GeminiFaqClassificationError('Gemini returned an invalid category');
     }
 
     const faqId = parsed.faqId as FaqId;
