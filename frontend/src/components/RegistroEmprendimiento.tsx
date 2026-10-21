@@ -761,6 +761,9 @@ function RegistroEmprendimiento({ onExito }: Props) {
         esBorrador
           ? 'El borrador del emprendimiento se guardó correctamente.'
           : 'El emprendimiento se registró correctamente.',
+        esBorrador
+          ? 'Borrador de emprendimiento guardado correctamente'
+          : '¡Emprendimiento registrado con éxito!',
       );
       // Al guardar un borrador se conserva la categoría elegida para que el
       // usuario pueda seguir completándolo sin tener que seleccionarla otra vez.
