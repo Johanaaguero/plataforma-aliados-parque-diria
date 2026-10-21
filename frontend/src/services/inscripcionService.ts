@@ -43,7 +43,6 @@ export interface ReservaResponse extends DatosReserva {
   esPago?: boolean;
   precio?: number | null;
   politicasCancelacion?: string | null;
-  fechaExpiracionPreReserva?: string | null;
   numeroTicket?: string | null;
 }
 
@@ -74,16 +73,22 @@ export async function inscribirseEnEvento(
 export async function crearReserva(
   eventoId: number,
   datos: DatosReserva,
+  comprobante?: File,
 ): Promise<ReservaResponse> {
+  const cuerpo = comprobante ? new FormData() : JSON.stringify(datos);
+  if (cuerpo instanceof FormData && comprobante) {
+    Object.entries(datos).forEach(([campo, valor]) => cuerpo.append(campo, valor));
+    cuerpo.append('comprobante', comprobante);
+  }
   return api.solicitar<ReservaResponse>(
     `/eventos-capacitaciones/${eventoId}/reserva`,
     {
       method: 'POST',
-      body: JSON.stringify(datos),
+      body: cuerpo,
     },
     {
       incluirAuth: true,
-      incluirContentType: true,
+      incluirContentType: !comprobante,
       desempaquetarData: true,
       mensajeError:
         'No se pudo enviar la solicitud de inscripción.',
@@ -136,4 +141,18 @@ export async function subirComprobanteReserva(reservaId: number, comprobante: Fi
     desempaquetarData: true,
     mensajeError: 'No se pudo subir el comprobante de pago.',
   });
+}
+
+export async function obtenerComprobanteReserva(
+  reservaId: number,
+): Promise<Blob> {
+  if (!Number.isSafeInteger(reservaId) || reservaId <= 0) {
+    throw new Error('La reserva no es válida.');
+  }
+
+  return api.solicitarBlob(
+    `/reservas/${reservaId}/comprobante`,
+    { method: 'GET' },
+    'No se pudo obtener el comprobante de pago.',
+  );
 }

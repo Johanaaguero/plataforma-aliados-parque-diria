@@ -12,6 +12,7 @@ import {
   Reserva,
   EstadoReserva,
 } from '../../../models/Reserva';
+import { ComprobantePago } from '../../../models/ComprobantePago';
 
 import { EventosCapacitaciones } from '../../../models/EventosCapacitaciones';
 
@@ -41,9 +42,14 @@ export interface InscripcionAdministrativaDTO {
   estado: string;
   origen: 'participante' | 'reserva';
   esPago?: boolean;
+  precio?: number | null;
   comprobanteUrl?: string | null;
   motivoRechazo?: string | null;
   numeroTicket?: string | null;
+  datosDevolucion?: Reserva['datosDevolucion'];
+  fechaCancelacion?: Date | string | null;
+  devolucionProcesadaEn?: Date | string | null;
+  referenciaDevolucion?: string | null;
 }
 
 export const listarInscripcionesAdministrativas =
@@ -67,6 +73,7 @@ export const listarInscripcionesAdministrativas =
         'evento.nombre AS nombreActividad',
         'evento.tipoActividad AS tipoActividad',
         'evento.esPago AS esPago',
+        'evento.precio AS precio',
         "DATE_FORMAT(evento.fecha, '%Y-%m-%d') AS fechaActividad",
         'participante.createdAt AS fechaInscripcion',
         'participante.numeroTicket AS numeroTicket',
@@ -103,6 +110,7 @@ export const listarInscripcionesAdministrativas =
           estado: 'confirmada',
           origen: 'participante',
           esPago: Boolean(registro.esPago),
+          precio: registro.precio == null ? null : Number(registro.precio),
           comprobanteUrl: null,
           numeroTicket: registro.numeroTicket ?? null,
         };
@@ -130,8 +138,13 @@ export const listarInscripcionesAdministrativas =
         'evento.nombre AS nombreActividad',
         'evento.tipoActividad AS tipoActividad',
         'evento.esPago AS esPago',
+        'evento.precio AS precio',
         'reserva.comprobanteUrl AS comprobanteUrl',
         'reserva.motivoRechazo AS motivoRechazo',
+        'reserva.datosDevolucion AS datosDevolucion',
+        'reserva.fechaCancelacion AS fechaCancelacion',
+        'reserva.devolucionProcesadaEn AS devolucionProcesadaEn',
+        'reserva.referenciaDevolucion AS referenciaDevolucion',
         "DATE_FORMAT(evento.fecha, '%Y-%m-%d') AS fechaActividad",
         'reserva.createdAt AS fechaInscripcion',
         'reserva.estado AS estado',
@@ -167,9 +180,14 @@ export const listarInscripcionesAdministrativas =
         estado: registro.estado,
         origen: 'reserva',
         esPago: Boolean(registro.esPago),
+        precio: registro.precio == null ? null : Number(registro.precio),
         comprobanteUrl: registro.comprobanteUrl ?? null,
         motivoRechazo: registro.motivoRechazo ?? null,
         numeroTicket: registro.numeroTicket ?? null,
+        datosDevolucion: registro.datosDevolucion ? (typeof registro.datosDevolucion === 'string' ? JSON.parse(registro.datosDevolucion) : registro.datosDevolucion) : null,
+        fechaCancelacion: serializarFechaUtc(registro.fechaCancelacion),
+        devolucionProcesadaEn: serializarFechaUtc(registro.devolucionProcesadaEn),
+        referenciaDevolucion: registro.referenciaDevolucion ?? null,
       }));
 
     return [...participantes, ...reservasFormateadas].sort(
@@ -187,6 +205,7 @@ export const actualizarEstadoReserva = async (
 ) => {
   return AppDataSource.transaction(async (manager) => {
     const reservasRepo = manager.getRepository(Reserva);
+    const comprobantesRepo = manager.getRepository(ComprobantePago);
     const participantesRepo = manager.getRepository(Participantes);
     const eventosRepo = manager.getRepository(EventosCapacitaciones);
 
@@ -229,6 +248,12 @@ export const actualizarEstadoReserva = async (
     const estadoAnterior = reserva.estado;
 
     if (estado === EstadoReserva.APROBADA) {
+      const tieneComprobante = reserva.comprobanteUrl || await comprobantesRepo.existsBy({ reservaId: reserva.id });
+      if (evento.esPago && !tieneComprobante) {
+        const error = new Error('La reserva pagada requiere comprobante.');
+        error.name = 'PaymentProofRequiredError';
+        throw error;
+      }
       const participanteExistente = await participantesRepo.findOne({
         where: {
           usuarioId: reserva.usuarioId,
@@ -304,3 +329,15 @@ export const actualizarEstadoReserva = async (
     return reservaActualizada;
   });
 };
+
+export const registrarDevolucionProcesada = async (reservaId: number, referencia: string, actorId: number | null) => AppDataSource.transaction(async (manager) => {
+  const repo = manager.getRepository(Reserva);
+  const reserva = await repo.findOne({ where: { id: reservaId }, relations: { eventoCapacitacion: true } });
+  if (!reserva) { const error = new Error('La reserva no existe.'); error.name = 'NotFoundError'; throw error; }
+  if (!reserva.eventoCapacitacion.esPago || reserva.estado !== EstadoReserva.CANCELADA || !reserva.datosDevolucion) { const error = new Error('La reserva no tiene una devolución pendiente válida.'); error.name = 'InvalidRefundStateError'; throw error; }
+  if (!referencia.trim()) { const error = new Error('La referencia de devolución es obligatoria.'); error.name = 'RefundReferenceRequiredError'; throw error; }
+  reserva.devolucionProcesadaEn = new Date(); reserva.referenciaDevolucion = referencia.trim();
+  await repo.save(reserva);
+  await registrarAuditoria({ usuarioId: actorId, action: 'REGISTRAR_DEVOLUCION_PROCESADA', description: `Registro administrativo de devolución para reserva #${reserva.id}`, status: 'success', details: JSON.stringify({ reservaId, referencia: reserva.referenciaDevolucion }) }, manager);
+  return reserva;
+});

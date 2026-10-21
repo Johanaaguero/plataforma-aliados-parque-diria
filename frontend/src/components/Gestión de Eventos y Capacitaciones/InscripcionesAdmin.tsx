@@ -2,8 +2,10 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   actualizarEstadoReserva,
   obtenerInscripcionesAdministrativas,
+  registrarDevolucionProcesada,
   type InscripcionAdministrativa
 } from '../../services/inscripcionesAdminService';
+import { obtenerComprobanteReserva } from '../../services/inscripcionService';
 
 type FiltroTemporal = 'todos' | 'proximos' | 'pasados';
 
@@ -28,6 +30,22 @@ const formatearFecha = (fecha?: string | null) => {
     month: 'short',
     year: 'numeric'
   });
+};
+
+const formatearMonto = (monto?: number | null) => {
+  if (monto == null) return 'No disponible';
+
+  return new Intl.NumberFormat('es-CR', {
+    style: 'currency',
+    currency: 'CRC',
+    maximumFractionDigits: 0,
+  }).format(monto);
+};
+
+const describirDestinoDevolucion = (datos: InscripcionAdministrativa['datosDevolucion']) => {
+  if (!datos) return 'No disponible';
+  if (datos.tipo === 'sinpe_movil') return datos.telefono;
+  return `${datos.iban} (${datos.banco})`;
 };
 
 const formatearTipoActividad = (tipo?: string | null) => {
@@ -106,7 +124,6 @@ const formatearEstado = (estado?: string | null) => {
   if (estado === 'confirmada') return 'Confirmada';
   if (estado === 'rechazada') return 'Rechazada';
   if (estado === 'cancelada') return 'Cancelada';
-
   return estado;
 };
 
@@ -250,6 +267,10 @@ export default function InscripcionesAdmin() {
   const [mensajeExito, setMensajeExito] = useState('');
   const [reservaARechazar, setReservaARechazar] = useState<InscripcionAdministrativa | null>(null);
   const [motivoRechazo, setMotivoRechazo] = useState('');
+  const [reservaConComprobanteAbierto, setReservaConComprobanteAbierto] = useState<number | null>(null);
+  const [reservaAProcesarDevolucion, setReservaAProcesarDevolucion] = useState<InscripcionAdministrativa | null>(null);
+  const [referenciaDevolucion, setReferenciaDevolucion] = useState('');
+  const [procesandoDevolucion, setProcesandoDevolucion] = useState(false);
 
   const cargarInscripciones = async () => {
     try {
@@ -338,6 +359,62 @@ export default function InscripcionesAdmin() {
     } finally {
       setReservaEnActualizacion(null);
       setAccionEnActualizacion(null);
+    }
+  };
+
+  const abrirComprobante = async (reservaId: number) => {
+    if (reservaConComprobanteAbierto !== null) return;
+
+    const ventana = window.open('', '_blank');
+    if (!ventana) {
+      setError('El navegador bloqueó la nueva pestaña. Permite las ventanas emergentes para ver el comprobante.');
+      return;
+    }
+
+    setReservaConComprobanteAbierto(reservaId);
+    try {
+      const comprobante = await obtenerComprobanteReserva(reservaId);
+      const urlTemporal = URL.createObjectURL(comprobante);
+      ventana.location.replace(urlTemporal);
+      window.setTimeout(() => URL.revokeObjectURL(urlTemporal), 60_000);
+    } catch (err: unknown) {
+      ventana.close();
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'No se pudo obtener el comprobante de pago.',
+      );
+    } finally {
+      setReservaConComprobanteAbierto(null);
+    }
+  };
+
+  const confirmarDevolucionProcesada = async () => {
+    if (!reservaAProcesarDevolucion || !referenciaDevolucion.trim() || procesandoDevolucion) return;
+
+    try {
+      setProcesandoDevolucion(true);
+      setError('');
+      const actualizada = await registrarDevolucionProcesada(
+        reservaAProcesarDevolucion.id,
+        referenciaDevolucion.trim(),
+      );
+      setInscripciones((actuales) => actuales.map((inscripcion) => (
+        inscripcion.id === actualizada.id
+          ? {
+              ...inscripcion,
+              devolucionProcesadaEn: actualizada.devolucionProcesadaEn,
+              referenciaDevolucion: actualizada.referenciaDevolucion,
+            }
+          : inscripcion
+      )));
+      setMensajeExito('La devolución fue registrada como procesada. No se realizó un pago automático.');
+      setReservaAProcesarDevolucion(null);
+      setReferenciaDevolucion('');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'No se pudo registrar la devolución como procesada.');
+    } finally {
+      setProcesandoDevolucion(false);
     }
   };
 
@@ -757,6 +834,30 @@ const registrosFiltrados = useMemo(() => {
                       </div>
                     </div>
 
+                    {inscripcion.estado === 'cancelada' && inscripcion.esPago && inscripcion.datosDevolucion && (
+                      <div className="mt-4 overflow-hidden rounded-2xl border border-sky-200 bg-sky-50/70 dark:border-sky-900/60 dark:bg-sky-950/20">
+                        <div className="border-b border-sky-200 px-4 py-3 dark:border-sky-900/60">
+                          <h3 className="text-sm font-bold text-sky-900 dark:text-sky-100">Datos de devolución</h3>
+                          <p className="mt-1 text-xs text-sky-800 dark:text-sky-200">El registro confirma gestión administrativa; no ejecuta un pago automático.</p>
+                        </div>
+                        <div className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4">
+                          <DatoFormulario etiqueta="Método" valor={inscripcion.datosDevolucion.tipo === 'sinpe_movil' ? 'SINPE Móvil' : 'Transferencia bancaria'} icono={<IconoTelefono />} />
+                          <DatoFormulario etiqueta="Destino" valor={describirDestinoDevolucion(inscripcion.datosDevolucion)} icono={<IconoIdentificacion />} />
+                          <DatoFormulario etiqueta="Monto" valor={formatearMonto(inscripcion.precio)} icono={<IconoActividad />} />
+                          <DatoFormulario etiqueta="Fecha de cancelación" valor={formatearFecha(inscripcion.fechaCancelacion)} icono={<IconoCalendario />} />
+                        </div>
+                        <div className="flex flex-col gap-3 border-t border-sky-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between dark:border-sky-900/60">
+                          <div>
+                            <p className="text-sm font-semibold text-sky-900 dark:text-sky-100">Estado: {inscripcion.devolucionProcesadaEn ? 'Procesada' : 'Pendiente'}</p>
+                            {inscripcion.devolucionProcesadaEn && <p className="text-xs text-sky-800 dark:text-sky-200">Procesada el {formatearFecha(inscripcion.devolucionProcesadaEn)}{inscripcion.referenciaDevolucion ? ` · Referencia: ${inscripcion.referenciaDevolucion}` : ''}</p>}
+                          </div>
+                          {!inscripcion.devolucionProcesadaEn && (
+                            <button type="button" onClick={() => { setReservaAProcesarDevolucion(inscripcion); setReferenciaDevolucion(''); }} className="rounded-xl bg-sky-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-sky-800">Registrar devolución procesada</button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
                     {puedeGestionar && (
                       <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/50 dark:bg-amber-950/20">
                         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -767,7 +868,17 @@ const registrosFiltrados = useMemo(() => {
 
                           <div className="flex flex-col gap-2 sm:flex-row">
                             {inscripcion.esPago && inscripcion.comprobanteUrl && (
-                              <a href={`${(import.meta.env.VITE_API_URL?.trim() || 'http://localhost:3000').replace(/\/+$/, '')}${inscripcion.comprobanteUrl}`} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center rounded-xl border border-sky-200 bg-white px-4 py-2.5 text-sm font-semibold text-sky-700 hover:bg-sky-50">Ver comprobante</a>
+                              <button
+                                type="button"
+                                onClick={() => void abrirComprobante(inscripcion.id)}
+                                disabled={isSubmitting || reservaConComprobanteAbierto !== null}
+                                aria-busy={reservaConComprobanteAbierto === inscripcion.id}
+                                className="inline-flex items-center justify-center rounded-xl border border-sky-200 bg-white px-4 py-2.5 text-sm font-semibold text-sky-700 hover:bg-sky-50 disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                {reservaConComprobanteAbierto === inscripcion.id
+                                  ? 'Abriendo comprobante...'
+                                  : 'Ver comprobante'}
+                              </button>
                             )}
                             <button
                               type="button"
@@ -833,6 +944,21 @@ const registrosFiltrados = useMemo(() => {
             <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <button type="button" onClick={() => { setReservaARechazar(null); setMotivoRechazo(''); }} disabled={reservaEnActualizacion !== null} className="rounded-xl border border-slate-200 bg-white/70 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-60 dark:border-white/10 dark:bg-white/5 dark:text-slate-200">Cancelar</button>
               <button type="button" onClick={() => void cambiarEstadoReserva(reservaARechazar.id, 'rechazada', motivoRechazo)} disabled={!motivoRechazo.trim() || reservaEnActualizacion !== null} className="rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60">{reservaEnActualizacion !== null ? 'Rechazando...' : 'Confirmar Rechazo'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {reservaAProcesarDevolucion && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="titulo-devolucion">
+          <div className="w-full max-w-lg rounded-2xl border border-white/20 bg-white p-6 shadow-xl dark:bg-slate-900">
+            <h2 id="titulo-devolucion" className="text-xl font-bold text-slate-900 dark:text-white">Registrar devolución procesada</h2>
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">Registra la referencia administrativa. Esta acción no envía dinero automáticamente.</p>
+            <label className="mt-5 block text-sm font-semibold text-slate-800 dark:text-slate-100">Referencia de la operación
+              <input value={referenciaDevolucion} onChange={(event) => setReferenciaDevolucion(event.target.value)} disabled={procesandoDevolucion} maxLength={120} className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-950" />
+            </label>
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button type="button" onClick={() => { setReservaAProcesarDevolucion(null); setReferenciaDevolucion(''); }} disabled={procesandoDevolucion} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 dark:border-slate-700 dark:text-slate-200">Cancelar</button>
+              <button type="button" onClick={() => void confirmarDevolucionProcesada()} disabled={!referenciaDevolucion.trim() || procesandoDevolucion} className="rounded-xl bg-sky-700 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">{procesandoDevolucion ? 'Registrando...' : 'Confirmar procesamiento'}</button>
             </div>
           </div>
         </div>

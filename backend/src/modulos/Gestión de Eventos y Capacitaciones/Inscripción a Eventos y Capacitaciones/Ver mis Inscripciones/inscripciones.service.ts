@@ -28,6 +28,9 @@ export interface MiInscripcionDTO {
   fechaActividad: string | null;
   fechaInscripcion: Date | string | null;
   origen?: 'participante' | 'reserva';
+  esPago?: boolean;
+  precio?: number | null;
+  politicasCancelacion?: string | null;
   motivoRechazo?: string | null;
   numeroTicket?: string | null;
   comprobanteUrl?: string | null;
@@ -100,7 +103,7 @@ export const listarMisInscripciones = async (
   for (const reserva of reservas) {
     const participante = participantesPorEvento.get(reserva.eventoCapacitacionId);
 
-    if (reserva.estado === EstadoReservaNueva.APROBADA && participante) {
+    if ([EstadoReservaNueva.APROBADA, EstadoReservaNueva.CANCELADA].includes(reserva.estado) && participante) {
       const indiceParticipante = resultado.findIndex(
         (inscripcion) =>
           inscripcion.id === participante.id &&
@@ -113,10 +116,17 @@ export const listarMisInscripciones = async (
         resultado[indiceParticipante] = {
           ...inscripcionParticipante,
           id: reserva.id,
-          estado: EstadoReservaNueva.APROBADA,
+          estado: reserva.estado,
           numeroTicket: reserva.numeroTicket ?? participante.numeroTicket ?? null,
           fechaInscripcion: serializarFechaUtc(reserva.createdAt),
+          fechaCancelacion: serializarFechaUtc(reserva.fechaCancelacion) ?? inscripcionParticipante.fechaCancelacion,
           origen: 'reserva',
+          esPago: reserva.eventoCapacitacion.esPago,
+          precio: reserva.eventoCapacitacion.precio,
+          politicasCancelacion: reserva.eventoCapacitacion.politicasCancelacion,
+          comprobanteUrl: reserva.comprobanteUrl ?? null,
+          metodoPago: reserva.metodoPago ?? reserva.eventoCapacitacion.tipoPago ?? null,
+          datosDevolucion: reserva.datosDevolucion ?? null,
         };
         reservasUnificadas.add(reserva.id);
       }
@@ -144,7 +154,7 @@ export const listarMisInscripciones = async (
       metodoPago: reserva.metodoPago ?? reserva.eventoCapacitacion.tipoPago ?? null,
       datosDevolucion: reserva.datosDevolucion ?? null,
       numeroTicket: reserva.numeroTicket ?? null,
-      fechaCancelacion: null,
+      fechaCancelacion: serializarFechaUtc(reserva.fechaCancelacion),
       fechaActividad: serializarFechaCalendario(reserva.eventoCapacitacion.fecha),
       fechaInscripcion: serializarFechaUtc(reserva.createdAt),
       origen: 'reserva' as const,
@@ -277,7 +287,16 @@ export const cancelarReserva = async (
     }
 
     if (evento.esPago) {
-      const fechaEvento = new Date(`${evento.fecha ?? ''}T${evento.hora ?? '00:00'}:00`);
+      const fecha = serializarFechaCalendario(evento.fecha);
+      const hora = typeof evento.hora === 'string' ? evento.hora : '';
+      const fechaHora = fecha && /^(\d{4})-(\d{2})-(\d{2})$/.exec(fecha);
+      const horaPartes = /^(\d{1,2}):(\d{2})(?::(\d{2}))?$/.exec(hora);
+      const fechaEvento = fechaHora && horaPartes
+        ? new Date(
+          Number(fechaHora[1]), Number(fechaHora[2]) - 1, Number(fechaHora[3]),
+          Number(horaPartes[1]), Number(horaPartes[2]), Number(horaPartes[3] ?? 0),
+        )
+        : new Date(Number.NaN);
       if (Number.isNaN(fechaEvento.getTime()) || fechaEvento.getTime() - Date.now() < 48 * 60 * 60 * 1000) {
         const error = new Error('Las actividades de pago solo pueden cancelarse con al menos 48 horas de anticipación.');
         error.name = 'PaymentCancellationWindowError';
@@ -312,6 +331,7 @@ export const cancelarReserva = async (
 
     const fechaCancelacion = new Date();
     reserva.estado = EstadoReservaNueva.CANCELADA;
+    reserva.fechaCancelacion = fechaCancelacion;
     await reservasRepo.save(reserva);
     if (evento.cuposDisponibles !== null) {
       evento.cuposDisponibles += 1;

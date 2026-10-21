@@ -28,6 +28,7 @@ import { ConversacionChatbot } from './models/ConversacionChatbot';
 import { PreguntasFrecuentes } from './models/PreguntasFrecuentes';
 import { ComentarioIncidencia } from './models/ComentarioIncidencia';
 import { ConfiguracionVisual } from './models/ConfiguracionVisual';
+import { ComprobantePago } from './models/ComprobantePago';
 
 dotenv.config();
 
@@ -79,6 +80,7 @@ timezone: '-06:00',
     PreguntasFrecuentes,
     ComentarioIncidencia,
     ConfiguracionVisual,
+    ComprobantePago,
 
   ],
  

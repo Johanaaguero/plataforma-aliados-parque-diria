@@ -117,10 +117,21 @@ export class Reserva {
   @Column({ type: 'json', name: 'datos_devolucion', nullable: true })
   datosDevolucion!: { tipo: 'sinpe_movil' | 'transferencia_bancaria'; telefono?: string; iban?: string; banco?: string } | null;
 
+  @Column({ type: 'datetime', name: 'devolucion_procesada_en', nullable: true })
+  devolucionProcesadaEn!: Date | null;
+
+  @Column({ type: 'varchar', length: 120, name: 'referencia_devolucion', nullable: true })
+  referenciaDevolucion!: string | null;
+
   @Column({ type: 'text', name: 'motivo_rechazo', nullable: true })
   motivoRechazo!: string | null;
 
+  @Column({ type: 'datetime', name: 'fecha_cancelacion', nullable: true })
+  fechaCancelacion!: Date | null;
+
   @Column({ type: 'datetime', name: 'fecha_expiracion_pre_reserva', nullable: true })
+  // Se conserva temporalmente por compatibilidad con el esquema histórico;
+  // el flujo actual no crea pre-reservas ni asigna vencimientos.
   fechaExpiracionPreReserva!: Date | null;
 
   @CreateDateColumn({

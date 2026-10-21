@@ -14,6 +14,7 @@ const inscripcionController = new InscripcionController();
 export const reservasRouter = Router();
 
 reservasRouter.post('/:id/comprobante', verificarToken, uploadComprobante.single('comprobante'), (req, res) => inscripcionController.subirComprobante(req, res));
+reservasRouter.get('/:id/comprobante', verificarToken, (req, res) => inscripcionController.descargarComprobante(req, res));
 
 reservasRouter.patch(
   '/:id/cancelar',
