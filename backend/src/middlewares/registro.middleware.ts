@@ -3,10 +3,28 @@ import multer from 'multer';
 
 export const errorMiddleware = (
   error: unknown,
-  _req: Request,
+  req: Request,
   res: Response,
   _next: NextFunction,
 ) => {
+  if (
+    error instanceof Error &&
+    'status' in error &&
+    error.status === 413
+  ) {
+    const esSolicitudEvidencia =
+      req.method === 'POST' &&
+      /^\/api\/incidencias\/\d+\/evidencias\/?$/.test(req.path);
+
+    return res.status(413).json({
+      ok: false,
+      code: 'FILE_TOO_LARGE',
+      message: esSolicitudEvidencia
+        ? 'La evidencia no puede superar el límite de 20 MiB.'
+        : 'El cuerpo de la solicitud supera el límite permitido.',
+    });
+  }
+
   if (error instanceof multer.MulterError) {
     if (error.code === 'LIMIT_FILE_SIZE') {
       return res.status(413).json({

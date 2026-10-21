@@ -31,12 +31,11 @@ const cargarImagenesEvento = async (
 };
 
 export function obtenerUrlImagen(item: Record<string, any>, categoria: Categoria): string | null {
+  if (categoria === 'incidencias') return null;
+
   const imagenEvento = item.imagenes?.[0];
   const imagenEmprendimiento = item.imagenes?.find((imagen: Record<string, unknown>) => imagen.esPortada)?.imagen ?? item.imagenes?.[0]?.imagen;
-  const evidencia = item.evidencias?.find((itemEvidencia: Record<string, unknown>) => itemEvidencia.tipo === 'foto') ?? item.evidencias?.[0];
-  const imagenIncidencia = evidencia?.id ? `/api/incidencias/evidencias/${evidencia.id}/archivo` : null;
   const imagen = [
-    categoria === 'incidencias' ? imagenIncidencia : null,
     categoria === 'eventos' ? imagenEvento?.imagen : null,
     categoria === 'eventos' && imagenEvento?.id ? `/api/eventos-capacitaciones/imagenes/${imagenEvento.id}` : null,
     categoria === 'emprendimientos' ? imagenEmprendimiento : null,

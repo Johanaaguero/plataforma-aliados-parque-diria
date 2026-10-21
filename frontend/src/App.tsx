@@ -243,6 +243,39 @@ function BotonVolverInicio({
   );
 }
 
+function PantallaAccesoDenegado({
+  onVolverInicio,
+}: {
+  onVolverInicio: () => void;
+}) {
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-[#f5f7ef] px-4 py-16">
+      <section
+        className="w-full max-w-lg rounded-3xl border border-emerald-900/10 bg-white p-8 text-center shadow-xl"
+        role="alert"
+        aria-labelledby="titulo-acceso-denegado"
+      >
+        <h1
+          id="titulo-acceso-denegado"
+          className="text-2xl font-bold text-[#174D3B]"
+        >
+          Acceso denegado
+        </h1>
+        <p className="mt-3 text-sm leading-6 text-slate-600">
+          Tu cuenta no tiene permisos para acceder a esta página.
+        </p>
+        <button
+          type="button"
+          onClick={onVolverInicio}
+          className="mt-6 rounded-full bg-[#095540] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#073f31] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2"
+        >
+          Volver al inicio
+        </button>
+      </section>
+    </main>
+  );
+}
+
 function App() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -578,6 +611,15 @@ const cerrarSesionPorInactividad = () => {
       ''
     ) || '/';
 
+  const renderAccesoRestringido = () =>
+    rolAutenticado ? (
+      <PantallaAccesoDenegado
+        onVolverInicio={() => navigate('/', { replace: true })}
+      />
+    ) : (
+      <Navigate to="/login" replace />
+    );
+
  const estadoNavegacion = location.state as {
   fromDashboard?: boolean;
   seccionPublica?: 'emprendimientos' | 'eventos' | 'incidencias';
@@ -702,7 +744,7 @@ useEffect(() => {
 
   if (rutaActual === '/super-admin/dashboard') {
     if (rolAutenticado !== 'super_admin') {
-      return <Navigate to="/" replace />;
+      return renderAccesoRestringido();
     }
 
     if (mostrarCuentasBloqueadas) {
@@ -743,7 +785,7 @@ useEffect(() => {
 
   if (rutaActual === '/admin/dashboard') {
     if (rolAutenticado !== 'administrador') {
-      return <Navigate to="/" replace />;
+      return renderAccesoRestringido();
     }
 
     return (
@@ -798,7 +840,7 @@ useEffect(() => {
 
   if (rutaActual === '/notificaciones') {
   if (!rolAutenticado) {
-    return <Navigate to="/" replace />;
+      return <Navigate to="/login" replace />;
   }
 
   const rutaVolver =
@@ -821,7 +863,7 @@ useEffect(() => {
  
 if (rutaActual === '/admin/roles') {
   if (rolAutenticado !== 'administrador') {
-    return <Navigate to="/" replace />;
+    return renderAccesoRestringido();
   }
 
   return (
@@ -843,7 +885,7 @@ if (rutaActual === '/admin/roles') {
 
   if (rutaActual === '/admin/inscripciones') {
     if (rolAutenticado !== 'administrador') {
-      return <Navigate to="/" replace />;
+      return renderAccesoRestringido();
     }
 
     return (
@@ -864,7 +906,7 @@ if (rutaActual === '/admin/roles') {
 
   if (rutaActual === '/admin/reportes') {
   if (rolAutenticado !== 'administrador') {
-    return <Navigate to="/" replace />;
+    return renderAccesoRestringido();
   }
 
   return (
@@ -884,7 +926,7 @@ if (rutaActual === '/admin/roles') {
 }
   if (rutaActual === '/admin/incidencias') {
     if (rolAutenticado !== 'administrador') {
-      return <Navigate to="/" replace />;
+      return renderAccesoRestringido();
     }
 
     return (
@@ -929,7 +971,7 @@ if (rutaActual === '/admin/roles') {
 
   if (rutaActual === '/admin/comunicados') {
     if (rolAutenticado !== 'administrador' && rolAutenticado !== 'super_admin') {
-      return <Navigate to="/" replace />;
+      return renderAccesoRestringido();
     }
 
     return (
@@ -942,7 +984,7 @@ if (rutaActual === '/admin/roles') {
 
   if (rutaActual === '/admin/preguntas-frecuentes') {
     if (rolAutenticado !== 'administrador' && rolAutenticado !== 'super_admin') {
-      return <Navigate to="/" replace />;
+      return renderAccesoRestringido();
     }
 
     return (
@@ -987,6 +1029,10 @@ if (rutaActual === '/admin/roles') {
         <Bitacora />
       </section>
     );
+  }
+
+  if (rutaActual === '/bitacora') {
+    return renderAccesoRestringido();
   }
 
   /*
@@ -1045,7 +1091,7 @@ if (rutaActual === '/admin/roles') {
       'administrador';
 
     if (!esAdministrador) {
-      return <Navigate to="/" replace />;
+      return renderAccesoRestringido();
     }
 
     return (

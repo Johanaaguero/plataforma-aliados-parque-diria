@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { AppDataSource } from '../../../data-source';
 import { EventosCapacitacionesService } from './eventosCapacitaciones.service';
+import { conBloqueoNotificacionEvento } from '../../Notificaciones/Crear notificaciones Eventos/notificacionEventoLock';
 import {
   TipoActividad,
   EstadoEventoCapacitacion,
@@ -147,25 +148,33 @@ export class EventosCapacitacionesController {
         return res.status(400).json({ mensaje: 'El id debe ser numérico.' });
       }
 
-      const actualizado = await AppDataSource.transaction(async (manager) => {
-        const transactionService = new EventosCapacitacionesService(manager);
-        const actualizado = await transactionService.update(id, req.body);
-        await registrarAuditoria({
-          usuarioId: req.usuario?.id ?? null,
-          action: 'ACTUALIZAR_EVENTO_CAPACITACION',
-          description: `Actualización del evento o capacitación #${id}`,
-          ipAddress: extraerIPDelRequest(req),
-          userAgent: (req.headers['user-agent'] as string | undefined) ?? null,
-          status: 'success',
-          details: JSON.stringify({
-            eventoCapacitacionId: actualizado.id,
-            tipoActividad: actualizado.tipoActividad,
-            estado: actualizado.estado,
-            campos: datosAuditablesEvento(req.body as Record<string, unknown>),
-          }),
-        }, manager);
-        return actualizado;
-      });
+      const actualizarEnTransaccion = () =>
+        AppDataSource.transaction(async (manager) => {
+          const transactionService = new EventosCapacitacionesService(manager);
+          const actualizado = await transactionService.update(id, req.body);
+          await registrarAuditoria({
+            usuarioId: req.usuario?.id ?? null,
+            action: 'ACTUALIZAR_EVENTO_CAPACITACION',
+            description: `Actualización del evento o capacitación #${id}`,
+            ipAddress: extraerIPDelRequest(req),
+            userAgent: (req.headers['user-agent'] as string | undefined) ?? null,
+            status: 'success',
+            details: JSON.stringify({
+              eventoCapacitacionId: actualizado.id,
+              tipoActividad: actualizado.tipoActividad,
+              estado: actualizado.estado,
+              campos: datosAuditablesEvento(req.body as Record<string, unknown>),
+            }),
+          }, manager);
+          return actualizado;
+        });
+      const actualizado =
+        req.body?.estado === EstadoEventoCapacitacion.PUBLICADO
+          ? await conBloqueoNotificacionEvento(
+              id,
+              actualizarEnTransaccion,
+            )
+          : await actualizarEnTransaccion();
 
       return res.status(200).json(actualizado.toPublic());
     } catch (error) {
@@ -275,26 +284,34 @@ export class EventosCapacitacionesController {
         });
       }
 
-      const actualizado = await AppDataSource.transaction(async (manager) => {
-        const transactionService = new EventosCapacitacionesService(manager);
-        const anterior = await transactionService.obtenerDetalle(id);
-        const actualizado = await transactionService.cambiarEstado(id, estado);
-        await registrarAuditoria({
-          usuarioId: req.usuario?.id ?? null,
-          action: 'CAMBIAR_ESTADO_EVENTO_CAPACITACION',
-          description: `Cambio de estado del evento o capacitación #${id}`,
-          ipAddress: extraerIPDelRequest(req),
-          userAgent: (req.headers['user-agent'] as string | undefined) ?? null,
-          status: 'success',
-          details: JSON.stringify({
-            eventoCapacitacionId: actualizado.id,
-            tipoActividad: actualizado.tipoActividad,
-            estadoAnterior: anterior.estado,
-            estadoNuevo: actualizado.estado,
-          }),
-        }, manager);
-        return actualizado;
-      });
+      const cambiarEstadoEnTransaccion = () =>
+        AppDataSource.transaction(async (manager) => {
+          const transactionService = new EventosCapacitacionesService(manager);
+          const anterior = await transactionService.obtenerDetalle(id);
+          const actualizado = await transactionService.cambiarEstado(id, estado);
+          await registrarAuditoria({
+            usuarioId: req.usuario?.id ?? null,
+            action: 'CAMBIAR_ESTADO_EVENTO_CAPACITACION',
+            description: `Cambio de estado del evento o capacitación #${id}`,
+            ipAddress: extraerIPDelRequest(req),
+            userAgent: (req.headers['user-agent'] as string | undefined) ?? null,
+            status: 'success',
+            details: JSON.stringify({
+              eventoCapacitacionId: actualizado.id,
+              tipoActividad: actualizado.tipoActividad,
+              estadoAnterior: anterior.estado,
+              estadoNuevo: actualizado.estado,
+            }),
+          }, manager);
+          return actualizado;
+        });
+      const actualizado =
+        estado === EstadoEventoCapacitacion.PUBLICADO
+          ? await conBloqueoNotificacionEvento(
+              id,
+              cambiarEstadoEnTransaccion,
+            )
+          : await cambiarEstadoEnTransaccion();
       return res.status(200).json(actualizado.toPublic());
     } catch (error) {
       return manejarError(res, error);

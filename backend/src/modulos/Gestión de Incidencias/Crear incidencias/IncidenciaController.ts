@@ -5,12 +5,19 @@ import {
   obtenerIncidencias,
   obtenerIncidenciaPorId,
   actualizarIncidenciaAdministrativa,
+  iniciarProcesoIncidencia,
   actualizarVisibilidadIncidencia,
   finalizarSeguimientoIncidencia,
   cerrarIncidenciaPorUsuario,
   obtenerMisIncidencias,
+  obtenerActorIncidencia,
   FiltrosIncidenciaDTO,
 } from '../Crear incidencias/IncidenciaService';
+import {
+  puedeConsultarEvidencia,
+  puedeConsultarIncidencia,
+  puedeListarIncidenciasOcultas,
+} from './IncidenciaAccess';
 
 import {
   CategoriaIncidencia,
@@ -22,6 +29,15 @@ import {
 import { notificacionIncidenciaService } from '../../Notificaciones/Crear notificaciones Incidencias/NotificacionIncidenciaService';
 import { AppDataSource } from '../../../data-source';
 import { ComentarioIncidencia } from '../../../models/ComentarioIncidencia';
+import { IncidenciaHistorial } from '../../../models/IncidenciaHistorial';
+import { validarContactoAnonimo } from './ContactoAnonimo';
+import { BloqueoCodigoIncidenciaNoDisponible } from './IncidenciaCodeLock';
+import { esPrioridadIncidencia } from './IncidenciaPrioridad';
+import {
+  etiquetarCampoHistorial,
+  etiquetarValorHistorial,
+  identificarActorHistorial,
+} from './IncidenciaHistorialPresentacion';
 
 const serializarComentario = (comentario: ComentarioIncidencia) => {
   const nombreAutor = comentario.autor
@@ -197,6 +213,65 @@ export const obtenerComentariosIncidencia = async (req: Request, res: Response):
   }
 };
 
+export const obtenerHistorialCambiosIncidencia = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  const incidenciaId = Number(req.params.id);
+  if (!Number.isSafeInteger(incidenciaId) || incidenciaId <= 0) {
+    res.status(400).json({ mensaje: 'El ID de la incidencia no es válido.' });
+    return;
+  }
+
+  try {
+    const incidencia = await AppDataSource.getRepository(Incidencia).findOne({
+      where: { id: incidenciaId },
+      select: { id: true },
+    });
+    if (!incidencia) {
+      res.status(404).json({ mensaje: 'Incidencia no encontrada.' });
+      return;
+    }
+
+    const historial = await AppDataSource.getRepository(IncidenciaHistorial).find({
+      where: { incidenciaId },
+      relations: { usuario: true },
+      order: { fecha: 'ASC', id: 'ASC' },
+    });
+
+    res.status(200).json({
+      historial: historial.map((cambio) => ({
+        id: cambio.id,
+        campoModificado: cambio.campoModificado,
+        campoEtiqueta: etiquetarCampoHistorial(cambio.campoModificado),
+        valorAnterior: cambio.valorAnterior,
+        valorAnteriorEtiqueta: etiquetarValorHistorial(cambio.valorAnterior),
+        valorNuevo: cambio.valorNuevo,
+        valorNuevoEtiqueta: etiquetarValorHistorial(cambio.valorNuevo),
+        fecha: cambio.fecha,
+        tipoActor: identificarActorHistorial(
+          cambio.campoModificado,
+          cambio.valorNuevo,
+          cambio.usuarioId,
+        ),
+        usuario: cambio.usuario
+          ? {
+              id: cambio.usuario.id,
+              nombre:
+                `${cambio.usuario.nombre} ${cambio.usuario.apellidos}`.trim() ||
+                cambio.usuario.nombreUsuario,
+            }
+          : null,
+      })),
+    });
+  } catch (error) {
+    console.error('Error al consultar el historial de cambios:', error);
+    res.status(500).json({
+      mensaje: 'No se pudo obtener el historial de cambios.',
+    });
+  }
+};
+
 
 const formatearFechaIncidencia = (
   fecha: Date | string | null | undefined,
@@ -223,11 +298,20 @@ const formatearFechaIncidencia = (
   return fecha.toISOString();
 };
 
-const serializarIncidencia = (incidencia: Incidencia) => {
-  const { usuarioReporta, adminActualiza, ...resto } = incidencia;
+const serializarIncidencia = (
+  incidencia: Incidencia,
+  incluirEvidencias = true,
+) => {
+  const {
+    usuarioReporta,
+    adminActualiza,
+    evidencias,
+    ...resto
+  } = incidencia;
 
   return {
     ...resto,
+    evidencias: incluirEvidencias ? evidencias : [],
 
     usuarioReporta: usuarioReporta
       ? {
@@ -272,6 +356,7 @@ export const registrarIncidencia = async (
       titulo,
       descripcion,
       categoria,
+      prioridad,
       ubicacion,
       latitud,
       longitud,
@@ -290,6 +375,18 @@ export const registrarIncidencia = async (
       usuarioAutenticado !== null && esAnonimo !== true
         ? usuarioAutenticado
         : null;
+
+    if (usuarioReporta === null) {
+      const errorContacto = validarContactoAnonimo({
+        nombre: nombreContacto,
+        telefono: telefonoContacto,
+      });
+
+      if (errorContacto) {
+        res.status(400).json({ mensaje: errorContacto });
+        return;
+      }
+    }
 
     // ============================================================
     // VALIDAR TÍTULO
@@ -350,6 +447,13 @@ export const registrarIncidencia = async (
     ) {
       res.status(400).json({
         mensaje: 'La categoría de la incidencia no es válida.',
+      });
+      return;
+    }
+
+    if (prioridad !== undefined && !esPrioridadIncidencia(prioridad)) {
+      res.status(400).json({
+        mensaje: 'La prioridad de la incidencia no es válida.',
       });
       return;
     }
@@ -445,6 +549,9 @@ export const registrarIncidencia = async (
       titulo: titulo.trim(),
       descripcion: descripcion.trim(),
       categoria,
+      ...(prioridad === undefined
+        ? {}
+        : { prioridad }),
       ubicacion:
         typeof ubicacion === 'string'
           ? ubicacion.trim()
@@ -484,6 +591,14 @@ export const registrarIncidencia = async (
       incidencia: serializarIncidencia(incidencia),
     });
   } catch (error) {
+    if (error instanceof BloqueoCodigoIncidenciaNoDisponible) {
+      res.status(503).json({
+        mensaje: error.message,
+        codigo: 'INCIDENCE_CODE_UNAVAILABLE',
+      });
+      return;
+    }
+
     console.error(
       'Error al registrar incidencia:',
       error,
@@ -788,6 +903,11 @@ export const listarIncidencias = async (
       return;
     }
 
+    const actor = await obtenerActorIncidencia(req.usuario?.id);
+    if (!puedeListarIncidenciasOcultas(actor)) {
+      filtros.soloPublicas = true;
+    }
+
     const resultado =
       await obtenerIncidencias(
         filtros,
@@ -800,7 +920,11 @@ export const listarIncidencias = async (
           'Incidencias obtenidas correctamente.',
         ...resultado,
         incidencias: resultado.incidencias.map(
-          serializarIncidencia,
+          (incidencia) =>
+            serializarIncidencia(
+              incidencia,
+              puedeConsultarEvidencia(incidencia, actor),
+            ),
         ),
       });
       return;
@@ -811,7 +935,11 @@ export const listarIncidencias = async (
         'Incidencias obtenidas correctamente.',
       incidencias:
         resultado.map(
-          serializarIncidencia,
+          (incidencia) =>
+            serializarIncidencia(
+              incidencia,
+              puedeConsultarEvidencia(incidencia, actor),
+            ),
         ),
     });
   } catch (error) {
@@ -849,12 +977,22 @@ export const obtenerDetalleIncidencia =
       const incidencia =
         await obtenerIncidenciaPorId(id);
 
+      const actor = await obtenerActorIncidencia(req.usuario?.id);
+
+      if (!puedeConsultarIncidencia(incidencia, actor)) {
+        res.status(404).json({
+          mensaje: 'La incidencia no está disponible.',
+        });
+        return;
+      }
+
       res.status(200).json({
         mensaje:
           'Incidencia obtenida correctamente.',
         incidencia:
           serializarIncidencia(
             incidencia,
+            puedeConsultarEvidencia(incidencia, actor),
           ),
       });
     } catch (error) {
@@ -1206,6 +1344,47 @@ export const finalizarSeguimientoAdmin =
     }
   };
 
+export const iniciarProcesoAdmin = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  const id = Number(req.params.id);
+  const adminId = req.usuario?.id;
+  if (!Number.isSafeInteger(id) || id <= 0) {
+  res.status(400).json({ mensaje: 'El ID de la incidencia no es válido.' });
+  return;
+  }
+  if (!adminId) {
+  res.status(401).json({ mensaje: 'Usuario autenticado no encontrado.' });
+  return;
+  }
+
+  try {
+  const incidencia = await iniciarProcesoIncidencia(id, adminId);
+  res.status(200).json({
+    mensaje: 'La incidencia pasó a En proceso.',
+    incidencia: serializarIncidencia(incidencia),
+  });
+  } catch (error) {
+  const mensaje =
+    error instanceof Error
+      ? error.message
+      : 'No se pudo iniciar el proceso de la incidencia.';
+  const estadoHttp =
+    mensaje === 'Incidencia no encontrada.'
+      ? 404
+      : mensaje === 'El administrador no existe.'
+        ? 401
+        : mensaje.startsWith('Solo se puede iniciar')
+          ? 409
+          : 500;
+  if (estadoHttp === 500) {
+    console.error('Error al iniciar proceso de incidencia:', error);
+  }
+  res.status(estadoHttp).json({ mensaje });
+  }
+};
+
 export const listarMisIncidencias =
   async (
     req: Request,
@@ -1233,7 +1412,7 @@ export const listarMisIncidencias =
           'Incidencias del usuario obtenidas correctamente.',
         incidencias:
           incidencias.map(
-            serializarIncidencia,
+            (incidencia) => serializarIncidencia(incidencia),
           ),
       });
     } catch (error) {

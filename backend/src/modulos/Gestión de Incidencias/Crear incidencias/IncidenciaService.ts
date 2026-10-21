@@ -9,7 +9,14 @@ import {
 
 import { Usuario } from '../../../models/Usuario';
 import { IncidenciaHistorial } from '../../../models/IncidenciaHistorial';
+import { ejecutarConBloqueoCodigoIncidencia } from './IncidenciaCodeLock';
+import { puedeIniciarProcesoIncidencia } from './IncidenciaEstado';
+import { obtenerCambiosClasificacionIncidencia } from './IncidenciaHistorialUtils';
 
+import {
+  puedeConsultarIncidencia,
+  puedeListarIncidenciasOcultas,
+} from './IncidenciaAccess';
 
 import { notificacionIncidenciaService } from '../../Notificaciones/Crear notificaciones Incidencias/NotificacionIncidenciaService';
 
@@ -18,6 +25,42 @@ const incidenciaRepository =
 
 const usuarioRepository =
   AppDataSource.getRepository(Usuario);
+
+export const obtenerActorIncidencia = async (usuarioId?: number) => {
+  if (!Number.isSafeInteger(usuarioId) || !usuarioId || usuarioId <= 0) {
+    return null;
+  }
+
+  const usuario = await usuarioRepository.findOne({
+    where: { id: usuarioId },
+    relations: { rol: true },
+  });
+
+  return usuario
+    ? { id: usuario.id, rol: usuario.rol.nombre }
+    : null;
+};
+
+export const puedeVerIncidenciasOcultas = async (
+  usuarioId?: number,
+): Promise<boolean> => {
+  const actor = await obtenerActorIncidencia(usuarioId);
+
+  return puedeListarIncidenciasOcultas(actor);
+};
+
+export const puedeConsultarIncidenciaConUsuario = async (
+  incidencia: Incidencia,
+  usuarioId?: number,
+): Promise<boolean> => {
+  if (incidencia.esPublica) {
+    return true;
+  }
+
+  const actor = await obtenerActorIncidencia(usuarioId);
+
+  return puedeConsultarIncidencia(incidencia, actor);
+};
 
 /**
  * Determina automáticamente la prioridad
@@ -53,6 +96,7 @@ export interface CrearIncidenciaDTO {
   titulo: string;
   descripcion: string;
   categoria: CategoriaIncidencia;
+  prioridad?: PrioridadIncidencia;
 
   ubicacion?: string | null;
   latitud?: number | null;
@@ -81,10 +125,12 @@ const obtenerSufijoCodigoActual = (): string => {
   return `${valor('month')}${valor('year')}`;
 };
 
-const generarCodigoIncidencia = async (): Promise<string> => {
+const generarCodigoIncidencia = async (
+  repository = incidenciaRepository,
+): Promise<string> => {
   const sufijo = obtenerSufijoCodigoActual();
 
-  const resultado = await incidenciaRepository
+  const resultado = await repository
     .createQueryBuilder('incidencia')
     .select(
       'MAX(CAST(SUBSTRING(incidencia.codigo, 6, 4) AS UNSIGNED))',
@@ -215,9 +261,8 @@ export type AccionCierreIncidencia =
 export const crearIncidencia = async (
   datos: CrearIncidenciaDTO,
 ): Promise<Incidencia> => {
-  const prioridad = determinarPrioridad(
-    datos.categoria,
-  );
+  const prioridad =
+    datos.prioridad ?? determinarPrioridad(datos.categoria);
 
   let usuarioReporta: Usuario | null = null;
 
@@ -239,47 +284,30 @@ export const crearIncidencia = async (
     }
   }
 
-  const incidencia =
-    incidenciaRepository.create({
-      codigo: await generarCodigoIncidencia(),
-
-      titulo: datos.titulo.trim(),
-
-      descripcion:
-        datos.descripcion.trim(),
-
-      categoria: datos.categoria,
-
-      prioridad,
-
-      estado:
-        EstadoIncidencia.PENDIENTE,
-
-      usuarioReporta,
-
-      nombreContacto:
-        datos.nombreContacto?.trim() || null,
-
-      telefonoContacto:
-        datos.telefonoContacto?.trim() || null,
-
-      ubicacion:
-        datos.ubicacion?.trim() || null,
-
-      latitud:
-        datos.latitud ?? null,
-
-      longitud:
-        datos.longitud ?? null,
-
-      observacionesAdmin: null,
-
-      fechaResolucion: null,
-    });
-
   const incidenciaGuardada =
-    await incidenciaRepository.save(
-      incidencia,
+    await ejecutarConBloqueoCodigoIncidencia(
+      () => AppDataSource.createQueryRunner(),
+      async (manager) => {
+        const repository = manager.getRepository(Incidencia);
+        const incidencia = repository.create({
+          codigo: await generarCodigoIncidencia(repository),
+          titulo: datos.titulo.trim(),
+          descripcion: datos.descripcion.trim(),
+          categoria: datos.categoria,
+          prioridad,
+          estado: EstadoIncidencia.PENDIENTE,
+          usuarioReporta,
+          nombreContacto: datos.nombreContacto?.trim() || null,
+          telefonoContacto: datos.telefonoContacto?.trim() || null,
+          ubicacion: datos.ubicacion?.trim() || null,
+          latitud: datos.latitud ?? null,
+          longitud: datos.longitud ?? null,
+          observacionesAdmin: null,
+          fechaResolucion: null,
+        });
+
+        return repository.save(incidencia);
+      },
     );
 
   /*
@@ -850,6 +878,70 @@ export const cambiarEstadoIncidencia =
     );
   };
 
+export const iniciarProcesoIncidencia = async (
+  id: number,
+  adminId: number,
+): Promise<Incidencia> =>
+  AppDataSource.transaction(async (manager) => {
+    const incidenciaRepo = manager.getRepository(Incidencia);
+    const usuarioRepo = manager.getRepository(Usuario);
+    const historialRepo = manager.getRepository(IncidenciaHistorial);
+
+    const incidencia = await incidenciaRepo
+      .createQueryBuilder('incidencia')
+      .setLock('pessimistic_write')
+      .where('incidencia.id = :id', { id })
+      .getOne();
+
+    if (!incidencia) {
+      throw new Error('Incidencia no encontrada.');
+    }
+
+    if (!puedeIniciarProcesoIncidencia(incidencia.estado)) {
+      throw new Error(
+        'Solo se puede iniciar el proceso de una incidencia pendiente.',
+      );
+    }
+
+    const administrador = await usuarioRepo.findOne({
+      where: { id: adminId },
+    });
+    if (!administrador) {
+      throw new Error('El administrador no existe.');
+    }
+
+    const estadoAnterior = incidencia.estado;
+    incidencia.estado = EstadoIncidencia.EN_PROCESO;
+    incidencia.adminActualiza = administrador;
+    incidencia.fechaActualizacion = new Date();
+    const guardada = await incidenciaRepo.save(incidencia);
+
+    await historialRepo.save(
+      historialRepo.create({
+        incidencia: guardada,
+        incidenciaId: guardada.id,
+        usuario: administrador,
+        usuarioId: administrador.id,
+        campoModificado: 'estado',
+        valorAnterior: estadoAnterior,
+        valorNuevo: guardada.estado,
+      }),
+    );
+
+    const incidenciaConRelaciones = await incidenciaRepo.findOne({
+      where: { id: guardada.id },
+      relations: {
+        usuarioReporta: true,
+        adminActualiza: true,
+        evidencias: true,
+      },
+    });
+    if (!incidenciaConRelaciones) {
+      throw new Error('Incidencia no encontrada.');
+    }
+    return incidenciaConRelaciones;
+  });
+
 const normalizarValorHistorial = (
   valor:
     | string
@@ -1056,17 +1148,19 @@ export const actualizarIncidenciaAdministrativa =
           );
         };
 
-        agregarCambioHistorial(
-          'categoria',
-          valoresOriginales.categoria,
-          incidenciaActualizada.categoria,
-        );
-
-        agregarCambioHistorial(
-          'prioridad',
-          valoresOriginales.prioridad,
-          incidenciaActualizada.prioridad,
-        );
+        for (const cambio of obtenerCambiosClasificacionIncidencia(
+          valoresOriginales,
+          {
+            categoria: incidenciaActualizada.categoria,
+            prioridad: incidenciaActualizada.prioridad,
+          },
+        )) {
+          agregarCambioHistorial(
+            cambio.campoModificado,
+            cambio.valorAnterior,
+            cambio.valorNuevo,
+          );
+        }
 
         if (
           cambiosHistorial.length > 0

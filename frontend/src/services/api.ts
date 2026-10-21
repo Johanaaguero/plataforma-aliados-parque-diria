@@ -1,8 +1,25 @@
-interface ApiError {
+export interface ApiError {
   code: string;
   message: string;
   status: number;
 }
+
+export const notificarErrorAuth = (error: ApiError): void => {
+  if (error.status === 401) {
+    if (error.code !== 'INVALID_CREDENTIALS') {
+      sessionStorage.removeItem('token');
+      localStorage.removeItem('token');
+    }
+
+    window.dispatchEvent(
+      new CustomEvent('auth:unauthorized', { detail: error }),
+    );
+  } else if (error.status === 403) {
+    window.dispatchEvent(
+      new CustomEvent('auth:forbidden', { detail: error }),
+    );
+  }
+};
 
 export interface ConfiguracionSolicitudApi {
   incluirAuth?: boolean;
@@ -38,25 +55,6 @@ class ApiService {
     return headers;
   }
 
-  // CORRECCIÓN 2: centraliza el manejo de 401/403 y borra el token en un 401
-  // (excepto credenciales inválidas del login) para que la sesión no se restaure.
-  private notificarErrorAuth(error: ApiError): void {
-    if (error.status === 401) {
-      if (error.code !== 'INVALID_CREDENTIALS') {
-        sessionStorage.removeItem('token');
-        localStorage.removeItem('token');
-      }
-
-      window.dispatchEvent(
-        new CustomEvent('auth:unauthorized', { detail: error }),
-      );
-    } else if (error.status === 403) {
-      window.dispatchEvent(
-        new CustomEvent('auth:forbidden', { detail: error }),
-      );
-    }
-  }
-
   private async handleResponse<T>(response: Response): Promise<T> {
     if (response.status === 204) {
       return undefined as T;
@@ -77,7 +75,7 @@ class ApiService {
         status: response.status,
       };
 
-      this.notificarErrorAuth(error);
+      notificarErrorAuth(error);
 
       throw error;
     }
@@ -146,7 +144,7 @@ console.error('Error en solicitud API:', {
         status: response.status,
       };
 
-      this.notificarErrorAuth(error);
+      notificarErrorAuth(error);
 
       const solicitudError = new Error(message);
       Object.assign(solicitudError, error);

@@ -12,6 +12,8 @@ import {
   compartirIncidencia,
   agregarComentarioIncidencia,
   obtenerComentariosIncidencia,
+  obtenerHistorialCambiosIncidencia,
+  iniciarProcesoAdmin,
 } from './IncidenciaController';
 import {
   registrarEvidencia,
@@ -45,6 +47,7 @@ router.post(
 
 router.get(
   '/',
+  verificarTokenOpcional,
   (req, res) => listarIncidencias(req, res),
 );
 
@@ -63,9 +66,22 @@ router.patch(
 );
 router.post('/:id/comentarios', verificarToken, autorizarRoles('administrador', 'super_admin'), (req, res) => agregarComentarioIncidencia(req, res));
 router.get('/:id/comentarios', verificarToken, (req, res) => obtenerComentariosIncidencia(req, res));
+router.get(
+  '/:id/historial-cambios',
+  verificarToken,
+  autorizarRoles('administrador', 'super_admin'),
+  (req, res) => obtenerHistorialCambiosIncidencia(req, res),
+);
+router.patch(
+  '/:id/iniciar-proceso',
+  verificarToken,
+  autorizarRoles('administrador'),
+  (req, res) => iniciarProcesoAdmin(req, res),
+);
 
 router.get(
   '/:id',
+  verificarTokenOpcional,
   (req, res) => obtenerDetalleIncidencia(req, res),
 );
 
@@ -96,6 +112,7 @@ router.patch(
 
 router.get(
   '/evidencias/:id/archivo',
+  verificarToken,
   (req, res) => obtenerArchivoEvidencia(req, res),
 );
 

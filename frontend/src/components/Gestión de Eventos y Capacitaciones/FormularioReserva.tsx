@@ -477,8 +477,6 @@ export default function FormularioReserva({
   const anioRef = useRef<HTMLInputElement>(null);
   const cuerpoRef = useRef<HTMLDivElement>(null);
 
-  const anioActual = new Date().getFullYear();
-
   const edadCalculada = useMemo(() => {
     const fecha = fechaLocalValida(formulario.fechaNacimiento);
     if (!fecha || fecha > new Date() || fecha.getFullYear() < 1900) return null;

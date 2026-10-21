@@ -13,15 +13,12 @@ import {
   type Notificacion,
 } from '../../services/notificacionesService';
 import parqueHero from '../../assets/parque-hero.jpg';
+import {
+  categoriaNotificacion,
+  type FiltroNotificacion,
+} from './notificacionCategorias';
 
-type Filtro =
-  | 'todas'
-  | 'no_leidas'
-  | 'incidencias'
-  | 'eventos'
-  | 'reservas'
-  | 'emprendimientos'
-  | 'comunicados';
+type Filtro = FiltroNotificacion;
 
 const filtros: { id: Filtro; etiqueta: string }[] = [
   { id: 'todas', etiqueta: 'Todas' },
@@ -32,29 +29,6 @@ const filtros: { id: Filtro; etiqueta: string }[] = [
   { id: 'emprendimientos', etiqueta: 'Emprendimientos' },
   { id: 'comunicados', etiqueta: 'Comunicados' },
 ];
-
-function categoriaNotificacion(
-  tipo: string,
-): Exclude<Filtro, 'todas' | 'no_leidas'> | null {
-  if (
-    tipo === 'nueva_incidencia' ||
-    tipo === 'seguimiento_incidencia' ||
-    tipo === 'incidencia_compartida'
-  ) return 'incidencias';
-
-  if (tipo === 'nuevo_evento' || tipo === 'nueva_capacitacion') return 'eventos';
-
-  if (
-    tipo === 'reserva_realizada' ||
-    tipo === 'nueva_reserva_admin' ||
-    tipo === 'reserva_aprobada' ||
-    tipo === 'reserva_rechazada'
-  ) return 'reservas';
-
-  if (tipo === 'nuevo_emprendimiento') return 'emprendimientos';
-  if (tipo === 'nuevo_comunicado') return 'comunicados';
-  return null;
-}
 
 function esNotificacionImportante(tipo: string): boolean {
   return (
