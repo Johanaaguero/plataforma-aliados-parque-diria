@@ -23,7 +23,6 @@ declare global {
 }
 
 const MINUTOS_INACTIVIDAD = 30;
-
 export const verificarToken = async (
   req: Request,
   res: Response,

@@ -13,32 +13,43 @@ export const useInactividad = ({
   onLogout,
 }: UseInactividadProps) => {
   const temporizador = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onLogoutRef = useRef(onLogout);
+  const cerrandoSesionRef = useRef(false);
+
+  // Mantiene la última función de cierre sin reiniciar el temporizador.
+  useEffect(() => {
+    onLogoutRef.current = onLogout;
+  }, [onLogout]);
 
   useEffect(() => {
     if (!activo) {
-      if (temporizador.current) {
+      if (temporizador.current !== null) {
         clearTimeout(temporizador.current);
         temporizador.current = null;
       }
 
+      cerrandoSesionRef.current = false;
       return;
     }
 
-    const cerrarPorInactividad = async () => {
-      try {
-        await api.logout();
-      } finally {
-        onLogout();
-      }
-    };
-
     const reiniciarTemporizador = () => {
-      if (temporizador.current) {
+      if (cerrandoSesionRef.current) return;
+
+      if (temporizador.current !== null) {
         clearTimeout(temporizador.current);
       }
 
       temporizador.current = setTimeout(() => {
-        void cerrarPorInactividad();
+        if (cerrandoSesionRef.current) return;
+
+        cerrandoSesionRef.current = true;
+        temporizador.current = null;
+
+        // Ejecuta el cierre visual sin esperar al servidor.
+        onLogoutRef.current();
+
+        // Invalida la sesión en el servidor y limpia el token.
+        void api.logout();
       }, tiempoInactividad);
     };
 
@@ -57,13 +68,14 @@ export const useInactividad = ({
     reiniciarTemporizador();
 
     return () => {
-      if (temporizador.current) {
+      if (temporizador.current !== null) {
         clearTimeout(temporizador.current);
+        temporizador.current = null;
       }
 
       eventos.forEach((evento) => {
         window.removeEventListener(evento, reiniciarTemporizador);
       });
     };
-  }, [activo, tiempoInactividad, onLogout]);
+  }, [activo, tiempoInactividad]);
 };

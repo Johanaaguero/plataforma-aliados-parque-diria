@@ -1,5 +1,3 @@
-
-
 interface ApiError {
   code: string;
   message: string;
@@ -40,6 +38,25 @@ class ApiService {
     return headers;
   }
 
+  // CORRECCIÓN 2: centraliza el manejo de 401/403 y borra el token en un 401
+  // (excepto credenciales inválidas del login) para que la sesión no se restaure.
+  private notificarErrorAuth(error: ApiError): void {
+    if (error.status === 401) {
+      if (error.code !== 'INVALID_CREDENTIALS') {
+        sessionStorage.removeItem('token');
+        localStorage.removeItem('token');
+      }
+
+      window.dispatchEvent(
+        new CustomEvent('auth:unauthorized', { detail: error }),
+      );
+    } else if (error.status === 403) {
+      window.dispatchEvent(
+        new CustomEvent('auth:forbidden', { detail: error }),
+      );
+    }
+  }
+
   private async handleResponse<T>(response: Response): Promise<T> {
     if (response.status === 204) {
       return undefined as T;
@@ -60,15 +77,7 @@ class ApiService {
         status: response.status,
       };
 
-      if (response.status === 401) {
-        window.dispatchEvent(
-          new CustomEvent('auth:unauthorized', { detail: error }),
-        );
-      } else if (response.status === 403) {
-        window.dispatchEvent(
-          new CustomEvent('auth:forbidden', { detail: error }),
-        );
-      }
+      this.notificarErrorAuth(error);
 
       throw error;
     }
@@ -137,15 +146,7 @@ console.error('Error en solicitud API:', {
         status: response.status,
       };
 
-      if (response.status === 401) {
-        window.dispatchEvent(
-          new CustomEvent('auth:unauthorized', { detail: error }),
-        );
-      } else if (response.status === 403) {
-        window.dispatchEvent(
-          new CustomEvent('auth:forbidden', { detail: error }),
-        );
-      }
+      this.notificarErrorAuth(error);
 
       const solicitudError = new Error(message);
       Object.assign(solicitudError, error);
@@ -173,26 +174,30 @@ console.error('Error en solicitud API:', {
     return this.handleResponse(response);
   }
 
-  async logout(): Promise<void> {
-    const token = this.getToken();
+ 
+async logout(): Promise<void> {
+  const token = this.getToken();
 
-    if (!token) {
-      throw { code: 'NO_TOKEN', message: 'No hay sesión activa', status: 401 };
-    }
+  // Eliminar la sesión del navegador inmediatamente.
+  sessionStorage.removeItem('token');
+  localStorage.removeItem('token');
 
+  // Intentar invalidar también el token en el servidor.
+  if (token) {
     try {
       await fetch(`${this.baseUrl}/auth/logout`, {
         method: 'POST',
-        headers: this.getHeaders(true),
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
       });
     } catch (error) {
       console.warn('Error al cerrar sesión en el servidor:', error);
     }
-
-    // Limpiar token del cliente sin importar si el servidor falla
-    sessionStorage.removeItem('token');
-    localStorage.removeItem('token');
   }
+}
+
 
   async registro(datos: {
     nombreUsuario: string;
@@ -221,8 +226,9 @@ console.error('Error en solicitud API:', {
     return this.handleResponse(response);
   }
 
+  // CORRECCIÓN 1: backticks para que se interpole ${this.baseUrl}
   async restablecerContrasena(token: string, nuevaPassword: string): Promise<{ message: string }> {
-    const response = await fetch('${this.baseUrl}/auth/reset-password', {
+    const response = await fetch(`${this.baseUrl}/auth/reset-password`, {
       method: 'POST',
       headers: this.getHeaders(false),
       body: JSON.stringify({ token, nuevaPassword }),
@@ -231,8 +237,9 @@ console.error('Error en solicitud API:', {
     return this.handleResponse(response);
   }
 
+  // CORRECCIÓN 1: backticks para que se interpole ${this.baseUrl}
   async obtenerRoles(): Promise<{ usuarios: unknown[] }> {
-    const response = await fetch('${this.baseUrl}/users/roles',{
+    const response = await fetch(`${this.baseUrl}/users/roles`, {
       method: 'GET',
       headers: this.getHeaders(true),
     });
@@ -260,4 +267,3 @@ console.error('Error en solicitud API:', {
 }
 
 export const api = new ApiService();
-

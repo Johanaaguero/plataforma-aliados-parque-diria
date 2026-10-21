@@ -32,19 +32,104 @@ const tituloTipo = (tipo: string): string => ({
   incidencias: 'Reporte de incidencias',
 }[tipo] ?? `Reporte de ${tipo}`);
 
-const metricasPorTipo: Record<string, Array<[string, string[]]>> = {
-  usuarios: [['TOTAL USUARIOS', ['total']], ['ADMINISTRADORES', ['administradores']], ['ASOCIADOS', ['asociados']], ['VISITANTES', ['visitantes']]],
-  reservas: [['TOTAL RESERVAS', ['total', 'totalReservas']], ['PENDIENTES', ['pendientes']], ['APROBADAS', ['aprobadas', 'confirmadas']], ['RECHAZADAS', ['rechazadas']]],
-  emprendimientos: [['TOTAL EMPRENDIMIENTOS', ['total', 'totalEmprendimientos']], ['PUBLICADOS', ['publicados']], ['BORRADORES', ['borradores']], ['NO PUBLICADOS', ['noPublicados']]],
-  eventos: [['TOTAL ACTIVIDADES', ['total', 'totalActividades']], ['EVENTOS', ['eventos']], ['CAPACITACIONES', ['capacitaciones']], ['PUBLICADAS', ['publicados']]],
-  incidencias: [['TOTAL INCIDENCIAS', ['total', 'totalIncidencias']], ['PENDIENTES', ['pendientes']], ['EN PROCESO', ['enProceso']], ['RESUELTAS', ['resueltas']]],
+type Metrica = { etiqueta: string; claves: string[]; estados?: string[] };
+
+const metricasPorTipo: Record<string, Metrica[]> = {
+  usuarios: [
+    { etiqueta: 'TOTAL USUARIOS', claves: ['total'] },
+    { etiqueta: 'ADMINISTRADORES', claves: ['administradores'], estados: ['administrador'] },
+    { etiqueta: 'ASOCIADOS', claves: ['asociados'], estados: ['asociado'] },
+    { etiqueta: 'VISITANTES', claves: ['visitantes'], estados: ['visitante'] },
+    { etiqueta: 'SUPER ADMIN', claves: ['superAdmins', 'superAdministradores', 'superAdmin'], estados: ['super_admin', 'superadmin', 'super_administrador'] },
+  ],
+  reservas: [
+    { etiqueta: 'TOTAL RESERVAS', claves: ['total', 'totalReservas'] },
+    { etiqueta: 'PENDIENTES', claves: ['pendientes', 'pendiente'], estados: ['pendiente'] },
+    { etiqueta: 'APROBADAS', claves: ['aprobadas', 'confirmadas', 'aprobada', 'confirmada'], estados: ['aprobada', 'aprobado', 'confirmada', 'confirmado'] },
+    { etiqueta: 'RECHAZADAS', claves: ['rechazadas', 'rechazada'], estados: ['rechazada', 'rechazado'] },
+  ],
+  emprendimientos: [
+    { etiqueta: 'TOTAL EMPRENDIMIENTOS', claves: ['total', 'totalEmprendimientos'] },
+    { etiqueta: 'PUBLICADOS', claves: ['publicados', 'publicado'], estados: ['publicado'] },
+    { etiqueta: 'BORRADORES', claves: ['borradores', 'borrador'], estados: ['borrador'] },
+    { etiqueta: 'NO PUBLICADOS', claves: ['noPublicados', 'no_publicado'], estados: ['no_publicado'] },
+  ],
+  eventos: [
+    { etiqueta: 'TOTAL ACTIVIDADES', claves: ['total', 'totalActividades'] },
+    { etiqueta: 'EVENTOS', claves: ['eventos', 'evento'], estados: ['evento'] },
+    { etiqueta: 'CAPACITACIONES', claves: ['capacitaciones', 'capacitacion'], estados: ['capacitacion'] },
+    { etiqueta: 'PUBLICADAS', claves: ['publicados', 'publicadas'], estados: ['publicado', 'publicada'] },
+  ],
+  incidencias: [
+    { etiqueta: 'TOTAL INCIDENCIAS', claves: ['total', 'totalIncidencias'] },
+    { etiqueta: 'PENDIENTES', claves: ['pendientes', 'pendiente'], estados: ['pendiente'] },
+    { etiqueta: 'EN PROCESO', claves: ['enProceso', 'en_proceso', 'proceso'], estados: ['en_proceso', 'enproceso'] },
+    { etiqueta: 'RESUELTAS', claves: ['resueltas', 'resuelta'], estados: ['resuelta', 'resuelto'] },
+  ],
 };
 
-const metricasDelReporte = (tipo: string, contenido: Record<string, unknown>): Array<[string, unknown]> =>
-  (metricasPorTipo[tipo] ?? []).map(([etiqueta, claves]) => [
-    etiqueta,
-    claves.map((clave) => contenido[clave]).find((valor) => valor !== undefined) ?? 0,
-  ]);
+const normalizar = (valor: unknown): string =>
+  String(valor ?? '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[\s-]+/g, '_')
+    .trim();
+
+const CONTENEDORES_METRICAS = ['resumen', 'estadisticas', 'totales', 'porEstado', 'informacionGeneral'];
+
+const buscarClave = (contenido: Record<string, unknown>, claves: string[]): unknown => {
+  const niveles = [
+    contenido,
+    ...CONTENEDORES_METRICAS.map((contenedor) => contenido[contenedor]).filter(esObjeto),
+  ];
+  for (const nivel of niveles) {
+    for (const clave of claves) {
+      if (nivel[clave] !== undefined && nivel[clave] !== null) return nivel[clave];
+    }
+  }
+  return undefined;
+};
+
+const metricasDelReporte = (tipo: string, contenido: Record<string, unknown>): Array<[string, unknown]> => {
+  const filas = filasDeContenido(contenido);
+  return (metricasPorTipo[tipo] ?? []).map(({ etiqueta, claves, estados }): [string, unknown] => {
+    const directo = buscarClave(contenido, claves);
+    if (directo !== undefined) return [etiqueta, directo];
+    if (estados) {
+      return [
+        etiqueta,
+        filas.filter((fila) =>
+          [fila.estado, fila.tipo, fila.tipoActividad, fila.rol].some((valor) => estados.includes(normalizar(valor))),
+        ).length,
+      ];
+    }
+    return [etiqueta, filas.length];
+  });
+};
+
+const etiquetasEstadoIncidencia: Record<string, string> = {
+  pendiente: 'Pendiente',
+  en_revision: 'En revisión',
+  en_proceso: 'En proceso',
+  resuelta: 'Resuelta',
+  rechazada: 'Rechazada',
+  cerrada: 'Cerrada',
+};
+
+const etiquetaEstadoIncidencia = (valor: unknown): string => {
+  if (typeof valor !== 'string' || !valor) return 'No disponible';
+  return Object.prototype.hasOwnProperty.call(etiquetasEstadoIncidencia, valor)
+    ? etiquetasEstadoIncidencia[valor] ?? valor
+    : valor;
+};
+
+const codigoIncidenciaLegible = (valor: unknown): string => {
+  if (typeof valor !== 'string' || !valor) return 'No disponible';
+  if (/^#?INC-/i.test(valor)) return `#INC-${valor.replace(/^#?INC-/i, '')}`;
+  if (/^\d+$/.test(valor)) return `#INC-${valor}`;
+  return valor;
+};
 
 const fechaLegible = (valor: unknown): string | null => {
   if (typeof valor !== 'string' || !/^\d{4}-\d{2}-\d{2}/.test(valor)) return null;
@@ -112,11 +197,31 @@ const periodoEventosLegible = (contenido: Record<string, unknown>): string => {
 const esObjeto = (valor: unknown): valor is Record<string, unknown> =>
   typeof valor === 'object' && valor !== null && !Array.isArray(valor);
 
+const periodoIncidenciasLegible = (contenido: Record<string, unknown>): string => {
+  const informacionGeneral = esObjeto(contenido.informacionGeneral)
+    ? contenido.informacionGeneral
+    : {};
+  const filtros = esObjeto(contenido.filtros)
+    ? contenido.filtros
+    : esObjeto(informacionGeneral.filtros)
+      ? informacionGeneral.filtros
+      : {};
+  const periodo = contenido.periodo ?? informacionGeneral.periodo;
+  const rango = esObjeto(periodo) ? periodo : {};
+  const inicio = fechaLegible(contenido.fechaInicio ?? filtros.fechaInicio ?? rango.fechaInicio);
+  const fin = fechaLegible(contenido.fechaFin ?? filtros.fechaFin ?? rango.fechaFin);
+
+  if (inicio && fin) return `${inicio} al ${fin}`;
+  if (inicio) return `Desde: ${inicio}`;
+  if (fin) return `Hasta: ${fin}`;
+  return 'Histórico completo';
+};
+
 const filtrosPdfLegibles = (
   tipo: string,
   contenido: Record<string, unknown>,
 ): Array<[string, string]> | null => {
-  if (tipo !== 'eventos' && tipo !== 'emprendimientos') return null;
+  if (tipo !== 'eventos' && tipo !== 'emprendimientos' && tipo !== 'incidencias') return null;
 
   const informacionGeneral = esObjeto(contenido.informacionGeneral)
     ? contenido.informacionGeneral
@@ -126,13 +231,57 @@ const filtrosPdfLegibles = (
     : esObjeto(informacionGeneral.filtros)
       ? informacionGeneral.filtros
       : {};
-  const periodo = contenido.periodo;
+  const periodo = tipo === 'incidencias'
+    ? contenido.periodo ?? informacionGeneral.periodo
+    : contenido.periodo;
   const rango = esObjeto(periodo) ? periodo : {};
   const fechaInicio = contenido.fechaInicio ?? filtros.fechaInicio ?? rango.fechaInicio;
   const fechaFin = contenido.fechaFin ?? filtros.fechaFin ?? rango.fechaFin;
   const filas: Array<[string, string]> = [];
 
-  if (tipo === 'eventos') {
+  if (tipo === 'incidencias') {
+    filas.push(['Período', periodoIncidenciasLegible(contenido)]);
+
+    const categorias: Record<string, string> = {
+      seguridad: 'Seguridad',
+      incendio: 'Incendio',
+      flora_fauna: 'Flora y fauna',
+      ambiental: 'Ambiental',
+      infraestructura: 'Infraestructura',
+      senderos: 'Senderos',
+      servicios: 'Servicios',
+      otro: 'Otro',
+    };
+    const prioridades: Record<string, string> = {
+      baja: 'Baja',
+      media: 'Media',
+      alta: 'Alta',
+      critica: 'Crítica',
+    };
+    const agregarFiltro = (
+      clave: string,
+      etiqueta: string,
+      valores: Record<string, string>,
+      formatear: (valor: string) => string = (valor) => valor,
+    ) => {
+      const valor = filtros[clave];
+      if (typeof valor !== 'string' || !valor) return;
+      const valorLegible = Object.prototype.hasOwnProperty.call(valores, valor)
+        ? valores[valor] ?? valor
+        : formatear(valor);
+      filas.push([etiqueta, valorLegible]);
+    };
+
+    agregarFiltro('categoria', 'Categoría', categorias, (valor) =>
+      valor.replace(/_/g, ' '),
+    );
+    agregarFiltro('prioridad', 'Prioridad', prioridades, (valor) =>
+      valor.replace(/_/g, ' '),
+    );
+    agregarFiltro('estado', 'Estado', etiquetasEstadoIncidencia, (valor) =>
+      valor.replace(/_/g, ' '),
+    );
+  } else if (tipo === 'eventos') {
     const inicio = fechaLegible(fechaInicio);
     const fin = fechaLegible(fechaFin);
     const periodoValor = inicio || fin
@@ -234,6 +383,11 @@ export class ReporteExportService {
       documento.on('end', () => resolve({ buffer: Buffer.concat(partes), contentType: 'application/pdf', extension: 'pdf' }));
 
       const ancho = documento.page.width - 84;
+      const periodoCabecera = reporte.tipoReporte === 'eventos'
+        ? periodoEventosLegible(contenido)
+        : reporte.tipoReporte === 'incidencias'
+          ? periodoIncidenciasLegible(contenido)
+          : periodoLegible(contenido);
       documento.rect(0, 0, documento.page.width, 122).fill('#064e3b');
       documento.fillColor('#ffffff').font('Helvetica-Bold').fontSize(19)
         .text('Plataforma SIGTAD', 42, 33);
@@ -247,7 +401,7 @@ export class ReporteExportService {
       documento.font('Helvetica').fontSize(8).fillColor('#d1fae5')
         .text(`Fecha de generación  ${reporte.fechaGeneracion.toLocaleString('es-CR')}`, 330, 38, { width: 224, align: 'right' })
         .text(`TIPO  ${reporte.tipoReporte.toUpperCase()}`, 370, 53, { width: 184, align: 'right' })
-        .text(`RANGO  ${reporte.tipoReporte === 'eventos' ? periodoEventosLegible(contenido) : periodoLegible(contenido)}`, 370, 68, { width: 184, align: 'right' });
+        .text(`RANGO  ${periodoCabecera}`, 370, 68, { width: 184, align: 'right' });
       documento.rect(330, 34, 224, 14).fill('#064e3b');
       documento.font('Helvetica').fontSize(8).fillColor('#d1fae5')
         .text(`Fecha de generación  ${reporte.fechaGeneracion.toLocaleString('es-CR')}`, 330, 38, { width: 224, align: 'right' });
@@ -255,12 +409,15 @@ export class ReporteExportService {
       documento.y = 146;
       documento.font('Helvetica-Bold').fontSize(11).fillColor('#064e3b').text('Resumen del reporte');
       const metricas = metricasDelReporte(reporte.tipoReporte, contenido);
+      const tarjetasMuchas = metricas.length > 4;
+      const anchoTarjeta = tarjetasMuchas ? (ancho - 8 * (metricas.length - 1)) / metricas.length : 116;
+      const pasoTarjeta = tarjetasMuchas ? anchoTarjeta + 8 : 128;
       metricas.forEach(([etiqueta, valor], indice) => {
-        const x = 42 + indice * 128;
-        documento.roundedRect(x, 169, 116, 66, 9).fill('#ecfdf5');
-        documento.roundedRect(x, 169, 116, 66, 9).lineWidth(1).strokeColor('#a7f3d0').stroke();
-        documento.font('Helvetica-Bold').fontSize(7).fillColor('#047857').text(etiqueta, x + 11, 181, { width: 94 });
-        documento.fontSize(22).fillColor('#064e3b').text(texto(valor ?? 0), x + 11, 198, { width: 94 });
+        const x = 42 + indice * pasoTarjeta;
+        documento.roundedRect(x, 169, anchoTarjeta, 66, 9).fill('#ecfdf5');
+        documento.roundedRect(x, 169, anchoTarjeta, 66, 9).lineWidth(1).strokeColor('#a7f3d0').stroke();
+        documento.font('Helvetica-Bold').fontSize(7).fillColor('#047857').text(etiqueta, x + 11, 181, { width: anchoTarjeta - 22 });
+        documento.fontSize(22).fillColor('#064e3b').text(texto(valor ?? 0), x + 11, 198, { width: anchoTarjeta - 22 });
       });
 
       documento.font('Helvetica-Bold').fontSize(11).fillColor('#064e3b').text('Filtros aplicados', 42, 255);
@@ -282,11 +439,8 @@ export class ReporteExportService {
         });
         inicioTabla = Math.max(inicioTabla, 272 + filasFiltros * 16 + 22);
       } else {
-        const filtros = Object.entries(contenido).filter(([clave, valor]) =>
-          ['periodo', 'periodoTexto', 'fechaInicio', 'fechaFin'].includes(clave) && !Array.isArray(valor),
-        );
         documento.font('Helvetica').fontSize(8).fillColor('#475569')
-          .text(filtros.map(([clave, valor]) => `${clave}: ${texto(valor)}`).join('   ·   ') || 'Sin filtros adicionales', 42, 272, { width: ancho });
+          .text(`Período: ${periodoLegible(contenido)}`, 42, 272, { width: ancho });
       }
       const emprendimientos = contenido.emprendimientos;
       const filas = reporte.tipoReporte === 'emprendimientos'
@@ -298,32 +452,61 @@ export class ReporteExportService {
           : []
         : filasDeContenido(contenido);
       if (filas.length > 0) {
-        const columnasDetalle = Object.keys(filas[0] ?? {})
-          .filter((columna) =>
-            reporte.tipoReporte !== 'emprendimientos' ||
-            columna.toLowerCase() !== 'id',
-          )
-          .slice(0, 5);
+        const columnasDetalle = reporte.tipoReporte === 'incidencias'
+          ? ['codigo', 'estado', 'titulo', 'latitud', 'longitud']
+          : Object.keys(filas[0] ?? {})
+            .filter((columna) =>
+              reporte.tipoReporte !== 'emprendimientos' ||
+              columna.toLowerCase() !== 'id',
+            )
+            .slice(0, 5);
         const columnas = reporte.tipoReporte === 'eventos' &&
           filas.some((fila) => 'temporada' in fila) &&
           !columnasDetalle.includes('temporada')
           ? [...columnasDetalle, 'temporada']
           : columnasDetalle;
-        const etiquetas = columnas.map((columna) => columna.replace(/([A-Z])/g, ' $1').toUpperCase());
+        const etiquetas = reporte.tipoReporte === 'incidencias'
+          ? ['Código de incidencia', 'Estado', 'Título', 'Latitud', 'Longitud']
+          : columnas.map((columna) => columna.replace(/([A-Z])/g, ' $1').toUpperCase());
         const anchoColumna = ancho / columnas.length;
+
+        // Encabezado de la tabla: se dibuja en la primera página y se repite en cada página nueva.
+        const dibujarEncabezadoTabla = (yEncabezado: number) => {
+          documento.rect(42, yEncabezado, ancho, 25).fill('#047857');
+          etiquetas.forEach((etiqueta, indice) => documento.font('Helvetica-Bold').fontSize(7).fillColor('#ffffff')
+            .text(etiqueta, 48 + indice * anchoColumna, yEncabezado + 9, { width: anchoColumna - 10 }));
+        };
+
+        // Límite inferior del contenido (el pie de página se dibuja en y = 795).
+        const limiteInferior = 780;
+
         documento.font('Helvetica-Bold').fontSize(11).fillColor('#064e3b').text('Datos detallados', 42, inicioTabla - 22);
-        documento.rect(42, inicioTabla, ancho, 25).fill('#047857');
-        etiquetas.forEach((etiqueta, indice) => documento.fontSize(7).fillColor('#ffffff')
-          .text(etiqueta, 48 + indice * anchoColumna, inicioTabla + 9, { width: anchoColumna - 10 }));
+        dibujarEncabezadoTabla(inicioTabla);
         let y = inicioTabla + 25;
-        filas.slice(0, 18).forEach((fila, indice) => {
+        filas.forEach((fila, indice) => {
+          if (y + 24 > limiteInferior) {
+            documento.addPage();
+            dibujarEncabezadoTabla(42);
+            y = 42 + 25;
+          }
           documento.rect(42, y, ancho, 24).fill(indice % 2 === 0 ? '#ffffff' : '#f9fafb');
           documento.moveTo(42, y + 24).lineTo(42 + ancho, y + 24).strokeColor('#e5e7eb').stroke();
           columnas.forEach((columna, columnaIndice) => {
-            const valor = reporte.tipoReporte === 'emprendimientos' &&
-              columna === 'fechaCreacion'
-              ? fechaHoraCostaRica(fila[columna])
-              : texto(fila[columna]);
+            const dato = fila[columna];
+            const valor = reporte.tipoReporte === 'incidencias'
+              ? columna === 'estado'
+                ? etiquetaEstadoIncidencia(dato)
+                : columna === 'latitud' || columna === 'longitud'
+                  ? dato === null || dato === undefined || dato === ''
+                    ? 'No disponible'
+                    : String(dato)
+                  : columna === 'codigo'
+                    ? codigoIncidenciaLegible(dato)
+                    : texto(dato)
+              : reporte.tipoReporte === 'emprendimientos' &&
+                  columna === 'fechaCreacion'
+                ? fechaHoraCostaRica(dato)
+                : texto(dato);
             const x = 48 + columnaIndice * anchoColumna;
             if (reporte.tipoReporte === 'emprendimientos' && columna === 'estado') {
               const estado = fila[columna];
@@ -366,19 +549,24 @@ export class ReporteExportService {
               documento.font('Helvetica').fontSize(7).fillColor('#334155')
                 .text(valor, x + 14, y + 9, { width: anchoColumna - 24, ellipsis: true });
             } else if (columna.toLowerCase() === 'rol') {
-              const color = valor === 'administrador' ? '#047857' : valor === 'asociado' ? '#2563eb' : '#7c3aed';
+              const color = valor === 'administrador' ? '#047857' : valor === 'super_admin' ? '#d97706' : valor === 'asociado' ? '#2563eb' : '#7c3aed';
               documento.roundedRect(x, y + 6, Math.min(anchoColumna - 10, 58), 12, 6).fill(color);
-              documento.font('Helvetica-Bold').fontSize(6).fillColor('#ffffff').text(valor.toUpperCase(), x + 5, y + 9, { width: 48 });
+              documento.font('Helvetica-Bold').fontSize(6).fillColor('#ffffff').text(valor === 'super_admin' ? 'SUPER ADMIN' : valor.toUpperCase(), x + 5, y + 9, { width: 48 });
             } else {
               documento.font('Helvetica').fontSize(7).fillColor('#334155').text(valor, x, y + 9, { width: anchoColumna - 10, ellipsis: true });
             }
           });
           y += 24;
         });
+      } else if (reporte.tipoReporte === 'incidencias') {
+        documento.font('Helvetica').fontSize(8).fillColor('#64748b')
+          .text('No se encontraron incidencias para los filtros aplicados.', 42, inicioTabla + 6, { width: ancho });
       }
       const paginas = documento.bufferedPageRange();
       for (let pagina = 0; pagina < paginas.count; pagina += 1) {
         documento.switchToPage(pagina);
+        // Evita que el pie de página (y = 803) fuerce la creación de páginas en blanco.
+        documento.page.margins.bottom = 0;
         documento.moveTo(42, 795).lineTo(553, 795).strokeColor('#a7f3d0').stroke();
         documento.font('Helvetica').fontSize(7).fillColor('#64748b')
           .text(`Documento generado automáticamente por la Plataforma Web Aliados Parque Nacional Diría - Página ${pagina + 1} de ${paginas.count}`, 42, 803, { width: ancho, align: 'center' });
@@ -387,23 +575,130 @@ export class ReporteExportService {
     });
   }
 
-  private async generarExcel(reporte: Reporte, contenido: Record<string, unknown>): Promise<ArchivoExportado> {
-    const libro = new ExcelJS.Workbook();
-    const hoja = libro.addWorksheet('Reporte');
-    hoja.addRow([contenido.nombre ? texto(contenido.nombre) : tituloTipo(reporte.tipoReporte)]);
-    hoja.addRow(['Tipo', reporte.tipoReporte, 'Fecha de creación', reporte.fechaGeneracion.toLocaleString('es-CR')]);
-    hoja.addRow([]);
-    hoja.addRow(['Resumen']);
-    resumen(contenido).forEach(([clave, valor]) => hoja.addRow([clave, valor]));
-    const filas = filasDeContenido(contenido);
-    if (filas.length > 0) {
-      hoja.addRow([]);
-      const columnas = Object.keys(filas[0] ?? {});
-      hoja.addRow(columnas);
-      filas.forEach((fila) => hoja.addRow(columnas.map((columna) => texto(fila[columna]))));
-    }
-    hoja.columns.forEach((columna) => { columna.width = 22; });
-    const datos = await libro.xlsx.writeBuffer();
-    return { buffer: Buffer.from(datos), contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', extension: 'xlsx' };
+private async generarExcel(reporte: Reporte, contenido: Record<string, unknown>): Promise<ArchivoExportado> {
+  const libro = new ExcelJS.Workbook();
+  const hoja = libro.addWorksheet('Reporte', {
+    views: [{ showGridLines: false }],
+  });
+
+  const verdeOscuro = 'FF064E3B';
+  const verde = 'FF047857';
+  const verdeClaro = 'FFECFDF5';
+  const borde = { style: 'thin' as const, color: { argb: 'FFE5E7EB' } };
+
+  const ultimaColumna = 6;
+
+  // Título
+  hoja.mergeCells(1, 1, 1, ultimaColumna);
+  const titulo = hoja.getCell('A1');
+  titulo.value = contenido.nombre ? texto(contenido.nombre) : tituloTipo(reporte.tipoReporte);
+  titulo.font = { name: 'Calibri', size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
+  titulo.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: verdeOscuro } };
+  titulo.alignment = { vertical: 'middle', indent: 1 };
+  hoja.getRow(1).height = 30;
+
+  // Datos generales
+  const datosGenerales: Array<[string, string]> = [
+    ['Tipo', reporte.tipoReporte.toUpperCase()],
+    ['Fecha de generación', fechaHoraCostaRica(reporte.fechaGeneracion)],
+    ['Rango', reporte.tipoReporte === 'eventos' ? periodoEventosLegible(contenido) : periodoLegible(contenido)],
+  ];
+  datosGenerales.forEach(([etiqueta, valor], i) => {
+    const fila = hoja.getRow(3 + i);
+    fila.getCell(1).value = etiqueta;
+    fila.getCell(1).font = { bold: true, color: { argb: 'FF334155' } };
+    fila.getCell(2).value = valor;
+  });
+
+  // Resumen (mismas métricas que el PDF)
+  let filaActual = 7;
+  hoja.getCell(filaActual, 1).value = 'Resumen del reporte';
+  hoja.getCell(filaActual, 1).font = { bold: true, size: 12, color: { argb: verdeOscuro } };
+  filaActual += 1;
+
+  metricasDelReporte(reporte.tipoReporte, contenido).forEach(([etiqueta, valor]) => {
+    const celdaEtiqueta = hoja.getCell(filaActual, 1);
+    const celdaValor = hoja.getCell(filaActual, 2);
+    celdaEtiqueta.value = etiqueta;
+    celdaEtiqueta.font = { bold: true, color: { argb: 'FF047857' } };
+    celdaEtiqueta.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: verdeClaro } };
+    celdaValor.value = typeof valor === 'number' ? valor : Number(valor) || texto(valor);
+    celdaValor.font = { bold: true, color: { argb: verdeOscuro } };
+    celdaValor.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: verdeClaro } };
+    celdaValor.alignment = { horizontal: 'left' };
+    filaActual += 1;
+  });
+
+  // Tabla de detalle
+  const filas = reporte.tipoReporte === 'emprendimientos' && Array.isArray(contenido.emprendimientos)
+    ? (contenido.emprendimientos as Fila[])
+    : filasDeContenido(contenido);
+
+  if (filas.length > 0) {
+    filaActual += 1;
+    hoja.getCell(filaActual, 1).value = 'Datos detallados';
+    hoja.getCell(filaActual, 1).font = { bold: true, size: 12, color: { argb: verdeOscuro } };
+    filaActual += 1;
+
+    const columnas = Object.keys(filas[0] ?? {});
+    const filaEncabezado = hoja.getRow(filaActual);
+    columnas.forEach((columna, i) => {
+      const celda = filaEncabezado.getCell(i + 1);
+      celda.value = columna.replace(/([A-Z])/g, ' $1').toUpperCase();
+      celda.font = { bold: true, size: 10, color: { argb: 'FFFFFFFF' } };
+      celda.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: verde } };
+      celda.alignment = { vertical: 'middle' };
+    });
+    filaEncabezado.height = 22;
+    const filaEncabezadoNumero = filaActual;
+    filaActual += 1;
+
+    filas.forEach((fila, indice) => {
+      const filaExcel = hoja.getRow(filaActual);
+      columnas.forEach((columna, i) => {
+        const valor = fila[columna];
+        const celda = filaExcel.getCell(i + 1);
+        const esFecha = typeof valor === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(valor);
+        celda.value = esFecha
+          ? fechaHoraCostaRica(valor)
+          : columna === 'rol' && valor === 'super_admin'
+            ? 'super administrador'
+            : (typeof valor === 'number' ? valor : texto(valor));
+        celda.alignment = { vertical: 'middle', horizontal: 'left' };
+        celda.border = { bottom: borde };
+        if (indice % 2 === 1) {
+          celda.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF9FAFB' } };
+        }
+      });
+      filaActual += 1;
+    });
+
+    hoja.autoFilter = {
+      from: { row: filaEncabezadoNumero, column: 1 },
+      to: { row: filaEncabezadoNumero, column: columnas.length },
+    };
+
+    // Ancho según el contenido
+    columnas.forEach((columna, i) => {
+      const mayor = Math.max(
+        columna.length + 2,
+        ...filas.map((fila) => {
+          const v = fila[columna];
+          return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(v) ? 22 : texto(v).length;
+        }),
+      );
+      hoja.getColumn(i + 1).width = Math.min(Math.max(mayor + 2, 14), 40);
+    });
+  } else {
+    hoja.getColumn(1).width = 26;
+    hoja.getColumn(2).width = 28;
   }
+
+  const datos = await libro.xlsx.writeBuffer();
+  return {
+    buffer: Buffer.from(datos),
+    contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    extension: 'xlsx',
+  };
+}
 }

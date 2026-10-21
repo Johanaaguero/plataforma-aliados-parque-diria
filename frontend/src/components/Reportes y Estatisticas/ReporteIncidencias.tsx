@@ -42,6 +42,7 @@ interface ItemReporte {
 
 interface IncidenciaReporte {
   id: number;
+  codigo: string;
   titulo: string;
   descripcion: string;
   categoria: string;
@@ -77,7 +78,10 @@ interface InformacionGeneralReporte {
 
 interface EstadisticasIncidencias {
   informacionGeneral?: InformacionGeneralReporte;
-  periodo: string;
+  periodo: {
+    fechaInicio: string | null;
+    fechaFin: string | null;
+  };
   fechaInicio: string | null;
   fechaFin: string | null;
 
