@@ -31,15 +31,6 @@ const etiquetasPrioridad: Record<string, string> = {
   critica: 'Crítica',
 };
 
-const etiquetasEstado: Record<string, string> = {
-  pendiente: 'Pendiente',
-  en_revision: 'En revisión',
-  en_proceso: 'En proceso',
-  resuelta: 'Resuelta',
-  rechazada: 'Rechazada',
-  cerrada: 'Cerrada',
-};
-
 export default function DetalleIncidenciaNotificacion({
   notificacion,
   esAdministrador,
