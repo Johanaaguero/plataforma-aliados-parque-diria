@@ -1,8 +1,11 @@
 import { Request, Response } from 'express';
 import { AppDataSource } from '../../../data-source';
 import { Reserva } from '../../../models/Reserva';
-import { mkdir, writeFile } from 'fs/promises';
-import path from 'path';
+import { Usuario } from '../../../models/Usuario';
+import { ComprobantePago } from '../../../models/ComprobantePago';
+import { validarContenidoComprobante } from '../../../services/StorageService';
+import { createHash } from 'node:crypto';
+import path from 'node:path';
 import { DatosReserva, InscripcionService } from './inscripcion.service';
 import { serializarFechaCalendario, serializarFechaUtc } from '../../../utils/fechas';
 
@@ -27,7 +30,6 @@ const serializarReservaConsulta = (reserva: Reserva | null) => {
     metodoPago: reserva.metodoPago ?? reserva.eventoCapacitacion?.tipoPago ?? null,
     datosDevolucion: reserva.datosDevolucion ?? null,
     motivoRechazo: reserva.motivoRechazo ?? null,
-    fechaExpiracionPreReserva: serializarFechaUtc(reserva.fechaExpiracionPreReserva),
     esPago: reserva.eventoCapacitacion?.esPago ?? false,
     precio: reserva.eventoCapacitacion?.precio ?? null,
     politicasCancelacion: reserva.eventoCapacitacion?.politicasCancelacion ?? null,
@@ -110,6 +112,14 @@ function manejarError(res: Response, error: unknown) {
       });
     }
 
+    if (error.name === 'PaymentProofRequiredError') {
+      return res.status(409).json({
+        ok: false,
+        code: 'PAYMENT_PROOF_REQUIRED',
+        message: error.message,
+      });
+    }
+
     return res.status(500).json({
       ok: false,
       code: 'INTERNAL_SERVER_ERROR',
@@ -125,6 +135,33 @@ function manejarError(res: Response, error: unknown) {
 }
 
 export class InscripcionController {
+  async descargarComprobante(req: Request, res: Response) {
+    const reservaId = Number(req.params.id);
+    if (!req.usuario?.id || !Number.isSafeInteger(reservaId)) return res.status(404).end();
+    const reserva = await AppDataSource.getRepository(Reserva).findOneBy({ id: reservaId });
+    if (!reserva) return res.status(404).end();
+    if (reserva.devolucionProcesadaEn) return res.status(404).end();
+    const usuario = await AppDataSource.getRepository(Usuario).findOne({ where: { id: req.usuario.id }, relations: { rol: true } });
+    if (!usuario || (reserva.usuarioId !== usuario.id && usuario.rol?.nombre !== 'administrador')) return res.status(404).end();
+    const comprobante = await AppDataSource.getRepository(ComprobantePago).findOneBy({ reservaId });
+    if (!comprobante) {
+      // Compatibilidad de solo lectura durante la migración. La ruta sigue protegida.
+      if (!reserva.comprobanteUrl) return res.status(404).end();
+      const directorio = path.resolve(process.cwd(), 'uploads', 'comprobantes');
+      const archivo = path.resolve(directorio, path.basename(reserva.comprobanteUrl));
+      if (!archivo.startsWith(`${directorio}${path.sep}`)) return res.status(404).end();
+      return res.sendFile(archivo, (error) => { if (error && !res.headersSent) res.status(404).end(); });
+    }
+    try {
+      if (!comprobante.contenido) return res.status(404).end();
+      res.setHeader('Content-Type', comprobante.contentType);
+      res.setHeader('Content-Disposition', `inline; filename="comprobante-${reservaId}"`);
+      res.setHeader('Cache-Control', 'private, no-store');
+      return res.send(comprobante.contenido);
+    } catch {
+      return res.status(404).end();
+    }
+  }
   async subirComprobante(req: Request, res: Response) {
     try {
       const reservaId = Number(req.params.id);
@@ -135,16 +172,20 @@ export class InscripcionController {
       const reserva = await repo.findOne({ where: { id: reservaId }, relations: { eventoCapacitacion: true } });
       if (!reserva || reserva.usuarioId !== req.usuario.id) return res.status(404).json({ ok: false, message: 'Reserva no encontrada.' });
       if (!reserva.eventoCapacitacion.esPago) return res.status(409).json({ ok: false, message: 'Esta actividad no requiere comprobante de pago.' });
-      if (reserva.fechaExpiracionPreReserva && reserva.fechaExpiracionPreReserva < new Date()) return res.status(409).json({ ok: false, message: 'La pre-reserva ha expirado.' });
-      const extension = req.file.mimetype === 'application/pdf' ? 'pdf' : req.file.mimetype === 'image/png' ? 'png' : req.file.mimetype === 'image/webp' ? 'webp' : 'jpg';
-      const directorio = path.join(process.cwd(), 'uploads', 'comprobantes');
-      await mkdir(directorio, { recursive: true });
-      const nombre = `reserva-${reserva.id}-${Date.now()}.${extension}`;
-      await writeFile(path.join(directorio, nombre), req.file.buffer);
-      reserva.comprobanteUrl = `/uploads/comprobantes/${nombre}`;
-      reserva.fechaExpiracionPreReserva = null;
-      await repo.save(reserva);
-      return res.status(200).json({ ok: true, data: { comprobanteUrl: reserva.comprobanteUrl } });
+      const archivoSubido = req.file;
+      validarContenidoComprobante(archivoSubido.buffer, archivoSubido.mimetype);
+      const comprobantes = AppDataSource.getRepository(ComprobantePago);
+      const anterior = await comprobantes.findOneBy({ reservaId: reserva.id });
+      try {
+        await AppDataSource.transaction(async (manager) => {
+          await manager.getRepository(ComprobantePago).upsert({ reservaId: reserva.id, usuarioId: reserva.usuarioId, storageKey: null, contenido: archivoSubido.buffer, originalFilename: archivoSubido.originalname.slice(0, 255), contentType: archivoSubido.mimetype, sizeBytes: archivoSubido.buffer.length, sha256: createHash('sha256').update(archivoSubido.buffer).digest('hex'), storageProvider: 'mysql' }, ['reservaId']);
+          reserva.comprobanteUrl = null;
+          await manager.getRepository(Reserva).save(reserva);
+        });
+      } catch (error) {
+        throw error;
+      }
+      return res.status(200).json({ ok: true });
     } catch {
       return res.status(500).json({ ok: false, message: 'No se pudo subir el comprobante.' });
     }
@@ -233,6 +274,9 @@ export class InscripcionController {
         req.usuario.id,
         eventoCapacitacionId,
         req.body as DatosReserva,
+        req.file
+          ? { buffer: req.file.buffer, mimetype: req.file.mimetype, originalname: req.file.originalname }
+          : undefined,
       );
 
       return res.status(201).json({
@@ -251,7 +295,6 @@ export class InscripcionController {
           estado: resultado.reserva.estado,
           numeroTicket: resultado.reserva.numeroTicket,
           comprobanteUrl: resultado.reserva.comprobanteUrl,
-          fechaExpiracionPreReserva: serializarFechaUtc(resultado.reserva.fechaExpiracionPreReserva),
           createdAt: serializarFechaUtc(resultado.reserva.createdAt),
           updatedAt: serializarFechaUtc(resultado.reserva.updatedAt),
           cuposDisponibles: resultado.cuposDisponibles,
@@ -336,7 +379,6 @@ export class InscripcionController {
             resultado.reserva.estado,
           numeroTicket: resultado.reserva.numeroTicket,
           comprobanteUrl: resultado.reserva.comprobanteUrl,
-          fechaExpiracionPreReserva: serializarFechaUtc(resultado.reserva.fechaExpiracionPreReserva),
           createdAt: serializarFechaUtc(resultado.reserva.createdAt),
           updatedAt: serializarFechaUtc(resultado.reserva.updatedAt),
           cuposDisponibles:

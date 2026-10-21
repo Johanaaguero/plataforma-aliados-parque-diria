@@ -336,7 +336,7 @@ describe('GET /api/eventos: catálogo público con TypeORM y MySQL', () => {
     assert.ok(Array.isArray(respuesta.body));
     const ids = respuesta.body.map((evento: unknown) => comoObjeto(evento).id);
     assert.ok(ids.includes(publicado.id));
-    assert.ok(ids.includes(borrador.id));
+    assert.equal(ids.includes(borrador.id), false);
     assert.equal((await obtenerCatalogo()).data.length, 1);
   });
 });

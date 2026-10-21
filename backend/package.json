@@ -12,6 +12,8 @@
     "test:inscripcion-eventos-capacitaciones": "node --require ts-node/register --test --test-concurrency=1 src/tests/inscripcion-eventos-capacitaciones.test.ts",
     "migration:generate": "typeorm-ts-node-commonjs -d src/data-source.ts migration:generate",
     "migration:run": "typeorm-ts-node-commonjs -d src/data-source.ts migration:run",
+    "storage:migrate-comprobantes": "ts-node src/scripts/migrarComprobantesPrivados.ts",
+    "qa:migration-comprobantes": "ts-node src/scripts/qaMigracionComprobantesPrivados.ts",
     "typecheck": "tsc --noEmit"
   },
   "keywords": [],

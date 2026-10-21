@@ -8,12 +8,15 @@ import {
   Reserva,
   EstadoReserva as EstadoReservaNueva,
 } from '../../../models/Reserva';
+import { ComprobantePago } from '../../../models/ComprobantePago';
 import {
   EventosCapacitaciones,
   EstadoEventoCapacitacion,
 } from '../../../models/EventosCapacitaciones';
 import { In, EntityManager } from 'typeorm';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
+import { validarContenidoComprobante } from '../../../services/StorageService';
+import { createHash } from 'node:crypto';
 import { NotificacionService } from '../../Notificaciones/Crear notificaciones Reservas/NotificacionReservaService';
 import { registrarAuditoria } from '../../Autenticación y gestión de usuario/Autenticación y seguridad de acceso al sistema/auditoria.service';
 
@@ -24,6 +27,12 @@ export interface DatosReserva {
   numeroIdentificacion: unknown;
   correo: unknown;
   telefono: unknown;
+}
+
+export interface ComprobanteReserva {
+  buffer: Buffer;
+  mimetype: string;
+  originalname?: string;
 }
 
 type TipoIdentificacion = 'cedula' | 'dimex' | 'pasaporte';
@@ -117,6 +126,21 @@ export async function generarNumeroTicket(
   const sufijo = sufijoTicketActual();
   const patron = `%${sufijo}`;
 
+  // La fila por período se bloquea hasta que finaliza la transacción que
+  // persiste la reserva o participante. Así dos transacciones no calculan el
+  // mismo consecutivo antes de insertar su ticket.
+  await manager.query(
+    `INSERT INTO \`secuencias_tickets\` (\`periodo\`, \`ultimo\`)
+     VALUES (?, 0)
+     ON DUPLICATE KEY UPDATE \`periodo\` = VALUES(\`periodo\`)`,
+    [sufijo],
+  );
+  const filasSecuencia = await manager.query(
+    'SELECT `ultimo` FROM `secuencias_tickets` WHERE `periodo` = ? FOR UPDATE',
+    [sufijo],
+  ) as Array<{ ultimo: string | number }>;
+  const ultimoRegistrado = Number(filasSecuencia[0]?.ultimo ?? 0);
+
   const [reserva, participante] = await Promise.all([
     manager
       .getRepository(Reserva)
@@ -141,6 +165,7 @@ export async function generarNumeroTicket(
 
   const consecutivo =
     Math.max(
+      ultimoRegistrado,
       Number(reserva?.ultimo ?? 0),
       Number(participante?.ultimo ?? 0),
     ) + 1;
@@ -151,6 +176,11 @@ export async function generarNumeroTicket(
       'Se alcanzó el límite mensual de tickets.',
     );
   }
+
+  await manager.query(
+    'UPDATE `secuencias_tickets` SET `ultimo` = ? WHERE `periodo` = ?',
+    [consecutivo, sufijo],
+  );
 
   return `#TKT-${String(consecutivo).padStart(4, '0')}${sufijo}`;
 }
@@ -285,13 +315,16 @@ export class InscripcionService {
     usuarioId: number,
     eventoCapacitacionId: number,
     datos: DatosReserva,
+    comprobante?: ComprobanteReserva,
   ): Promise<{
     reserva: Reserva;
     cuposDisponibles: number;
   }> {
-    return AppDataSource.transaction(async (manager) => {
+    try {
+      return await AppDataSource.transaction(async (manager) => {
       const eventosRepo = manager.getRepository(EventosCapacitaciones);
       const reservasRepo = manager.getRepository(Reserva);
+      const comprobantesRepo = manager.getRepository(ComprobantePago);
 
       const evento = await eventosRepo
         .createQueryBuilder('evento')
@@ -310,6 +343,13 @@ export class InscripcionService {
         throw errorReserva(
           'EventNotPublishedError',
           'El evento o capacitación no está publicado.',
+        );
+      }
+
+      if (evento.esPago && !comprobante) {
+        throw errorReserva(
+          'PaymentProofRequiredError',
+          'La actividad pagada requiere un comprobante para crear la reserva.',
         );
       }
 
@@ -382,9 +422,7 @@ export class InscripcionService {
             metodoPago: evento.esPago ? evento.tipoPago : null,
             datosDevolucion: null,
             motivoRechazo: null,
-            fechaExpiracionPreReserva: evento.esPago
-              ? new Date(Date.now() + 24 * 60 * 60 * 1000)
-              : null,
+            fechaExpiracionPreReserva: null,
           })
         : reservasRepo.create({
             usuarioId,
@@ -399,14 +437,43 @@ export class InscripcionService {
             numeroTicket: await generarNumeroTicket(manager),
             metodoPago: evento.esPago ? evento.tipoPago : null,
             datosDevolucion: null,
-            fechaExpiracionPreReserva: evento.esPago
-              ? new Date(Date.now() + 24 * 60 * 60 * 1000)
-              : null,
+            fechaExpiracionPreReserva: null,
           });
 
-      evento.cuposDisponibles -= 1;
+      let reservaGuardada = await reservasRepo.save(reserva);
+      if (evento.esPago && comprobante) {
+        const extensiones: Record<string, string> = {
+          'application/pdf': 'pdf',
+          'image/jpeg': 'jpg',
+          'image/png': 'png',
+          'image/webp': 'webp',
+        };
+        const extension = extensiones[comprobante.mimetype];
+        if (!extension) {
+          throw errorReserva('ValidationError', 'El tipo de comprobante no es válido.');
+        }
+        validarContenidoComprobante(comprobante.buffer, comprobante.mimetype);
+        try {
+          // La URL histórica se conserva solo para compatibilidad; las descargas usan metadatos privados.
+          reservaGuardada.comprobanteUrl = null;
+          reservaGuardada = await reservasRepo.save(reservaGuardada);
+          await comprobantesRepo.save(comprobantesRepo.create({
+            reservaId: reservaGuardada.id,
+            usuarioId,
+            storageKey: null,
+            contenido: comprobante.buffer,
+            originalFilename: comprobante.originalname?.slice(0, 255) || `comprobante.${extension}`,
+            contentType: comprobante.mimetype,
+            sizeBytes: comprobante.buffer.length,
+            sha256: createHash('sha256').update(comprobante.buffer).digest('hex'),
+            storageProvider: 'mysql',
+          }));
+        } catch (error) {
+          throw error;
+        }
+      }
 
-      const reservaGuardada = await reservasRepo.save(reserva);
+      evento.cuposDisponibles -= 1;
       await eventosRepo.save(evento);
 
       await this.notificacionService.notificarReserva(
@@ -437,7 +504,10 @@ export class InscripcionService {
         reserva: reservaGuardada,
         cuposDisponibles: evento.cuposDisponibles,
       };
-    });
+      });
+    } catch (error) {
+      throw error;
+    }
   }
 
   async editarReserva(
