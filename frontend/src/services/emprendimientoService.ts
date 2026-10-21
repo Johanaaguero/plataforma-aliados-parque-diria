@@ -89,6 +89,8 @@ export interface Emprendimiento {
         descripcion?: string | null;
       };
 
+  categoriaId?: number | null;
+
   asociadoId: number | null;
     provincia: string | null;
 
@@ -544,6 +546,5 @@ export async function actualizarUbicacion(
     },
   );
 }
-
 
 

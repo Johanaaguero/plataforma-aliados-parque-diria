@@ -73,7 +73,7 @@ const extraerRolDelToken = (): NombreRol | null => {
   }
 };
 
-export default function login({
+export default function Login({
   onLogin,
   onIrRegistro,
 }: LoginProps) {

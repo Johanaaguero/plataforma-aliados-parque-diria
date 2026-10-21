@@ -161,6 +161,55 @@ console.error('Error en solicitud API:', {
 
     return data as T;
   }
+async solicitarBlob(
+  ruta: string,
+  opciones: RequestInit = {},
+  mensajeError = 'No se pudo completar la solicitud',
+): Promise<Blob> {
+  const headers = new Headers(this.getHeaders(true, false));
+
+  new Headers(opciones.headers).forEach((valor, clave) => {
+    headers.set(clave, valor);
+  });
+
+  let response: Response;
+
+  try {
+    response = await fetch(`${this.baseUrl}${ruta}`, {
+      ...opciones,
+      headers,
+    });
+  } catch {
+    throw new Error(mensajeError);
+  }
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => null);
+    const respuesta = data as Record<string, unknown> | null;
+
+    const error: ApiError = {
+      code:
+        typeof respuesta?.code === 'string'
+          ? respuesta.code
+          : 'UNKNOWN_ERROR',
+      message:
+        typeof respuesta?.message === 'string'
+          ? respuesta.message
+          : typeof respuesta?.mensaje === 'string'
+            ? respuesta.mensaje
+            : mensajeError,
+      status: response.status,
+    };
+
+    this.notificarErrorAuth(error);
+
+    const solicitudError = new Error(error.message);
+    Object.assign(solicitudError, error);
+    throw solicitudError;
+  }
+
+  return response.blob();
+}
 
   async login(identificador: string, password: string): Promise<{ token: string; usuario: unknown }> {
     const response = await fetch(`${this.baseUrl}/auth/login`, {
@@ -172,25 +221,30 @@ console.error('Error en solicitud API:', {
     return this.handleResponse(response);
   }
 
-  // CORRECCIÓN 3: ya no lanza error si no hay token; siempre limpia el storage.
-  async logout(): Promise<void> {
-    const token = this.getToken();
+ 
+async logout(): Promise<void> {
+  const token = this.getToken();
 
-    if (token) {
-      try {
-        await fetch(`${this.baseUrl}/auth/logout`, {
-          method: 'POST',
-          headers: this.getHeaders(true),
-        });
-      } catch (error) {
-        console.warn('Error al cerrar sesión en el servidor:', error);
-      }
+  // Eliminar la sesión del navegador inmediatamente.
+  sessionStorage.removeItem('token');
+  localStorage.removeItem('token');
+
+  // Intentar invalidar también el token en el servidor.
+  if (token) {
+    try {
+      await fetch(`${this.baseUrl}/auth/logout`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+    } catch (error) {
+      console.warn('Error al cerrar sesión en el servidor:', error);
     }
-
-    // Limpiar token del cliente sin importar si el servidor falla
-    sessionStorage.removeItem('token');
-    localStorage.removeItem('token');
   }
+}
+
 
   async registro(datos: {
     nombreUsuario: string;

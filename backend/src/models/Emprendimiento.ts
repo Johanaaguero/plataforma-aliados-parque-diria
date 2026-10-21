@@ -194,6 +194,7 @@ if (params.distrito !== undefined) {
       nombre: this.nombre,
       descripcion: this.descripcion,
       categoria: this.categoria ? this.categoria.nombre : null,
+      categoriaId: this.categoria?.id ?? null,
       asociadoId: this.asociado ? this.asociado.id : null,
       direccion: this.direccion,
       provincia: this.provincia,

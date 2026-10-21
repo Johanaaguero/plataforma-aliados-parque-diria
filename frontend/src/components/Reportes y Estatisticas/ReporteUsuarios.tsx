@@ -1671,7 +1671,7 @@ const contenedorFechasRef =
              * TARJETAS
              * ================================================= */}
 
-            <div className="grid grid-cols-1 gap-4 min-[560px]:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 min-[560px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
 
               {/* TOTAL */}
 
@@ -1772,6 +1772,33 @@ const contenedorFechasRef =
                 <p className="mt-1 text-xs font-medium text-violet-600 dark:text-violet-400">
                   {porcentaje(
                     datos.visitantes,
+                  )}
+                  % del total
+                </p>
+
+              </article>
+
+              {/* SUPER ADMINISTRADORES */}
+
+              <article className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
+
+                <div className="flex items-center justify-between gap-4">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400">
+                    {iconos.administrador}
+                  </span>
+
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                    Super admin
+                  </span>
+                </div>
+
+                <p className="mt-5 text-3xl font-extrabold tracking-tight text-slate-800 dark:text-slate-100">
+                  {datos.superAdmins}
+                </p>
+
+                <p className="mt-1 text-xs font-medium text-amber-600 dark:text-amber-400">
+                  {porcentaje(
+                    datos.superAdmins,
                   )}
                   % del total
                 </p>
@@ -1961,40 +1988,37 @@ const contenedorFechasRef =
 
                   {/* SUPER ADMIN */}
 
-                  {datos.superAdmins >
-                    0 && (
-                    <div>
-                      <div className="mb-2 flex justify-between text-sm font-semibold">
+                  <div>
+                    <div className="mb-2 flex justify-between text-sm font-semibold">
 
-                        <span className="text-slate-700 dark:text-slate-300">
-                          Super administradores
-                        </span>
+                      <span className="text-slate-700 dark:text-slate-300">
+                        Super administradores
+                      </span>
 
-                        <span className="text-amber-600 dark:text-amber-400">
-                          {
-                            datos.superAdmins
-                          }{' '}
-                          (
-                          {porcentaje(
-                            datos.superAdmins,
-                          )}
-                          %)
-                        </span>
+                      <span className="text-amber-600 dark:text-amber-400">
+                        {
+                          datos.superAdmins
+                        }{' '}
+                        (
+                        {porcentaje(
+                          datos.superAdmins,
+                        )}
+                        %)
+                      </span>
 
-                      </div>
-
-                      <div className="h-2.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                        <div
-                          className="h-full rounded-full bg-amber-500 transition-all duration-500"
-                          style={{
-                            width: `${porcentaje(
-                              datos.superAdmins,
-                            )}%`,
-                          }}
-                        />
-                      </div>
                     </div>
-                  )}
+
+                    <div className="h-2.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                      <div
+                        className="h-full rounded-full bg-amber-500 transition-all duration-500"
+                        style={{
+                          width: `${porcentaje(
+                            datos.superAdmins,
+                          )}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
 
                 </div>
 
@@ -2217,4 +2241,4 @@ const contenedorFechasRef =
         )}
     </div>
   );
-}
+}       

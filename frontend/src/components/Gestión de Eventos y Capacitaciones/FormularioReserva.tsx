@@ -16,7 +16,6 @@ import type { EventoCapacitacion } from '../../services/eventosCapacitacionesSer
 import {
   crearReserva,
   editarReserva,
-  subirComprobanteReserva,
   type DatosReserva,
 } from '../../services/inscripcionService';
 import CountrySelectPersonalizado from '../CountrySelectPersonalizado';
@@ -572,12 +571,6 @@ export default function FormularioReserva({
   function alCambiarDia(valor: string) {
     const limpio = valor.replace(/\D/g, '').slice(0, 2);
     actualizarFecha({ dia: limpio });
-
-    // Avanza al mes cuando el día ya no admite más dígitos
-    if (limpio.length === 2 || (limpio.length === 1 && Number(limpio) > 3)) {
-      mesRef.current?.focus();
-      setMesAbierto(true);
-    }
   }
 
   function seleccionarMes(valor: string) {
@@ -717,7 +710,7 @@ export default function FormularioReserva({
 
     if (evento.esPago && !reservaInicial && !comprobante) {
       setMensajeError(
-        'Adjunta el comprobante de pago para completar la pre-reserva.',
+        'Adjunta el comprobante de pago para completar la solicitud de reserva.',
       );
       cuerpoRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
       return;
@@ -729,11 +722,7 @@ export default function FormularioReserva({
     try {
       const resultado = reservaInicial
         ? await editarReserva(evento.id, formulario)
-        : await crearReserva(evento.id, formulario);
-
-      if (evento.esPago && !reservaInicial && comprobante) {
-        await subirComprobanteReserva(resultado.id, comprobante);
-      }
+        : await crearReserva(evento.id, formulario, comprobante ?? undefined);
 
       setEnviado(true);
       onSuccess(resultado.cuposDisponibles);

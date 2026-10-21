@@ -5,6 +5,7 @@ type TipoNotificacion = 'bienvenida' | 'registro' | 'categoria' | 'despedida' | 
 interface Notificacion {
   tipo: TipoNotificacion;
   mensaje: string;
+  titulo?: string;
 }
 
 const ICONOS: Record<TipoNotificacion, string> = {
@@ -15,10 +16,14 @@ const ICONOS: Record<TipoNotificacion, string> = {
   error: 'error',
 };
 
-export function mostrarFeedback(tipo: TipoNotificacion, mensaje: string) {
+export function mostrarFeedback(
+  tipo: TipoNotificacion,
+  mensaje: string,
+  titulo?: string,
+) {
   window.dispatchEvent(
     new CustomEvent<Notificacion>('sigtad:feedback', {
-      detail: { tipo, mensaje },
+      detail: { tipo, mensaje, titulo },
     }),
   );
 }
@@ -81,7 +86,9 @@ export default function FeedbackToast() {
         {icono === 'error' && <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true"><path d="M12 8v4m0 4h.01M10.3 3.9 2.8 17a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" strokeLinecap="round" /></svg>}
       </span>
       <div className="relative min-w-0 flex-1">
-        <p className="text-sm font-bold leading-5">{encabezados[notificacion.tipo]}</p>
+        <p className="text-sm font-bold leading-5">
+          {notificacion.titulo ?? encabezados[notificacion.tipo]}
+        </p>
         <p className="mt-0.5 text-xs leading-5 text-slate-600 dark:text-slate-300">{notificacion.mensaje}</p>
       </div>
       <button type="button" onClick={cerrar} className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-slate-500 transition hover:bg-emerald-500/10 hover:text-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 dark:text-slate-300 dark:hover:text-white" aria-label="Cerrar notificación">

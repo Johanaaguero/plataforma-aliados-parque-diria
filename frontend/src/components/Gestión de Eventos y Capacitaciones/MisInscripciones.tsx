@@ -15,6 +15,7 @@ import FormularioReserva from './FormularioReserva';
 
 import {
   consultarReservaEvento,
+  obtenerComprobanteReserva,
   type DatosReserva,
 } from '../../services/inscripcionService';
 
@@ -36,13 +37,6 @@ const formatearTipoActividad = (tipo: string): string => {
   }
 
   return tipo;
-};
-
-const obtenerUrlComprobante = (ruta: string): string => {
-  if (/^https?:\/\//i.test(ruta)) return ruta;
-
-  const apiUrl = import.meta.env.VITE_API_URL?.trim() || 'http://localhost:3000';
-  return `${apiUrl.replace(/\/+$/, '')}${ruta}`;
 };
 
 const acentoPorTipo: Record<
@@ -87,6 +81,11 @@ const normalizarEstado = (
   estado: string | null | undefined,
 ): string => {
   return (estado ?? '').trim().toLowerCase();
+};
+
+const esEstadoCerrado = (estado: string | null | undefined): boolean => {
+  const normalizado = normalizarEstado(estado);
+  return normalizado === 'cancelada';
 };
 
 const esFechaFutura = (
@@ -164,6 +163,40 @@ export default function MisInscripciones() {
 
   const [cargandoEdicion, setCargandoEdicion] =
     useState(false);
+
+  const [reservaConComprobanteAbierto, setReservaConComprobanteAbierto] =
+    useState<number | null>(null);
+
+  const abrirComprobante = async (reservaId: number) => {
+    if (reservaConComprobanteAbierto !== null) return;
+
+    const ventana = window.open('', '_blank');
+    if (!ventana) {
+      mostrarFeedback(
+        'error',
+        'El navegador bloqueó la nueva pestaña. Permite las ventanas emergentes para ver el comprobante.',
+      );
+      return;
+    }
+
+    setReservaConComprobanteAbierto(reservaId);
+    try {
+      const comprobante = await obtenerComprobanteReserva(reservaId);
+      const urlTemporal = URL.createObjectURL(comprobante);
+      ventana.location.replace(urlTemporal);
+      window.setTimeout(() => URL.revokeObjectURL(urlTemporal), 60_000);
+    } catch (error) {
+      ventana.close();
+      mostrarFeedback(
+        'error',
+        error instanceof Error
+          ? error.message
+          : 'No se pudo obtener el comprobante de pago.',
+      );
+    } finally {
+      setReservaConComprobanteAbierto(null);
+    }
+  };
 
   const obtenerDatosDevolucion = (): DatosDevolucion | null => {
     if (tipoDevolucion === 'sinpe_movil') {
@@ -269,6 +302,7 @@ export default function MisInscripciones() {
       mostrarFeedback(
         'registro',
         'Reserva cancelada correctamente.',
+        'Reserva cancelada correctamente.',
       );
     } catch (errorSolicitud: unknown) {
       mostrarFeedback(
@@ -306,7 +340,11 @@ export default function MisInscripciones() {
       ));
       setReservaParaDevolucion(null);
       limpiarDatosDevolucion();
-      mostrarFeedback('registro', 'Tus datos de devolución fueron enviados correctamente.');
+      mostrarFeedback(
+        'registro',
+        'Tus datos de devolución fueron enviados correctamente.',
+        'Datos de devolución enviados correctamente.',
+      );
     } catch (errorSolicitud: unknown) {
       mostrarFeedback(
         'error',
@@ -450,8 +488,7 @@ export default function MisInscripciones() {
     () =>
       inscripciones.filter(
         (inscripcion) =>
-          normalizarEstado(inscripcion.estado) !==
-            'cancelada' &&
+          !esEstadoCerrado(inscripcion.estado) &&
           esFechaFutura(inscripcion.fechaActividad),
       ).length,
     [inscripciones],
@@ -469,8 +506,7 @@ export default function MisInscripciones() {
 
   const totalPasadas = inscripciones.filter(
     (inscripcion) =>
-      normalizarEstado(inscripcion.estado) !==
-        'cancelada' &&
+        !esEstadoCerrado(inscripcion.estado) &&
       !esFechaFutura(inscripcion.fechaActividad),
   ).length;
 
@@ -488,14 +524,14 @@ const registrosVisibles = useMemo(() => {
   if (filtroTiempo === 'todas') {
     lista = lista.filter(
       (inscripcion) =>
-        normalizarEstado(inscripcion.estado) !== 'cancelada',
+        !esEstadoCerrado(inscripcion.estado),
     );
   }
 
   if (filtroTiempo === 'proximas') {
     lista = lista.filter(
       (inscripcion) =>
-        normalizarEstado(inscripcion.estado) !== 'cancelada' &&
+        !esEstadoCerrado(inscripcion.estado) &&
         esFechaFutura(inscripcion.fechaActividad),
     );
   }
@@ -503,7 +539,7 @@ const registrosVisibles = useMemo(() => {
   if (filtroTiempo === 'pasadas') {
     lista = lista.filter(
       (inscripcion) =>
-        normalizarEstado(inscripcion.estado) !== 'cancelada' &&
+        !esEstadoCerrado(inscripcion.estado) &&
         !esFechaFutura(inscripcion.fechaActividad),
     );
   }
@@ -514,6 +550,7 @@ const registrosVisibles = useMemo(() => {
         normalizarEstado(inscripcion.estado) === 'cancelada',
     );
   }
+
 
   // Filtrar por tipo de actividad
   if (filtroTipo !== 'todas') {
@@ -1132,25 +1169,27 @@ const registrosVisibles = useMemo(() => {
                             {estadoInscripcion ===
                               'cancelada' && (
                               <p className="mt-1 text-xs font-medium text-rose-600 dark:text-rose-300">
-                                Cancelada el{' '}
-                                {formatearFechaActividad(
-                                  inscripcion.fechaCancelacion,
-                                )}
+                                {inscripcion.fechaCancelacion
+                                  ? <>Cancelada el {formatearFechaActividad(inscripcion.fechaCancelacion)}</>
+                                  : 'Fecha de cancelación no disponible'}
                               </p>
                             )}
 
                             {inscripcion.esPago && inscripcion.comprobanteUrl && (
-                              <a
-                                href={obtenerUrlComprobante(inscripcion.comprobanteUrl)}
-                                target="_blank"
-                                rel="noreferrer"
+                              <button
+                                type="button"
+                                onClick={() => void abrirComprobante(inscripcion.id)}
+                                disabled={reservaConComprobanteAbierto !== null}
+                                aria-busy={reservaConComprobanteAbierto === inscripcion.id}
                                 className="mt-3 inline-flex items-center gap-2 rounded-xl border border-sky-500/25 bg-sky-500/10 px-3 py-2 text-xs font-bold text-sky-800 transition hover:bg-sky-500/20 dark:text-sky-200"
                               >
                                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5v-9m0 0-3.5 3.5M12 7.5l3.5 3.5M5.25 15.75v2.5A1.75 1.75 0 0 0 7 20h10a1.75 1.75 0 0 0 1.75-1.75v-2.5" />
                                 </svg>
-                                Ver comprobante de pago
-                              </a>
+                                {reservaConComprobanteAbierto === inscripcion.id
+                                  ? 'Abriendo comprobante...'
+                                  : 'Ver comprobante de pago'}
+                              </button>
                             )}
 
                             {estadoInscripcion === 'rechazada' && inscripcion.motivoRechazo && (
@@ -1339,6 +1378,7 @@ const registrosVisibles = useMemo(() => {
 
               mostrarFeedback(
                 'registro',
+                'Reserva actualizada correctamente.',
                 'Reserva actualizada correctamente.',
               );
             }}

@@ -3,6 +3,7 @@ import { EventosCapacitacionesController } from './eventosCapacitaciones.control
 import { verificarToken } from '../../../middlewares/auth.middleware';
 import { InscripcionController } from '../Inscripción a Eventos y Capacitaciones/inscripcion.controller';
 import { autorizarRoles } from '../../../middlewares/authorization.middleware';
+import { uploadComprobante } from '../../../middlewares/upload';
 
 const router = Router();
 const controller = new EventosCapacitacionesController();
@@ -54,6 +55,7 @@ router.post(
   '/:id/reserva',
   verificarToken,
   autorizarRoles('visitante', 'asociado'),
+  uploadComprobante.single('comprobante'),
   (req, res) => inscripcionController.crearReserva(req, res),
 );
 

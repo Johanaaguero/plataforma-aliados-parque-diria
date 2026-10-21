@@ -21,9 +21,17 @@ export interface InscripcionAdministrativa {
   estado: 'pendiente' | 'aprobada' | 'rechazada' | 'cancelada' | string;
   origen: 'participante' | 'reserva';
   esPago?: boolean;
+  precio?: number | null;
   comprobanteUrl?: string | null;
   motivoRechazo?: string | null;
   numeroTicket?: string | null;
+  datosDevolucion?:
+    | { tipo: 'sinpe_movil'; telefono: string }
+    | { tipo: 'transferencia_bancaria'; iban: string; banco: string }
+    | null;
+  fechaCancelacion?: string | null;
+  devolucionProcesadaEn?: string | null;
+  referenciaDevolucion?: string | null;
 }
 
 export const obtenerInscripcionesAdministrativas = async (): Promise<InscripcionAdministrativa[]> => {
@@ -46,5 +54,25 @@ export const actualizarEstadoReserva = async (
   {
     incluirContentType: estado === 'rechazada',
     mensajeError: `No se pudo ${estado === 'aprobada' ? 'aprobar' : 'rechazar'} la reserva.`,
+  },
+);
+
+export const registrarDevolucionProcesada = async (
+  reservaId: number,
+  referencia: string,
+): Promise<{
+  id: number;
+  devolucionProcesadaEn: string;
+  referenciaDevolucion: string;
+}> => api.solicitar(
+  `/admin/inscripciones/${reservaId}/devolucion-procesada`,
+  {
+    method: 'PATCH',
+    body: JSON.stringify({ referencia }),
+  },
+  {
+    incluirAuth: true,
+    incluirContentType: true,
+    mensajeError: 'No se pudo registrar la devolución como procesada.',
   },
 );

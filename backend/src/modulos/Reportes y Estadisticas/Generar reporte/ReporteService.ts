@@ -5,25 +5,51 @@ const reporteRepository = AppDataSource.getRepository(Reporte);
 
 export class ReporteService {
 
-  async obtenerTodos(): Promise<Reporte[]> {
-    return await reporteRepository.find({
-      relations: {
-        usuarioGenero: true,
+ async obtenerTodos(): Promise<Reporte[]> {
+  return await reporteRepository.find({
+    select: {
+      id: true,
+      numeroReporte: true,
+      tipoReporte: true,
+      fechaGeneracion: true,
+      usuarioGeneroId: true,
+      usuarioGenero: {
+        id: true,
+        nombreUsuario: true,
+        nombre: true,
+        apellidos: true,
       },
-      order: {
-        fechaGeneracion: 'DESC',
-      },
-    });
-  }
+    },
+    relations: {
+      usuarioGenero: true,
+    },
+    order: {
+      fechaGeneracion: 'DESC',
+    },
+  });
+}
 
-  async obtenerPorId(id: number): Promise<Reporte | null> {
-    return await reporteRepository.findOne({
-      where: { id },
-      relations: {
-        usuarioGenero: true,
+async obtenerPorId(id: number): Promise<Reporte | null> {
+  return await reporteRepository.findOne({
+    select: {
+      id: true,
+      numeroReporte: true,
+      tipoReporte: true,
+      fechaGeneracion: true,
+      usuarioGeneroId: true,
+      usuarioGenero: {
+        id: true,
+        nombreUsuario: true,
+        nombre: true,
+        apellidos: true,
       },
-    });
-  }
+    },
+    where: { id },
+    relations: {
+      usuarioGenero: true,
+    },
+  });
+}
 
   async crear(
     tipoReporte: TipoReporte,

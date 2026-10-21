@@ -96,6 +96,12 @@ app.use((req, res, next) => {
 
 app.use(
   '/uploads',
+  (req, res, next) => {
+    if (req.path === '/comprobantes' || req.path.startsWith('/comprobantes/')) {
+      return res.status(404).end();
+    }
+    next();
+  },
   express.static(path.join(__dirname, '../uploads')),
 );
 
@@ -204,17 +210,11 @@ const PORT = process.env.PORT || 3000;
 AppDataSource.initialize()
   .then(() => {
     console.log('Conectado a MySQL correctamente');
-
     iniciarLimpiezaTokensExpirados();
-
     iniciarLimpiezaTokensBlacklist();
-
     iniciarLimpiezaIncidencias();
-
     app.listen(PORT, () => {
-      console.log(
-        `Servidor corriendo en http://localhost:${PORT}`,
-      );
+      console.log(`Servidor corriendo en http://localhost:${PORT}`);
     });
   })
   .catch((error) => {
