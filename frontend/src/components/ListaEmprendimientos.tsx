@@ -192,7 +192,6 @@ function ListaEmprendimientos({
     useState<Emprendimiento | null>(null);
 
   const [eliminando, setEliminando] = useState(false);
-  const [mensajeEliminacion, setMensajeEliminacion] = useState<string | null>(null);
   const [errorEliminacion, setErrorEliminacion] = useState<string | null>(null);
 
   const esContextoAdministrativo = contexto === 'administrativo';
@@ -383,8 +382,12 @@ const puedeEditarEmprendimiento = (emprendimiento: Emprendimiento) =>
       setMensajeAccion({
         tipo: 'exito',
         texto:
-          resultado.message ||
-          'El emprendimiento fue actualizado correctamente.',
+          transicion.accion === 'publicar'
+            ? 'Emprendimiento publicado correctamente.'
+            : transicion.accion === 'ocultar'
+              ? 'Emprendimiento despublicado correctamente.'
+              : resultado.message ||
+                'El emprendimiento fue actualizado correctamente.',
       });
       setEmprendimientoSeleccionado(null);
       setTransicionSeleccionada(null);
@@ -488,7 +491,6 @@ useEffect(() => {
     try {
       setEliminando(true);
       setErrorEliminacion(null);
-      setMensajeEliminacion(null);
 
       await eliminarEmprendimiento(emprendimientoAEliminar.id);
 
@@ -496,9 +498,10 @@ useEffect(() => {
         actuales.filter((e) => e.id !== emprendimientoAEliminar.id),
       );
 
-      setMensajeEliminacion(
-        `El emprendimiento "${emprendimientoAEliminar.nombre}" fue eliminado correctamente.`,
-      );
+      setMensajeAccion({
+        tipo: 'exito',
+        texto: 'Emprendimiento eliminado correctamente.',
+      });
       setEmprendimientoAEliminar(null);
     } catch (err: unknown) {
       setErrorEliminacion(
@@ -722,57 +725,56 @@ useEffect(() => {
         )}
 
         {/* MENSAJE DE ACCIÓN */}
-       {mensajeAccion && (
-  <div
-    className="fixed right-4 top-4 z-[100] w-[calc(100%-2rem)] max-w-md motion-safe:transition-[opacity,transform] motion-safe:duration-300 motion-safe:ease-out motion-reduce:transition-none"
-    role={mensajeAccion.tipo === 'error' ? 'alert' : 'status'}
-    aria-live="polite"
-  >
-    <div
-      className={`flex items-start gap-3 rounded-2xl border bg-[#fffef9] p-4 shadow-xl ${
-        mensajeAccion.tipo === 'exito'
-          ? 'border-emerald-200'
-          : 'border-rose-200'
-      }`}
-    >
-      <div
-        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-lg font-bold ${
-          mensajeAccion.tipo === 'exito'
-            ? 'bg-emerald-100 text-emerald-700'
-            : 'bg-rose-100 text-rose-700'
-        }`}
-      >
-        {mensajeAccion.tipo === 'exito' ? '✓' : '⚠'}
-      </div>
+        {mensajeAccion &&
+          createPortal(
+            <div
+              className="fixed right-4 top-4 z-[10001] w-[calc(100%-2rem)] max-w-md motion-safe:transition-[opacity,transform] motion-safe:duration-300 motion-safe:ease-out motion-reduce:transition-none"
+              role={mensajeAccion.tipo === 'error' ? 'alert' : 'status'}
+              aria-live="polite"
+            >
+              <div
+                className={`flex items-start gap-3 rounded-2xl border bg-[#fffef9] p-4 shadow-xl ${
+                  mensajeAccion.tipo === 'exito'
+                    ? 'border-emerald-200'
+                    : 'border-rose-200'
+                }`}
+              >
+                <div
+                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-lg font-bold ${
+                    mensajeAccion.tipo === 'exito'
+                      ? 'bg-emerald-100 text-emerald-700'
+                      : 'bg-rose-100 text-rose-700'
+                  }`}
+                >
+                  {mensajeAccion.tipo === 'exito' ? '✓' : '⚠'}
+                </div>
 
-      <div className="min-w-0 flex-1 pt-0.5">
-        <p
-          className={`text-sm font-bold ${
-            mensajeAccion.tipo === 'exito'
-              ? 'text-emerald-900'
-              : 'text-rose-900'
-          }`}
-        >
-          {mensajeAccion.texto}
-        </p>
-      </div>
+                <div className="min-w-0 flex-1 pt-0.5">
+                  <p
+                    className={`text-sm font-bold ${
+                      mensajeAccion.tipo === 'exito'
+                        ? 'text-emerald-900'
+                        : 'text-rose-900'
+                    }`}
+                  >
+                    {mensajeAccion.texto}
+                  </p>
+                </div>
 
-      <button
-        type="button"
-        onClick={() => setMensajeAccion(null)}
-        className="shrink-0 rounded-lg p-1 text-stone-400 motion-safe:transition-colors hover:bg-stone-100 hover:text-stone-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2"
-        aria-label="Cerrar notificación"
-      >
-        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M6 6l12 12M18 6 6 18" />
-        </svg>
-      </button>
-    </div>
-  </div>
-  
-  
-
-)}
+                <button
+                  type="button"
+                  onClick={() => setMensajeAccion(null)}
+                  className="shrink-0 rounded-lg p-1 text-stone-400 motion-safe:transition-colors hover:bg-stone-100 hover:text-stone-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2"
+                  aria-label="Cerrar notificación"
+                >
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 6l12 12M18 6 6 18" />
+                  </svg>
+                </button>
+              </div>
+            </div>,
+            document.body,
+          )}
 
 
 
@@ -919,19 +921,6 @@ useEffect(() => {
             </div>
           )}
         </div>
-
-        {/* MENSAJES DE ELIMINACIÓN */}
-        {mensajeEliminacion && (
-          <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800" role="status" aria-live="polite">
-            {mensajeEliminacion}
-          </div>
-        )}
-
-        {errorEliminacion && (
-          <div className="mb-6 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-800" role="alert">
-            {errorEliminacion}
-          </div>
-        )}
 
         {/* ESTADO VACÍO */}
         {emprendimientosFiltrados.length === 0 && (
@@ -1532,7 +1521,7 @@ useEffect(() => {
                       onClick={(event) => {
                         event.stopPropagation();
                         setErrorEliminacion(null);
-                        setMensajeEliminacion(null);
+                        setMensajeAccion(null);
                         setEmprendimientoAEliminar(
                           emprendimiento,
                         );
@@ -1712,7 +1701,7 @@ useEffect(() => {
             <div className="grid gap-4 text-sm sm:grid-cols-2">
               {detalleSeleccionado.descripcion && <p className="sm:col-span-2 text-sm leading-6 text-slate-600">{detalleSeleccionado.descripcion}</p>}
               {ubicacionDetalle && <p className="text-sm text-slate-700 dark:text-slate-200"><strong className="block text-xs uppercase tracking-wider text-slate-400">Ubicación</strong>{ubicacionDetalle}</p>}
-              {detalleSeleccionado.direccion && <p className="text-sm text-slate-700"><strong className="block text-xs uppercase tracking-wider text-slate-400">Ubicación</strong>{detalleSeleccionado.direccion}</p>}
+              {/* {detalleSeleccionado.direccion && <p className="text-sm text-slate-700"><strong className="block text-xs uppercase tracking-wider text-slate-400">Ubicación</strong>{detalleSeleccionado.direccion}</p>} */}
               {detalleSeleccionado.telefono && (
                 <button
                   type="button"
@@ -1855,6 +1844,16 @@ useEffect(() => {
                 </strong>
                 ? Esta acción es irreversible.
               </p>
+
+              {errorEliminacion && (
+                <p
+                  className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-semibold text-rose-800"
+                  role="alert"
+                  aria-live="assertive"
+                >
+                  {errorEliminacion}
+                </p>
+              )}
 
               <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row">
                 <button

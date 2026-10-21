@@ -83,7 +83,7 @@ interface CrearEmprendimientoDto {
 // DTO ACTUALIZAR
 // ============================================================
 
-interface ActualizarEmprendimientoDto {
+ export interface ActualizarEmprendimientoDto {
   nombre?: string;
   descripcion?: string;
   categoriaId?: number;
@@ -360,6 +360,29 @@ export class EmprendimientoService {
     if (!manager) {
       return AppDataSource.transaction((transactionManager) =>
         this.crear(dto, usuarioId, rolUsuario, transactionManager),
+      );
+    }
+
+    if (!dto.descripcion?.trim()) {
+      throw new Error(
+        'La descripción es obligatoria',
+      );
+    }
+
+    if (
+      dto.modo !== 'borrador' &&
+      !(
+        (Buffer.isBuffer(dto.imagen) &&
+          dto.imagen.length > 0) ||
+        dto.imagenes?.some(
+          (imagen) =>
+            Buffer.isBuffer(imagen.buffer) &&
+            imagen.buffer.length > 0,
+        )
+      )
+    ) {
+      throw new Error(
+        'Debe agregar al menos una imagen para registrar el emprendimiento.',
       );
     }
 
@@ -1274,6 +1297,12 @@ export class EmprendimientoService {
         dto.descripcion;
     }
 
+    if (!emprendimiento.descripcion?.trim()) {
+      throw new Error(
+        'La descripción es obligatoria',
+      );
+    }
+
     // ========================================================
     // DIRECCIÓN
     // ========================================================
@@ -1362,6 +1391,41 @@ export class EmprendimientoService {
       delete emprendimiento.imagen;
     }
 
+    if (dto.modo === 'cambios') {
+      const idsConservados =
+        dto.imagenesConservadas === undefined
+          ? null
+          : new Set(dto.imagenesConservadas);
+      const tieneImagenRelacionConservada =
+        emprendimiento.imagenes?.some(
+          (imagen) =>
+            (idsConservados === null ||
+              idsConservados.has(imagen.id)) &&
+            Buffer.isBuffer(imagen.imagen) &&
+            imagen.imagen.length > 0,
+        ) ?? false;
+      const tieneImagenPrincipal =
+        !dto.eliminarImagen &&
+        Buffer.isBuffer(emprendimiento.imagen) &&
+        emprendimiento.imagen.length > 0;
+      const tieneImagenNueva =
+        dto.imagenes?.some(
+          (imagen) =>
+            Buffer.isBuffer(imagen.buffer) &&
+            imagen.buffer.length > 0,
+        ) ?? false;
+
+      if (
+        !tieneImagenRelacionConservada &&
+        !tieneImagenPrincipal &&
+        !tieneImagenNueva
+      ) {
+        throw new Error(
+          'Debe conservar o agregar al menos una imagen para guardar el emprendimiento.',
+        );
+      }
+    }
+
     if (
       dto.imagenesConservadas !==
       undefined
@@ -1381,10 +1445,21 @@ export class EmprendimientoService {
       );
     }
 
-    let imagenesNuevas:
+   /* let imagenesNuevas:
       EmprendimientoImagen[] = [];
-
-    if (dto.imagenes?.length) {
+      if (dto.imagenes?.length) {
+      imagenesNuevas = await imagenRepository.save(
+        dto.imagenes.map((imagen) =>
+          imagenRepository.create({
+            emprendimiento: { id: emprendimiento.id }, // <--- CAMBIO: Forzar ID
+            imagen: imagen.buffer,
+            tipoMime: imagen.tipoMime,
+            esPortada: false,
+          }),
+        ),
+      );
+    } */
+    /*if (dto.imagenes?.length) {
       imagenesNuevas =
         await imagenRepository.save(
           dto.imagenes.map(
@@ -1397,7 +1472,10 @@ export class EmprendimientoService {
               }),
           ),
         );
-    }
+    } */
+
+
+  
 
     // ========================================================
     // ESTADO SEGÚN MODO DE GUARDADO
@@ -1447,12 +1525,68 @@ export class EmprendimientoService {
     // GUARDAR
     // ========================================================
 
-    const actualizado =
+    /*const actualizado =
       await emprendimientoRepository.save(
         emprendimiento,
-      );
+      );*/
 
-    if (
+      // ========================================================
+    // 1. GUARDAR EMPRENDIMIENTO PRIMERO
+    // ========================================================
+    const actualizado = await emprendimientoRepository.save(emprendimiento);
+
+    // ========================================================
+    // 2. PROCESAR IMÁGENES NUEVAS Y RESETEAR PORTADAS
+    // ========================================================
+
+    // Resetear todas las imágenes a no portada antes de procesar nuevas
+    await imagenRepository.update(
+      { emprendimiento: { id: actualizado.id } },
+      { esPortada: false }
+    );
+
+    let imagenesNuevas: EmprendimientoImagen[] = [];
+
+    if (dto.imagenes?.length) {
+      for (const img of dto.imagenes) {
+        const nuevaImagen = await imagenRepository.save(
+          imagenRepository.create({
+            emprendimiento: actualizado, // Aquí usamos la variable que acabamos de definir arriba
+            imagen: img.buffer,
+            tipoMime: img.tipoMime,
+            esPortada: false,
+          })
+        );
+        imagenesNuevas.push(nuevaImagen);
+      }
+    }
+
+    // ========================================================
+    // 3. ACTUALIZAR PORTADA Y SINCRONIZAR BLOB
+    // ========================================================
+
+    let portadaData: Buffer | undefined;
+
+    if (dto.portadaImagenId !== undefined) {
+      const img = await imagenRepository.findOne({ where: { id: dto.portadaImagenId } });
+      if (img) {
+        await imagenRepository.update({ id: img.id }, { esPortada: true });
+        portadaData = img.imagen; 
+      }
+    } else if (dto.portadaNueva && imagenesNuevas.length > 0) {
+      await imagenRepository.update({ id: imagenesNuevas[0]!.id }, { esPortada: true });
+      portadaData = imagenesNuevas[0]!.imagen;
+    }
+
+    // Sincronizar blob principal si cambió la portada
+    if (portadaData) {
+      await emprendimientoRepository.update(
+        { id: actualizado.id }, // Aquí usamos 'actualizado' que definimos al principio
+        { imagen: portadaData }
+      );
+    }
+
+    /*if (
       dto.portadaImagenId !== undefined
     ) {
       const imagenes =
@@ -1510,6 +1644,32 @@ export class EmprendimientoService {
 
       actualizado.imagen =
         imagenesNuevas[0]!.imagen;
+    } */
+
+
+        // ========================================================
+    // ACTUALIZAR PORTADA (Lógica atómica y segura)
+    // ========================================================
+
+    // 1. Primero, quitamos la marca de portada a todas las imágenes de este emprendimiento
+    await imagenRepository.update(
+      { emprendimiento: { id: actualizado.id } },
+      { esPortada: false }
+    );
+
+    // 2. Si se eligió una portada existente, la marcamos
+    if (dto.portadaImagenId !== undefined) {
+      await imagenRepository.update(
+        { id: dto.portadaImagenId, emprendimiento: { id: actualizado.id } },
+        { esPortada: true }
+      );
+    } 
+    // 3. O si se subió una nueva y se marcó como portada
+    else if (dto.portadaNueva && imagenesNuevas.length > 0) {
+      await imagenRepository.update(
+        { id: imagenesNuevas[0]!.id, emprendimiento: { id: actualizado.id } },
+        { esPortada: true }
+      );
     }
 
     // ========================================================

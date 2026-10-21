@@ -1,7 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 
-import { emprendimientoService } from './emprendimiento.service';
-
+import { emprendimientoService, ActualizarEmprendimientoDto } from './emprendimiento.service';
 import { EstadoPublicacion } from '../../../models/Emprendimiento';
 
 const ESTADOS_TEXTO: Record<string, EstadoPublicacion> = {
@@ -1072,7 +1071,7 @@ async actualizarUbicacion(
       // CONSTRUIR DTO
       // ========================================================
 
-      const archivos = req.files
+     /* const archivos = req.files
         ? obtenerArchivos(req.files)
         : [];
 
@@ -1148,7 +1147,44 @@ async actualizarUbicacion(
         imagen: req.file.buffer,
       }
     : {}),
-};
+}; */
+
+// ========================================================
+      // CONSTRUIR DTO
+      // ========================================================
+
+      const archivos = req.files ? obtenerArchivos(req.files) : [];
+
+      const dto: ActualizarEmprendimientoDto = {
+        ...req.body,
+        ...(req.body.categoriaId !== undefined && req.body.categoriaId !== ''
+          ? { categoriaId: Number(req.body.categoriaId) }
+          : {}),
+        ...(typeof req.body.imagenesConservadas === 'string'
+          ? { imagenesConservadas: JSON.parse(req.body.imagenesConservadas) as number[] }
+          : {}),
+        ...(req.body.portadaImagenId !== undefined && req.body.portadaImagenId !== ''
+          ? { portadaImagenId: Number(req.body.portadaImagenId) }
+          : {}),
+        ...(req.body.portadaNueva === 'true' ? { portadaNueva: true } : {}),
+        ...(req.body.eliminarImagen === 'true' ? { eliminarImagen: true } : {}),
+        ...(archivos.length > 0
+          ? {
+              imagen: archivos[0]!.buffer,
+              imagenes: archivos.map((archivo) => ({
+                buffer: archivo.buffer,
+                tipoMime: archivo.mimetype,
+              })),
+            }
+          : {}),
+      };
+
+
+
+
+
+
+
       // ========================================================
       // ACTUALIZAR
       // ========================================================

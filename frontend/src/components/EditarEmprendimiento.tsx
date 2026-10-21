@@ -50,6 +50,7 @@ interface FormErrors {
   longitud?: string;
   correoElectronico?: string;
   telefono?: string;
+  imagen?: string;
 }
 
 interface ImagenExistente {
@@ -174,7 +175,10 @@ const validarFormulario = (
       'El nombre no puede superar los 150 caracteres.';
   }
 
-  if (
+  if (!form.descripcion.trim()) {
+    errores.descripcion =
+      'La descripción es obligatoria.';
+  } else if (
     form.descripcion.trim().length > 500
   ) {
     errores.descripcion =
@@ -296,7 +300,10 @@ const validarFormularioBorrador = (
         : 'El nombre no puede superar los 150 caracteres.';
   }
 
-  if (
+  if (!form.descripcion.trim()) {
+    errores.descripcion =
+      'La descripción es obligatoria.';
+  } else if (
     form.descripcion.trim().length > 500
   ) {
     errores.descripcion =
@@ -528,17 +535,14 @@ function EditarEmprendimiento({
             id,
           );
 
-        let categoriaId = '';
-
-        if (
-          emprendimiento.categoria &&
-          typeof emprendimiento.categoria ===
-            'object'
-        ) {
-          categoriaId = String(
-            emprendimiento.categoria.id,
-          );
-        }
+        const categoriaId =
+          emprendimiento.categoriaId !== null &&
+          emprendimiento.categoriaId !== undefined
+            ? String(emprendimiento.categoriaId)
+            : emprendimiento.categoria &&
+                typeof emprendimiento.categoria === 'object'
+              ? String(emprendimiento.categoria.id)
+              : '';
 
         setForm({
           nombre:
@@ -854,6 +858,10 @@ function EditarEmprendimiento({
         },
       );
 
+      setErrores((prev) => ({
+        ...prev,
+        imagen: undefined,
+      }));
       setError(null);
       setExito(false);
     }
@@ -910,6 +918,18 @@ function EditarEmprendimiento({
         return restantes;
       },
     );
+
+    if (
+      imagenesExistentes.length +
+        imagenesNuevas.length -
+        1 >
+      0
+    ) {
+      setErrores((prev) => ({
+        ...prev,
+        imagen: undefined,
+      }));
+    }
   };
 
   const handleRemoveCurrentImage = (
@@ -922,6 +942,18 @@ function EditarEmprendimiento({
             index !== indice,
         ),
     );
+
+    if (
+      imagenesExistentes.length +
+        imagenesNuevas.length -
+        1 >
+      0
+    ) {
+      setErrores((prev) => ({
+        ...prev,
+        imagen: undefined,
+      }));
+    }
 
     setError(null);
   };
@@ -977,6 +1009,16 @@ function EditarEmprendimiento({
         : validarFormularioBorrador(
             form,
           );
+
+    if (
+      modo === 'cambios' &&
+      imagenesExistentes.length +
+        imagenesNuevas.length ===
+        0
+    ) {
+      erroresFormulario.imagen =
+        'Debe conservar o agregar al menos una imagen para guardar el emprendimiento.';
+    }
 
     setErrores(
       erroresFormulario,
@@ -1349,293 +1391,174 @@ function EditarEmprendimiento({
           </label>
 
           {/* ==========================================
-              SELECTOR VISUAL DE CATEGORÍA
+              CATEGORÍA
               ========================================== */}
 
-          <div className="mx-auto w-full max-w-2xl rounded-3xl border border-emerald-900/10 bg-white p-5 shadow-sm">
-            <div className="mb-4 flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-800">
-                <svg
-                  className="h-5 w-5"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  aria-hidden="true"
-                >
-                  <rect
-                    x="3"
-                    y="3"
-                    width="7"
-                    height="7"
-                    rx="1"
-                    strokeWidth="2"
-                  />
+          <div className="relative flex flex-col gap-2">
+            <label
+              htmlFor="categoriaId"
+              className="text-sm font-semibold text-[#095540]"
+            >
+              Categoría *
+            </label>
 
-                  <rect
-                    x="14"
-                    y="3"
-                    width="7"
-                    height="7"
-                    rx="1"
-                    strokeWidth="2"
-                  />
+            <button
+              type="button"
+              id="categoriaId"
+              aria-haspopup="listbox"
+              aria-expanded={categoriaAbierta}
+              onClick={() => setCategoriaAbierta((abierta) => !abierta)}
+              className={`flex w-full items-center justify-between gap-4 rounded-2xl border bg-white/60 px-4 py-3 text-left shadow-[inset_0_1px_2px_rgba(9,85,64,0.05)] outline-none motion-safe:transition-[border-color,background-color,box-shadow] motion-safe:duration-200 focus-visible:bg-white focus-visible:ring-4 ${
+                errores.categoriaId
+                  ? 'border-red-400 bg-red-50/70 focus-visible:ring-red-100'
+                  : categoriaAbierta
+                    ? 'border-[#009444] bg-white ring-4 ring-[#009444]/15'
+                    : 'border-[#095540]/15 hover:border-[#009444]/50 hover:bg-white/80 focus-visible:border-[#009444] focus-visible:ring-[#009444]/15'
+              }`}
+            >
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#8DC63F]/20 text-[#095540]">
+                  <svg
+                    className="h-6 w-6"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    aria-hidden="true"
+                  >
+                    <rect x="3" y="3" width="7" height="7" rx="1" strokeWidth="2" />
+                    <rect x="14" y="3" width="7" height="7" rx="1" strokeWidth="2" />
+                    <rect x="3" y="14" width="7" height="7" rx="1" strokeWidth="2" />
+                    <rect x="14" y="14" width="7" height="7" rx="1" strokeWidth="2" />
+                  </svg>
+                </div>
 
-                  <rect
-                    x="3"
-                    y="14"
-                    width="7"
-                    height="7"
-                    rx="1"
-                    strokeWidth="2"
-                  />
-
-                  <rect
-                    x="14"
-                    y="14"
-                    width="7"
-                    height="7"
-                    rx="1"
-                    strokeWidth="2"
-                  />
-                </svg>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="categoriaId"
-                  className="block text-sm font-bold text-stone-800"
-                >
-                  Categoría{' '}
-                  <span className="text-emerald-800">
-                    *
-                  </span>
-                </label>
-
-                <p className="mt-1 text-xs font-normal text-stone-500">
-                  Seleccione la categoría que mejor representa su emprendimiento.
-                </p>
-              </div>
-            </div>
-
-            <div className="relative">
-              {/* Botón principal */}
-              <button
-                type="button"
-                id="categoriaId"
-                onClick={() =>
-                  setCategoriaAbierta(
-                    (abierta) =>
-                      !abierta,
-                  )
-                }
-                className={`flex w-full items-center justify-between rounded-2xl border bg-[#fffef9] px-4 py-3 text-left outline-none motion-safe:transition-all motion-safe:duration-200 ${
-                  errores.categoriaId
-                    ? 'border-red-400 bg-red-50 focus-visible:ring-4 focus-visible:ring-red-100'
-                    : categoriaAbierta
-                      ? 'border-emerald-700 bg-white shadow-[0_0_0_4px_rgba(16,185,129,0.10)]'
-                      : 'border-stone-200 hover:border-emerald-500 hover:bg-white focus-visible:border-emerald-700 focus-visible:ring-4 focus-visible:ring-emerald-100'
-                }`}
-                aria-haspopup="listbox"
-                aria-expanded={
-                  categoriaAbierta
-                }
-              >
-                <div className="flex min-w-0 items-center gap-3">
-                  {/* Ícono */}
-                  <div
-                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl motion-safe:transition-colors motion-safe:duration-200 ${
+                <div className="min-w-0">
+                  <p
+                    className={`truncate text-sm font-semibold ${
                       categoriaSeleccionada
-                        ? 'bg-emerald-100 text-emerald-800'
-                        : 'bg-stone-100 text-stone-400'
+                        ? 'text-stone-800'
+                        : 'text-stone-500'
                     }`}
                   >
-                    <svg
-                      className="h-5 w-5"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      aria-hidden="true"
-                    >
-                      <path
-                        d="M4 6.5A2.5 2.5 0 0 1 6.5 4h4A2.5 2.5 0 0 1 13 6.5v4a2.5 2.5 0 0 1-2.5 2.5h-4A2.5 2.5 0 0 1 4 10.5v-4Z"
-                        strokeWidth="1.8"
-                      />
+                    {categoriaSeleccionada
+                      ? categoriaSeleccionada.nombre
+                      : 'Seleccionar categoría'}
+                  </p>
 
-                      <path
-                        d="M13 13.5a2.5 2.5 0 0 1 2.5-2.5h2a2.5 2.5 0 0 1 2.5 2.5v4a2.5 2.5 0 0 1-2.5 2.5h-2a2.5 2.5 0 0 1-2.5-2.5v-4Z"
-                        strokeWidth="1.8"
-                      />
-                    </svg>
-                  </div>
-
-                  {/* Texto seleccionado */}
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400">
-                      Categoría seleccionada
-                    </p>
-
-                    <p
-                      className={`truncate text-sm font-semibold ${
-                        categoriaSeleccionada
-                          ? 'text-stone-800'
-                          : 'text-stone-400'
-                      }`}
-                    >
-                      {categoriaSeleccionada
-                        ? categoriaSeleccionada.nombre
-                        : 'Selecciona una categoría'}
-                    </p>
-                  </div>
+                  <p className="text-xs font-normal text-stone-500">
+                    Elija la que mejor represente su emprendimiento
+                  </p>
                 </div>
+              </div>
 
-                {/* Flecha */}
-                <svg
-                  className={`h-5 w-5 shrink-0 text-emerald-800 motion-safe:transition-transform motion-safe:duration-200 ${
-                    categoriaAbierta
-                      ? 'rotate-180'
-                      : ''
-                  }`}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="m6 9 6 6 6-6"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                  />
-                </svg>
-              </button>
+              <svg
+                className={`h-5 w-5 shrink-0 text-[#095540] motion-safe:transition-transform motion-safe:duration-200 ${
+                  categoriaAbierta ? 'rotate-180' : ''
+                }`}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  d="m6 9 6 6 6-6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                />
+              </svg>
+            </button>
 
-              {/* =====================================
-                  MENÚ DE CATEGORÍAS
-                  ===================================== */}
-
-              {categoriaAbierta && (
+            {categoriaAbierta && (
+  <div className="relative mt-2 w-full overflow-hidden rounded-2xl border border-emerald-900/10 bg-white/90 p-2 shadow-[0_20px_45px_rgba(20,83,45,0.15)] backdrop-blur-xl">
                 <div
-                  className="absolute left-0 right-0 z-50 mt-2 overflow-hidden rounded-2xl border border-emerald-900/10 bg-white p-2 shadow-[0_20px_45px_rgba(20,83,45,0.15)]"
                   role="listbox"
                   aria-labelledby="categoriaId"
+                  className="max-h-64 space-y-1 overflow-y-auto"
                 >
-                  <div className="mb-2 px-2 py-1.5">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-800">
-                      Categorías disponibles
-                    </p>
+                  {categorias.map((categoria) => {
+                    const seleccionada =
+                      String(categoria.id) === String(form.categoriaId);
 
-                    <p className="mt-0.5 text-xs text-stone-400">
-                      Seleccione una opción
-                    </p>
-                  </div>
+                    return (
+                      <button
+                        key={categoria.id}
+                        type="button"
+                        role="option"
+                        aria-selected={seleccionada}
+                        onClick={() => seleccionarCategoria(categoria.id)}
+                        className={`flex w-full items-center gap-3 rounded-xl p-3 text-left outline-none motion-safe:transition-colors motion-safe:duration-200 focus-visible:ring-2 focus-visible:ring-[#009444] ${
+                          seleccionada
+                            ? 'bg-[#8DC63F]/20 ring-1 ring-[#009444]/30'
+                            : 'hover:bg-[#eef6e8]/70'
+                        }`}
+                      >
+                        <div
+                          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
+                            seleccionada
+                              ? 'bg-[#095540] text-white'
+                              : 'bg-[#8DC63F]/20 text-[#095540]'
+                          }`}
+                        >
+                          <svg
+                            className="h-6 w-6"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            aria-hidden="true"
+                          >
+                            <path
+                              d="M4 7.5A3.5 3.5 0 0 1 7.5 4h9A3.5 3.5 0 0 1 20 7.5v9a3.5 3.5 0 0 1-3.5 3.5h-9A3.5 3.5 0 0 1 4 16.5v-9Z"
+                              strokeWidth="1.8"
+                            />
+                            <path
+                              d="M8 9h8M8 13h5"
+                              strokeLinecap="round"
+                              strokeWidth="1.8"
+                            />
+                          </svg>
+                        </div>
 
-                  <div className="max-h-64 space-y-1 overflow-y-auto">
-                    {categorias.map(
-                      (categoria) => {
-                        const seleccionada =
-                          String(
-                            categoria.id,
-                          ) ===
-                          form.categoriaId;
-
-                        return (
-                          <button
-                            key={
-                              categoria.id
-                            }
-                            type="button"
-                            role="option"
-                            aria-selected={
-                              seleccionada
-                            }
-                            onClick={() =>
-                              seleccionarCategoria(
-                                categoria.id,
-                              )
-                            }
-                            className={`group flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left outline-none motion-safe:transition-all motion-safe:duration-150 ${
-                              seleccionada
-                                ? 'bg-emerald-50 ring-1 ring-emerald-200'
-                                : 'hover:bg-stone-50 hover:ring-1 hover:ring-stone-200 focus-visible:bg-stone-50 focus-visible:ring-2 focus-visible:ring-emerald-500'
+                        <div className="min-w-0 flex-1">
+                          <p
+                            className={`text-sm font-bold ${
+                              seleccionada ? 'text-[#095540]' : 'text-stone-800'
                             }`}
                           >
-                            {/* Ícono */}
-                            <div
-                              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl motion-safe:transition-colors ${
-                                seleccionada
-                                  ? 'bg-emerald-800 text-white'
-                                  : 'bg-emerald-50 text-emerald-700 group-hover:bg-emerald-100'
-                              }`}
+                            {categoria.nombre}
+                          </p>
+                          <p className="mt-0.5 text-xs text-stone-500">
+                            Categoría de emprendimiento
+                          </p>
+                        </div>
+
+                        {seleccionada && (
+                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#095540] text-white">
+                            <svg
+                              className="h-4 w-4"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              aria-hidden="true"
                             >
-                              <svg
-                                className="h-5 w-5"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                aria-hidden="true"
-                              >
-                                <path
-                                  d="M4 7.5A3.5 3.5 0 0 1 7.5 4h9A3.5 3.5 0 0 1 20 7.5v9a3.5 3.5 0 0 1-3.5 3.5h-9A3.5 3.5 0 0 1 4 16.5v-9Z"
-                                  strokeWidth="1.8"
-                                />
-
-                                <path
-                                  d="M8 9h8M8 13h5"
-                                  strokeLinecap="round"
-                                  strokeWidth="1.8"
-                                />
-                              </svg>
-                            </div>
-
-                            {/* Información */}
-                            <div className="min-w-0 flex-1">
-                              <p
-                                className={`truncate text-sm font-semibold ${
-                                  seleccionada
-                                    ? 'text-emerald-900'
-                                    : 'text-stone-700'
-                                }`}
-                              >
-                                {
-                                  categoria.nombre
-                                }
-                              </p>
-
-                              <p className="mt-0.5 text-[11px] text-stone-400">
-                                Categoría de emprendimiento
-                              </p>
-                            </div>
-
-                            {/* Check */}
-                            {seleccionada && (
-                              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-800 text-white">
-                                <svg
-                                  className="h-4 w-4"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  aria-hidden="true"
-                                >
-                                  <path
-                                    d="m5 12 4 4L19 6"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth="2.5"
-                                  />
-                                </svg>
-                              </div>
-                            )}
-                          </button>
-                        );
-                      },
-                    )}
-                  </div>
+                              <path
+                                d="m5 12 4 4L19 6"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                              />
+                            </svg>
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
             {errores.categoriaId && (
-              <p className="mt-2 flex items-center gap-1 text-xs font-medium text-red-600">
+              <p className="flex items-center gap-1 text-xs font-medium text-red-600">
                 <span>⚠</span>
                 {errores.categoriaId}
               </p>
@@ -1643,7 +1566,7 @@ function EditarEmprendimiento({
           </div>
 
           <label className={labelClase}>
-            Descripción
+            Descripción *
 
             <textarea
               name="descripcion"
@@ -1715,23 +1638,16 @@ function EditarEmprendimiento({
                     imagen.id > 0 && (
                       <button
                         type="button"
-                        onClick={() =>
-                          setImagenesExistentes(
-                            (
-                              actuales,
-                            ) =>
-                              actuales.map(
-                                (
-                                  actual,
-                                ) => ({
-                                  ...actual,
-                                  esPortada:
-                                    actual.id ===
-                                    imagen.id,
-                                }),
-                              ),
-                          )
-                        }
+                       // ESTO ES LO CORRECTO:
+onClick={() => {
+  setPortadaNueva(false); // La acción va afuera
+  setImagenesExistentes((actuales) =>
+    actuales.map((actual) => ({
+      ...actual,
+      esPortada: actual.id === imagen.id,
+    }))
+  );
+}}
                         className="absolute bottom-2 left-2 rounded-lg bg-white/90 px-2 py-1 text-[10px] font-bold text-[#095540] backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444]"
                       >
                         Hacer portada
@@ -1789,11 +1705,10 @@ function EditarEmprendimiento({
                   {!portadaNueva && (
                     <button
                       type="button"
-                      onClick={() =>
-                        setPortadaNueva(
-                          true,
-                        )
-                      }
+                      onClick={() => {
+  setPortadaNueva(true);
+  setImagenesExistentes((prev) => prev.map((img) => ({ ...img, esPortada: false })));
+}}
                       className="absolute bottom-2 left-2 rounded-lg bg-white/90 px-2 py-1 text-[10px] font-bold text-[#095540] backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444]"
                     >
                       Hacer portada
@@ -1897,6 +1812,16 @@ function EditarEmprendimiento({
               className="hidden"
             />
           </label>
+
+          {errores.imagen && (
+            <p
+              className="flex items-center gap-1 text-xs font-medium text-red-600"
+              role="alert"
+            >
+              <span aria-hidden="true">⚠</span>
+              {errores.imagen}
+            </p>
+          )}
         </div>
 
         {/* ==========================================
