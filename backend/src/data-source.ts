@@ -88,7 +88,7 @@ ssl: process.env.DB_SSL === 'true'
   ],
  
 
-  migrations: ['src/migrations/*.ts'],
-
+  migrations: [__dirname + '/migrations/*.{js,ts}'],
+  
   synchronize: false,
 });
