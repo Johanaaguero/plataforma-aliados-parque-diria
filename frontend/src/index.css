@@ -1,0 +1,899 @@
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700&family=Open+Sans:wght@400;500;600;700;800&display=swap");
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Open Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-brand: "Montserrat", "Open Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+  }
+}
+
+/* Shared presentation tokens. Existing components keep their classes and behavior. */
+:root {
+  color-scheme: light;
+  --sigtad-background: #f3f6ee;
+  --sigtad-surface: rgb(255 255 251 / 68%);
+  --sigtad-surface-solid: #fffef9;
+  --sigtad-surface-soft: rgb(237 244 231 / 88%);
+  --sigtad-surface-hover: #e6efdf;
+  --sigtad-text: #233b31;
+  --sigtad-heading: #095540;
+  --sigtad-muted: #52645b;
+  --sigtad-accent-text: #416817;
+  --sigtad-border: rgb(9 85 64 / 19%);
+  --sigtad-glass-edge: rgb(255 255 255 / 55%);
+  --sigtad-focus: #08743f;
+  --sigtad-primary: #095540;
+  --sigtad-primary-hover: #08743f;
+  --sigtad-danger: #a51e37;
+  --sigtad-danger-bg: #ffedf0;
+  --sigtad-warning: #715005;
+  --sigtad-warning-bg: #fff4ce;
+  --sigtad-success: #176441;
+  --sigtad-success-bg: #e5f3e9;
+  --sigtad-info: #086187;
+  --sigtad-info-bg: #e0f2fa;
+  --sigtad-shadow: 0 16px 45px rgb(7 63 49 / 10%), inset 0 1px 0 rgb(255 255 255 / 70%);
+  --sigtad-catalog-overlay: rgb(244 248 239 / 83%);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --sigtad-background: #0b1914;
+  --sigtad-surface: rgb(22 43 34 / 92%);
+  --sigtad-surface-solid: #162b22;
+  --sigtad-surface-soft: rgb(31 54 43 / 94%);
+  --sigtad-surface-hover: #2b4938;
+  --sigtad-text: #edf5ed;
+  --sigtad-heading: #c3f0d5;
+  --sigtad-muted: #bed0c2;
+  --sigtad-accent-text: #b9e891;
+  --sigtad-border: rgb(186 223 199 / 28%);
+  --sigtad-glass-edge: rgb(196 233 211 / 28%);
+  --sigtad-focus: #b9e891;
+  --sigtad-primary: #095540;
+  --sigtad-primary-hover: #08743f;
+  --sigtad-danger: #ffc4cc;
+  --sigtad-danger-bg: #4c2330;
+  --sigtad-warning: #ffe8a5;
+  --sigtad-warning-bg: #453b1c;
+  --sigtad-success: #c3f0d5;
+  --sigtad-success-bg: #224733;
+  --sigtad-info: #bce7ff;
+  --sigtad-info-bg: #193c4a;
+  --sigtad-shadow: 0 16px 45px rgb(0 0 0 / 24%), inset 0 1px 0 rgb(209 245 221 / 9%);
+  --sigtad-catalog-overlay: rgb(9 25 18 / 85%);
+}
+
+html {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+  background-color: var(--sigtad-background);
+  scroll-behavior: smooth;
+  scroll-padding-top: 7rem;
+}
+
+body {
+  min-width: 320px;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  color: var(--sigtad-text);
+  background-color: var(--sigtad-background);
+  transition: color 300ms ease-in-out, background-color 300ms ease-in-out;
+}
+
+/* A single stacking context contains the decorative background and every modal. */
+#root {
+  min-height: 100svh;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  isolation: isolate;
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(16 185 129 / 40%) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgb(6 78 59 / 15%);
+  border-radius: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgb(16 185 129 / 40%);
+  border-radius: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgb(16 185 129 / 70%);
+}
+
+::selection {
+  color: #073f31;
+  background: #b9e891;
+}
+
+.sigtad-heading { color: var(--sigtad-heading); }
+.sigtad-muted { color: var(--sigtad-muted); }
+
+/* Map existing light surfaces without touching photo overlays or solid green heroes. */
+:where([class~="bg-white"], [class~="bg-white/55"], [class~="bg-white/60"],
+  [class~="bg-white/65"], [class~="bg-white/80"], [class~="bg-white/84"],
+  [class~="bg-white/85"], [class~="bg-white/86"], [class~="bg-white/90"],
+  [class~="bg-white/95"], [class~="bg-[#fffef9]"], [class~="bg-[#fffef9]/95"]) {
+  background-color: var(--sigtad-surface);
+}
+
+:where([class~="bg-[#f5f7ef]"], [class~="bg-[#f5f7f1]"], [class~="bg-[#f5f8f6]"],
+  section[class~="bg-stone-50"]) {
+  background-color: var(--sigtad-background);
+}
+
+:where([class~="bg-slate-50"], [class~="bg-slate-50/60"], [class~="bg-slate-50/70"],
+  [class~="bg-slate-100"], [class~="bg-slate-200"], [class~="bg-slate-200/60"],
+  [class~="bg-stone-50"], [class~="bg-stone-50/70"], [class~="bg-stone-100"],
+  [class~="bg-[#f7faf5]"], [class~="bg-[#eaf5d9]"], [class~="bg-[#edf6df]/70"]) {
+  background-color: var(--sigtad-surface-soft);
+}
+
+/* Photo-carousel indicators retain their light contrast against the photograph. */
+[aria-hidden="true"][class~="bg-white/55"] {
+  background-color: rgb(255 255 255 / 70%);
+}
+
+/* Existing activity chips use inline palette values; only their text is adjusted. */
+.sigtad-catalogo article span[style*="background-color: rgb(0, 174, 239)"] {
+  color: #06394a !important;
+}
+
+/* Rounded surfaces share glass; no blur on ancestors containing fixed dialogs. */
+.sigtad-glass,
+:where(article, form, section, div)[class*="rounded-"]:where(
+  [class~="bg-white"], [class~="bg-white/60"], [class~="bg-white/65"],
+  [class~="bg-white/80"], [class~="bg-white/84"], [class~="bg-white/85"],
+  [class~="bg-white/86"], [class~="bg-white/90"], [class~="bg-white/95"],
+  [class~="bg-[#fffef9]"], [class~="bg-[#fffef9]/95"]
+):not(:has(.fixed)) {
+  border-color: var(--sigtad-glass-edge);
+  background-color: var(--sigtad-surface);
+  box-shadow: var(--sigtad-shadow);
+  -webkit-backdrop-filter: blur(20px) saturate(120%);
+  backdrop-filter: blur(20px) saturate(120%);
+}
+
+.sigtad-glass:has(.fixed) {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/* Keep the original logo readable on its white backing in both themes. */
+:is(div, span):has(> img[src*="logo"]) {
+  background-color: rgb(255 255 255 / 96%);
+}
+
+.sigtad-navbar-logo {
+  background-color: transparent !important;
+}
+
+[data-theme="dark"] .sigtad-logo-claro {
+  display: none;
+}
+
+[data-theme="dark"] .sigtad-logo-oscuro {
+  display: block;
+}
+
+button:not(:disabled) {
+  font-family: inherit;
+  transition: transform 300ms ease-in-out, color 300ms ease-in-out,
+    background-color 300ms ease-in-out, border-color 300ms ease-in-out,
+    box-shadow 300ms ease-in-out;
+}
+
+/* Las tarjetas de notificación se animan como una unidad; sus controles no
+   deben escalar de forma aislada y desplazar el texto sobre los iconos. */
+.sigtad-notificaciones button:not(:disabled):hover {
+  transform: none;
+}
+
+.sigtad-notificaciones li {
+  will-change: transform, box-shadow;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Base compartida para selects nativos: el menú del sistema mantiene sus
+   restricciones, mientras el control visible conserva la estética glass. */
+select {
+  border: 1px solid rgb(226 232 240 / 100%);
+  border-radius: .75rem;
+  background-color: rgb(255 255 255 / 80%);
+  color: #1e293b;
+  box-shadow: 0 10px 28px rgb(7 63 49 / 12%);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+[data-theme="dark"] select {
+  border-color: #1e293b;
+  background-color: rgb(15 23 42 / 80%);
+  color: #fff;
+  box-shadow: 0 14px 30px rgb(0 0 0 / 32%);
+}
+
+/* Los navegadores controlan el panel de un <select> nativo, pero estas reglas
+   conservan contraste legible para las opciones que sí permiten estilizar. */
+select option {
+  background-color: #fff;
+  color: #17372c;
+}
+
+[data-theme="dark"] select option {
+  background-color: #0f172a;
+  color: #f8fafc;
+}
+
+@media (hover: hover) {
+  button:not(:disabled):hover {
+    transform: scale(1.05);
+  }
+}
+
+button:not(:disabled):active {
+  transform: scale(0.95);
+}
+
+.sigtad-button-feedback {
+  animation: sigtad-feedback-in 450ms ease-out both;
+}
+
+@keyframes sigtad-feedback-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.sigtad-animate-in {
+  animation: sigtad-fade-up 500ms ease-out both;
+}
+
+.sigtad-reveal {
+  will-change: transform, opacity, filter;
+  animation: sigtad-reveal-up 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.sigtad-observe {
+  opacity: 0;
+  transform: translate3d(0, 30px, 0);
+  will-change: transform, opacity;
+  transition: opacity 700ms cubic-bezier(0.16, 1, 0.3, 1), transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sigtad-observe.is-visible {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+.sigtad-observe-stagger > * {
+  opacity: 0;
+  transform: translate3d(0, 40px, 0) scale(0.98);
+  will-change: transform, opacity;
+  transition: opacity 700ms cubic-bezier(0.16, 1, 0.3, 1), transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sigtad-observe-stagger.is-visible > * { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+.sigtad-observe-stagger > *:nth-child(2) { transition-delay: 120ms; }
+.sigtad-observe-stagger > *:nth-child(3) { transition-delay: 240ms; }
+.sigtad-observe-stagger > *:nth-child(4) { transition-delay: 360ms; }
+
+.sigtad-reveal-stagger > * {
+  will-change: transform, opacity, filter;
+  animation: sigtad-reveal-up 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.sigtad-reveal-stagger > *:nth-child(2) { animation-delay: 80ms; }
+.sigtad-reveal-stagger > *:nth-child(3) { animation-delay: 160ms; }
+.sigtad-reveal-stagger > *:nth-child(4) { animation-delay: 240ms; }
+
+.sigtad-image-reveal {
+  will-change: transform, opacity, filter;
+  animation: sigtad-image-reveal 850ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@supports (animation-timeline: view()) {
+  .sigtad-reveal,
+  .sigtad-reveal-stagger > * {
+    animation-timeline: view();
+    animation-range: entry 8% cover 28%;
+  }
+
+  .sigtad-image-reveal {
+    animation-timeline: view();
+    animation-range: entry 5% cover 36%;
+  }
+}
+
+.sigtad-menu-reveal {
+  transform-origin: top right;
+  will-change: transform, opacity;
+  animation: sigtad-menu-in 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+:is([role="dialog"], dialog[open]) {
+  animation: sigtad-modal-zoom 350ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform: translateZ(0);
+  will-change: transform, opacity;
+}
+
+details[open] > .sigtad-menu-reveal {
+  animation: sigtad-menu-in 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+main {
+  animation: sigtad-page-in 550ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
+}
+
+.sigtad-feedback-toast {
+  animation: sigtad-toast-in 450ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.sigtad-feedback-toast-out {
+  animation: sigtad-toast-out 350ms ease-in both;
+}
+
+.sigtad-feedback-toast-welcome {
+  box-shadow: 0 18px 50px rgb(7 63 49 / 24%), 0 0 0 1px rgb(185 232 145 / 34%), 0 0 30px rgb(141 198 63 / 18%);
+}
+
+.sigtad-feedback-toast-farewell {
+  box-shadow: 0 18px 50px rgb(7 63 49 / 24%), 0 0 26px rgb(0 174 239 / 14%);
+}
+
+.sigtad-login-welcome {
+  animation: sigtad-login-welcome-in 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform: translateZ(0);
+  will-change: opacity, transform;
+}
+
+.sigtad-logout-welcome {
+  animation:
+    sigtad-login-welcome-in 420ms cubic-bezier(0.16, 1, 0.3, 1) both,
+    sigtad-logout-welcome-out 450ms ease-in-out 1350ms both;
+}
+
+.sigtad-logout-welcome {
+  animation: sigtad-logout-welcome 1800ms ease-in-out both;
+}
+
+@keyframes sigtad-toast-in {
+  from { opacity: 0; transform: translateY(-18px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes sigtad-toast-out {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(-8px) scale(0.98); }
+}
+
+@keyframes sigtad-logout-welcome {
+  0%, 75% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes sigtad-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes sigtad-page-in {
+  from { opacity: 0; transform: translate3d(0, 16px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes sigtad-reveal-up {
+  from { opacity: 0; filter: blur(4px); transform: translate3d(0, 40px, 0) scale(0.98); }
+  to { opacity: 1; filter: blur(0); transform: translate3d(0, 0, 0); }
+}
+
+@keyframes sigtad-image-reveal {
+  from { opacity: 0; filter: blur(4px); transform: translate3d(0, 24px, 0) scale(1.05); }
+  to { opacity: 1; filter: blur(0); transform: translate3d(0, 0, 0) scale(1); }
+}
+
+@keyframes sigtad-menu-in {
+  from { opacity: 0; transform: translate3d(0, -4px, 0) scale(0.95); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+
+@keyframes sigtad-modal-zoom {
+  from { opacity: 0; transform: translate3d(0, 8px, 0) scale(.95); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+
+@keyframes sigtad-login-welcome-in {
+  from { opacity: 0; transform: translate3d(0, 12px, 0) scale(.97); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+
+@keyframes sigtad-logout-welcome-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.sigtad-footer {
+  background-color: #095540 !important;
+}
+
+[data-theme="dark"] .sigtad-footer {
+  background-color: #020617 !important;
+}
+
+.sigtad-footer-wave {
+  fill: #095540 !important;
+}
+
+[data-theme="dark"] .sigtad-footer-wave {
+  fill: #020617 !important;
+}
+
+/* La foto institucional se conserva en ambos temas; la capa de contraste se
+   adapta sin afectar el contenido ni los controles del formulario. */
+.sigtad-incidencia-form::before {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  content: "";
+  background: rgb(237 247 240 / 72%);
+  transition: background-color 300ms ease;
+}
+
+.sigtad-incidencia-form > * {
+  position: relative;
+  z-index: 1;
+}
+
+[data-theme="dark"] .sigtad-incidencia-form::before {
+  background: rgb(2 6 23 / 72%);
+}
+
+/* Only the decorative pseudo-element is blurred, never the catalog or its children. */
+.sigtad-catalogo {
+  position: relative;
+  background-color: transparent;
+}
+
+.sigtad-catalogo::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  content: "";
+  pointer-events: none;
+  background: linear-gradient(var(--sigtad-catalog-overlay), var(--sigtad-catalog-overlay)),
+    url("./assets/diria-paisaje-3.jpg") center top / cover no-repeat;
+  filter: blur(9px);
+}
+
+.sigtad-catalogo > section {
+  background-color: transparent;
+}
+
+/* Text colors stay independent of background utility colors. */
+:where([class~="text-slate-400"], [class~="text-slate-500"], [class~="text-slate-600"],
+  [class~="text-stone-400"], [class~="text-stone-500"], [class~="text-stone-600"],
+  [class~="text-[#587267]"], [class~="text-[#095540]/50"], [class~="text-[#095540]/60"]) {
+  color: var(--sigtad-muted);
+}
+
+:where([class~="text-slate-700"], [class~="text-slate-800"], [class~="text-slate-900"],
+  [class~="text-stone-700"], [class~="text-stone-800"], [class~="text-stone-900"],
+  [class~="text-black"], [class~="text-[#17372c]"], [class~="text-[#183c2f]"],
+  [class~="text-[#244a38]"]) {
+  color: var(--sigtad-text);
+}
+
+:where([class~="text-[#095540]"], [class~="text-[#073f31]"], [class~="text-[#08743f]"],
+  [class~="text-[#174d35]"], [class~="text-[#0b6246]"], [class~="text-emerald-700"],
+  [class~="text-emerald-800"], [class~="text-emerald-900"], [class~="text-emerald-950"]) {
+  color: var(--sigtad-heading);
+}
+
+:where([class~="text-[#009444]"], [class~="text-[#567d16]"], [class~="text-[#568000]"],
+  [class~="text-[#8DC63F]"], [class~="text-[#8dc63f]"]) {
+  color: var(--sigtad-accent-text);
+}
+
+:where(#inicio, footer, header[class~="text-white"])
+  :is([class~="text-[#8DC63F]"], [class~="text-[#8dc63f]"]) {
+  color: #b9e891;
+}
+
+footer [class~="text-white/55"] {
+  color: #cfdfd5;
+}
+
+/* Keep white captions legible across the entire green header gradient. */
+[class~="text-white"][class~="to-[#009444]"] {
+  --tw-gradient-to: #08743f;
+}
+
+:where([class~="border-slate-100"], [class~="border-slate-200"], [class~="border-slate-200/60"],
+  [class~="border-slate-200/70"], [class~="border-slate-300"], [class~="border-stone-200"],
+  [class~="border-stone-300"], [class~="border-[#e2ebe5]"], [class~="border-[#095540]/10"],
+  [class~="border-[#095540]/12"], [class~="border-[#095540]/15"], [class~="border-[#095540]/20"],
+  [class~="border-[#095540]/25"], [class~="border-[#095540]/30"],
+  [class~="border-emerald-950/10"], [class~="border-emerald-950/15"]) {
+  border-color: var(--sigtad-border);
+}
+
+[class~="divide-slate-100"] > :not(:last-child) {
+  border-color: var(--sigtad-border);
+}
+
+/* Success, warning, error and information retain their semantic colors. */
+:where([class~="bg-emerald-50"], [class~="bg-emerald-100"], [class~="bg-emerald-100/60"],
+  [class~="bg-emerald-200/60"]) { background-color: var(--sigtad-success-bg); }
+:where([class~="bg-amber-50"], [class~="bg-amber-200/60"]) { background-color: var(--sigtad-warning-bg); }
+:where([class~="bg-red-50"], [class~="bg-red-50/40"], [class~="bg-red-100"],
+  [class~="bg-rose-50"], [class~="bg-rose-100"], [class~="bg-rose-200/60"]) {
+  background-color: var(--sigtad-danger-bg);
+}
+:where([class~="text-red-600"], [class~="text-red-700"], [class~="text-red-800"],
+  [class~="text-rose-600"], [class~="text-rose-700"], [class~="text-rose-800"],
+  [class~="text-rose-900"]) { color: var(--sigtad-danger); }
+:where([class~="text-amber-700"], [class~="text-amber-800"], [class~="text-amber-900"],
+  [class~="text-[#5f5b00]"], [class~="text-[#6B6900]"], [class~="text-[#6e6c00]"]) {
+  color: var(--sigtad-warning);
+}
+:where([class~="text-[#0087BA]"], [class~="text-[#087AA8]"], [class~="text-[#0B7FB0]"]) {
+  color: var(--sigtad-info);
+}
+
+/* Form controls, including native menus and react-phone-number-input. */
+:where(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea) {
+  color: var(--sigtad-text);
+  background-color: var(--sigtad-surface-solid);
+  caret-color: var(--sigtad-heading);
+}
+
+:where(input, textarea)::placeholder {
+  color: var(--sigtad-muted);
+  opacity: 1;
+}
+
+select option {
+  color: var(--sigtad-text);
+  background-color: var(--sigtad-surface-solid);
+}
+
+.PhoneInputInput {
+  color: var(--sigtad-text);
+  background: transparent;
+}
+
+:where(input[type="checkbox"], input[type="radio"]) {
+  accent-color: var(--sigtad-focus);
+}
+
+:where(input, textarea, select):focus {
+  background-color: var(--sigtad-surface-solid);
+}
+
+/* Harmonized actions preserve current dimensions, radii, icons and click targets. */
+:where(button, a, input, select, textarea, summary, [role="button"]) {
+  transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+  transition-duration: 300ms;
+  transition-timing-function: ease-in-out;
+}
+
+:where(button, a, summary, [role="button"]):focus-visible,
+:where(input, select, textarea):focus-visible {
+  outline: 2px solid var(--sigtad-focus);
+  outline-offset: 3px;
+  --tw-ring-offset-color: var(--sigtad-surface-solid);
+}
+
+:where(button, summary):not(:disabled) { cursor: pointer; }
+
+.sigtad-button-primary,
+:is(button, a):where([class~="bg-[#095540]"], [class~="bg-[#009444]"],
+  [class~="bg-emerald-700"], [class~="bg-emerald-800"], [class~="bg-emerald-900"]) {
+  color: #fff;
+  background-color: var(--sigtad-primary);
+}
+
+.sigtad-button-secondary {
+  color: var(--sigtad-heading);
+  background-color: var(--sigtad-surface);
+  border-color: var(--sigtad-border);
+}
+
+:is(button, a):where([class~="bg-[#8DC63F]"], [class~="bg-[#8dc63f]"],
+  [class~="bg-[#d9d823]"], [class~="bg-[#D9D823]"]) {
+  color: #073f31;
+}
+
+:is(button, a):is([class~="bg-[#8DC63F]"], [class~="bg-[#8dc63f]"],
+  [class~="bg-[#d9d823]"], [class~="bg-[#D9D823]"]) :where(svg, span) {
+  color: inherit;
+}
+
+:is(button, a):where([class~="bg-[#00AEEF]"], [class~="bg-[#0B7FB0]"]) {
+  color: #fff;
+  background-color: #086187;
+}
+:is(button, a):where([class~="bg-amber-500"], [class~="bg-amber-600"]) {
+  color: #fff;
+  background-color: #895c08;
+}
+:is(button, a):where([class~="bg-red-500"], [class~="bg-red-600"], [class~="bg-rose-500"]) {
+  color: #fff;
+  background-color: #b4233e;
+}
+:is(button, a):where([class~="bg-[#6f8e22]"], [class~="bg-[#b7b30d]"]) {
+  color: #073f31;
+  background-color: #b9d679;
+}
+
+@media (hover: hover) {
+  .sigtad-theme-control button:not([aria-pressed="true"]):hover {
+    background-color: var(--sigtad-surface-hover);
+  }
+
+  .sigtad-button-primary:hover,
+  :is(button, a):where([class~="hover:bg-[#009444]"], [class~="bg-[#095540]"],
+    [class~="bg-[#009444]"], [class~="bg-emerald-700"], [class~="bg-emerald-800"],
+    [class~="bg-emerald-900"]):not(:disabled):hover {
+    color: #fff;
+    background-color: var(--sigtad-primary-hover);
+  }
+
+  .sigtad-button-secondary:hover,
+  :where([class~="hover:bg-white"], [class~="hover:bg-stone-50"], [class~="hover:bg-stone-100"],
+    [class~="hover:bg-slate-50"], [class~="hover:bg-slate-100"], [class~="hover:bg-slate-200/80"],
+    [class~="hover:bg-[#f7faf5]"], [class~="hover:bg-[#eef7e7]"],
+    [class~="hover:bg-[#eef7e7]/70"]):not(:disabled):hover {
+    background-color: var(--sigtad-surface-hover);
+  }
+
+  :where([class~="hover:text-[#095540]"], [class~="hover:text-[#073f31]"],
+    [class~="hover:text-[#009444]"], [class~="hover:text-emerald-900"],
+    [class~="hover:text-slate-700"], [class~="hover:text-slate-800"],
+    [class~="hover:text-slate-900"], [class~="hover:text-stone-700"]):hover {
+    color: var(--sigtad-heading);
+  }
+
+  :where([class~="hover:bg-emerald-50"], [class~="hover:bg-emerald-50/70"],
+    [class~="hover:bg-emerald-100"], [class~="hover:bg-emerald-100/80"]):hover {
+    background-color: var(--sigtad-success-bg);
+  }
+  :where([class~="hover:bg-amber-100"], [class~="hover:bg-amber-100/80"]):hover {
+    background-color: var(--sigtad-warning-bg);
+  }
+  :where([class~="hover:bg-red-50"], [class~="hover:bg-rose-50"],
+    [class~="hover:bg-rose-100"], [class~="hover:bg-rose-100/80"]):hover {
+    background-color: var(--sigtad-danger-bg);
+  }
+  :where([class~="hover:text-red-900"], [class~="hover:text-rose-800"]):hover {
+    color: var(--sigtad-danger);
+  }
+
+  .group:hover :is([class~="group-hover:text-emerald-900"], [class~="group-hover:text-[#009444]"]) {
+    color: var(--sigtad-heading);
+  }
+}
+
+:where(button, input, select, textarea):disabled {
+  cursor: not-allowed;
+}
+
+/* Dark-only details for lightly tinted chips and inherited form labels. */
+[data-theme="dark"] :where([class~="bg-[#095540]/5"], [class~="bg-[#095540]/10"]) {
+  background-color: var(--sigtad-success-bg);
+}
+[data-theme="dark"] :where([class~="border-emerald-100"], [class~="border-emerald-200"],
+  [class~="border-emerald-300"]) { border-color: #4b795b; }
+[data-theme="dark"] :where([class~="border-red-200"], [class~="border-red-300"],
+  [class~="border-rose-200"], [class~="border-rose-300"]) { border-color: #9a5362; }
+[data-theme="dark"] :where([class~="border-amber-200"], [class~="border-amber-300"]) {
+  border-color: #a18441;
+}
+
+/* The two activity forms set this translucent badge's text inline. Override only
+   its color in dark mode; keep their existing activity-dependent backgrounds. */
+[data-theme="dark"] :is([aria-labelledby="registro-actividad-titulo"],
+  [aria-labelledby="edicion-actividad-titulo"]) span[class~="rounded-full"][style] {
+  color: var(--sigtad-heading) !important;
+}
+
+/* Preserve map imagery and attribution; only controls and popups follow the theme. */
+:root .leaflet-container {
+  color: var(--sigtad-text);
+  background: var(--sigtad-surface-soft);
+  font-family: var(--font-sans);
+}
+:root .leaflet-container .leaflet-popup-content-wrapper,
+:root .leaflet-container .leaflet-popup-tip,
+:root .leaflet-container .leaflet-bar a,
+:root .leaflet-container .leaflet-bar a:hover,
+:root .leaflet-container .leaflet-control-attribution {
+  color: var(--sigtad-text);
+  background-color: var(--sigtad-surface-solid);
+}
+:root .leaflet-container .leaflet-bar a,
+:root .leaflet-container .leaflet-control-zoom,
+:root .leaflet-container .leaflet-control-attribution { border-color: var(--sigtad-border); }
+:root .leaflet-container .leaflet-bar a.leaflet-disabled {
+  color: var(--sigtad-muted);
+  background-color: var(--sigtad-surface-soft);
+}
+:root .leaflet-container a,
+:root .leaflet-container a.leaflet-popup-close-button {
+  color: var(--sigtad-heading);
+}
+:root .leaflet-container .leaflet-control-attribution a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.sigtad-map { border-color: var(--sigtad-border); }
+
+/* Native disclosures/dialogs are presentation only and do not affect app state. */
+.sigtad-theme-control {
+  color: var(--sigtad-heading);
+}
+.sigtad-theme-control summary { list-style: none; }
+.sigtad-theme-control summary::-webkit-details-marker { display: none; }
+.sigtad-theme-control [aria-pressed="true"] {
+  color: #073f31;
+  background-color: #b9e891;
+}
+.sigtad-theme-control [aria-pressed="true"] :is(.sigtad-heading, .sigtad-muted) {
+  color: #073f31;
+}
+
+.sigtad-about {
+  color: var(--sigtad-text);
+  background-color: var(--sigtad-surface-solid);
+  scrollbar-color: var(--sigtad-border) transparent;
+}
+.sigtad-about::backdrop {
+  background-color: rgb(3 24 16 / 68%);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .sigtad-glass {
+    background-color: var(--sigtad-surface-solid);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root, :root[data-theme="dark"] { --sigtad-surface: var(--sigtad-surface-solid); }
+  .sigtad-catalogo::before { background-image: none; }
+}
+
+@media (forced-colors: active) {
+  .sigtad-catalogo::before { display: none; }
+  .sigtad-glass, .sigtad-about, .sigtad-theme-control,
+  :where(button, input, select, textarea, [role="dialog"]) {
+    border-color: ButtonText;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  :where(button, a, summary, input, select, textarea, [role="button"]):focus-visible {
+    outline-color: Highlight;
+  }
+}
+
+/* Calendario reutilizable con tratamiento Liquid Glass para eventos y reservas. */
+.calendario-liquid-glass.react-datepicker {
+  overflow: hidden;
+  border: 1px solid rgb(9 85 64 / 20%);
+  border-radius: 1rem;
+  background: rgb(255 255 251 / 92%);
+  box-shadow: 0 18px 45px rgb(6 53 39 / 18%);
+  font-family: var(--font-sans);
+  backdrop-filter: blur(18px);
+}
+.calendario-liquid-glass .react-datepicker__header {
+  border-bottom: 1px solid rgb(9 85 64 / 12%);
+  background: rgb(237 244 231 / 82%);
+}
+.calendario-liquid-glass .react-datepicker__current-month,
+.calendario-liquid-glass .react-datepicker__day-name { color: #095540; }
+.calendario-liquid-glass .react-datepicker__day { border-radius: .6rem; }
+.calendario-liquid-glass .react-datepicker__day:hover { background: rgb(141 198 63 / 24%); }
+.calendario-liquid-glass .react-datepicker__day--selected,
+.calendario-liquid-glass .react-datepicker__day--keyboard-selected {
+  background: #095540;
+  color: #fff;
+}
+:root[data-theme="dark"] .calendario-liquid-glass.react-datepicker {
+  border-color: rgb(183 232 108 / 25%);
+  background: rgb(15 23 42 / 94%);
+}
+:root[data-theme="dark"] .calendario-liquid-glass .react-datepicker__header {
+  border-color: rgb(255 255 255 / 10%);
+  background: rgb(30 41 59 / 86%);
+}
+:root[data-theme="dark"] .calendario-liquid-glass .react-datepicker__current-month,
+:root[data-theme="dark"] .calendario-liquid-glass .react-datepicker__day-name,
+:root[data-theme="dark"] .calendario-liquid-glass .react-datepicker__day { color: #e2e8f0; }
+
+/* Selector de prioridades del formulario de comunicados. */
+select:has(> option[value="ALTA"]):has(> option[value="MEDIA"]):has(> option[value="BAJA"]) {
+  appearance: none;
+  border-color: rgb(16 185 129 / 20%);
+  border-radius: 1rem;
+  background-color: rgb(255 255 255 / 70%);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23047857' stroke-width='2'%3E%3Cpath d='m5 7.5 5 5 5-5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-position: right 1rem center;
+  background-repeat: no-repeat;
+  background-size: 1rem;
+  color: #1e293b;
+  padding: .625rem 2.75rem .625rem 1rem;
+  backdrop-filter: blur(12px);
+}
+select:has(> option[value="ALTA"]):has(> option[value="MEDIA"]):has(> option[value="BAJA"]):focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgb(16 185 129 / 50%);
+}
+select:has(> option[value="ALTA"]):has(> option[value="MEDIA"]):has(> option[value="BAJA"]) option {
+  background: #fff;
+  color: #1e293b;
+}
+:root[data-theme="dark"] select:has(> option[value="ALTA"]):has(> option[value="MEDIA"]):has(> option[value="BAJA"]) {
+  border-color: rgb(16 185 129 / 30%);
+  background-color: rgb(15 23 42 / 70%);
+  color: #f1f5f9;
+}
+:root[data-theme="dark"] select:has(> option[value="ALTA"]):has(> option[value="MEDIA"]):has(> option[value="BAJA"]) option {
+  background: #0f172a;
+  color: #f1f5f9;
+}
