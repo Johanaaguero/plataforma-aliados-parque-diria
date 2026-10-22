@@ -29,7 +29,7 @@ export interface ConfiguracionSolicitudApi {
 }
 
 class ApiService {
-  private baseUrl = 'http://localhost:3000/api';
+  private baseUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api`;
 
   private getToken(): string | null {
     return sessionStorage.getItem('token') ?? localStorage.getItem('token');
