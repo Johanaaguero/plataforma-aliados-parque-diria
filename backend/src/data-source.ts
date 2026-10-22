@@ -52,6 +52,9 @@ export const AppDataSource = new DataSource({
   password: DB_PASSWORD,
   database: DB_DATABASE,
 timezone: '-06:00',
+ssl: process.env.DB_SSL === 'true'
+  ? { rejectUnauthorized: true }
+  : undefined,
   entities: [
     Usuario,
     Rol,
