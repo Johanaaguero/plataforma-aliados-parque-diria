@@ -117,6 +117,10 @@ const esFechaFutura = (
   return fechaActividad.getTime() >= hoy.getTime();
 };
 
+// text-base en móvil evita el zoom automático de iOS al enfocar un input
+const claseInputDevolucion =
+  'w-full rounded-xl border border-slate-200 bg-white/80 px-3 py-3 text-base text-slate-800 outline-none transition focus:border-emerald-500 dark:border-emerald-500/20 dark:bg-emerald-950/40 dark:text-white sm:py-2.5 sm:text-sm';
+
 export default function MisInscripciones() {
   const [inscripciones, setInscripciones] = useState<
     MiInscripcion[]
@@ -132,7 +136,7 @@ export default function MisInscripciones() {
   const [filtroTiempo, setFiltroTiempo] =
     useState<FiltroTiempo>('proximas');
 
-    const [busquedaTicket, setBusquedaTicket] = useState('');
+  const [busquedaTicket, setBusquedaTicket] = useState('');
 
   const [expandidoId, setExpandidoId] =
     useState<number | null>(null);
@@ -218,18 +222,55 @@ export default function MisInscripciones() {
     setBancoDevolucion('');
   };
 
+  const claseTipoDevolucion = (activo: boolean) =>
+    `min-h-[44px] rounded-xl border px-3 py-2 text-xs font-bold transition ${
+      activo
+        ? 'border-emerald-500 bg-emerald-500/15 text-emerald-800 dark:text-emerald-200'
+        : 'border-slate-200 text-slate-600 dark:border-white/10 dark:text-slate-300'
+    }`;
+
   const camposDevolucion = () => (
     <>
       <div className="mt-3 grid grid-cols-2 gap-2">
-        <button type="button" onClick={() => setTipoDevolucion('sinpe_movil')} className={`rounded-xl border px-3 py-2 text-xs font-bold transition ${tipoDevolucion === 'sinpe_movil' ? 'border-emerald-500 bg-emerald-500/15 text-emerald-800 dark:text-emerald-200' : 'border-slate-200 text-slate-600 dark:border-white/10 dark:text-slate-300'}`}>SINPE Móvil</button>
-        <button type="button" onClick={() => setTipoDevolucion('transferencia_bancaria')} className={`rounded-xl border px-3 py-2 text-xs font-bold transition ${tipoDevolucion === 'transferencia_bancaria' ? 'border-emerald-500 bg-emerald-500/15 text-emerald-800 dark:text-emerald-200' : 'border-slate-200 text-slate-600 dark:border-white/10 dark:text-slate-300'}`}>Transferencia</button>
+        <button
+          type="button"
+          onClick={() => setTipoDevolucion('sinpe_movil')}
+          className={claseTipoDevolucion(tipoDevolucion === 'sinpe_movil')}
+        >
+          SINPE Móvil
+        </button>
+        <button
+          type="button"
+          onClick={() => setTipoDevolucion('transferencia_bancaria')}
+          className={claseTipoDevolucion(tipoDevolucion === 'transferencia_bancaria')}
+        >
+          Transferencia
+        </button>
       </div>
       {tipoDevolucion === 'sinpe_movil' ? (
-        <input value={telefonoDevolucion} onChange={(event) => setTelefonoDevolucion(event.target.value)} placeholder="Número de teléfono SINPE" className="mt-3 w-full rounded-xl border border-slate-200 bg-white/80 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-emerald-500 dark:border-emerald-500/20 dark:bg-emerald-950/40 dark:text-white" />
+        <input
+          value={telefonoDevolucion}
+          onChange={(event) => setTelefonoDevolucion(event.target.value)}
+          placeholder="Número de teléfono SINPE"
+          type="tel"
+          inputMode="tel"
+          className={`mt-3 ${claseInputDevolucion}`}
+        />
       ) : (
         <div className="mt-3 grid gap-2">
-          <input value={ibanDevolucion} onChange={(event) => setIbanDevolucion(event.target.value)} placeholder="Cuenta IBAN" className="w-full rounded-xl border border-slate-200 bg-white/80 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-emerald-500 dark:border-emerald-500/20 dark:bg-emerald-950/40 dark:text-white" />
-          <input value={bancoDevolucion} onChange={(event) => setBancoDevolucion(event.target.value)} placeholder="Banco o entidad financiera" className="w-full rounded-xl border border-slate-200 bg-white/80 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-emerald-500 dark:border-emerald-500/20 dark:bg-emerald-950/40 dark:text-white" />
+          <input
+            value={ibanDevolucion}
+            onChange={(event) => setIbanDevolucion(event.target.value)}
+            placeholder="Cuenta IBAN"
+            autoCapitalize="characters"
+            className={claseInputDevolucion}
+          />
+          <input
+            value={bancoDevolucion}
+            onChange={(event) => setBancoDevolucion(event.target.value)}
+            placeholder="Banco o entidad financiera"
+            className={claseInputDevolucion}
+          />
         </div>
       )}
     </>
@@ -506,104 +547,99 @@ export default function MisInscripciones() {
 
   const totalPasadas = inscripciones.filter(
     (inscripcion) =>
-        !esEstadoCerrado(inscripcion.estado) &&
+      !esEstadoCerrado(inscripcion.estado) &&
       !esFechaFutura(inscripcion.fechaActividad),
   ).length;
 
+  const registrosVisibles = useMemo(() => {
+    let lista = [...inscripciones];
 
+    // Filtrar por estado temporal
+    if (filtroTiempo === 'todas') {
+      lista = lista.filter(
+        (inscripcion) =>
+          !esEstadoCerrado(inscripcion.estado),
+      );
+    }
 
+    if (filtroTiempo === 'proximas') {
+      lista = lista.filter(
+        (inscripcion) =>
+          !esEstadoCerrado(inscripcion.estado) &&
+          esFechaFutura(inscripcion.fechaActividad),
+      );
+    }
 
+    if (filtroTiempo === 'pasadas') {
+      lista = lista.filter(
+        (inscripcion) =>
+          !esEstadoCerrado(inscripcion.estado) &&
+          !esFechaFutura(inscripcion.fechaActividad),
+      );
+    }
 
+    if (filtroTiempo === 'canceladas') {
+      lista = lista.filter(
+        (inscripcion) =>
+          normalizarEstado(inscripcion.estado) === 'cancelada',
+      );
+    }
 
+    // Filtrar por tipo de actividad
+    if (filtroTipo !== 'todas') {
+      lista = lista.filter(
+        (inscripcion) =>
+          inscripcion.tipoActividad === filtroTipo,
+      );
+    }
 
-  
-const registrosVisibles = useMemo(() => {
-  let lista = [...inscripciones];
+    // Buscar por número de ticket
+    const ticketBuscado = busquedaTicket.trim().toLowerCase();
 
-  // Filtrar por estado temporal
-  if (filtroTiempo === 'todas') {
-    lista = lista.filter(
-      (inscripcion) =>
-        !esEstadoCerrado(inscripcion.estado),
-    );
-  }
+    if (ticketBuscado) {
+      lista = lista.filter((inscripcion) => {
+        const numeroTicket = String(
+          inscripcion.numeroTicket ?? '',
+        ).toLowerCase();
 
-  if (filtroTiempo === 'proximas') {
-    lista = lista.filter(
-      (inscripcion) =>
-        !esEstadoCerrado(inscripcion.estado) &&
-        esFechaFutura(inscripcion.fechaActividad),
-    );
-  }
+        return numeroTicket.includes(ticketBuscado);
+      });
+    }
 
-  if (filtroTiempo === 'pasadas') {
-    lista = lista.filter(
-      (inscripcion) =>
-        !esEstadoCerrado(inscripcion.estado) &&
-        !esFechaFutura(inscripcion.fechaActividad),
-    );
-  }
+    // Ordenar por fecha de inscripción, de más reciente a más antigua
+    lista.sort((a, b) => {
+      const fechaA = a.fechaInscripcion
+        ? new Date(a.fechaInscripcion).getTime()
+        : 0;
 
-  if (filtroTiempo === 'canceladas') {
-    lista = lista.filter(
-      (inscripcion) =>
-        normalizarEstado(inscripcion.estado) === 'cancelada',
-    );
-  }
+      const fechaB = b.fechaInscripcion
+        ? new Date(b.fechaInscripcion).getTime()
+        : 0;
 
-
-  // Filtrar por tipo de actividad
-  if (filtroTipo !== 'todas') {
-    lista = lista.filter(
-      (inscripcion) =>
-        inscripcion.tipoActividad === filtroTipo,
-    );
-  }
-
-  // Buscar por número de ticket
-  const ticketBuscado = busquedaTicket.trim().toLowerCase();
-
-  if (ticketBuscado) {
-    lista = lista.filter((inscripcion) => {
-      const numeroTicket = String(
-        inscripcion.numeroTicket ?? '',
-      ).toLowerCase();
-
-      return numeroTicket.includes(ticketBuscado);
+      return fechaB - fechaA;
     });
-  }
 
-  // Ordenar por fecha de inscripción, de más reciente a más antigua
-  lista.sort((a, b) => {
-    const fechaA = a.fechaInscripcion
-      ? new Date(a.fechaInscripcion).getTime()
-      : 0;
+    return lista;
+  }, [inscripciones, filtroTipo, filtroTiempo, busquedaTicket]);
 
-    const fechaB = b.fechaInscripcion
-      ? new Date(b.fechaInscripcion).getTime()
-      : 0;
-
-    return fechaB - fechaA;
-  });
-
-  return lista;
-}, [inscripciones, filtroTipo, filtroTiempo, busquedaTicket]);
-
+  // Botones de filtro: táctiles (44px) y a ancho completo dentro de su rejilla en móvil
   const claseFiltro = (activo: boolean) =>
-    `rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-200 ${
+    `min-h-[44px] rounded-xl px-3 py-2 text-center text-sm font-semibold transition-all duration-200 sm:min-h-0 sm:px-4 ${
       activo
         ? 'bg-[#095540] text-white shadow-md shadow-[#095540]/15 dark:bg-[#8dc63f] dark:text-[#071c16] dark:shadow-[#8dc63f]/10'
         : 'border border-white/30 bg-white/50 text-slate-600 backdrop-blur-md hover:bg-white/70 hover:text-[#095540] dark:border-emerald-500/20 dark:bg-emerald-950/50 dark:text-slate-300 dark:hover:bg-emerald-950/70 dark:hover:text-[#b7e86c]'
     }`;
 
   return (
-    <section className="relative isolate flex min-h-screen w-full flex-col overflow-x-hidden bg-transparent px-4 py-8 font-sans transition-colors duration-300 sm:px-6 lg:px-10">
+    <section className="relative isolate flex min-h-dvh w-full min-w-0 flex-col overflow-x-clip bg-transparent px-3 py-4 font-sans transition-colors duration-300 sm:px-6 sm:py-8 lg:px-10">
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
         <img src={parqueHero} alt="" className="absolute inset-0 h-full w-full scale-105 object-cover opacity-80 blur-sm brightness-90" />
         <div className="absolute inset-0 bg-white/20 dark:bg-slate-950/30" />
       </div>
-      <div className="relative z-10 mx-auto max-w-5xl">
-        <div className="relative mb-6 overflow-hidden rounded-3xl border border-white/40 bg-white/70 px-6 py-6 text-[#073f31] shadow-xl backdrop-blur-xl sm:px-8 sm:py-7 dark:border-emerald-500/20 dark:bg-emerald-950/70 dark:text-white">
+
+      <div className="relative z-10 mx-auto w-full min-w-0 max-w-5xl">
+        {/* Encabezado */}
+        <div className="relative mb-4 overflow-hidden rounded-2xl border border-white/40 bg-white/70 px-4 py-5 text-[#073f31] shadow-xl backdrop-blur-xl sm:mb-6 sm:rounded-3xl sm:px-8 sm:py-7 dark:border-emerald-500/20 dark:bg-emerald-950/70 dark:text-white">
           <div
             className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-[#8dc63f]/[0.12] blur-3xl"
             aria-hidden="true"
@@ -633,7 +669,7 @@ const registrosVisibles = useMemo(() => {
                 </svg>
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#095540] dark:text-emerald-200/65">
                   Área personal
                 </p>
@@ -650,52 +686,46 @@ const registrosVisibles = useMemo(() => {
               detalles.
             </p>
 
-            <div className="mt-5 flex items-center gap-5">
-              <div className="flex items-center gap-2.5">
+            <div className="mt-5 grid grid-cols-3 gap-2 sm:flex sm:items-center sm:gap-5">
+              <div className="flex flex-col items-start gap-1.5 sm:flex-row sm:items-center sm:gap-2.5">
                 <span className="flex h-7 min-w-7 items-center justify-center rounded-lg bg-[#dff0c7] px-2 text-sm font-bold text-[#095540] dark:bg-[#8dc63f]/15 dark:text-[#c8ee8d]">
                   {totalProximas}
                 </span>
 
-                <div>
-                  <p className="text-[11px] font-medium text-[#355448] dark:text-emerald-100/55">
-                    Próximas
-                  </p>
-                </div>
+                <p className="text-[11px] font-medium text-[#355448] dark:text-emerald-100/55">
+                  Próximas
+                </p>
               </div>
 
-              <div className="h-6 w-px bg-[#b9d6af] dark:bg-white/10" />
+              <div className="hidden h-6 w-px bg-[#b9d6af] sm:block dark:bg-white/10" />
 
-              <div className="flex items-center gap-2.5">
+              <div className="flex flex-col items-start gap-1.5 sm:flex-row sm:items-center sm:gap-2.5">
                 <span className="flex h-7 min-w-7 items-center justify-center rounded-lg bg-[#e4eee8] px-2 text-sm font-bold text-[#17372c] dark:bg-white/[0.08] dark:text-white/85">
                   {totalPasadas}
                 </span>
 
-                <div>
-                  <p className="text-[11px] font-medium text-[#355448] dark:text-emerald-100/55">
-                    Pasadas
-                  </p>
-                </div>
+                <p className="text-[11px] font-medium text-[#355448] dark:text-emerald-100/55">
+                  Pasadas
+                </p>
               </div>
 
-              <div className="h-6 w-px bg-[#b9d6af] dark:bg-white/10" />
+              <div className="hidden h-6 w-px bg-[#b9d6af] sm:block dark:bg-white/10" />
 
-              <div className="flex items-center gap-2.5">
+              <div className="flex flex-col items-start gap-1.5 sm:flex-row sm:items-center sm:gap-2.5">
                 <span className="flex h-7 min-w-7 items-center justify-center rounded-lg bg-rose-100 px-2 text-sm font-bold text-rose-700 dark:bg-rose-400/15 dark:text-rose-100">
                   {totalCanceladas}
                 </span>
 
-                <div>
-                  <p className="text-[11px] font-medium text-[#355448] dark:text-emerald-100/55">
-                    Canceladas
-                  </p>
-                </div>
+                <p className="text-[11px] font-medium text-[#355448] dark:text-emerald-100/55">
+                  Canceladas
+                </p>
               </div>
             </div>
           </div>
         </div>
 
         {cargando && (
-          <div className="rounded-3xl border border-white/40 bg-white/70 p-12 text-center shadow-xl backdrop-blur-xl transition-colors dark:border-emerald-500/20 dark:bg-emerald-950/70">
+          <div className="rounded-2xl border border-white/40 bg-white/70 p-8 text-center shadow-xl backdrop-blur-xl transition-colors sm:rounded-3xl sm:p-12 dark:border-emerald-500/20 dark:bg-emerald-950/70">
             <div className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-4 border-emerald-100 border-t-[#095540] dark:border-white/10 dark:border-t-[#8dc63f]" />
 
             <p className="text-sm font-semibold text-[#095540] dark:text-emerald-200">
@@ -710,10 +740,10 @@ const registrosVisibles = useMemo(() => {
 
         {!cargando && error && (
           <div
-            className="rounded-3xl border border-white/40 bg-white/70 p-6 shadow-xl backdrop-blur-xl dark:border-emerald-500/20 dark:bg-emerald-950/70"
+            className="rounded-2xl border border-white/40 bg-white/70 p-4 shadow-xl backdrop-blur-xl sm:rounded-3xl sm:p-6 dark:border-emerald-500/20 dark:bg-emerald-950/70"
             role="alert"
           >
-            <div className="flex items-start gap-4">
+            <div className="flex items-start gap-3 sm:gap-4">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-500 dark:bg-rose-500/10 dark:text-rose-300">
                 <svg
                   className="h-5 w-5"
@@ -731,12 +761,12 @@ const registrosVisibles = useMemo(() => {
                 </svg>
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <p className="text-sm font-bold text-rose-900 dark:text-rose-200">
                   No se pudo cargar la información
                 </p>
 
-                <p className="mt-1 text-sm text-rose-700 dark:text-rose-300">
+                <p className="mt-1 break-words text-sm text-rose-700 dark:text-rose-300">
                   {error}
                 </p>
               </div>
@@ -745,8 +775,8 @@ const registrosVisibles = useMemo(() => {
         )}
 
         {!cargando && !error && (
-          <div className="relative overflow-hidden rounded-3xl border border-white/40 bg-white/70 shadow-xl backdrop-blur-xl transition-colors dark:border-emerald-500/20 dark:bg-emerald-950/70">
-            <div className="border-b border-slate-100 px-5 py-5 dark:border-white/10 sm:px-7">
+          <div className="relative overflow-hidden rounded-2xl border border-white/40 bg-white/70 shadow-xl backdrop-blur-xl transition-colors sm:rounded-3xl dark:border-emerald-500/20 dark:bg-emerald-950/70">
+            <div className="border-b border-slate-100 px-4 py-4 dark:border-white/10 sm:px-7 sm:py-5">
               <div className="flex flex-col gap-4">
                 <div>
                   <h2 className="text-lg font-bold text-[#073f31] dark:text-white">
@@ -759,154 +789,127 @@ const registrosVisibles = useMemo(() => {
                   </p>
                 </div>
 
-              
-<div className="relative">
-  <label
-    htmlFor="buscar-ticket"
-    className="mb-2 block text-sm font-semibold text-[#073f31] dark:text-emerald-100"
-  >
-    Buscar por número de ticket
-  </label>
+                <div className="relative">
+                  <label
+                    htmlFor="buscar-ticket"
+                    className="mb-2 block text-sm font-semibold text-[#073f31] dark:text-emerald-100"
+                  >
+                    Buscar por número de ticket
+                  </label>
 
-  <div className="relative">
-    <svg
-      className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      aria-hidden="true"
-    >
-      <circle cx="10.5" cy="10.5" r="6.75" />
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="m15.5 15.5 4.25 4.25"
-      />
-    </svg>
+                  <div className="relative">
+                    <svg
+                      className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                      aria-hidden="true"
+                    >
+                      <circle cx="10.5" cy="10.5" r="6.75" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="m15.5 15.5 4.25 4.25"
+                      />
+                    </svg>
 
-    <input
-      id="buscar-ticket"
-      type="text"
-      value={busquedaTicket}
-      onChange={(event) => setBusquedaTicket(event.target.value)}
-      placeholder="Ej. TKT-00001234"
-      autoComplete="off"
-      className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-11 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#095540] focus:bg-white focus:ring-4 focus:ring-[#095540]/10 dark:border-white/10 dark:bg-white/[0.04] dark:text-white dark:focus:border-[#8dc63f] dark:focus:bg-white/[0.06] dark:focus:ring-[#8dc63f]/10"
-    />
+                    <input
+                      id="buscar-ticket"
+                      type="text"
+                      value={busquedaTicket}
+                      onChange={(event) => setBusquedaTicket(event.target.value)}
+                      placeholder="Ej. TKT-00001234"
+                      autoComplete="off"
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-11 text-base text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#095540] focus:bg-white focus:ring-4 focus:ring-[#095540]/10 sm:text-sm dark:border-white/10 dark:bg-white/[0.04] dark:text-white dark:focus:border-[#8dc63f] dark:focus:bg-white/[0.06] dark:focus:ring-[#8dc63f]/10"
+                    />
 
-    {busquedaTicket && (
-      <button
-        type="button"
-        onClick={() => setBusquedaTicket('')}
-        aria-label="Limpiar búsqueda de ticket"
-        className="absolute right-3 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-200 hover:text-slate-700 dark:hover:bg-white/10 dark:hover:text-white"
-      >
-        <svg
-          className="h-4 w-4"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth="2"
-          aria-hidden="true"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="m6 6 12 12M18 6 6 18"
-          />
-        </svg>
-      </button>
-    )}
-  </div>
-</div>
+                    {busquedaTicket && (
+                      <button
+                        type="button"
+                        onClick={() => setBusquedaTicket('')}
+                        aria-label="Limpiar búsqueda de ticket"
+                        className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-200 hover:text-slate-700 dark:hover:bg-white/10 dark:hover:text-white"
+                      >
+                        <svg
+                          className="h-4 w-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          aria-hidden="true"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="m6 6 12 12M18 6 6 18"
+                          />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                </div>
 
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                  <div className="flex flex-wrap gap-2">
+                  {/* Móvil: rejilla 2x2 · Escritorio: fila */}
+                  <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
                     <button
                       type="button"
-                      className={claseFiltro(
-                        filtroTiempo === 'proximas',
-                      )}
-                      onClick={() =>
-                        setFiltroTiempo('proximas')
-                      }
+                      className={claseFiltro(filtroTiempo === 'proximas')}
+                      onClick={() => setFiltroTiempo('proximas')}
                     >
                       Próximas
                     </button>
 
                     <button
                       type="button"
-                      className={claseFiltro(
-                        filtroTiempo === 'pasadas',
-                      )}
-                      onClick={() =>
-                        setFiltroTiempo('pasadas')
-                      }
+                      className={claseFiltro(filtroTiempo === 'pasadas')}
+                      onClick={() => setFiltroTiempo('pasadas')}
                     >
                       Pasadas
                     </button>
 
                     <button
                       type="button"
-                      className={claseFiltro(
-                        filtroTiempo === 'canceladas',
-                      )}
-                      onClick={() =>
-                        setFiltroTiempo('canceladas')
-                      }
+                      className={claseFiltro(filtroTiempo === 'canceladas')}
+                      onClick={() => setFiltroTiempo('canceladas')}
                     >
                       Canceladas
                     </button>
 
                     <button
                       type="button"
-                      className={claseFiltro(
-                        filtroTiempo === 'todas',
-                      )}
-                      onClick={() =>
-                        setFiltroTiempo('todas')
-                      }
+                      className={claseFiltro(filtroTiempo === 'todas')}
+                      onClick={() => setFiltroTiempo('todas')}
                     >
                       Todas
                     </button>
                   </div>
 
-                  <div className="flex flex-wrap gap-2">
+                  {/* Móvil: 3 columnas · Escritorio: fila */}
+                  <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap">
                     <button
                       type="button"
-                      className={claseFiltro(
-                        filtroTipo === 'todas',
-                      )}
-                      onClick={() =>
-                        setFiltroTipo('todas')
-                      }
+                      className={claseFiltro(filtroTipo === 'todas')}
+                      onClick={() => setFiltroTipo('todas')}
                     >
                       Todo tipo
                     </button>
 
                     <button
                       type="button"
-                      className={claseFiltro(
-                        filtroTipo === 'evento',
-                      )}
-                      onClick={() =>
-                        setFiltroTipo('evento')
-                      }
+                      className={claseFiltro(filtroTipo === 'evento')}
+                      onClick={() => setFiltroTipo('evento')}
                     >
                       Eventos
                     </button>
 
                     <button
                       type="button"
-                      className={claseFiltro(
-                        filtroTipo === 'capacitacion',
-                      )}
-                      onClick={() =>
-                        setFiltroTipo('capacitacion')
-                      }
+                      className={`${claseFiltro(filtroTipo === 'capacitacion')} !px-1.5 sm:!px-4`}
+                      onClick={() => setFiltroTipo('capacitacion')}
                     >
-                      Capacitaciones
+                      Capacita&shy;ciones
                     </button>
                   </div>
                 </div>
@@ -914,7 +917,7 @@ const registrosVisibles = useMemo(() => {
             </div>
 
             {registrosVisibles.length === 0 ? (
-              <div className="px-6 py-16 text-center">
+              <div className="px-4 py-12 text-center sm:px-6 sm:py-16">
                 <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#00AEEF]/10 text-[#0087BA] dark:bg-[#00AEEF]/15 dark:text-[#67d5ff]">
                   <svg
                     className="h-7 w-7"
@@ -949,7 +952,7 @@ const registrosVisibles = useMemo(() => {
                 </p>
               </div>
             ) : (
-              <ul className="space-y-3 p-4">
+              <ul className="space-y-3 p-2.5 sm:p-4">
                 {registrosVisibles.map((inscripcion) => {
                   const acentoTipo =
                     obtenerAcentoTipo(
@@ -999,15 +1002,18 @@ const registrosVisibles = useMemo(() => {
                               ? 'Confirmada'
                               : inscripcion.estado ?? 'Estado';
 
+                  const hayAcciones =
+                    puedeEditar || puedeCancelar || tieneDetalle;
+
                   return (
                     <li
                       key={inscripcion.id}
-                      className="group rounded-3xl border border-white/40 bg-white/70 p-5 shadow-xl backdrop-blur-xl transition-colors duration-200 hover:bg-white/80 dark:border-emerald-500/20 dark:bg-emerald-950/70 dark:hover:bg-emerald-950/80 sm:p-7"
+                      className="group w-full min-w-0 overflow-hidden rounded-2xl border border-white/40 bg-white/70 p-3.5 shadow-xl backdrop-blur-xl transition-colors duration-200 hover:bg-white/80 dark:border-emerald-500/20 dark:bg-emerald-950/70 dark:hover:bg-emerald-950/80 sm:rounded-3xl sm:p-7"
                     >
                       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                        <div className="flex min-w-0 gap-4">
+                        <div className="flex min-w-0 gap-3 sm:gap-4">
                           <div
-                            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${acentoTipo.icono}`}
+                            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl sm:h-11 sm:w-11 ${acentoTipo.icono}`}
                           >
                             {inscripcion.tipoActividad ===
                             'capacitacion' ? (
@@ -1043,12 +1049,13 @@ const registrosVisibles = useMemo(() => {
                             )}
                           </div>
 
-                          <div className="min-w-0">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <h3 className="truncate text-base font-bold text-[#095540] dark:text-emerald-200">
-                                {inscripcion.nombreActividad}
-                              </h3>
+                          <div className="min-w-0 flex-1">
+                            {/* Título propio en una línea: se muestra completo en móvil */}
+                            <h3 className="break-words text-base font-bold leading-snug text-[#095540] dark:text-emerald-200">
+                              {inscripcion.nombreActividad}
+                            </h3>
 
+                            <div className="mt-1.5 flex flex-wrap items-center gap-2">
                               <span
                                 className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${acentoTipo.fondo} ${acentoTipo.borde} ${acentoTipo.texto}`}
                               >
@@ -1081,13 +1088,13 @@ const registrosVisibles = useMemo(() => {
                               )}
                             </div>
 
-                            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-slate-500 dark:text-slate-400">
-                              <span className="rounded-lg border border-sky-500/25 bg-sky-500/10 px-2.5 py-1 text-xs font-bold text-sky-700 dark:text-sky-300">
+                            <div className="mt-2.5 flex flex-col gap-y-1.5 text-sm text-slate-500 sm:flex-row sm:flex-wrap sm:gap-x-4 dark:text-slate-400">
+                              <span className="inline-flex max-w-full min-w-0 flex-wrap self-start break-all rounded-lg border border-sky-500/25 bg-sky-500/10 px-2 py-1 text-xs font-bold text-sky-700 dark:text-sky-300">
                                 Nº de ticket: {inscripcion.numeroTicket ?? '#TKT-00000000'}
                               </span>
                               <span className="inline-flex items-center gap-1.5">
                                 <svg
-                                  className="h-4 w-4 text-slate-400 dark:text-slate-500"
+                                  className="h-4 w-4 shrink-0 text-slate-400 dark:text-slate-500"
                                   fill="none"
                                   viewBox="0 0 24 24"
                                   strokeWidth="1.7"
@@ -1109,7 +1116,7 @@ const registrosVisibles = useMemo(() => {
                               {inscripcion.horaInicio && (
                                 <span className="inline-flex items-center gap-1.5">
                                   <svg
-                                    className="h-4 w-4 text-slate-400 dark:text-slate-500"
+                                    className="h-4 w-4 shrink-0 text-slate-400 dark:text-slate-500"
                                     fill="none"
                                     viewBox="0 0 24 24"
                                     strokeWidth="1.7"
@@ -1132,9 +1139,9 @@ const registrosVisibles = useMemo(() => {
                               )}
 
                               {inscripcion.ubicacion && (
-                                <span className="inline-flex items-center gap-1.5">
+                                <span className="inline-flex min-w-0 items-start gap-1.5">
                                   <svg
-                                    className="h-4 w-4 text-slate-400 dark:text-slate-500"
+                                    className="mt-0.5 h-4 w-4 shrink-0 text-slate-400 dark:text-slate-500"
                                     fill="none"
                                     viewBox="0 0 24 24"
                                     strokeWidth="1.7"
@@ -1154,7 +1161,9 @@ const registrosVisibles = useMemo(() => {
                                     />
                                   </svg>
 
-                                  {inscripcion.ubicacion}
+                                  <span className="min-w-0 break-words">
+                                    {inscripcion.ubicacion}
+                                  </span>
                                 </span>
                               )}
                             </div>
@@ -1181,9 +1190,9 @@ const registrosVisibles = useMemo(() => {
                                 onClick={() => void abrirComprobante(inscripcion.id)}
                                 disabled={reservaConComprobanteAbierto !== null}
                                 aria-busy={reservaConComprobanteAbierto === inscripcion.id}
-                                className="mt-3 inline-flex items-center gap-2 rounded-xl border border-sky-500/25 bg-sky-500/10 px-3 py-2 text-xs font-bold text-sky-800 transition hover:bg-sky-500/20 dark:text-sky-200"
+                                className="mt-3 inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border border-sky-500/25 bg-sky-500/10 px-3 py-2 text-xs font-bold text-sky-800 transition hover:bg-sky-500/20 disabled:opacity-60 sm:min-h-0 sm:w-auto sm:justify-start dark:text-sky-200"
                               >
-                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                                <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5v-9m0 0-3.5 3.5M12 7.5l3.5 3.5M5.25 15.75v2.5A1.75 1.75 0 0 0 7 20h10a1.75 1.75 0 0 0 1.75-1.75v-2.5" />
                                 </svg>
                                 {reservaConComprobanteAbierto === inscripcion.id
@@ -1193,14 +1202,14 @@ const registrosVisibles = useMemo(() => {
                             )}
 
                             {estadoInscripcion === 'rechazada' && inscripcion.motivoRechazo && (
-                              <div className="mt-3 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2.5 text-sm text-rose-700 dark:text-rose-300">
+                              <div className="mt-3 break-words rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2.5 text-sm text-rose-700 dark:text-rose-300">
                                 <p><strong>Motivo del rechazo:</strong> {inscripcion.motivoRechazo}</p>
                                 <p className="mt-1 text-xs">Puedes realizar una nueva reserva corrigiendo esta indicación.</p>
                               </div>
                             )}
 
                             {estadoInscripcion === 'rechazada' && inscripcion.esPago && inscripcion.origen === 'reserva' && !inscripcion.datosDevolucion && (
-                              <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-400/30 bg-amber-500/10 px-3 py-2.5 text-sm text-amber-800 dark:text-amber-200">
+                              <div className="mt-3 flex flex-col gap-3 rounded-xl border border-amber-400/30 bg-amber-500/10 px-3 py-2.5 text-sm text-amber-800 sm:flex-row sm:items-center sm:justify-between dark:text-amber-200">
                                 <p>Tu pago requiere datos para gestionar la devolución.</p>
                                 <button
                                   type="button"
@@ -1208,7 +1217,7 @@ const registrosVisibles = useMemo(() => {
                                     limpiarDatosDevolucion();
                                     setReservaParaDevolucion(inscripcion);
                                   }}
-                                  className="rounded-lg border border-amber-500/30 bg-white/70 px-3 py-1.5 text-xs font-bold text-amber-800 transition hover:bg-white dark:border-emerald-500/20 dark:bg-emerald-950/50 dark:text-amber-200"
+                                  className="min-h-[44px] w-full rounded-lg border border-amber-500/30 bg-white/70 px-3 py-1.5 text-xs font-bold text-amber-800 transition hover:bg-white sm:min-h-0 sm:w-auto dark:border-emerald-500/20 dark:bg-emerald-950/50 dark:text-amber-200"
                                 >
                                   Ingresar datos de devolución
                                 </button>
@@ -1217,99 +1226,102 @@ const registrosVisibles = useMemo(() => {
                           </div>
                         </div>
 
-                        <div className="flex shrink-0 flex-wrap gap-2">
-                          {puedeEditar && (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                void abrirEdicionReserva(
-                                  inscripcion,
-                                )
-                              }
-                              disabled={cargandoEdicion}
-                              className="rounded-xl border border-[#095540]/20 bg-[#eef7e7] px-3.5 py-2 text-xs font-bold text-[#095540] transition hover:border-[#095540]/30 hover:bg-[#dff0c7] disabled:cursor-not-allowed disabled:opacity-60 dark:border-[#8dc63f]/20 dark:bg-[#8dc63f]/10 dark:text-[#b7e86c] dark:hover:bg-[#8dc63f]/15"
-                            >
-                              {cargandoEdicion
-                                ? 'Cargando...'
-                                : 'Editar reserva'}
-                            </button>
-                          )}
+                        {hayAcciones && (
+                          <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:shrink-0 sm:justify-end">
+                            {puedeEditar && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  void abrirEdicionReserva(
+                                    inscripcion,
+                                  )
+                                }
+                                disabled={cargandoEdicion}
+                                className="min-h-[44px] flex-1 rounded-xl border border-[#095540]/20 bg-[#eef7e7] px-3.5 py-2 text-xs font-bold text-[#095540] transition hover:border-[#095540]/30 hover:bg-[#dff0c7] disabled:cursor-not-allowed disabled:opacity-60 sm:min-h-0 sm:flex-none dark:border-[#8dc63f]/20 dark:bg-[#8dc63f]/10 dark:text-[#b7e86c] dark:hover:bg-[#8dc63f]/15"
+                              >
+                                {cargandoEdicion
+                                  ? 'Cargando...'
+                                  : 'Editar reserva'}
+                              </button>
+                            )}
 
-                          {puedeCancelar && (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setReservaACancelar(
-                                  inscripcion,
-                                )
-                              }
-                              className="rounded-xl border border-rose-300/80 bg-rose-50/70 px-3.5 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-100 dark:border-rose-300/20 dark:bg-rose-500/10 dark:text-rose-200 dark:hover:bg-rose-500/20"
-                            >
-                              Cancelar reserva
-                            </button>
-                          )}
-                        </div>
+                            {puedeCancelar && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setReservaACancelar(
+                                    inscripcion,
+                                  )
+                                }
+                                className="min-h-[44px] flex-1 rounded-xl border border-rose-300/80 bg-rose-50/70 px-3.5 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-100 sm:min-h-0 sm:flex-none dark:border-rose-300/20 dark:bg-rose-500/10 dark:text-rose-200 dark:hover:bg-rose-500/20"
+                              >
+                                Cancelar reserva
+                              </button>
+                            )}
 
-                        {tieneDetalle && (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setExpandidoId(
-                                expandido
-                                  ? null
-                                  : inscripcion.id,
-                              )
-                            }
-                            className="flex shrink-0 items-center justify-center gap-2 rounded-xl border border-[#095540]/15 px-3.5 py-2 text-xs font-bold text-[#095540] transition-all duration-200 hover:border-[#095540]/30 hover:bg-[#eef7e7] dark:border-white/15 dark:text-[#b7e86c] dark:hover:border-[#8dc63f]/30 dark:hover:bg-[#8dc63f]/10"
-                          >
-                            {expandido
-                              ? 'Ocultar'
-                              : 'Ver detalle'}
+                            {tieneDetalle && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setExpandidoId(
+                                    expandido
+                                      ? null
+                                      : inscripcion.id,
+                                  )
+                                }
+                                aria-expanded={expandido}
+                                className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border border-[#095540]/15 px-3.5 py-2 text-xs font-bold text-[#095540] transition-all duration-200 hover:border-[#095540]/30 hover:bg-[#eef7e7] sm:min-h-0 sm:w-auto dark:border-white/15 dark:text-[#b7e86c] dark:hover:border-[#8dc63f]/30 dark:hover:bg-[#8dc63f]/10"
+                              >
+                                {expandido
+                                  ? 'Ocultar'
+                                  : 'Ver detalle'}
 
-                            <svg
-                              className={`h-4 w-4 transition-transform duration-200 ${
-                                expandido
-                                  ? 'rotate-180'
-                                  : ''
-                              }`}
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              strokeWidth="2"
-                              stroke="currentColor"
-                              aria-hidden="true"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="m19.5 8.25-7.5 7.5-7.5-7.5"
-                              />
-                            </svg>
-                          </button>
+                                <svg
+                                  className={`h-4 w-4 transition-transform duration-200 ${
+                                    expandido
+                                      ? 'rotate-180'
+                                      : ''
+                                  }`}
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  strokeWidth="2"
+                                  stroke="currentColor"
+                                  aria-hidden="true"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="m19.5 8.25-7.5 7.5-7.5-7.5"
+                                  />
+                                </svg>
+                              </button>
+                            )}
+                          </div>
                         )}
                       </div>
 
                       {expandido && tieneDetalle && (
-                        <div className="mt-4 rounded-2xl border border-white/30 bg-white/45 p-5 backdrop-blur-md dark:border-emerald-500/20 dark:bg-emerald-950/45">
+                        <div className="mt-4 rounded-2xl border border-white/30 bg-white/45 p-4 backdrop-blur-md sm:p-5 dark:border-emerald-500/20 dark:bg-emerald-950/45">
                           {inscripcion.descripcion && (
                             <div>
                               <p className="text-xs font-bold uppercase tracking-wider text-[#095540]/60 dark:text-emerald-200/70">
                                 Descripción
                               </p>
 
-                              <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                              <p className="mt-2 break-words text-sm leading-relaxed text-slate-600 dark:text-slate-300">
                                 {inscripcion.descripcion}
                               </p>
                             </div>
                           )}
 
-                          <dl className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
+                          <dl className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
                             {inscripcion.ubicacion && (
                               <div className="rounded-xl border border-white/30 bg-white/50 p-3.5 text-center shadow-sm backdrop-blur-md dark:border-emerald-500/20 dark:bg-emerald-950/50 dark:shadow-none">
                                 <dt className="text-xs font-medium text-slate-400 dark:text-slate-500">
                                   Ubicación
                                 </dt>
 
-                                <dd className="mt-1 text-sm font-semibold text-slate-700 dark:text-slate-200">
+                                <dd className="mt-1 break-words text-sm font-semibold text-slate-700 dark:text-slate-200">
                                   {inscripcion.ubicacion}
                                 </dd>
                               </div>
@@ -1340,7 +1352,7 @@ const registrosVisibles = useMemo(() => {
             )}
 
             {registrosVisibles.length > 0 && (
-              <div className="border-t border-white/30 bg-white/40 px-5 py-3.5 backdrop-blur-md dark:border-emerald-500/20 dark:bg-emerald-950/40 sm:px-7">
+              <div className="border-t border-white/30 bg-white/40 px-4 py-3.5 backdrop-blur-md sm:px-7 dark:border-emerald-500/20 dark:bg-emerald-950/40">
                 <p className="text-xs font-medium text-slate-400 dark:text-slate-500">
                   Mostrando{' '}
                   <span className="font-bold text-slate-600 dark:text-slate-300">
@@ -1385,14 +1397,15 @@ const registrosVisibles = useMemo(() => {
           />
         )}
 
+        {/* Modal de cancelación: hoja inferior en móvil, centrado en escritorio, con scroll interno */}
         {reservaACancelar && (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-[#071a15]/45 p-4 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-end justify-center bg-[#071a15]/45 backdrop-blur-sm sm:items-center sm:p-4"
             role="dialog"
             aria-modal="true"
             aria-labelledby="titulo-cancelacion"
           >
-            <div className="w-full max-w-md rounded-[28px] border border-white/60 bg-white/75 p-6 shadow-[0_22px_65px_rgba(7,63,49,0.3)] backdrop-blur-2xl dark:border-white/15 dark:bg-[#0d241d]/85">
+            <div className="max-h-[92dvh] w-full max-w-md overflow-y-auto overscroll-contain rounded-t-[28px] border border-white/60 bg-white/90 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-[0_22px_65px_rgba(7,63,49,0.3)] backdrop-blur-2xl sm:rounded-[28px] sm:bg-white/75 sm:p-6 dark:border-white/15 dark:bg-[#0d241d]/95 sm:dark:bg-[#0d241d]/85">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-500/10 text-rose-600 dark:text-rose-300">
                 <svg
                   className="h-5 w-5"
@@ -1417,7 +1430,7 @@ const registrosVisibles = useMemo(() => {
                 reserva?
               </h2>
 
-              <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+              <p className="mt-2 break-words text-sm leading-relaxed text-slate-600 dark:text-slate-300">
                 Se liberará un cupo de “
                 {reservaACancelar.nombreActividad}”. La
                 reserva permanecerá en su historial como
@@ -1444,7 +1457,7 @@ const registrosVisibles = useMemo(() => {
                     limpiarDatosDevolucion();
                   }}
                   disabled={cancelando}
-                  className="rounded-xl px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-100 disabled:opacity-50 dark:text-slate-300 dark:hover:bg-white/10"
+                  className="min-h-[48px] rounded-xl px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-100 disabled:opacity-50 sm:min-h-0 dark:text-slate-300 dark:hover:bg-white/10"
                 >
                   Volver
                 </button>
@@ -1455,7 +1468,7 @@ const registrosVisibles = useMemo(() => {
                     void confirmarCancelacion()
                   }
                   disabled={cancelando}
-                  className="rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-rose-600/20 transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="min-h-[48px] rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-rose-600/20 transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60 sm:min-h-0"
                 >
                   {cancelando
                     ? 'Cancelando…'
@@ -1467,14 +1480,36 @@ const registrosVisibles = useMemo(() => {
         )}
 
         {reservaParaDevolucion && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="titulo-devolucion">
-            <div className="w-full max-w-md rounded-[28px] border border-white/20 bg-white/80 p-6 shadow-xl backdrop-blur-md dark:border-emerald-500/20 dark:bg-emerald-950/80">
+          <div
+            className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/45 backdrop-blur-sm sm:items-center sm:p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="titulo-devolucion"
+          >
+            <div className="max-h-[92dvh] w-full max-w-md overflow-y-auto overscroll-contain rounded-t-[28px] border border-white/20 bg-white/90 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-xl backdrop-blur-md sm:rounded-[28px] sm:bg-white/80 sm:p-6 dark:border-emerald-500/20 dark:bg-emerald-950/95 sm:dark:bg-emerald-950/80">
               <h2 id="titulo-devolucion" className="text-lg font-bold text-slate-900 dark:text-white">Datos para devolución</h2>
-              <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">Ingresa los datos para procesar la devolución de “{reservaParaDevolucion.nombreActividad}”.</p>
+              <p className="mt-2 break-words text-sm text-slate-600 dark:text-slate-300">Ingresa los datos para procesar la devolución de “{reservaParaDevolucion.nombreActividad}”.</p>
               {camposDevolucion()}
               <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-                <button type="button" onClick={() => { setReservaParaDevolucion(null); limpiarDatosDevolucion(); }} disabled={guardandoDevolucion} className="rounded-xl px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-100 disabled:opacity-50 dark:text-slate-300 dark:hover:bg-white/10">Cancelar</button>
-                <button type="button" onClick={() => void guardarDevolucionRechazo()} disabled={guardandoDevolucion} className="rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60">{guardandoDevolucion ? 'Guardando…' : 'Enviar datos'}</button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setReservaParaDevolucion(null);
+                    limpiarDatosDevolucion();
+                  }}
+                  disabled={guardandoDevolucion}
+                  className="min-h-[48px] rounded-xl px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-100 disabled:opacity-50 sm:min-h-0 dark:text-slate-300 dark:hover:bg-white/10"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void guardarDevolucionRechazo()}
+                  disabled={guardandoDevolucion}
+                  className="min-h-[48px] rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60 sm:min-h-0"
+                >
+                  {guardandoDevolucion ? 'Guardando…' : 'Enviar datos'}
+                </button>
               </div>
             </div>
           </div>

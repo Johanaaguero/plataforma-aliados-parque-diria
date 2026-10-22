@@ -959,7 +959,7 @@ export default function ListaEventosCapacitaciones({
     return (
       <article
         key={item.id}
-        className={`group flex min-h-[580px] w-[420px] shrink-0 snap-center flex-col overflow-hidden rounded-3xl border shadow-2xl backdrop-blur-md transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl sm:w-[480px] md:w-[520px] ${
+        className={`group flex min-h-[540px] w-[calc(100vw-2rem)] max-w-[420px] shrink-0 snap-center flex-col overflow-hidden rounded-3xl border shadow-2xl backdrop-blur-md transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl sm:min-h-[580px] sm:w-[480px] sm:max-w-none md:w-[520px] ${
           eventoPasado
             ? 'border-slate-200 bg-slate-100/90 dark:bg-slate-900/90'
             : 'border-white/10 bg-white/85 dark:bg-emerald-950/80'
@@ -1107,8 +1107,8 @@ export default function ListaEventosCapacitaciones({
           )}
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col p-5">
-          <div className="mb-3 flex shrink-0 flex-wrap items-center gap-2">
+          <div className="flex min-h-0 flex-1 flex-col p-4 sm:p-5">       
+               <div className="mb-3 flex shrink-0 flex-wrap items-center gap-2">
             <span
               className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em] ${obtenerClaseEstado(
                 item.estado,
@@ -1166,8 +1166,8 @@ export default function ListaEventosCapacitaciones({
           </p>
 
           <div className="mt-4 shrink-0 border-t border-slate-100 pt-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex min-w-0 items-start gap-2.5">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="flex min-w-0 items-start gap-2.5">
                 <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#8DC63F]/10 text-[#095540]">
                   <svg
                     className="h-4 w-4"
@@ -1531,8 +1531,7 @@ export default function ListaEventosCapacitaciones({
               ? undefined
               : carruselEventosRef
           }
-          className="flex items-stretch gap-6 overflow-x-auto scroll-smooth px-2 py-4 snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-        >
+        className="flex items-stretch gap-4 overflow-x-auto scroll-smooth px-0 py-4 snap-x snap-mandatory sm:gap-6 sm:px-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"        >
           {lista.map(
             (item) =>
               renderTarjetaEvento(
@@ -1801,7 +1800,7 @@ export default function ListaEventosCapacitaciones({
                 aria-pressed={
                   filtro === 'todos'
                 }
-                className={`flex shrink-0 items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-300 ease-in-out hover:scale-105 active:scale-95 ${
+                className={`flex grow items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold sm:grow-0 sm:px-5 ${
                   filtro === 'todos'
                     ? 'bg-white text-[#095540] shadow-sm'
                     : 'text-slate-500 hover:text-slate-800'
@@ -1828,7 +1827,7 @@ export default function ListaEventosCapacitaciones({
                 aria-pressed={
                   filtro === 'evento'
                 }
-                className={`flex shrink-0 items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-300 ease-in-out hover:scale-105 active:scale-95 ${
+                className={`flex grow items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold sm:grow-0 sm:px-5 ${
                   filtro === 'evento'
                     ? 'bg-white text-[#095540] shadow-sm'
                     : 'text-slate-500 hover:text-slate-800'
@@ -1857,7 +1856,7 @@ export default function ListaEventosCapacitaciones({
                 aria-pressed={
                   filtro === 'capacitacion'
                 }
-                className={`flex shrink-0 items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-300 ease-in-out hover:scale-105 active:scale-95 ${
+                className={`flex grow items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold sm:grow-0 sm:px-5${
                   filtro === 'capacitacion'
                     ? 'bg-white text-[#087AA8] shadow-sm'
                     : 'text-slate-500 hover:text-slate-800'
@@ -2212,8 +2211,7 @@ export default function ListaEventosCapacitaciones({
                 </p>
               </div>
 
-              <div className="mt-8 flex flex-row justify-end gap-3">
-                <button
+<div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">                <button
                   ref={
                     botonCancelarEliminacionRef
                   }

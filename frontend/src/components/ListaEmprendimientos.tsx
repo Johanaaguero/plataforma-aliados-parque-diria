@@ -1001,8 +1001,7 @@ useEffect(() => {
 
     <div
       ref={carruselEmprendimientos}
-      className="flex items-stretch gap-6 overflow-x-auto scroll-smooth px-2 py-4 snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-    >
+    className="flex items-stretch gap-4 overflow-x-auto scroll-smooth px-0 py-4 snap-x snap-mandatory sm:gap-6 sm:px-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"    >
     {emprendimientosFiltrados.map((emprendimiento) => {
       const estiloEstado = obtenerEstiloEstado(
         emprendimiento.estadoPublicacion,
@@ -1039,8 +1038,7 @@ useEffect(() => {
           role={esCatalogoPublico ? 'button' : undefined}
           tabIndex={esCatalogoPublico ? 0 : undefined}
           className="
-            sigtad-image-reveal group flex min-h-[580px] w-[420px] shrink-0 cursor-pointer snap-center flex-col overflow-hidden sm:w-[480px] md:w-[520px]
-            rounded-[1.75rem]
+            sigtad-image-reveal group flex min-h-[540px] w-[calc(100vw-2rem)] max-w-[420px] shrink-0 cursor-pointer snap-center flex-col overflow-hidden sm:min-h-[580px] sm:w-[480px] sm:max-w-none md:w-[520px]            rounded-[1.75rem]
             border border-[#095540]/10
             bg-white/85 backdrop-blur-md dark:bg-emerald-950/80
             shadow-[0_8px_28px_rgba(9,85,64,0.07)]
@@ -1196,8 +1194,7 @@ useEffect(() => {
             </div>
 
             {/* Información */}
-            <div className="mt-3 grid grid-cols-2 gap-2 border-t border-slate-100 pt-3">
-              {ubicacion && (
+                <div className="mt-3 grid grid-cols-1 gap-3 border-t border-slate-100 pt-3 sm:grid-cols-2 sm:gap-2 [&>*]:min-w-0">              {ubicacion && (
                 <div className="flex items-start gap-3">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-500">
                     <svg

@@ -509,7 +509,7 @@ const registrosFiltrados = useMemo(() => {
     <section className="min-h-screen bg-slate-50 px-3 py-5 dark:bg-[#07100b] sm:px-6 lg:px-8">
       {mensajeExito && (
         <div
-          className="fixed right-4 top-4 z-50 flex max-w-sm items-start gap-3 rounded-2xl border border-emerald-200/80 bg-white/90 px-4 py-3 text-sm text-emerald-800 shadow-xl backdrop-blur-md dark:border-emerald-700/60 dark:bg-emerald-950/90 dark:text-emerald-100"
+          className="fixed left-4 right-4 top-4 z-50 flex items-start gap-3 sm:left-auto sm:max-w-sm rounded-2xl border border-emerald-200/80 bg-white/90 px-4 py-3 text-sm text-emerald-800 shadow-xl backdrop-blur-md dark:border-emerald-700/60 dark:bg-emerald-950/90 dark:text-emerald-100"
           role="status"
         >
           <svg className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -614,12 +614,11 @@ const registrosFiltrados = useMemo(() => {
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
                 placeholder="Buscar por nombre, usuario, correo, identificación o actividad..."
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-base sm:text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500"
               />
             </div>
 
-            <div className="no-scrollbar flex h-auto min-w-[140px] shrink-0 items-center gap-2 overflow-x-auto overflow-y-hidden py-1 whitespace-nowrap">
-              {[
+              <div className="no-scrollbar grid w-full grid-cols-3 gap-2 py-1 sm:flex sm:w-auto sm:shrink-0 sm:items-center sm:overflow-x-auto sm:overflow-y-hidden sm:whitespace-nowrap">              {[
                 { valor: 'todos' as const, texto: 'Todos' },
                 { valor: 'proximos' as const, texto: 'Próximos' },
                 { valor: 'pasados' as const, texto: 'Pasados' }
@@ -628,7 +627,7 @@ const registrosFiltrados = useMemo(() => {
                   key={filtro.valor}
                   type="button"
                   onClick={() => setFiltroTemporal(filtro.valor)}
-                  className={`min-w-[140px] shrink-0 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
+                  className={`min-w-0 rounded-xl px-2 py-2.5 text-sm font-semibold transition sm:min-w-[140px] sm:shrink-0 sm:px-4 ${
                     filtroTemporal === filtro.valor
                       ? 'bg-emerald-600 text-white shadow-sm'
                       : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
@@ -724,7 +723,7 @@ const registrosFiltrados = useMemo(() => {
                               {inscripcion.nombreActividad || 'Actividad sin nombre'}
                             </p>
 
-                            <p className="mt-2 w-fit rounded-lg border border-sky-500/25 bg-sky-500/10 px-2 py-1 text-xs font-bold text-sky-700 dark:text-sky-300">
+                            <p className="mt-2 w-fit max-w-full break-all rounded-lg border border-sky-500/25 bg-sky-500/10 px-2 py-1 text-xs font-bold text-sky-700 dark:text-sky-300">
                               Nº de ticket: {inscripcion.numeroTicket ?? '#TKT-00000000'}
                             </p>
 
@@ -934,12 +933,12 @@ const registrosFiltrados = useMemo(() => {
 
       {reservaARechazar && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="titulo-rechazo" onMouseDown={(event) => { if (event.target === event.currentTarget && reservaEnActualizacion === null) { setReservaARechazar(null); setMotivoRechazo(''); } }}>
-          <div className="w-full max-w-lg rounded-2xl border border-white/20 bg-white/80 p-6 shadow-xl backdrop-blur-md dark:border-white/10 dark:bg-slate-900/80">
+<div className="max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-2xl border border-white/20 bg-white/80 p-5 shadow-xl backdrop-blur-md dark:border-white/10 dark:bg-slate-900/80 sm:p-6">
             <h2 id="titulo-rechazo" className="text-xl font-bold text-slate-900 dark:text-white">Rechazar Inscripción</h2>
             <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">Indica a {reservaARechazar.nombreCompleto} cómo puede corregir su solicitud antes de realizar una nueva reserva.</p>
             <label className="mt-5 block text-sm font-semibold text-slate-800 dark:text-slate-100">
               Ingrese el motivo del rechazo para el usuario...
-              <textarea value={motivoRechazo} onChange={(event) => setMotivoRechazo(event.target.value)} disabled={reservaEnActualizacion !== null} required rows={4} className="mt-2 w-full resize-y rounded-xl border border-slate-200 bg-white/70 px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-rose-400 focus:ring-4 focus:ring-rose-500/15 disabled:opacity-60 dark:border-white/10 dark:bg-slate-950/40 dark:text-white" />
+              <textarea value={motivoRechazo} onChange={(event) => setMotivoRechazo(event.target.value)} disabled={reservaEnActualizacion !== null} required rows={4} className="mt-2 w-full resize-y rounded-xl border border-slate-200 bg-white/70 px-3 py-2.5 text-base sm:text-sm text-slate-800 outline-none focus:border-rose-400 focus:ring-4 focus:ring-rose-500/15 disabled:opacity-60 dark:border-white/10 dark:bg-slate-950/40 dark:text-white" />
             </label>
             <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <button type="button" onClick={() => { setReservaARechazar(null); setMotivoRechazo(''); }} disabled={reservaEnActualizacion !== null} className="rounded-xl border border-slate-200 bg-white/70 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-60 dark:border-white/10 dark:bg-white/5 dark:text-slate-200">Cancelar</button>
@@ -950,11 +949,11 @@ const registrosFiltrados = useMemo(() => {
       )}
       {reservaAProcesarDevolucion && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="titulo-devolucion">
-          <div className="w-full max-w-lg rounded-2xl border border-white/20 bg-white p-6 shadow-xl dark:bg-slate-900">
+<div className="max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-2xl border border-white/20 bg-white p-5 shadow-xl dark:bg-slate-900 sm:p-6">
             <h2 id="titulo-devolucion" className="text-xl font-bold text-slate-900 dark:text-white">Registrar devolución procesada</h2>
             <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">Registra la referencia administrativa. Esta acción no envía dinero automáticamente.</p>
             <label className="mt-5 block text-sm font-semibold text-slate-800 dark:text-slate-100">Referencia de la operación
-              <input value={referenciaDevolucion} onChange={(event) => setReferenciaDevolucion(event.target.value)} disabled={procesandoDevolucion} maxLength={120} className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-950" />
+              <input value={referenciaDevolucion} onChange={(event) => setReferenciaDevolucion(event.target.value)} disabled={procesandoDevolucion} maxLength={120} className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-base sm:text-sm dark:border-slate-700 dark:bg-slate-950" />
             </label>
             <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <button type="button" onClick={() => { setReservaAProcesarDevolucion(null); setReferenciaDevolucion(''); }} disabled={procesandoDevolucion} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 dark:border-slate-700 dark:text-slate-200">Cancelar</button>
