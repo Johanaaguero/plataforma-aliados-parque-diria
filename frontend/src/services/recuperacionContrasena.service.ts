@@ -1,3 +1,5 @@
+import { api } from './api';
+
 interface RespuestaApi {
   ok: boolean;
   message: string;
@@ -20,16 +22,6 @@ export class ErrorConexion extends Error {
   }
 }
 
-function obtenerUrlBase(): string {
-  const urlConfigurada = import.meta.env.VITE_API_URL?.trim();
-
-  if (!urlConfigurada) {
-    throw new Error('VITE_API_URL no está configurada');
-  }
-
-  return urlConfigurada.replace(/\/+$/, '');
-}
-
 function esRespuestaApi(valor: unknown): valor is RespuestaApi {
   if (typeof valor !== 'object' || valor === null) {
     return false;
@@ -47,7 +39,7 @@ async function enviarSolicitud(
   ruta: string,
   datos: Record<string, string>,
 ): Promise<RespuestaApi> {
-  const url = obtenerUrlBase() + ruta;
+  const url = api.url(ruta);
   let respuesta: Response;
 
   try {
@@ -88,14 +80,14 @@ async function enviarSolicitud(
 export async function solicitarRecuperacionContrasena(
   correo: string,
 ): Promise<void> {
-  await enviarSolicitud('/api/auth/forgot-password', { correo });
+  await enviarSolicitud('/auth/forgot-password', { correo });
 }
 
 export async function restablecerContrasena(
   token: string,
   newPassword: string,
 ): Promise<void> {
-  await enviarSolicitud('/api/auth/reset-password', {
+  await enviarSolicitud('/auth/reset-password', {
     token,
     newPassword,
   });

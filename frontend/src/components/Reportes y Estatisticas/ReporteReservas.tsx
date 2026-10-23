@@ -5,6 +5,7 @@ import {
   type ReactNode,
 } from 'react';
 import AccionesReporteGuardado from './AccionesReporteGuardado';
+import { api } from '../../services/api';
 type Periodo = 'hoy' | '7dias' | '30dias' | 'mes' | 'personalizado';
 
 type TemporadaFiltro = '' | 'seca' | 'lluviosa';
@@ -1206,7 +1207,7 @@ const contenedorFechasRef =
       }
 
       const respuesta = await fetch(
-        `http://localhost:3000/api/reportes/reservas/estadisticas/reservas?${params.toString()}`,
+        api.url(`/reportes/reservas/estadisticas/reservas?${params.toString()}`),
         {
           method: 'GET',
           headers: {

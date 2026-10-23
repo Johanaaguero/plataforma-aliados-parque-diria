@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { api } from '../services/api';
 type NombreRol =
   | 'super_admin'
   | 'administrador'
@@ -162,7 +163,7 @@ export default function GestionRoles() {
         return;
       }
       const respuesta = await fetch(
-        'http://localhost:3000/api/users/roles',
+        api.url('/users/roles'),
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -311,7 +312,7 @@ export default function GestionRoles() {
         return;
       }
       const respuesta = await fetch(
-        `http://localhost:3000/api/users/${usuarioSeleccionado.id}/role`,
+        api.url(`/users/${usuarioSeleccionado.id}/role`),
         {
           method: 'PUT',
           headers: {

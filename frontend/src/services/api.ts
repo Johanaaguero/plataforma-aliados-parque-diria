@@ -28,8 +28,20 @@ export interface ConfiguracionSolicitudApi {
   mensajeError?: string;
 }
 
+function obtenerBaseUrlApi(): string {
+  const origen = (import.meta.env.VITE_API_URL || 'http://localhost:3000')
+    .trim()
+    .replace(/\/+$/, '');
+
+  return origen.replace(/\/api$/i, '');
+}
+
 class ApiService {
-  private baseUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api`;
+  private baseUrl = `${obtenerBaseUrlApi()}/api`;
+
+  url(ruta: string): string {
+    return `${this.baseUrl}/${ruta.replace(/^\/+/, '')}`;
+  }
 
   private getToken(): string | null {
     return sessionStorage.getItem('token') ?? localStorage.getItem('token');
@@ -105,7 +117,7 @@ class ApiService {
     let response: Response;
 
     try {
-      response = await fetch(`${this.baseUrl}${ruta}`, {
+      response = await fetch(this.url(ruta), {
         ...opciones,
         headers,
       });
@@ -175,7 +187,7 @@ async solicitarBlob(
   let response: Response;
 
   try {
-    response = await fetch(`${this.baseUrl}${ruta}`, {
+    response = await fetch(this.url(ruta), {
       ...opciones,
       headers,
     });
@@ -211,7 +223,7 @@ notificarErrorAuth(error);
 }
 
   async login(identificador: string, password: string): Promise<{ token: string; usuario: unknown }> {
-    const response = await fetch(`${this.baseUrl}/auth/login`, {
+    const response = await fetch(this.url('/auth/login'), {
       method: 'POST',
       headers: this.getHeaders(false),
       body: JSON.stringify({ identificador, password }),
@@ -231,7 +243,7 @@ async logout(): Promise<void> {
   // Intentar invalidar también el token en el servidor.
   if (token) {
     try {
-      await fetch(`${this.baseUrl}/auth/logout`, {
+      await fetch(this.url('/auth/logout'), {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -253,7 +265,7 @@ async logout(): Promise<void> {
     telefono: string;
     password: string;
   }): Promise<{ usuario: unknown }> {
-    const response = await fetch(`${this.baseUrl}/auth/registro`, {
+    const response = await fetch(this.url('/auth/registro'), {
       method: 'POST',
       headers: this.getHeaders(false),
       body: JSON.stringify(datos),
@@ -263,7 +275,7 @@ async logout(): Promise<void> {
   }
 
   async solicitarRecuperacion(correo: string): Promise<{ message: string }> {
-    const response = await fetch(`${this.baseUrl}/auth/forgot-password`, {
+    const response = await fetch(this.url('/auth/forgot-password'), {
       method: 'POST',
       headers: this.getHeaders(false),
       body: JSON.stringify({ correo }),
@@ -274,7 +286,7 @@ async logout(): Promise<void> {
 
   // CORRECCIÓN 1: backticks para que se interpole ${this.baseUrl}
   async restablecerContrasena(token: string, nuevaPassword: string): Promise<{ message: string }> {
-    const response = await fetch(`${this.baseUrl}/auth/reset-password`, {
+    const response = await fetch(this.url('/auth/reset-password'), {
       method: 'POST',
       headers: this.getHeaders(false),
       body: JSON.stringify({ token, nuevaPassword }),
@@ -285,7 +297,7 @@ async logout(): Promise<void> {
 
   // CORRECCIÓN 1: backticks para que se interpole ${this.baseUrl}
   async obtenerRoles(): Promise<{ usuarios: unknown[] }> {
-    const response = await fetch(`${this.baseUrl}/users/roles`, {
+    const response = await fetch(this.url('/users/roles'), {
       method: 'GET',
       headers: this.getHeaders(true),
     });
@@ -293,17 +305,17 @@ async logout(): Promise<void> {
     return this.handleResponse(response);
   }
 
-  async actualizarRol(usuarioId: number, rolId: number): Promise<{ usuario: unknown }> {
-    const response = await fetch(`${this.baseUrl}/users/${usuarioId}/role`, {
+  async actualizarRol(usuarioId: number, rol: string): Promise<{ usuario: unknown }> {
+    const response = await fetch(this.url(`/users/${usuarioId}/role`), {
       method: 'PUT',
       headers: this.getHeaders(true),
-      body: JSON.stringify({ rolId }),
+      body: JSON.stringify({ rol }),
     });
 
     return this.handleResponse(response);
   }
   async eliminar(url: string): Promise<void> {
-  const response = await fetch(`${this.baseUrl}${url}`, {
+  const response = await fetch(this.url(url), {
     method: 'DELETE',
     headers: this.getHeaders(true),
   });

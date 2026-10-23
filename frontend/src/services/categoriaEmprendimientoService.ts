@@ -1,3 +1,5 @@
+import { api } from './api';
+
 export interface CategoriaEmprendimiento {
   id: number;
   nombre: string;
@@ -9,7 +11,7 @@ export interface CrearCategoriaDto {
   descripcion?: string;
 }
 
-const BASE_URL = 'http://localhost:3000/api/categorias-emprendimientos';
+const BASE_URL = api.url('/categorias-emprendimientos');
 
 export async function obtenerCategorias(): Promise<CategoriaEmprendimiento[]> {
   const res = await fetch(BASE_URL);
