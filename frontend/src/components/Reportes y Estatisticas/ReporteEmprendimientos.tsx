@@ -1,6 +1,7 @@
 import {useEffect, useRef, useState, type ReactNode, } from 'react';
 import AccionesReporteGuardado from './AccionesReporteGuardado';
 import LiquidFilterSelect from '../ui/LiquidFilterSelect';
+import { api } from '../../services/api';
 type Periodo =
   | 'hoy'
   | '7dias'
@@ -974,7 +975,7 @@ export default function ReporteEmprendimientos() {
 
         const respuesta =
           await fetch(
-            'http://localhost:3000/api/emprendimientos',
+            api.url('/emprendimientos'),
             {
               method: 'GET',
               headers: {
@@ -1179,7 +1180,7 @@ export default function ReporteEmprendimientos() {
 
       const respuesta =
         await fetch(
-          `http://localhost:3000/api/reportes/estadisticas/emprendimientos?${params.toString()}`,
+          api.url(`/reportes/estadisticas/emprendimientos?${params.toString()}`),
           {
             method: 'GET',
 
