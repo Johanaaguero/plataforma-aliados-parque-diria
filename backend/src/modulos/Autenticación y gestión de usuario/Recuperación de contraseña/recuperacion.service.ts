@@ -98,12 +98,15 @@ export async function solicitarRecuperacionPassword(correo: string): Promise<voi
   const idToken = recuperacionId;
 
   // El envío se desacopla para que el tiempo de respuesta no revele si la cuenta existe.
+  console.info('Recuperación de contraseña: se invoca el servicio SMTP', {
+    recuperacionId: idToken,
+  });
   void enviarCorreoRecuperacion({
     destinatario,
     nombre: nombreDestinatario,
     token: tokenOriginal,
     minutosExpiracion,
-  }).catch(async () => {
+  }).catch(async (error: unknown) => {
     try {
       await AppDataSource.getRepository(RecuperacionContrasena).update(
         { id: idToken },
@@ -113,7 +116,11 @@ export async function solicitarRecuperacionPassword(correo: string): Promise<voi
       console.error('No se pudo invalidar un token cuyo correo no fue enviado.');
     }
 
-    console.error('No se pudo enviar un correo de recuperación de contraseña.');
+    const message = error instanceof Error ? error.message : 'Error desconocido';
+    console.error('Recuperación de contraseña: token invalidado tras fallo de correo', {
+      recuperacionId: idToken,
+      message,
+    });
   });
 }
 
