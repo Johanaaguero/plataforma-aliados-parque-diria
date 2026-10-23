@@ -700,6 +700,7 @@ export default function DashboardAdministrador({
               </p>
 
               <div className="mt-4 grid grid-cols-1 gap-4 min-[560px]:grid-cols-2">
+                
                 <TarjetaResumen
                   icono={iconos.emprendimientos}
                   titulo="Emprendimientos registrados"
@@ -708,17 +709,22 @@ export default function DashboardAdministrador({
                   brillo="bg-[#8dc63f]/15"
                   claseIcono="bg-[#009443]/10 text-[#009443]"
                   claseEtiqueta="bg-[#009443]/10 text-[#009443] dark:bg-[#009443]/15 dark:text-[#76d7b1]"
+                  onClick={onIrEmprendimientos}
                 />
 
-                <TarjetaResumen
-                  icono={iconos.eventosCalendario}
-                  titulo="Eventos y capacitaciones"
-                  valor={conteoEventos.todos}
-                  etiqueta="Vigentes"
-                  brillo="bg-[#00AEEF]/15"
-                  claseIcono="bg-[#00AEEF]/10 text-[#008fbd]"
-                  claseEtiqueta="bg-[#00AEEF]/10 text-[#007fae] dark:bg-[#00AEEF]/15 dark:text-[#69d8f7]"
-                />
+
+                
+                  <TarjetaResumen
+                    icono={iconos.eventosCalendario}
+                    titulo="Eventos y capacitaciones"
+                    valor={conteoEventos.todos}
+                    etiqueta="Vigentes"
+                    brillo="bg-[#00AEEF]/15"
+                    claseIcono="bg-[#00AEEF]/10 text-[#008fbd]"
+                    claseEtiqueta="bg-[#00AEEF]/10 text-[#007fae] dark:bg-[#00AEEF]/15 dark:text-[#69d8f7]"
+                    onClick={onIrEventos}
+                  />
+
 
                 <TarjetaResumen
                   icono={iconos.notificaciones}

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import AccionesReporteGuardado from './AccionesReporteGuardado';
+import { api } from '../../services/api';
 
 type Periodo =
   | 'hoy'
@@ -1392,7 +1393,7 @@ export default function ReportesIncidencias() {
 
       const respuesta =
         await fetch(
-          `http://localhost:3000/api/reportes/estadisticas/incidencias?${params.toString()}`,
+          api.url(`/reportes/estadisticas/incidencias?${params.toString()}`),
           {
             method: 'GET',
             headers: {

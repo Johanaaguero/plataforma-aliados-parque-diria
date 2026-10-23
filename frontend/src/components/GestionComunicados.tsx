@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { createPortal } from 'react-dom';
 import { api } from '../services/api';
 import imagenParque from '../assets/parque-hero.jpg';
 
@@ -84,11 +85,15 @@ export default function GestionComunicados() {
   const [pagina, setPagina] = useState(1);
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
+  const [comunicadoAEliminar, setComunicadoAEliminar] = useState<Comunicado | null>(null);
+  const [eliminando, setEliminando] = useState(false);
   const [menuPrioridadAbierto, setMenuPrioridadAbierto] = useState(false);
   const [menuFiltroPrioridadAbierto, setMenuFiltroPrioridadAbierto] = useState(false);
   const menuPrioridadRef = useRef<HTMLDivElement>(null);
   const menuFiltroPrioridadRef = useRef<HTMLDivElement>(null);
   const tituloRef = useRef<HTMLInputElement>(null);
+  const contenidoRef = useRef<HTMLTextAreaElement>(null);
+  const [errores, setErrores] = useState<{ titulo?: string; contenido?: string }>({});
 
   const cargar = async () => {
     setCargando(true);
@@ -113,6 +118,8 @@ export default function GestionComunicados() {
 
   useEffect(() => {
     if (!modal) return;
+    const overflowPrevio = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
     const temporizador = window.setTimeout(() => tituloRef.current?.focus(), 80);
     const cerrarConEscape = (evento: KeyboardEvent) => {
       if (evento.key === 'Escape') {
@@ -122,10 +129,25 @@ export default function GestionComunicados() {
     };
     document.addEventListener('keydown', cerrarConEscape);
     return () => {
+      document.body.style.overflow = overflowPrevio;
       window.clearTimeout(temporizador);
       document.removeEventListener('keydown', cerrarConEscape);
     };
   }, [modal]);
+
+  useEffect(() => {
+    if (!comunicadoAEliminar) return;
+    const overflowPrevio = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const cerrarConEscape = (evento: KeyboardEvent) => {
+      if (evento.key === 'Escape' && !eliminando) setComunicadoAEliminar(null);
+    };
+    document.addEventListener('keydown', cerrarConEscape);
+    return () => {
+      document.body.style.overflow = overflowPrevio;
+      document.removeEventListener('keydown', cerrarConEscape);
+    };
+  }, [comunicadoAEliminar, eliminando]);
 
   useEffect(() => {
     const cerrarMenusFuera = (evento: MouseEvent) => {
@@ -175,12 +197,22 @@ export default function GestionComunicados() {
       : vacio);
     setMenuPrioridadAbierto(false);
     setMensaje('');
+    setErrores({});
     setModal(true);
   };
 
   const guardar = async (evento: FormEvent) => {
     evento.preventDefault();
     if (guardando) return;
+    const nuevosErrores: { titulo?: string; contenido?: string } = {};
+    if (!formulario.titulo.trim()) nuevosErrores.titulo = 'Escribe un título para el comunicado.';
+    if (!formulario.contenido.trim()) nuevosErrores.contenido = 'Escribe el contenido del comunicado.';
+    if (nuevosErrores.titulo || nuevosErrores.contenido) {
+      setErrores(nuevosErrores);
+      (nuevosErrores.titulo ? tituloRef : contenidoRef).current?.focus();
+      return;
+    }
+    setErrores({});
     setGuardando(true);
     setMensaje('');
     try {
@@ -200,7 +232,8 @@ export default function GestionComunicados() {
   };
 
   const eliminar = async (id: number) => {
-    if (!window.confirm('¿Eliminar este comunicado?')) return;
+    if (eliminando) return;
+    setEliminando(true);
     setMensaje('');
     try {
       await api.solicitar<void>(
@@ -208,10 +241,14 @@ export default function GestionComunicados() {
         { method: 'DELETE' },
         { mensajeError: 'No se pudo eliminar el comunicado.' },
       );
+      setComunicadoAEliminar(null);
       await cargar();
       setPagina((actual) => Math.min(actual, Math.max(1, Math.ceil((comunicadosFiltrados.length - 1) / POR_PAGINA))));
     } catch (error: unknown) {
+      setComunicadoAEliminar(null);
       setMensaje(error instanceof Error ? error.message : 'No se pudo eliminar el comunicado.');
+    } finally {
+      setEliminando(false);
     }
   };
 
@@ -371,7 +408,7 @@ export default function GestionComunicados() {
                       </div>
                       <div className="flex shrink-0 flex-row gap-2 sm:justify-end">
                         <button type="button" onClick={() => abrir(comunicado)} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-emerald-800/10 bg-white/75 px-3.5 py-2 text-xs font-bold text-emerald-900 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50 focus:outline-none focus-visible:ring-4 focus-visible:ring-emerald-500/15 dark:border-white/10 dark:bg-white/5 dark:text-emerald-100 dark:hover:bg-emerald-300/10"><Icono nombre="editar" className="h-4 w-4" />Editar</button>
-                        <button type="button" onClick={() => void eliminar(comunicado.id)} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-rose-200/80 bg-rose-50/75 px-3.5 py-2 text-xs font-bold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 focus:outline-none focus-visible:ring-4 focus-visible:ring-rose-500/15 dark:border-rose-300/15 dark:bg-rose-300/[0.06] dark:text-rose-200 dark:hover:bg-rose-300/10"><Icono nombre="eliminar" className="h-4 w-4" />Eliminar</button>
+                        <button type="button" onClick={() => setComunicadoAEliminar(comunicado)} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-rose-200/80 bg-rose-50/75 px-3.5 py-2 text-xs font-bold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 focus:outline-none focus-visible:ring-4 focus-visible:ring-rose-500/15 dark:border-rose-300/15 dark:bg-rose-300/[0.06] dark:text-rose-200 dark:hover:bg-rose-300/10"><Icono nombre="eliminar" className="h-4 w-4" />Eliminar</button>
                       </div>
                     </div>
                   </article>
@@ -404,9 +441,9 @@ export default function GestionComunicados() {
       </section>
       </div>
 
-      {modal && (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center overflow-y-auto bg-[#071C16]/[0.58] p-3 backdrop-blur-[12px] sm:p-6" onMouseDown={(evento) => { if (evento.target === evento.currentTarget) setModal(false); }}>
-          <form onSubmit={(evento) => void guardar(evento)} className="my-auto max-h-[calc(100dvh-1.5rem)] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-white/45 bg-white/[0.93] p-5 shadow-[0_28px_100px_rgba(3,32,23,0.28)] backdrop-blur-[32px] sm:max-h-[calc(100dvh-3rem)] sm:p-8 dark:border-white/10 dark:bg-[#0B3026]/[0.96]">
+      {modal && createPortal(
+        <div className="fixed inset-0 z-[9000] flex items-center justify-center overflow-hidden overscroll-contain bg-[#071C16]/[0.58] p-3 font-['Montserrat',sans-serif] backdrop-blur-[12px] sm:p-6" onMouseDown={(evento) => { if (evento.target === evento.currentTarget) setModal(false); }}>
+          <form noValidate onSubmit={(evento) => void guardar(evento)} className="max-h-[calc(100dvh-1.5rem)] w-full max-w-2xl overflow-y-auto overscroll-contain rounded-[2rem] border border-white/45 bg-white/[0.93] p-5 shadow-[0_28px_100px_rgba(3,32,23,0.28)] backdrop-blur-[32px] sm:max-h-[calc(100dvh-3rem)] sm:p-8 dark:border-white/10 dark:bg-[#0B3026]/[0.96]">
             <div className="flex items-start justify-between gap-4 border-b border-emerald-900/10 pb-5 dark:border-white/10">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-emerald-700/75 dark:text-emerald-300/70">Comunicación institucional</p>
@@ -421,11 +458,17 @@ export default function GestionComunicados() {
             )}
 
             <label className="mt-6 block text-sm font-bold text-slate-700 dark:text-emerald-100/85">Título
-              <input ref={tituloRef} required maxLength={180} value={formulario.titulo} onChange={(evento) => setFormulario({ ...formulario, titulo: evento.target.value })} placeholder="Escribe el título del comunicado" className="mt-2 h-12 w-full rounded-xl border border-emerald-900/10 bg-white/80 px-4 text-sm font-normal text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/10 dark:border-white/10 dark:bg-white/[0.055] dark:text-emerald-50 dark:placeholder:text-emerald-100/35" />
+              <input ref={tituloRef} required maxLength={180} value={formulario.titulo} onChange={(evento) => { setFormulario({ ...formulario, titulo: evento.target.value }); if (errores.titulo) setErrores((actuales) => ({ ...actuales, titulo: undefined })); }} placeholder="Escribe el título del comunicado" aria-invalid={Boolean(errores.titulo)} aria-describedby={errores.titulo ? 'error-titulo' : undefined} className={`mt-2 h-12 w-full rounded-xl border bg-white/80 px-4 text-sm font-normal text-slate-800 outline-none transition placeholder:text-slate-400 dark:bg-white/[0.055] dark:text-emerald-50 dark:placeholder:text-emerald-100/35 ${errores.titulo ? 'border-rose-400/70 ring-4 ring-rose-500/10 dark:border-rose-300/40' : 'border-emerald-900/10 focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/10 dark:border-white/10'}`} />
+              {errores.titulo && (
+                <span id="error-titulo" role="alert" className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-rose-700 dark:text-rose-200"><Icono nombre="prioridad" className="h-3.5 w-3.5 shrink-0" />{errores.titulo}</span>
+              )}
             </label>
 
             <label className="mt-5 block text-sm font-bold text-slate-700 dark:text-emerald-100/85">Contenido
-              <textarea required rows={6} value={formulario.contenido} onChange={(evento) => setFormulario({ ...formulario, contenido: evento.target.value })} placeholder="Escribe aquí el mensaje que deseas comunicar..." className="mt-2 w-full resize-y rounded-xl border border-emerald-900/10 bg-white/80 px-4 py-3 text-sm font-normal leading-6 text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/10 dark:border-white/10 dark:bg-white/[0.055] dark:text-emerald-50 dark:placeholder:text-emerald-100/35" />
+              <textarea ref={contenidoRef} required rows={6} value={formulario.contenido} onChange={(evento) => { setFormulario({ ...formulario, contenido: evento.target.value }); if (errores.contenido) setErrores((actuales) => ({ ...actuales, contenido: undefined })); }} placeholder="Escribe aquí el mensaje que deseas comunicar..." aria-invalid={Boolean(errores.contenido)} aria-describedby={errores.contenido ? 'error-contenido' : undefined} className={`mt-2 w-full resize-y rounded-xl border bg-white/80 px-4 py-3 text-sm font-normal leading-6 text-slate-800 outline-none transition placeholder:text-slate-400 dark:bg-white/[0.055] dark:text-emerald-50 dark:placeholder:text-emerald-100/35 ${errores.contenido ? 'border-rose-400/70 ring-4 ring-rose-500/10 dark:border-rose-300/40' : 'border-emerald-900/10 focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/10 dark:border-white/10'}`} />
+              {errores.contenido && (
+                <span id="error-contenido" role="alert" className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-rose-700 dark:text-rose-200"><Icono nombre="prioridad" className="h-3.5 w-3.5 shrink-0" />{errores.contenido}</span>
+              )}
             </label>
 
             <div className="relative mt-5" ref={menuPrioridadRef}>
@@ -435,7 +478,7 @@ export default function GestionComunicados() {
                 <svg className={`h-4 w-4 text-emerald-700 transition-transform duration-200 dark:text-emerald-200 ${menuPrioridadAbierto ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="m6 9 6 6 6-6" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </button>
               {menuPrioridadAbierto && (
-                <div className="absolute left-0 right-0 top-full z-[100] mt-2 overflow-hidden rounded-xl border border-white/90 bg-white/95 shadow-[0_16px_40px_rgba(20,60,43,0.18)] backdrop-blur-2xl dark:border-white/10 dark:bg-[#102e23]/[0.98]" role="listbox" aria-label="Prioridad">
+                <div className="absolute left-0 right-0 bottom-full z-[100] mb-2 overflow-hidden rounded-xl border border-white/90 bg-white/95 shadow-[0_16px_40px_rgba(20,60,43,0.18)] backdrop-blur-2xl dark:border-white/10 dark:bg-[#102e23]/[0.98]" role="listbox" aria-label="Prioridad">
                   {prioridades.map((prioridad) => (
                     <button key={prioridad.valor} type="button" role="option" aria-selected={formulario.prioridad === prioridad.valor} onClick={() => { setFormulario({ ...formulario, prioridad: prioridad.valor }); setMenuPrioridadAbierto(false); }} className="flex w-full items-center justify-between px-4 py-3 text-left text-sm text-slate-700 transition hover:bg-emerald-50 focus:outline-none focus-visible:bg-emerald-50 dark:text-emerald-50 dark:hover:bg-white/10 dark:focus-visible:bg-white/10">
                       <span className="flex items-center gap-2"><span className={`h-2.5 w-2.5 rounded-full ${prioridad.valor === 'ALTA' ? 'bg-rose-500' : prioridad.valor === 'MEDIA' ? 'bg-amber-500' : 'bg-emerald-500'}`} />{prioridad.etiqueta}</span>
@@ -453,7 +496,36 @@ export default function GestionComunicados() {
               </button>
             </div>
           </form>
-        </div>
+        </div>,
+        document.body,
+      )}
+
+      {comunicadoAEliminar && createPortal(
+        <div
+          className="fixed inset-0 z-[9100] flex items-center justify-center overflow-hidden overscroll-contain bg-[#071C16]/[0.58] p-3 font-['Montserrat',sans-serif] backdrop-blur-[12px] sm:p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="titulo-eliminar-comunicado"
+          aria-describedby="detalle-eliminar-comunicado"
+          onMouseDown={(evento) => { if (evento.target === evento.currentTarget && !eliminando) setComunicadoAEliminar(null); }}
+        >
+          <div className="max-h-[calc(100dvh-1.5rem)] w-full max-w-md overflow-y-auto overscroll-contain rounded-[2rem] border border-white/45 bg-white/[0.93] p-6 shadow-[0_28px_100px_rgba(3,32,23,0.28)] backdrop-blur-[32px] sm:p-8 dark:border-white/10 dark:bg-[#0B3026]/[0.96]">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-rose-200/80 bg-rose-50/80 text-rose-600 dark:border-rose-300/15 dark:bg-rose-300/10 dark:text-rose-200">
+              <Icono nombre="eliminar" className="h-6 w-6" />
+            </div>
+            <h2 id="titulo-eliminar-comunicado" className="mt-5 text-2xl font-extrabold tracking-tight text-[#164b3c] dark:text-emerald-50">Eliminar comunicado</h2>
+            <p id="detalle-eliminar-comunicado" className="mt-2 break-words text-sm leading-6 text-slate-600 dark:text-emerald-100/65">
+              ¿Deseas eliminar <span className="font-bold text-[#164b3c] dark:text-emerald-50">“{comunicadoAEliminar.titulo}”</span>? Esta acción no se puede deshacer.
+            </p>
+            <div className="mt-7 flex flex-col-reverse gap-3 border-t border-emerald-900/10 pt-5 sm:flex-row sm:justify-end dark:border-white/10">
+              <button type="button" autoFocus disabled={eliminando} onClick={() => setComunicadoAEliminar(null)} className="inline-flex min-h-11 items-center justify-center rounded-xl border border-emerald-900/10 bg-white/75 px-5 py-3 text-sm font-bold text-slate-600 transition hover:bg-white focus:outline-none focus-visible:ring-4 focus-visible:ring-emerald-500/15 disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:text-emerald-100 dark:hover:bg-white/10">Cancelar</button>
+              <button type="button" disabled={eliminando} onClick={() => void eliminar(comunicadoAEliminar.id)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-rose-600 px-6 py-3 text-sm font-bold text-white shadow-[0_8px_18px_rgba(225,29,72,0.2)] transition hover:bg-rose-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-rose-500/20 disabled:cursor-wait disabled:opacity-60">
+                {eliminando && <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />}{eliminando ? 'Eliminando...' : 'Eliminar'}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body,
       )}
     </main>
   );

@@ -1,4 +1,5 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { createPortal } from 'react-dom';
 import { api } from '../services/api';
 import imagenParque from '../assets/parque-hero.jpg';
 
@@ -16,6 +17,11 @@ interface FormularioPregunta {
   publicada: boolean;
 }
 
+interface ErroresFormulario {
+  pregunta?: string;
+  respuesta?: string;
+}
+
 const formularioVacio: FormularioPregunta = {
   pregunta: '',
   respuesta: '',
@@ -29,6 +35,13 @@ const opcionesApi = {
   mensajeError: 'No se pudieron cargar las preguntas frecuentes.',
 };
 
+const claseCampo = (error?: string) =>
+  `mt-2 w-full rounded-2xl border bg-white/75 px-4 py-3 text-sm text-[#173d2e] shadow-sm outline-none transition placeholder:text-[#9aaba1] dark:bg-white/[0.06] dark:text-white dark:placeholder:text-[#8da79a] ${
+    error
+      ? 'border-rose-400/70 ring-4 ring-rose-500/10 dark:border-rose-300/40'
+      : 'border-[#173d2e]/10 focus:border-[#009443]/35 focus:ring-4 focus:ring-[#009443]/[0.09] dark:border-white/10 dark:focus:border-[#72d2a4]/35 dark:focus:ring-[#72d2a4]/[0.08]'
+  }`;
+
 export default function GestionPreguntasFrecuentes() {
   const [preguntas, setPreguntas] = useState<PreguntaFrecuente[]>([]);
   const [formulario, setFormulario] = useState(formularioVacio);
@@ -39,6 +52,11 @@ export default function GestionPreguntasFrecuentes() {
   const [mensaje, setMensaje] = useState('');
   const [paginaActual, setPaginaActual] = useState(1);
   const [busqueda, setBusqueda] = useState('');
+  const [errores, setErrores] = useState<ErroresFormulario>({});
+  const [preguntaAEliminar, setPreguntaAEliminar] = useState<PreguntaFrecuente | null>(null);
+  const [eliminando, setEliminando] = useState(false);
+  const preguntaRef = useRef<HTMLInputElement>(null);
+  const respuestaRef = useRef<HTMLTextAreaElement>(null);
 
   const cargar = async () => {
     setCargando(true);
@@ -60,6 +78,26 @@ export default function GestionPreguntasFrecuentes() {
     void cargar();
   }, []);
 
+  // Bloquea el scroll de la página y permite cerrar con Escape mientras hay un modal abierto.
+  useEffect(() => {
+    if (!modalAbierto && !preguntaAEliminar) return;
+    const overflowPrevio = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const cerrarConEscape = (evento: KeyboardEvent) => {
+      if (evento.key !== 'Escape') return;
+      if (preguntaAEliminar) {
+        if (!eliminando) setPreguntaAEliminar(null);
+      } else if (!guardando) {
+        setModalAbierto(false);
+      }
+    };
+    document.addEventListener('keydown', cerrarConEscape);
+    return () => {
+      document.body.style.overflow = overflowPrevio;
+      document.removeEventListener('keydown', cerrarConEscape);
+    };
+  }, [modalAbierto, preguntaAEliminar, eliminando, guardando]);
+
   const abrirFormulario = (pregunta?: PreguntaFrecuente) => {
     setEditando(pregunta ?? null);
     setFormulario(
@@ -72,11 +110,23 @@ export default function GestionPreguntasFrecuentes() {
         : formularioVacio,
     );
     setMensaje('');
+    setErrores({});
     setModalAbierto(true);
   };
 
   const guardar = async (evento: FormEvent<HTMLFormElement>) => {
     evento.preventDefault();
+
+    const nuevosErrores: ErroresFormulario = {};
+    if (!formulario.pregunta.trim()) nuevosErrores.pregunta = 'Escribe la pregunta frecuente.';
+    if (!formulario.respuesta.trim()) nuevosErrores.respuesta = 'Escribe la respuesta de la pregunta.';
+    if (nuevosErrores.pregunta || nuevosErrores.respuesta) {
+      setErrores(nuevosErrores);
+      (nuevosErrores.pregunta ? preguntaRef : respuestaRef).current?.focus();
+      return;
+    }
+    setErrores({});
+
     setGuardando(true);
     setMensaje('');
     try {
@@ -118,7 +168,8 @@ export default function GestionPreguntasFrecuentes() {
   };
 
   const eliminar = async (pregunta: PreguntaFrecuente) => {
-    if (!window.confirm(`¿Eliminar la pregunta “${pregunta.pregunta}”?`)) return;
+    if (eliminando) return;
+    setEliminando(true);
     setMensaje('');
     try {
       await api.solicitar<void>(
@@ -126,9 +177,13 @@ export default function GestionPreguntasFrecuentes() {
         { method: 'DELETE' },
         { incluirAuth: true, mensajeError: 'No se pudo eliminar la pregunta frecuente.' },
       );
+      setPreguntaAEliminar(null);
       await cargar();
     } catch (error) {
+      setPreguntaAEliminar(null);
       setMensaje(error instanceof Error ? error.message : 'No se pudo eliminar la pregunta frecuente.');
+    } finally {
+      setEliminando(false);
     }
   };
 
@@ -300,7 +355,7 @@ export default function GestionPreguntasFrecuentes() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => void eliminar(pregunta)}
+                            onClick={() => setPreguntaAEliminar(pregunta)}
                             className="inline-flex items-center gap-1.5 rounded-xl border border-red-200/75 bg-red-50/75 px-3.5 py-2.5 text-xs font-bold text-red-700 shadow-sm transition hover:border-red-300 hover:bg-red-100 dark:border-red-300/15 dark:bg-red-300/[0.06] dark:text-red-300 dark:hover:bg-red-300/[0.12] focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
                           >
                             <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 13h12l1-13M9 7V4h6v3" /></svg>
@@ -380,14 +435,15 @@ export default function GestionPreguntasFrecuentes() {
         </div>
       </section>
 
-      {modalAbierto && (
-        <div className="fixed inset-0 z-[90] grid place-items-center overflow-y-auto bg-[#08271c]/45 p-3 backdrop-blur-md sm:p-5">
+      {modalAbierto && createPortal(
+        <div className="fixed inset-0 z-[9000] grid place-items-center overflow-hidden overscroll-contain bg-[#08271c]/45 p-3 font-brand backdrop-blur-md sm:p-5">
           <form
+            noValidate
             onSubmit={(evento) => void guardar(evento)}
             role="dialog"
             aria-modal="true"
             aria-labelledby="titulo-modal-pregunta"
-            className="my-auto max-h-[min(92dvh,850px)] w-full max-w-2xl overflow-y-auto rounded-[1.75rem] border border-white/65 bg-[#f8fcf9]/95 p-5 shadow-[0_30px_100px_rgba(4,35,23,0.28)] backdrop-blur-2xl dark:border-white/[0.12] dark:bg-[#102d21]/95 sm:rounded-[2rem] sm:p-7"
+            className="max-h-[min(92dvh,850px)] w-full max-w-2xl overflow-y-auto overscroll-contain rounded-[1.75rem] border border-white/65 bg-[#f8fcf9]/95 p-5 shadow-[0_30px_100px_rgba(4,35,23,0.28)] backdrop-blur-2xl dark:border-white/[0.12] dark:bg-[#102d21]/95 sm:rounded-[2rem] sm:p-7"
           >
             <div className="flex items-start justify-between gap-4 border-b border-[#173d2e]/10 pb-5 dark:border-white/[0.09]">
               <div className="min-w-0">
@@ -410,25 +466,49 @@ export default function GestionPreguntasFrecuentes() {
             <label className="mt-5 block text-sm font-bold text-[#315747] dark:text-[#d9ebe0]">
               Pregunta
               <input
+                ref={preguntaRef}
                 required
                 maxLength={1000}
                 value={formulario.pregunta}
-                onChange={(evento) => setFormulario({ ...formulario, pregunta: evento.target.value })}
+                onChange={(evento) => {
+                  setFormulario({ ...formulario, pregunta: evento.target.value });
+                  if (errores.pregunta) setErrores((actuales) => ({ ...actuales, pregunta: undefined }));
+                }}
                 placeholder="Escribe la pregunta frecuente..."
-                className="mt-2 w-full rounded-2xl border border-[#173d2e]/10 bg-white/75 px-4 py-3 text-sm text-[#173d2e] shadow-sm outline-none transition placeholder:text-[#9aaba1] focus:border-[#009443]/35 focus:ring-4 focus:ring-[#009443]/[0.09] dark:border-white/10 dark:bg-white/[0.06] dark:text-white dark:placeholder:text-[#8da79a] dark:focus:border-[#72d2a4]/35 dark:focus:ring-[#72d2a4]/[0.08]"
+                aria-invalid={Boolean(errores.pregunta)}
+                aria-describedby={errores.pregunta ? 'error-pregunta' : undefined}
+                className={claseCampo(errores.pregunta)}
               />
+              {errores.pregunta && (
+                <span id="error-pregunta" role="alert" className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-rose-700 dark:text-rose-200">
+                  <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 8v5M12 16h.01" /></svg>
+                  {errores.pregunta}
+                </span>
+              )}
             </label>
 
             <label className="mt-4 block text-sm font-bold text-[#315747] dark:text-[#d9ebe0]">
               Respuesta
               <textarea
+                ref={respuestaRef}
                 required
                 rows={5}
                 value={formulario.respuesta}
-                onChange={(evento) => setFormulario({ ...formulario, respuesta: evento.target.value })}
+                onChange={(evento) => {
+                  setFormulario({ ...formulario, respuesta: evento.target.value });
+                  if (errores.respuesta) setErrores((actuales) => ({ ...actuales, respuesta: undefined }));
+                }}
                 placeholder="Escribe una respuesta clara y útil..."
-                className="mt-2 w-full resize-y rounded-2xl border border-[#173d2e]/10 bg-white/75 px-4 py-3 text-sm leading-6 text-[#173d2e] shadow-sm outline-none transition placeholder:text-[#9aaba1] focus:border-[#009443]/35 focus:ring-4 focus:ring-[#009443]/[0.09] dark:border-white/10 dark:bg-white/[0.06] dark:text-white dark:placeholder:text-[#8da79a] dark:focus:border-[#72d2a4]/35 dark:focus:ring-[#72d2a4]/[0.08]"
+                aria-invalid={Boolean(errores.respuesta)}
+                aria-describedby={errores.respuesta ? 'error-respuesta' : undefined}
+                className={`${claseCampo(errores.respuesta)} resize-y leading-6`}
               />
+              {errores.respuesta && (
+                <span id="error-respuesta" role="alert" className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-rose-700 dark:text-rose-200">
+                  <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 8v5M12 16h.01" /></svg>
+                  {errores.respuesta}
+                </span>
+              )}
             </label>
 
             <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-2xl border border-emerald-200/65 bg-emerald-50/65 p-4 text-sm text-[#315747] transition hover:bg-emerald-50 dark:border-emerald-300/15 dark:bg-emerald-300/[0.05] dark:text-[#d9ebe0] dark:hover:bg-emerald-300/[0.08]">
@@ -466,7 +546,50 @@ export default function GestionPreguntasFrecuentes() {
               </button>
             </div>
           </form>
-        </div>
+        </div>,
+        document.body,
+      )}
+
+      {preguntaAEliminar && createPortal(
+        <div
+          className="fixed inset-0 z-[9100] grid place-items-center overflow-hidden overscroll-contain bg-[#08271c]/45 p-3 font-brand backdrop-blur-md sm:p-5"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="titulo-eliminar-pregunta"
+          aria-describedby="detalle-eliminar-pregunta"
+          onMouseDown={(evento) => { if (evento.target === evento.currentTarget && !eliminando) setPreguntaAEliminar(null); }}
+        >
+          <div className="max-h-[min(92dvh,850px)] w-full max-w-md overflow-y-auto overscroll-contain rounded-[1.75rem] border border-white/65 bg-[#f8fcf9]/95 p-6 shadow-[0_30px_100px_rgba(4,35,23,0.28)] backdrop-blur-2xl dark:border-white/[0.12] dark:bg-[#102d21]/95 sm:rounded-[2rem] sm:p-7">
+            <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-red-200/80 bg-red-50/80 text-red-600 dark:border-red-300/15 dark:bg-red-300/10 dark:text-red-200">
+              <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 13h12l1-13M9 7V4h6v3" /></svg>
+            </span>
+            <h2 id="titulo-eliminar-pregunta" className="mt-5 text-xl font-extrabold tracking-tight text-[#174c38] dark:text-white sm:text-2xl">Eliminar pregunta frecuente</h2>
+            <p id="detalle-eliminar-pregunta" className="mt-2 break-words text-sm leading-6 text-[#62786d] dark:text-[#b9cec2]">
+              ¿Deseas eliminar <span className="font-bold text-[#174c38] dark:text-white">“{preguntaAEliminar.pregunta}”</span>? Esta acción no se puede deshacer.
+            </p>
+            <div className="mt-6 flex flex-col-reverse gap-3 border-t border-[#173d2e]/10 pt-5 dark:border-white/[0.09] sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                autoFocus
+                disabled={eliminando}
+                onClick={() => setPreguntaAEliminar(null)}
+                className="rounded-2xl border border-[#173d2e]/15 bg-white/55 px-5 py-3 text-sm font-bold text-[#456556] transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00AEEF] disabled:opacity-50 dark:border-white/10 dark:bg-white/[0.04] dark:text-[#d4e9dc] dark:hover:bg-white/[0.08]"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={eliminando}
+                onClick={() => void eliminar(preguntaAEliminar)}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-red-600 px-5 py-3 text-sm font-bold text-white shadow-[0_10px_24px_rgba(220,38,38,0.2)] transition hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60"
+              >
+                {eliminando && <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />}
+                {eliminando ? 'Eliminando…' : 'Eliminar'}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body,
       )}
       </div>
     </main>
