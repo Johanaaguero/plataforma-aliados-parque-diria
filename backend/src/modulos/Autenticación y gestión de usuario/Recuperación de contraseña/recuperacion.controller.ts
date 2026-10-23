@@ -14,6 +14,11 @@ import {
 
 const TIEMPO_MINIMO_RESPUESTA_MS = 400;
 
+function enmascararCorreo(correo: string): string {
+  const [usuario, dominio] = correo.trim().split('@');
+  return usuario && dominio ? `${usuario.slice(0, 1)}***@${dominio}` : 'correo-inválido';
+}
+
 async function esperarTiempoMinimo(inicio: number): Promise<void> {
   const tiempoRestante = TIEMPO_MINIMO_RESPUESTA_MS - (Date.now() - inicio);
 
@@ -47,8 +52,17 @@ export const solicitarRecuperacion = async (
       });
     }
 
-    void solicitarRecuperacionPassword(normalizarCorreo(correo)).catch(() => {
-      console.error('No se pudo procesar una solicitud de recuperación.');
+    const correoNormalizado = normalizarCorreo(correo);
+    console.info('Recuperación de contraseña: solicitud recibida', {
+      destinatario: enmascararCorreo(correoNormalizado),
+    });
+
+    void solicitarRecuperacionPassword(correoNormalizado).catch((error: unknown) => {
+      const message = error instanceof Error ? error.message : 'Error desconocido';
+      console.error('Recuperación de contraseña: procesamiento interno falló', {
+        destinatario: enmascararCorreo(correoNormalizado),
+        message,
+      });
     });
     await esperarTiempoMinimo(inicio);
 
