@@ -52,6 +52,7 @@ export interface InscripcionAdministrativaDTO {
   referenciaDevolucion?: string | null;
 }
 
+
 export const listarInscripcionesAdministrativas =
   async (): Promise<InscripcionAdministrativaDTO[]> => {
     const registros = await AppDataSource
@@ -110,12 +111,16 @@ export const listarInscripcionesAdministrativas =
           estado: 'confirmada',
           origen: 'participante',
           esPago: Boolean(registro.esPago),
-          precio: registro.precio == null ? null : Number(registro.precio),
+          precio: registro.precio == null
+            ? null
+            : Number(registro.precio),
           comprobanteUrl: null,
           numeroTicket: registro.numeroTicket ?? null,
         };
       });
 
+    // Solo obtener las reservas aprobadas.
+    // Las reservas CONFIRMADA no deben aparecer en este listado.
     const reservas = await AppDataSource
       .getRepository(Reserva)
       .createQueryBuilder('reserva')
@@ -150,6 +155,9 @@ export const listarInscripcionesAdministrativas =
         'reserva.estado AS estado',
         'reserva.numeroTicket AS numeroTicket',
       ])
+      .where('reserva.estado = :estado', {
+        estado: EstadoReserva.APROBADA,
+      })
       .orderBy('reserva.createdAt', 'DESC')
       .getRawMany();
 
@@ -180,43 +188,55 @@ export const listarInscripcionesAdministrativas =
         estado: registro.estado,
         origen: 'reserva',
         esPago: Boolean(registro.esPago),
-        precio: registro.precio == null ? null : Number(registro.precio),
+        precio: registro.precio == null
+          ? null
+          : Number(registro.precio),
         comprobanteUrl: registro.comprobanteUrl ?? null,
         motivoRechazo: registro.motivoRechazo ?? null,
         numeroTicket: registro.numeroTicket ?? null,
-        datosDevolucion: registro.datosDevolucion ? (typeof registro.datosDevolucion === 'string' ? JSON.parse(registro.datosDevolucion) : registro.datosDevolucion) : null,
-        fechaCancelacion: serializarFechaUtc(registro.fechaCancelacion),
-        devolucionProcesadaEn: serializarFechaUtc(registro.devolucionProcesadaEn),
-        referenciaDevolucion: registro.referenciaDevolucion ?? null,
+        datosDevolucion: registro.datosDevolucion
+          ? (
+              typeof registro.datosDevolucion === 'string'
+                ? JSON.parse(registro.datosDevolucion)
+                : registro.datosDevolucion
+            )
+          : null,
+        fechaCancelacion: serializarFechaUtc(
+          registro.fechaCancelacion,
+        ),
+        devolucionProcesadaEn: serializarFechaUtc(
+          registro.devolucionProcesadaEn,
+        ),
+        referenciaDevolucion:
+          registro.referenciaDevolucion ?? null,
       }));
 
+    // Identificar las inscripciones que ya están representadas
+    // por una reserva aprobada, usando usuario y actividad.
+    const clavesReservasAprobadas = new Set(
+      reservasFormateadas.map(
+        (reserva) =>
+          `${reserva.usuarioId}-${reserva.eventoCapacitacionId}`,
+      ),
+    );
 
-const ticketsReservasAprobadas = new Set(
-  reservasFormateadas
-    .filter(
-      (reserva) =>
-        reserva.estado === EstadoReserva.APROBADA &&
-        Boolean(reserva.numeroTicket),
-    )
-    .map((reserva) => reserva.numeroTicket),
-);
+    const participantesSinDuplicar = participantes.filter(
+      (participante) =>
+        !clavesReservasAprobadas.has(
+          `${participante.usuarioId}-${participante.eventoCapacitacionId}`,
+        ),
+    );
 
-const participantesSinDuplicar = participantes.filter(
-  (participante) =>
-    !(
-      participante.numeroTicket &&
-      ticketsReservasAprobadas.has(participante.numeroTicket)
-    ),
-);
-
-return [...participantesSinDuplicar, ...reservasFormateadas].sort(
-  (a, b) =>
-    new Date(b.fechaInscripcion ?? 0).getTime() -
-    new Date(a.fechaInscripcion ?? 0).getTime(),
-);
-
-
+    return [
+      ...participantesSinDuplicar,
+      ...reservasFormateadas,
+    ].sort(
+      (a, b) =>
+        new Date(b.fechaInscripcion ?? 0).getTime() -
+        new Date(a.fechaInscripcion ?? 0).getTime(),
+    );
   };
+
 
 export const actualizarEstadoReserva = async (
   reservaId: number,
