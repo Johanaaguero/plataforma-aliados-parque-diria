@@ -1,5 +1,7 @@
+
 import { AppDataSource } from '../../../data-source';
 import { TokenBlacklist } from '../../../models/TokenBlacklist';
+import { SesionActiva } from '../../../models/SesionActiva';
 import jwt from 'jsonwebtoken';
 
 export const logoutUser = async (
@@ -14,55 +16,65 @@ export const logoutUser = async (
   }
 
   try {
+    // Leer los datos del token.
     const decoded = jwt.decode(token) as {
       id?: number;
       jti?: string;
       exp?: number;
     } | null;
 
-    if (!decoded || !decoded.jti) {
+    if (!decoded || !decoded.jti || !decoded.id) {
       return {
         ok: false,
-        message: 'Token inválido: no contiene JTI',
+        message: 'Token inválido: no contiene los datos de sesión necesarios',
       };
     }
 
     const repo = AppDataSource.getRepository(TokenBlacklist);
+    const sesionesRepo = AppDataSource.getRepository(SesionActiva);
 
+    // Invalidar el token para que no vuelva a utilizarse.
     const yaExiste = await repo.findOne({
-      where: { token,
+      where: { token },
+    });
+
+    if (!yaExiste) {
+      const tokenInvalidado = repo.create({
+        token,
+        motivo,
+        expiracion: null,
+      });
+
+      await repo.save(tokenInvalidado);
+    }
+
+    // Eliminar únicamente la sesión que corresponde a este token.
+    // Así, un token antiguo no puede borrar una sesión nueva.
+    const sesionActiva = await sesionesRepo.findOne({
+      where: {
+        usuarioId: decoded.id,
+        jti: decoded.jti,
       },
     });
 
-    if (yaExiste) {
-      return {
-        ok: true,
-        message: 'El token ya estaba invalidado',
-      };
+    if (sesionActiva) {
+      await sesionesRepo.delete({
+        id: sesionActiva.id,
+      });
     }
-
-    const expiracion = decoded.exp
-      ? new Date(decoded.exp * 1000)
-      : new Date(Date.now() + 2 * 60 * 60 * 1000);
-
-    const tokenInvalidado = repo.create({
-       token,
-  motivo,
-  expiracion: null,
-    });
-
-    await repo.save(tokenInvalidado);
 
     return {
       ok: true,
-      message: 'Sesión cerrada correctamente',
+      message: yaExiste
+        ? 'El token ya estaba invalidado y se verificó la sesión'
+        : 'Sesión cerrada correctamente',
     };
   } catch (error) {
-    console.error('Error al invalidar token:', error);
+    console.error('Error al cerrar sesión:', error);
 
     return {
       ok: false,
-      message: 'No se pudo invalidar el token',
+      message: 'No se pudo cerrar la sesión',
     };
   }
 };

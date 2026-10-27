@@ -1,11 +1,13 @@
+
 import { AppDataSource } from '../../../data-source';
 import { Usuario } from '../../../models/Usuario';
 import { LoginAttempt } from '../../../models/LoginAttempt';
 import { IntentoAcceso } from '../../../models/IntentoAcceso';
+import { SesionActiva } from '../../../models/SesionActiva';
 import { registrarAuditoria } from '../Autenticación y seguridad de acceso al sistema/auditoria.service';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-
+import { randomUUID } from 'node:crypto';
 
 interface LoginInput {
   identificador: string;
@@ -27,6 +29,8 @@ export const loginUser = async ({
   const usuarioRepo = AppDataSource.getRepository(Usuario);
   const attemptRepo = AppDataSource.getRepository(LoginAttempt);
   const intentoAccesoRepo = AppDataSource.getRepository(IntentoAcceso);
+  const sesionesRepo = AppDataSource.getRepository(SesionActiva);
+
   const identificadorNormalizado = identificador.trim().toLowerCase();
 
   const usuario = await usuarioRepo
@@ -40,11 +44,8 @@ export const loginUser = async ({
     })
     .getOne();
 
-  
   // USUARIO NO ENCONTRADO
-  
   if (!usuario) {
-    // Registrar en intentos_acceso
     await intentoAccesoRepo.save({
       usuarioId: null,
       correo: identificadorNormalizado,
@@ -53,7 +54,6 @@ export const loginUser = async ({
       ip: ipAddress || null,
     });
 
-    // Registrar también en auditoría
     await registrarAuditoria({
       action: 'LOGIN_ATTEMPT',
       description: `Intento de login con identificador no encontrado: ${identificador}`,
@@ -69,9 +69,7 @@ export const loginUser = async ({
     };
   }
 
-  
   // BUSCAR O CREAR REGISTRO DE INTENTOS
-  
   let intento = await attemptRepo.findOne({
     where: { usuarioId: usuario.id },
   });
@@ -83,18 +81,12 @@ export const loginUser = async ({
     });
   }
 
-  
   // VERIFICAR SI LA CUENTA ESTÁ BLOQUEADA
-  
-  if (
-    intento.bloqueadoHasta &&
-    intento.bloqueadoHasta > new Date()
-  ) {
+  if (intento.bloqueadoHasta && intento.bloqueadoHasta > new Date()) {
     const minutosRestantes = Math.ceil(
       (intento.bloqueadoHasta.getTime() - Date.now()) / 60000,
     );
 
-    // Registrar en intentos_acceso
     await intentoAccesoRepo.save({
       usuarioId: usuario.id,
       correo: usuario.correo,
@@ -103,11 +95,10 @@ export const loginUser = async ({
       ip: ipAddress || null,
     });
 
-    // Registrar en auditoría
     await registrarAuditoria({
       usuarioId: usuario.id,
       action: 'LOGIN_BLOCKED',
-      description: `Intento de login en cuenta bloqueada`,
+      description: 'Intento de login en cuenta bloqueada',
       ipAddress: ipAddress || null,
       userAgent: userAgent || null,
       status: 'blocked',
@@ -120,17 +111,13 @@ export const loginUser = async ({
     };
   }
 
-  
   // VALIDAR CONTRASEÑA
-  
   const passwordValida = await bcrypt.compare(
     password,
     usuario.contraseña,
   );
 
-  
   // CONTRASEÑA INCORRECTA
-  
   if (!passwordValida) {
     intento.intentosFallidos += 1;
     intento.fechaUltimoIntento = new Date();
@@ -143,7 +130,6 @@ export const loginUser = async ({
 
       await attemptRepo.save(intento);
 
-      // Registrar en intentos_acceso
       await intentoAccesoRepo.save({
         usuarioId: usuario.id,
         correo: usuario.correo,
@@ -152,7 +138,6 @@ export const loginUser = async ({
         ip: ipAddress || null,
       });
 
-      // Registrar en auditoría
       await registrarAuditoria({
         usuarioId: usuario.id,
         action: 'LOGIN_FAILED_BLOCKED',
@@ -172,7 +157,6 @@ export const loginUser = async ({
     // Guardar contador de intentos
     await attemptRepo.save(intento);
 
-    // Registrar en intentos_acceso
     await intentoAccesoRepo.save({
       usuarioId: usuario.id,
       correo: usuario.correo,
@@ -181,7 +165,6 @@ export const loginUser = async ({
       ip: ipAddress || null,
     });
 
-    // Registrar en auditoría
     await registrarAuditoria({
       usuarioId: usuario.id,
       action: 'LOGIN_FAILED',
@@ -198,18 +181,14 @@ export const loginUser = async ({
     };
   }
 
-  
-  // LOGIN EXITOSO
-  
-
-  // Reiniciar contador de intentos
+  // LOGIN EXITOSO: REINICIAR CONTADOR DE INTENTOS
   intento.intentosFallidos = 0;
   intento.bloqueadoHasta = null;
   intento.fechaUltimoIntento = new Date();
 
   await attemptRepo.save(intento);
 
-  // Registrar login exitoso en intentos_acceso
+  // REGISTRAR LOGIN EN intentos_acceso
   await intentoAccesoRepo.save({
     usuarioId: usuario.id,
     correo: usuario.correo,
@@ -218,11 +197,46 @@ export const loginUser = async ({
     ip: ipAddress || null,
   });
 
-  
-  // CREAR TOKEN JWT
-  
+  // VERIFICAR SI YA EXISTE UNA SESIÓN ACTIVA
+  const ahoraFecha = new Date();
+  const limiteInactividad = new Date(
+    ahoraFecha.getTime() - MINUTOS_INACTIVIDAD * 60 * 1000,
+  );
 
-  const ahora = Math.floor(Date.now() / 1000);
+  const sesionExistente = await sesionesRepo.findOne({
+    where: { usuarioId: usuario.id },
+  });
+
+  if (sesionExistente) {
+    const sigueActiva =
+      sesionExistente.ultimaActividad > limiteInactividad &&
+      sesionExistente.expiraEn > ahoraFecha;
+
+    if (sigueActiva) {
+      await registrarAuditoria({
+        usuarioId: usuario.id,
+        action: 'LOGIN_SESSION_ALREADY_ACTIVE',
+        description: 'Inicio de sesión rechazado porque la cuenta ya tiene una sesión activa',
+        ipAddress: ipAddress || null,
+        userAgent: userAgent || null,
+        status: 'blocked',
+      });
+
+      return {
+        ok: false,
+        code: 'SESSION_ALREADY_ACTIVE',
+        message:
+          'Esta cuenta ya tiene una sesión activa en otro dispositivo. Cierra esa sesión antes de volver a ingresar.',
+      };
+    }
+
+    // La sesión anterior expiró o superó el tiempo de inactividad.
+    await sesionesRepo.delete({ id: sesionExistente.id });
+  }
+
+  // CREAR TOKEN JWT CON UN IDENTIFICADOR ÚNICO
+  const ahora = Math.floor(ahoraFecha.getTime() / 1000);
+  const jti = randomUUID();
 
   const token = jwt.sign(
     {
@@ -235,14 +249,21 @@ export const loginUser = async ({
     process.env.JWT_SECRET as string,
     {
       expiresIn: '2h',
-        jwtid: `${usuario.id}-${ahora}`,
+      jwtid: jti,
     },
   );
 
-  
-  // REGISTRAR AUDITORÍA
-  
+  // REGISTRAR LA SESIÓN ACTIVA
+  await sesionesRepo.save(
+    sesionesRepo.create({
+      usuarioId: usuario.id,
+      jti,
+      ultimaActividad: ahoraFecha,
+      expiraEn: new Date(ahoraFecha.getTime() + 2 * 60 * 60 * 1000),
+    }),
+  );
 
+  // REGISTRAR AUDITORÍA
   await registrarAuditoria({
     usuarioId: usuario.id,
     action: 'LOGIN_SUCCESS',
@@ -252,10 +273,7 @@ export const loginUser = async ({
     status: 'success',
   });
 
-  
   // RESPUESTA
-
-
   return {
     ok: true,
     code: 'LOGIN_SUCCESS',
