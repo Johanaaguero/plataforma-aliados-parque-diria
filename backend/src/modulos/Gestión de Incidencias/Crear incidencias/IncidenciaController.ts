@@ -311,7 +311,18 @@ const serializarIncidencia = (
 
   return {
     ...resto,
-    evidencias: incluirEvidencias ? evidencias : [],
+    evidencias: incluirEvidencias
+      ? (evidencias ?? []).map(
+          ({ id, tipoMime, nombreArchivo, tamanoBytes, tipo, fechaCreacion }) => ({
+            id,
+            tipoMime,
+            nombreArchivo,
+            tamanoBytes,
+            tipo,
+            fechaCreacion,
+          }),
+        )
+      : [],
 
     usuarioReporta: usuarioReporta
       ? {

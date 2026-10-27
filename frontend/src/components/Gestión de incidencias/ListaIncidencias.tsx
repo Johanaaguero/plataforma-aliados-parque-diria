@@ -316,6 +316,7 @@ function DetalleIncidenciaModal({
   const [comentarios, setComentarios] = useState<ComentarioIncidencia[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
+  const [errorComentarios, setErrorComentarios] = useState('');
   const onCloseRef = useRef(onClose);
 
   useEffect(() => {
@@ -335,21 +336,36 @@ function DetalleIncidenciaModal({
     const cargarDetalle = async () => {
       setCargando(true);
       setError('');
+      setErrorComentarios('');
 
       try {
-        const [detalle, historial] = await Promise.all([
-          obtenerDetalleIncidencia(incidenciaInicial.id),
-          obtenerComentariosIncidencia(incidenciaInicial.id),
-        ]);
+        const detalle = await obtenerDetalleIncidencia(incidenciaInicial.id);
 
         if (!cancelado) {
           setIncidencia(detalle);
-          setComentarios(
-            historial.filter(
-              (comentario) =>
-                !comentario.esNotaPrivada && !comentario.esDatoSensible,
-            ),
+        }
+
+        try {
+          const historial = await obtenerComentariosIncidencia(
+            incidenciaInicial.id,
+            !detalle.esPublica,
           );
+          if (!cancelado) {
+            setComentarios(
+              historial.filter(
+                (comentario) =>
+                  !comentario.esNotaPrivada && !comentario.esDatoSensible,
+              ),
+            );
+          }
+        } catch (errorSolicitud) {
+          if (!cancelado) {
+            setErrorComentarios(
+              errorSolicitud instanceof Error
+                ? errorSolicitud.message
+                : 'No se pudieron cargar los comentarios públicos.',
+            );
+          }
         }
       } catch (errorSolicitud) {
         if (!cancelado) {
@@ -495,7 +511,7 @@ function DetalleIncidenciaModal({
           {cargando && <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">Cargando comentarios...</p>}
           {!cargando && !error && comentarios.length === 0 && (
             <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
-              Aún no hay comentarios públicos para esta incidencia.
+              {errorComentarios || 'Aún no hay comentarios públicos para esta incidencia.'}
             </p>
           )}
           <div className="mt-3 space-y-3">

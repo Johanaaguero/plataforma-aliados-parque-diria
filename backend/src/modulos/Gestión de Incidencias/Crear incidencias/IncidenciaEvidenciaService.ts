@@ -57,14 +57,13 @@ export const crearEvidencia = async (
 export const obtenerEvidenciaPorId = async (
   id: number,
 ): Promise<IncidenciaEvidencia> => {
-  const evidencia = await evidenciaRepository.findOne({
-    where: { id },
-    relations: {
-      incidencia: {
-        usuarioReporta: true,
-      },
-    },
-  });
+  const evidencia = await evidenciaRepository
+    .createQueryBuilder('evidencia')
+    .addSelect('evidencia.archivo')
+    .leftJoinAndSelect('evidencia.incidencia', 'incidencia')
+    .leftJoinAndSelect('incidencia.usuarioReporta', 'usuarioReporta')
+    .where('evidencia.id = :id', { id })
+    .getOne();
 
   if (!evidencia) {
     throw new Error('La evidencia no existe.');

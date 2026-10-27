@@ -1,12 +1,9 @@
 import { api, notificarErrorAuth } from './api';
 
-const API_URL =
-  import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
 export function urlArchivoEvidencia(
   evidenciaId: number,
 ): string {
-  return `${API_URL}/api/incidencias/evidencias/${evidenciaId}/archivo`;
+  return api.url(`/incidencias/evidencias/${evidenciaId}/archivo`);
 }
 
 export async function cargarArchivoEvidencia(
@@ -503,11 +500,19 @@ export async function cerrarMiIncidencia(
   return respuesta.incidencia;
 }
 
-export async function obtenerComentariosIncidencia(id: number): Promise<ComentarioIncidencia[]> {
+export async function obtenerComentariosIncidencia(
+  id: number,
+  incluirAuth = true,
+): Promise<ComentarioIncidencia[]> {
   const respuesta = await api.solicitar<RespuestaComentariosIncidencia>(
     `/incidencias/${id}/comentarios`,
     { method: 'GET' },
-    { desempaquetarData: false, mensajeError: 'No se pudo cargar el historial de seguimiento.' },
+    {
+      incluirAuth,
+      desempaquetarData: false,
+      notificarErrorAuth: incluirAuth,
+      mensajeError: 'No se pudo cargar el historial de seguimiento.',
+    },
   );
   return respuesta.comentarios;
 }
