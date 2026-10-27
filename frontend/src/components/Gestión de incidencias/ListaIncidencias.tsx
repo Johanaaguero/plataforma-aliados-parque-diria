@@ -146,8 +146,16 @@ function TarjetaIncidencia({
 }) {
   const infoCategoria = categoriasInfo[incidencia.categoria];
 
-  const primeraEvidencia = incidencia.evidencias?.[0];
-  const restoEvidencias = incidencia.evidencias?.slice(1) ?? [];
+const evidencias = incidencia.evidencias ?? [];
+
+const primeraEvidencia = evidencias.find(
+  (evidencia) =>
+    evidencia.tipo === 'foto' || evidencia.tipo === 'video',
+);
+
+const restoEvidencias = evidencias.filter(
+  (evidencia) => evidencia.id !== primeraEvidencia?.id,
+);
 
   return (
     <div
@@ -166,34 +174,29 @@ function TarjetaIncidencia({
 
       <div className="flex flex-col sm:flex-row">
 
-        {/* Imagen */}
-        <div className="relative h-52 w-full shrink-0 bg-slate-200 sm:h-60 sm:w-56 dark:bg-slate-800">
+       
+{/* Imagen de la incidencia */}
+<div className="relative h-56 w-full shrink-0 overflow-hidden bg-slate-200 dark:bg-slate-800 sm:h-60 sm:w-56">
+  {primeraEvidencia ? (
+    <EvidenciaMedia
+      key={primeraEvidencia.id}
+      evidenciaId={primeraEvidencia.id}
+      tipo={primeraEvidencia.tipo}
+      alt={`Evidencia de ${incidencia.titulo}`}
+      className="absolute inset-0 block h-full w-full object-cover"
+      muted
+    />
+  ) : (
+    <div className="flex h-full w-full items-center justify-center text-slate-400 dark:text-slate-600">
+      <Icon className="h-8 w-8">
+        <path d="M4 16l4.586-4.586a2 2 0 0 1 2.828 0L16 16" />
+        <circle cx="9" cy="9" r="1.5" />
+        <rect x="3" y="4" width="18" height="16" rx="2" />
+      </Icon>
+    </div>
+  )}
+</div>
 
-          {primeraEvidencia ? (
-            <EvidenciaMedia
-              evidenciaId={primeraEvidencia.id}
-              tipo={primeraEvidencia.tipo}
-              alt={incidencia.titulo}
-              className="h-full w-full object-cover"
-              muted
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center text-slate-400 dark:text-slate-600">
-              <Icon className="h-8 w-8">
-                <path d="M4 16l4.586-4.586a2 2 0 0 1 2.828 0L16 16" />
-                <circle cx="9" cy="9" r="1.5" />
-                <rect
-                  x="3"
-                  y="4"
-                  width="18"
-                  height="16"
-                  rx="2"
-                />
-              </Icon>
-            </div>
-          )}
-
-        </div>
 
         {/* Información */}
         <div className="flex-1 p-5 sm:p-6">
