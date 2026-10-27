@@ -439,6 +439,7 @@ export class ReportesIncidenciasService {
         }),
       );
 
+    
     /*
      * REGISTRAR CONSULTA DEL REPORTE
      */
@@ -463,7 +464,9 @@ export class ReportesIncidenciasService {
         tipoReporte:
           TipoReporte.INCIDENCIAS,
 
-        usuarioGeneroId,
+        usuarioGenero: {
+          id: usuarioGeneroId,
+        } as import('../../../models/Usuario').Usuario,
       });
 
     await this.reporteRepository.save(
