@@ -192,6 +192,8 @@ export class ReportesUsuariosService {
      * GUARDAR REPORTE GENERADO
      */
 
+    
+    // GUARDAR REPORTE GENERADO
     let reporteGenerado: Reporte | null = null;
 
     if (usuarioGeneroId) {
@@ -203,8 +205,7 @@ export class ReportesUsuariosService {
           take: 1,
         });
 
-      const ultimoReporte =
-        reportes[0];
+      const ultimoReporte = reportes[0];
 
       const siguienteNumero =
         (ultimoReporte?.id ?? 0) + 1;
@@ -217,17 +218,17 @@ export class ReportesUsuariosService {
       const reporte =
         this.reporteRepository.create({
           numeroReporte,
-          tipoReporte:
-            TipoReporte.USUARIOS,
-          usuarioGeneroId,
+          tipoReporte: TipoReporte.USUARIOS,
+          usuarioGenero: {
+            id: usuarioGeneroId,
+          } as Usuario,
         });
 
-      await this.reporteRepository.save(
-        reporte,
-      );
+      await this.reporteRepository.save(reporte);
 
       reporteGenerado = reporte;
     }
+
 
     /*
      * RESPUESTA

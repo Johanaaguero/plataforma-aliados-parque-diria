@@ -1,3 +1,4 @@
+
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -53,12 +54,6 @@ export class Reporte {
   })
   usuarioGenero!: Usuario;
 
-  @Column({
-    name: 'usuario_genero_id',
-    type: 'int',
-  })
-  usuarioGeneroId!: number;
-
   @Column({ type: 'json', nullable: true })
   contenido?: Record<string, unknown> | null;
 
@@ -86,10 +81,10 @@ export class Reporte {
 
     if (params.usuarioGenero !== undefined) {
       this.usuarioGenero = params.usuarioGenero;
-    }
-
-    if (params.usuarioGeneroId !== undefined) {
-      this.usuarioGeneroId = params.usuarioGeneroId;
+    } else if (params.usuarioGeneroId !== undefined) {
+      this.usuarioGenero = {
+        id: params.usuarioGeneroId,
+      } as Usuario;
     }
 
     if (params.contenido !== undefined) {
