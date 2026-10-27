@@ -170,10 +170,10 @@ export default function RegistroEventoCapacitacion({
 
   const esCapacitacion = tipoActividad === 'capacitacion';
 
-  const colorAcento = esCapacitacion ? '#00AEEF' : '#8DC63F';
+  const colorAcento = esCapacitacion ? '#58D6A5' : '#8DC63F';
 
   const colorAcentoOscuro = esCapacitacion
-    ? '#0B7FB0'
+    ? '#168A63'
     : '#009444';
 
   useEffect(() => {

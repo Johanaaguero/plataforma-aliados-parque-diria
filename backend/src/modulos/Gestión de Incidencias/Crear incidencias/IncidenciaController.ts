@@ -177,8 +177,7 @@ export const agregarComentarioIncidencia = async (req: Request, res: Response): 
 
 export const obtenerComentariosIncidencia = async (req: Request, res: Response): Promise<void> => {
   const incidenciaId = Number(req.params.id);
-  const usuarioId = req.usuario?.id;
-  if (!Number.isSafeInteger(incidenciaId) || incidenciaId <= 0 || !usuarioId) {
+  if (!Number.isSafeInteger(incidenciaId) || incidenciaId <= 0) {
     res.status(400).json({ mensaje: 'Solicitud de historial inválida.' });
     return;
   }
@@ -195,7 +194,8 @@ export const obtenerComentariosIncidencia = async (req: Request, res: Response):
     }
 
     const esAdministrador = req.usuario?.rol === 'administrador' || req.usuario?.rol === 'super_admin';
-    if (!esAdministrador && incidencia.usuarioReporta?.id !== usuarioId) {
+    const actor = await obtenerActorIncidencia(req.usuario?.id);
+    if (!puedeConsultarIncidencia(incidencia, actor)) {
       res.status(403).json({ mensaje: 'No tienes acceso al historial de esta incidencia.' });
       return;
     }

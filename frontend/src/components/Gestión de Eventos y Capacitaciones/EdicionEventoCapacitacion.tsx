@@ -168,8 +168,8 @@ export default function EdicionEventoCapacitacion({
   const [segundosRestantes, setSegundosRestantes] = useState<number | null>(null);
 
   const esCapacitacion = tipoActividad === 'capacitacion';
-  const colorAcento = esCapacitacion ? '#00AEEF' : '#8DC63F';
-  const colorAcentoOscuro = esCapacitacion ? '#0B7FB0' : '#009444';
+  const colorAcento = esCapacitacion ? '#58D6A5' : '#8DC63F';
+  const colorAcentoOscuro = esCapacitacion ? '#168A63' : '#009444';
   const tipoActividadBloqueado = evento.estado === 'publicado';
   const camposBloqueados =
     estado === 'cargando' ||

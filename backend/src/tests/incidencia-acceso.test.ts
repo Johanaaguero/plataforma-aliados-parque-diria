@@ -23,6 +23,16 @@ describe('acceso a incidencias', () => {
     );
   });
 
+  test('permite consultar el historial de incidencias públicas sin autenticación', () => {
+    assert.equal(
+      puedeConsultarIncidencia(
+        { esPublica: true, usuarioReporta: { id: 12 } },
+        null,
+      ),
+      true,
+    );
+  });
+
   test('rechaza incidencias ocultas sin autenticación', () => {
     assert.equal(
       puedeConsultarIncidencia(incidenciaOculta, null),
@@ -90,7 +100,7 @@ describe('acceso a incidencias', () => {
     );
   });
 
-  test('requiere propietario o administración para consultar evidencia pública', () => {
+  test('permite consultar evidencia publicada y conserva el acceso restringido a evidencia privada', () => {
     const incidenciaPublica = {
       esPublica: true,
       usuarioReporta: { id: 12 },
@@ -98,14 +108,14 @@ describe('acceso a incidencias', () => {
 
     assert.equal(
       puedeConsultarEvidencia(incidenciaPublica, null),
-      false,
+      true,
     );
     assert.equal(
       puedeConsultarEvidencia(incidenciaPublica, {
         id: 99,
         rol: 'visitante',
       }),
-      false,
+      true,
     );
     assert.equal(
       puedeConsultarEvidencia(incidenciaPublica, {
@@ -162,6 +172,23 @@ describe('acceso a incidencias', () => {
         'private, no-store',
       );
     }
+  });
+
+  test('sirve la evidencia de una incidencia publicada sin autenticación', () => {
+    const archivo = Buffer.from('imagen-publica');
+    const respuesta = prepararRespuestaEvidencia(
+      { esPublica: true, usuarioReporta: { id: 12 } },
+      null,
+      archivo,
+      'image/jpeg',
+    );
+
+    assert.equal(respuesta?.archivo, archivo);
+    assert.equal(respuesta?.headers['Content-Type'], 'image/jpeg');
+    assert.equal(
+      respuesta?.headers['Cache-Control'],
+      'private, no-store',
+    );
   });
 
   test('no sirve el BLOB a usuarios no autorizados', () => {

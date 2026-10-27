@@ -1,3 +1,5 @@
+import { api } from './api';
+
 const API_ORIGIN = (import.meta.env.VITE_API_URL ?? 'http://localhost:3000')
   .replace(/\/$/, '')
   .replace(/\/api$/, '');
@@ -31,12 +33,37 @@ export interface ReporteGuardado {
 }
 
 export const guardarReporte = async (datosReporte: GuardarReporteInput): Promise<ReporteGuardado> => {
-  const token = sessionStorage.getItem('token') ?? localStorage.getItem('token');
-  const respuesta = await fetch(rutaApiReportes(), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-    body: JSON.stringify(datosReporte),
-  });
-  const resultado = await leerJsonSeguro<{ reporte: ReporteGuardado }>(respuesta);
+  const resultado = await api.solicitar<{ reporte: ReporteGuardado }>(
+    '/reportes',
+    {
+      method: 'POST',
+      body: JSON.stringify(datosReporte),
+    },
+    {
+      desempaquetarData: false,
+      mensajeError: 'No se pudo guardar el reporte.',
+    },
+  );
   return resultado.reporte;
+};
+
+export const exportarReporte = (
+  reporteId: number,
+  formato: 'pdf' | 'excel',
+): Promise<Blob> =>
+  api.solicitarBlob(
+    `/reportes/${reporteId}/exportar?formato=${formato}`,
+    {},
+    'No se pudo exportar el reporte.',
+  );
+
+export const descargarArchivo = (archivo: Blob, nombre: string): void => {
+  const url = URL.createObjectURL(archivo);
+  const enlace = document.createElement('a');
+  enlace.href = url;
+  enlace.download = nombre;
+  document.body.appendChild(enlace);
+  enlace.click();
+  enlace.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 };

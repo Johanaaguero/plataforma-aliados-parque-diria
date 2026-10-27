@@ -41,10 +41,6 @@ export default function EvidenciaMedia({
     const controlador = new AbortController();
     let urlTemporal: string | null = null;
 
-    if (!token) {
-      return () => controlador.abort();
-    }
-
     void cargarArchivoEvidencia(evidenciaId, controlador.signal)
       .then((archivo) => {
         if (controlador.signal.aborted) {
@@ -70,11 +66,10 @@ export default function EvidenciaMedia({
   }, [evidenciaId, token]);
 
   const url =
-    token && archivoCargado?.evidenciaId === evidenciaId
+    archivoCargado?.evidenciaId === evidenciaId
       ? archivoCargado.url
       : null;
   const error = evidenciaConError === evidenciaId;
-  const sinSesion = !token;
 
   const contenido = url
     ? tipo === 'video'
@@ -113,9 +108,7 @@ export default function EvidenciaMedia({
             )
           : error
             ? 'Evidencia no disponible'
-            : sinSesion
-              ? 'Inicia sesión para ver evidencia'
-              : 'Cargando evidencia...'}
+            : 'Cargando evidencia...'}
       </a>
     );
   }
@@ -124,13 +117,11 @@ export default function EvidenciaMedia({
     return (
       <div
         className={`${className} flex items-center justify-center text-center text-xs text-slate-500`}
-        role={error || sinSesion ? 'status' : undefined}
+        role={error ? 'status' : undefined}
       >
         {error
           ? 'Evidencia no disponible'
-          : sinSesion
-            ? 'Inicia sesión para ver evidencia'
-            : 'Cargando evidencia...'}
+          : 'Cargando evidencia...'}
       </div>
     );
   }

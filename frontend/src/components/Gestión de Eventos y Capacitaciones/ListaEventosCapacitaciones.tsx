@@ -482,7 +482,7 @@ export default function ListaEventosCapacitaciones({
     }
 
     return {
-      fondo: '#00AEEF',
+      fondo: '#58D6A5',
       texto: '#ffffff',
     };
   }
@@ -961,8 +961,8 @@ export default function ListaEventosCapacitaciones({
         key={item.id}
         className={`group flex min-h-[540px] w-[calc(100vw-2rem)] max-w-[420px] shrink-0 snap-center flex-col overflow-hidden rounded-3xl border shadow-2xl backdrop-blur-md transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl sm:min-h-[580px] sm:w-[480px] sm:max-w-none md:w-[520px] ${
           eventoPasado
-            ? 'border-slate-200 bg-slate-100/90 dark:bg-slate-900/90'
-            : 'border-white/10 bg-white/85 dark:bg-emerald-950/80'
+            ? 'border-[#b9dccc]/65 bg-[#e6f3eb]/82 dark:border-white/[0.12] dark:bg-[#234437]/78'
+            : 'border-white/55 bg-white/72 dark:border-white/[0.12] dark:bg-[#234437]/72'
         }`}
       >
         <div className="relative shrink-0">
@@ -975,8 +975,8 @@ export default function ListaEventosCapacitaciones({
           />
 
           {eventoPasado && (
-            <div className="absolute inset-0 flex items-center justify-center bg-slate-950/30">
-              <span className="rounded-full border border-white/30 bg-slate-950/75 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-white shadow-lg backdrop-blur-sm">
+            <div className="absolute inset-0 flex items-center justify-center bg-[#102b22]/38">
+              <span className="rounded-full border border-white/30 bg-[#173d2e]/78 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-white shadow-lg backdrop-blur-md">
                 Actividad pasada
               </span>
             </div>
@@ -999,7 +999,7 @@ export default function ListaEventosCapacitaciones({
           </div>
 
           <div className="absolute bottom-4 left-4">
-            <span className={`inline-flex rounded-lg px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.1em] shadow-md ${item.esPago ? 'bg-sky-600 text-white' : 'bg-emerald-600 text-white'}`}>
+            <span className={`inline-flex rounded-lg px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.1em] shadow-md ${item.esPago ? 'bg-[#168a63] text-white' : 'bg-emerald-600 text-white'}`}>
               {item.esPago ? `De pago · ₡${(item.precio ?? 0).toLocaleString('es-CR')}` : 'Gratuito'}
             </span>
           </div>
@@ -1131,7 +1131,7 @@ export default function ListaEventosCapacitaciones({
                   item.temporada ===
                   'seca'
                     ? 'border-[#D9D823]/40 bg-[#D9D823]/10 text-[#6B6900]'
-                    : 'border-[#00AEEF]/30 bg-[#00AEEF]/10 text-[#087AA8]'
+                    : 'border-[#58D6A5]/30 bg-[#58D6A5]/12 text-[#168A63] dark:text-[#A2F0CE]'
                 }`}
               >
                 <span
@@ -1139,7 +1139,7 @@ export default function ListaEventosCapacitaciones({
                     item.temporada ===
                     'seca'
                       ? 'bg-[#D9D823]'
-                      : 'bg-[#00AEEF]'
+                      : 'bg-[#58D6A5]'
                   } rounded-full`}
                 />
 
@@ -1208,7 +1208,7 @@ export default function ListaEventosCapacitaciones({
               </div>
 
               <div className="flex min-w-0 items-start gap-2.5">
-                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#00AEEF]/10 text-[#087AA8]">
+                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#58D6A5]/12 text-[#168A63] dark:text-[#A2F0CE]">
                   <svg
                     className="h-4 w-4"
                     viewBox="0 0 24 24"
@@ -1337,7 +1337,7 @@ export default function ListaEventosCapacitaciones({
               }
               className={`flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009444] focus-visible:ring-offset-2 ${
                 eventoPasado
-                  ? 'bg-slate-600 text-white hover:bg-slate-700'
+                  ? 'bg-[#315b4c] text-white hover:bg-[#234437]'
                   : 'bg-[#095540] text-white hover:scale-[1.02] hover:bg-[#009444] active:scale-95'
               }`}
               aria-label={`Ver detalles de ${
@@ -1482,7 +1482,7 @@ export default function ListaEventosCapacitaciones({
             <button
               type="button"
               onClick={() => desplazarCarrusel(-1)}
-              className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/15 bg-emerald-950/60 text-white shadow-lg backdrop-blur-md transition-all duration-200 hover:bg-emerald-600/30 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] dark:bg-slate-900/80"
+              className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/15 bg-emerald-950/60 text-white shadow-lg backdrop-blur-md transition-all duration-200 hover:bg-emerald-600/30 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] dark:bg-[#234437]/80"
               aria-label="Ver actividades anteriores"
             >
               <svg
@@ -1504,7 +1504,7 @@ export default function ListaEventosCapacitaciones({
             <button
               type="button"
               onClick={() => desplazarCarrusel(1)}
-              className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/15 bg-emerald-950/60 text-white shadow-lg backdrop-blur-md transition-all duration-200 hover:bg-emerald-600/30 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] dark:bg-slate-900/80"
+              className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/15 bg-emerald-950/60 text-white shadow-lg backdrop-blur-md transition-all duration-200 hover:bg-emerald-600/30 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] dark:bg-[#234437]/80"
               aria-label="Ver más actividades"
             >
               <svg
@@ -1858,7 +1858,7 @@ export default function ListaEventosCapacitaciones({
                 }
                 className={`flex grow items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold sm:grow-0 sm:px-5${
                   filtro === 'capacitacion'
-                    ? 'bg-white text-[#087AA8] shadow-sm'
+                    ? 'bg-white text-[#168A63] shadow-sm'
                     : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
@@ -1868,7 +1868,7 @@ export default function ListaEventosCapacitaciones({
                   className={`rounded-md px-1.5 py-0.5 text-[10px] ${
                     filtro ===
                     'capacitacion'
-                      ? 'bg-[#00AEEF]/10 text-[#087AA8]'
+                      ? 'bg-[#58D6A5]/12 text-[#168A63] dark:text-[#A2F0CE]'
                       : 'bg-slate-200 text-slate-500'
                   }`}
                 >
