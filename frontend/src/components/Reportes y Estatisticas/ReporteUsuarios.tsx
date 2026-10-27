@@ -4,7 +4,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { guardarReporte as guardarReporteApi, leerJsonSeguro, rutaApiReportes } from '../../services/reportesApi';
+import { descargarArchivo, exportarReporte as exportarReporteApi, guardarReporte as guardarReporteApi, leerJsonSeguro, rutaApiReportes } from '../../services/reportesApi';
 
 type Periodo =
   | 'hoy'
@@ -1260,23 +1260,10 @@ const contenedorFechasRef =
     setExportandoFormato(formato);
     setError('');
     try {
-      const token = sessionStorage.getItem('token') ?? localStorage.getItem('token');
-      const respuesta = await fetch(
-        `${rutaApiReportes(`/${reporteExportableId}/exportar`)}?formato=${formato}`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      if (!respuesta.ok || (respuesta.headers.get('content-type') ?? '').includes('text/html')) {
-        const errorRespuesta = await respuesta.json().catch(() => null) as { mensaje?: string } | null;
-        throw new Error(errorRespuesta?.mensaje ?? 'No se pudo exportar el reporte.');
-      }
-      const archivo = await respuesta.blob();
+      const archivo = await exportarReporteApi(reporteExportableId, formato);
       const extension = formato === 'pdf' ? 'pdf' : 'xlsx';
       const nombre = `Reporte_usuarios_${new Date().toISOString().slice(0, 10)}.${extension}`;
-      const enlace = document.createElement('a');
-      enlace.href = URL.createObjectURL(archivo);
-      enlace.download = nombre;
-      enlace.click();
-      URL.revokeObjectURL(enlace.href);
+      descargarArchivo(archivo, nombre);
       setExportadoFormato(formato);
       window.setTimeout(() => setExportadoFormato(null), 2500);
     } catch (err) {

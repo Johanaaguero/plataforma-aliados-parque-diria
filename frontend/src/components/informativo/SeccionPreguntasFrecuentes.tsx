@@ -40,7 +40,7 @@ export default function SeccionPreguntasFrecuentes() {
   if (!cargando && preguntas.length === 0) return null;
 
   return (
-    <section aria-labelledby="titulo-preguntas-frecuentes" className="bg-gradient-to-b from-white to-[#f3f8eb] px-4 py-16 sm:px-6 dark:from-[#0b241b] dark:to-[#0d3024]">
+    <section aria-labelledby="titulo-preguntas-frecuentes" className="sigtad-public-section bg-gradient-to-b from-[#f4fbf7] via-[#eaf8f0] to-[#dff3e8] px-4 py-16 sm:px-6 dark:from-[#101d1a] dark:via-[#172923] dark:to-[#1d3930]">
       <div className="mx-auto max-w-5xl">
         <header className="mx-auto mb-9 max-w-3xl text-center">
           <h2 id="titulo-preguntas-frecuentes" className="mt-2 text-3xl font-bold tracking-tight text-emerald-950 dark:text-white sm:text-4xl">Preguntas frecuentes</h2>
@@ -63,7 +63,7 @@ export default function SeccionPreguntasFrecuentes() {
               return (
                 <article
                   key={pregunta.id}
-                  className="overflow-hidden rounded-2xl border border-emerald-500/20 bg-white/50 shadow-lg backdrop-blur-md transition-all duration-300 hover:border-emerald-500/40 md:rounded-3xl dark:border-white/10 dark:bg-slate-900/50"
+                  className="overflow-hidden rounded-2xl border border-white/65 bg-white/62 shadow-[0_16px_40px_rgba(16,82,57,0.10)] backdrop-blur-xl transition-[border-color,background-color,box-shadow] duration-200 hover:border-[#58d6a5]/55 hover:bg-white/75 md:rounded-3xl dark:border-white/[0.14] dark:bg-[#234437]/58 dark:shadow-[0_18px_42px_rgba(0,0,0,0.22)]"
                 >
                   <h3>
                     <button

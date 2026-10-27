@@ -30,6 +30,10 @@ import {
   PrioridadIncidencia,
 } from '../models/Incidencia';
 import { EstadoReserva, Reserva } from '../models/Reserva';
+import {
+  EstadoReserva as EstadoParticipante,
+  Participantes,
+} from '../models/Participantes';
 import type { NombreRol, Rol } from '../models/Rol';
 import type { Usuario } from '../models/Usuario';
 import type {} from '../middlewares/auth.middleware';
@@ -138,6 +142,7 @@ const crearToken = (usuarioId: number, rol: NombreRol): string =>
 const limpiarBaseTest = async (): Promise<void> => {
   const conexion = await exigirConexionAislada();
   await conexion.query('DELETE FROM reportes');
+  await conexion.query('DELETE FROM participantes');
   await conexion.query('DELETE FROM reservas');
   await conexion.query('DELETE FROM incidencias');
   await conexion.query('DELETE FROM emprendimientos');
@@ -220,6 +225,7 @@ const crearReserva = async (
       correo: `reserva.indicador.${secuencia}@test.local`,
       telefono: '+50685554444',
       estado,
+      numeroTicket: `RES-4074-${String(secuencia).padStart(6, '0')}`,
     }),
   );
 
@@ -374,6 +380,53 @@ after(async () => {
 });
 
 describe('Task 4074 - indicadores y resultados de reportes estadisticos', () => {
+  test('incluye inscripciones directas de participantes y evita joins de usuario al preparar la exportación', async () => {
+    const conexion = await exigirConexionAislada();
+    const admin = await crearUsuario('administrador');
+    const visitante = await crearUsuario('visitante');
+    const evento = await crearEvento({
+      nombre: 'Evento con inscripción directa',
+      fecha: '2020-01-10',
+    });
+    const participante = await conexion.getRepository(Participantes).save(
+      conexion.getRepository(Participantes).create({
+        usuarioId: visitante.id,
+        eventoCapacitacionId: evento.id,
+        usuario: visitante,
+        eventoCapacitacion: evento,
+        estado: EstadoParticipante.CONFIRMADA,
+        numeroTicket: 'PAR-4074-000001',
+      }),
+    );
+    await conexion.query(
+      'UPDATE participantes SET created_at = ?, updated_at = ? WHERE id = ?',
+      ['2020-01-05 09:00:00', '2020-01-05 09:00:00', participante.id],
+    );
+
+    const respuesta = await solicitar(
+      '/api/reportes/reservas/estadisticas/reservas?fechaInicio=2020-01-01&fechaFin=2020-01-31',
+      crearToken(admin.id, 'administrador'),
+    );
+
+    assert.equal(respuesta.status, 200, respuesta.texto);
+    const body = comoObjeto(respuesta.body);
+    assert.equal(body.totalReservas, 1);
+    const detalle = comoArreglo(body.detalleReservas);
+    assert.equal(detalle[0]?.eventoId, evento.id);
+    assert.equal(detalle[0]?.estado, 'aprobada');
+
+    const reporte = comoObjeto(body.reporte);
+    const { ReporteService } = await import(
+      '../modulos/Reportes y Estadisticas/Generar reporte/ReporteService'
+    );
+    const reporteParaExportar = await new ReporteService().obtenerParaExportar(
+      Number(reporte.id),
+    );
+    assert.ok(reporteParaExportar);
+    assert.equal(reporteParaExportar?.usuarioGenero, undefined);
+    assert.equal(reporteParaExportar?.numeroReporte, reporte.numeroReporte);
+  });
+
   test('valida total e indicadores de reservas', async () => {
     const admin = await crearUsuario('administrador');
     const eventoSeca = await crearEvento({

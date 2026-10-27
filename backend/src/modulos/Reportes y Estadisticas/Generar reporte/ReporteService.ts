@@ -51,6 +51,25 @@ async obtenerPorId(id: number): Promise<Reporte | null> {
   });
 }
 
+  /**
+   * La exportación solo necesita los metadatos del reporte. No se cargan
+   * usuarioGenero ni su rol eager: esa combinación añadía joins y aliases
+   * duplicados en MySQL durante la exportación.
+   */
+  async obtenerParaExportar(id: number): Promise<Reporte | null> {
+    return reporteRepository
+      .createQueryBuilder('reporte')
+      .select([
+        'reporte.id',
+        'reporte.numeroReporte',
+        'reporte.tipoReporte',
+        'reporte.fechaGeneracion',
+        'reporte.usuarioGeneroId',
+      ])
+      .where('reporte.id = :id', { id })
+      .getOne();
+  }
+
   async crear(
     tipoReporte: TipoReporte,
     usuarioGeneroId: number,

@@ -2,6 +2,7 @@ import { Between, DataSource } from 'typeorm';
 import { AppDataSource } from '../../../../data-source';
 
 import { Reserva } from '../../../../models/Reserva';
+import { Participantes } from '../../../../models/Participantes';
 import {
   TipoActividad,
   Temporada,
@@ -31,6 +32,18 @@ interface FiltrosReservas {
   fechaFin?: string;
   temporada?: Temporada;
   tipoActividad?: TipoActividad;
+}
+
+interface RegistroInscripcionReporte {
+  id: number | string;
+  usuarioId: number | string;
+  estado: string;
+  createdAt: Date | string;
+  eventoId: number | string | null;
+  eventoNombre: string | null;
+  tipoActividad: TipoActividad | null;
+  temporada: Temporada | null;
+  fechaEvento: Date | string | null;
 }
 
 export class ReportesReservasService {
@@ -118,6 +131,7 @@ export class ReportesReservasService {
       await query
         .select([
           'reserva.id AS id',
+          'reserva.usuario_id AS usuarioId',
           'reserva.estado AS estado',
           'reserva.created_at AS createdAt',
           'evento.id AS eventoId',
@@ -128,12 +142,68 @@ export class ReportesReservasService {
         ])
         .orderBy('reserva.created_at', 'DESC')
         .getRawMany(),
+    ) as RegistroInscripcionReporte[];
+
+    const queryParticipantes = AppDataSource
+      .getRepository(Participantes)
+      .createQueryBuilder('participante')
+      .leftJoin(
+        'eventos_capacitaciones',
+        'evento',
+        'evento.id = participante.evento_capacitacion_id',
+      )
+      .where(
+        'participante.created_at BETWEEN :fechaInicio AND :fechaFin',
+        { fechaInicio, fechaFin },
+      );
+
+    if (filtros.temporada) {
+      queryParticipantes.andWhere('evento.temporada = :temporada', {
+        temporada: filtros.temporada,
+      });
+    }
+
+    if (filtros.tipoActividad) {
+      queryParticipantes.andWhere('evento.tipo_actividad = :tipoActividad', {
+        tipoActividad: filtros.tipoActividad,
+      });
+    }
+
+    const participantes = await queryParticipantes
+      .select([
+        'participante.id AS id',
+        'participante.usuario_id AS usuarioId',
+        "CASE WHEN participante.estado = 'confirmada' THEN 'aprobada' ELSE participante.estado END AS estado",
+        'participante.created_at AS createdAt',
+        'evento.id AS eventoId',
+        'evento.nombre AS eventoNombre',
+        'evento.tipo_actividad AS tipoActividad',
+        'evento.temporada AS temporada',
+        'evento.fecha AS fechaEvento',
+      ])
+      .orderBy('participante.created_at', 'DESC')
+      .getRawMany<RegistroInscripcionReporte>();
+
+    // Una reserva aprobada genera un participante para la misma actividad.
+    // Conservamos la reserva como registro canónico para no duplicar la inscripción.
+    const porUsuarioYActividad = new Map<string, RegistroInscripcionReporte>();
+    for (const reserva of reservas) {
+      porUsuarioYActividad.set(`${reserva.usuarioId}-${reserva.eventoId}`, reserva);
+    }
+    for (const participante of participantes) {
+      const clave = `${participante.usuarioId}-${participante.eventoId}`;
+      if (!porUsuarioYActividad.has(clave)) {
+        porUsuarioYActividad.set(clave, participante);
+      }
+    }
+    const inscripciones = Array.from(porUsuarioYActividad.values()).sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
 
     /*
      * TOTAL DE RESERVAS
      */
-    const totalReservas = reservas.length;
+    const totalReservas = inscripciones.length;
 
     /*
      * RESERVAS POR ESTADO
@@ -145,7 +215,7 @@ export class ReportesReservasService {
       cancelada: 0,
     };
 
-    for (const reserva of reservas) {
+    for (const reserva of inscripciones) {
       const estado = reserva.estado;
 
       if (
@@ -168,7 +238,7 @@ export class ReportesReservasService {
       number
     >();
 
-    for (const reserva of reservas) {
+    for (const reserva of inscripciones) {
       const fecha = new Date(reserva.createdAt);
 
       const año = fecha.getFullYear();
@@ -220,7 +290,7 @@ export class ReportesReservasService {
       capacitacion: 0,
     };
 
-    for (const reserva of reservas) {
+    for (const reserva of inscripciones) {
       if (
         reserva.tipoActividad ===
         TipoActividad.EVENTO
@@ -244,7 +314,7 @@ export class ReportesReservasService {
       lluviosa: 0,
     };
 
-    for (const reserva of reservas) {
+    for (const reserva of inscripciones) {
       if (
         reserva.temporada === Temporada.SECA
       ) {
@@ -262,7 +332,7 @@ export class ReportesReservasService {
     /*
      * DETALLE DE RESERVAS
      */
-    const detalleReservas = reservas.map(
+    const detalleReservas = inscripciones.map(
       (reserva) => ({
         id: Number(reserva.id),
         estado: reserva.estado,

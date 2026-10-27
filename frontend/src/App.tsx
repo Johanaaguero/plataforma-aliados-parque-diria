@@ -339,7 +339,40 @@ const vinoDeNotificacionIncidenciasRef = useRef(false);
 
     const [vistaEmprendimientos, setVistaEmprendimientos] =
   useState<'catalogo' | 'mios'>('catalogo');
-  const irACatalogoEmprendimientos = () => {
+    const destinoAnteriorRef = useRef(
+      `${location.pathname}:${seccionActual}:catalogo`,
+    );
+    const temporizadorTransicionRef = useRef<number | null>(null);
+
+    useEffect(() => {
+      const destinoActual = `${location.pathname}:${seccionActual}:${vistaEmprendimientos}`;
+      if (destinoActual === destinoAnteriorRef.current) return;
+      destinoAnteriorRef.current = destinoActual;
+
+      const raiz = document.getElementById('root');
+      if (!raiz) return;
+
+      raiz.classList.remove('sigtad-navigation-transition');
+      void raiz.offsetWidth;
+      raiz.classList.add('sigtad-navigation-transition');
+      if (temporizadorTransicionRef.current !== null) {
+        window.clearTimeout(temporizadorTransicionRef.current);
+      }
+      temporizadorTransicionRef.current = window.setTimeout(() => {
+        raiz.classList.remove('sigtad-navigation-transition');
+        temporizadorTransicionRef.current = null;
+      }, 450);
+
+      return () => {
+        if (temporizadorTransicionRef.current !== null) {
+          window.clearTimeout(temporizadorTransicionRef.current);
+          temporizadorTransicionRef.current = null;
+        }
+        raiz.classList.remove('sigtad-navigation-transition');
+      };
+    }, [location.pathname, seccionActual, vistaEmprendimientos]);
+
+    const irACatalogoEmprendimientos = () => {
   setVistaEmprendimientos('catalogo');
   setSeccionActual('emprendimientos');
 };
@@ -1342,7 +1375,7 @@ if (rutaActual === '/admin/roles') {
           }
         />
 
-<main className={`relative isolate min-h-[80vh] w-full max-w-full overflow-x-hidden bg-transparent pt-24 sm:pt-28 ${mostrarRegistroIncidencia ? '' : '-mb-20'}`}>
+<main className="relative isolate min-h-[80vh] w-full max-w-full overflow-x-hidden bg-transparent pt-24 sm:pt-28">
   {!mostrarRegistroIncidencia && (
     <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden" aria-hidden="true">
       <img
@@ -1786,7 +1819,7 @@ if (rutaActual === '/admin/roles') {
             }
           />
 
-          <main>
+          <main className="sigtad-home">
             <Hero />
             <Informativo />
             <SeccionResenas nombreUsuario={nombreUsuario} />

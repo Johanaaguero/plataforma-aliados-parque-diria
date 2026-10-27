@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { rutaApiReportes } from '../../services/reportesApi';
+import { descargarArchivo, exportarReporte } from '../../services/reportesApi';
 
 type FormatoExportacion = 'pdf' | 'excel';
 
@@ -15,45 +15,37 @@ const normalizarNombre = (valor: string): string =>
     .replace(/[^a-zA-Z0-9áéíóúñü]+/gi, '_')
     .replace(/^_+|_+$/g, '') || 'Reporte';
 
-/**
- * Componente visual aislado para resultados de reportes ya generados.
- * No cambia datos ni navegación: solamente solicita un blob y lo descarga.
- */
 export default function BotonesExportarReporte({
   reporteId,
   nombreReporte,
 }: BotonesExportarReporteProps) {
   const [isExporting, setIsExporting] = useState<FormatoExportacion | null>(null);
   const [exportado, setExportado] = useState<FormatoExportacion | null>(null);
+  const [error, setError] = useState('');
 
-if (!reporteId) return null;
+  if (!reporteId) return null;
+
   const exportar = async (formato: FormatoExportacion): Promise<void> => {
     if (isExporting) return;
     setIsExporting(formato);
+    setError('');
     try {
-      const token = sessionStorage.getItem('token') ?? localStorage.getItem('token');
-      const respuesta = await fetch(
-        `${rutaApiReportes(`/${reporteId}/exportar`)}?formato=${formato}`,
-        { headers: token ? { Authorization: `Bearer ${token}` } : {} },
-      );
-      if (!respuesta.ok || (respuesta.headers.get('content-type') ?? '').includes('text/html')) {
-        const detalle = await respuesta.json().catch(() => null) as { mensaje?: string } | null;
-        throw new Error(detalle?.mensaje ?? 'No fue posible exportar el reporte.');
-      }
-
+      const archivo = await exportarReporte(reporteId, formato);
       const extension = formato === 'pdf' ? 'pdf' : 'xlsx';
       const fecha = new Date().toISOString().slice(0, 10);
-      const enlace = document.createElement('a');
-      const url = URL.createObjectURL(await respuesta.blob());
-      enlace.href = url;
-      enlace.download = `Reporte_${normalizarNombre(nombreReporte)}_${fecha}.${extension}`;
-      document.body.appendChild(enlace);
-      enlace.click();
-      enlace.remove();
-      URL.revokeObjectURL(url);
+      descargarArchivo(
+        archivo,
+        `Reporte_${normalizarNombre(nombreReporte)}_${fecha}.${extension}`,
+      );
       setExportado(formato);
       window.setTimeout(() => setExportado(null), 2500);
-    } catch {
+    } catch (errorSolicitud) {
+      console.error('Error al exportar reporte:', errorSolicitud);
+      setError(
+        errorSolicitud instanceof Error
+          ? errorSolicitud.message
+          : 'No fue posible exportar el reporte.',
+      );
       setExportado(null);
     } finally {
       setIsExporting(null);
@@ -80,6 +72,7 @@ if (!reporteId) return null;
         {isExporting === 'excel' && <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />}
         {isExporting === 'excel' ? 'Exportando...' : exportado === 'excel' ? 'Exportado ✓' : 'Exportar Excel'}
       </button>
+      {error && <p className="basis-full text-sm text-red-700 dark:text-red-300" role="alert">{error}</p>}
     </div>
   );
 }

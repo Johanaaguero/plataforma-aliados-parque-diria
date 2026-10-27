@@ -137,7 +137,7 @@ export default function SeccionResenas({
   };
 
   return (
-    <section className="bg-gradient-to-b from-[#f7fbe9] to-emerald-100/50 px-4 py-12 sm:px-6 sm:py-16 dark:from-[#082a20] dark:to-[#0a3b2d]">
+    <section className="sigtad-public-section bg-gradient-to-b from-[#f7fbe9] to-emerald-100/50 px-4 py-12 sm:px-6 sm:py-16 dark:from-[#082a20] dark:to-[#0a3b2d]">
       <div className="mx-auto max-w-6xl">
         {/* Encabezado */}
         <div className="mb-9 text-center">

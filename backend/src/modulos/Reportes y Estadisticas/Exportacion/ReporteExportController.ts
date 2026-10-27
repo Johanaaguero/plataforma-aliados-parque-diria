@@ -21,7 +21,7 @@ export class ReporteExportController {
         res.status(400).json({ mensaje: 'El formato debe ser pdf o excel' });
         return;
       }
-      const reporte = await reporteService.obtenerPorId(id);
+      const reporte = await reporteService.obtenerParaExportar(id);
       if (!reporte) {
         res.status(404).json({ mensaje: 'Reporte no encontrado' });
         return;

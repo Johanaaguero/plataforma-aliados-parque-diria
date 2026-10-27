@@ -111,7 +111,7 @@ export default function DatePickerCampo({
           line-height: 2rem;
           margin: 3px;
           border-radius: 10px;
-          color: #334155;
+          color: #18352a;
           font-size: 13px;
           transition: background-color 150ms, color 150ms;
         }
