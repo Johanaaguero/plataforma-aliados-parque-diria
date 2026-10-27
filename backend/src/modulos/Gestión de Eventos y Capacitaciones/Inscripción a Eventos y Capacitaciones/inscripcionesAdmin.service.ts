@@ -190,31 +190,31 @@ export const listarInscripcionesAdministrativas =
         referenciaDevolucion: registro.referenciaDevolucion ?? null,
       }));
 
-    
-const participantesPorTicket = new Set(
-  participantes
-    .map((participante) => participante.numeroTicket)
-    .filter((ticket): ticket is string => Boolean(ticket)),
+
+const ticketsReservasAprobadas = new Set(
+  reservasFormateadas
+    .filter(
+      (reserva) =>
+        reserva.estado === EstadoReserva.APROBADA &&
+        Boolean(reserva.numeroTicket),
+    )
+    .map((reserva) => reserva.numeroTicket),
 );
 
-const reservasSinDuplicar = reservasFormateadas.filter(
-  (reserva) => {
-    if (reserva.estado !== EstadoReserva.APROBADA) {
-      return true;
-    }
-
-    return !(
-      reserva.numeroTicket &&
-      participantesPorTicket.has(reserva.numeroTicket)
-    );
-  },
+const participantesSinDuplicar = participantes.filter(
+  (participante) =>
+    !(
+      participante.numeroTicket &&
+      ticketsReservasAprobadas.has(participante.numeroTicket)
+    ),
 );
 
-return [...participantes, ...reservasSinDuplicar].sort(
+return [...participantesSinDuplicar, ...reservasFormateadas].sort(
   (a, b) =>
     new Date(b.fechaInscripcion ?? 0).getTime() -
     new Date(a.fechaInscripcion ?? 0).getTime(),
 );
+
 
   };
 
