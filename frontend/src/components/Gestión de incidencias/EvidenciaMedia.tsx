@@ -14,6 +14,11 @@ interface EvidenciaMediaProps {
   onClick?: MouseEventHandler<HTMLAnchorElement>;
 }
 
+interface ArchivoEvidencia {
+  evidenciaId: number;
+  url: string;
+}
+
 export default function EvidenciaMedia({
   evidenciaId,
   tipo,
@@ -26,50 +31,87 @@ export default function EvidenciaMedia({
   claseEnlace,
   onClick,
 }: EvidenciaMediaProps) {
-  const token =
-    sessionStorage.getItem('token') ??
-    localStorage.getItem('token');
-  const [archivoCargado, setArchivoCargado] = useState<{
-    evidenciaId: number;
-    url: string;
-  } | null>(null);
-  const [evidenciaConError, setEvidenciaConError] = useState<number | null>(
-    null,
-  );
+  const [archivo, setArchivo] = useState<ArchivoEvidencia | null>(null);
+  const [errorId, setErrorId] = useState<number | null>(null);
+  const [cargandoId, setCargandoId] = useState<number | null>(evidenciaId);
 
   useEffect(() => {
     const controlador = new AbortController();
-    let urlTemporal: string | null = null;
+    let activo = true;
+    let urlCreada: string | null = null;
 
-    void cargarArchivoEvidencia(evidenciaId, controlador.signal)
-      .then((archivo) => {
-        if (controlador.signal.aborted) {
+    setArchivo(null);
+    setErrorId(null);
+    setCargandoId(evidenciaId);
+
+    const cargar = async () => {
+      try {
+        const blob = await cargarArchivoEvidencia(
+          evidenciaId,
+          controlador.signal,
+        );
+
+        if (!activo || controlador.signal.aborted) {
           return;
         }
 
-        setEvidenciaConError(null);
-        urlTemporal = URL.createObjectURL(archivo);
-        setArchivoCargado({ evidenciaId, url: urlTemporal });
-      })
-      .catch(() => {
-        if (!controlador.signal.aborted) {
-          setEvidenciaConError(evidenciaId);
-        }
-      });
+        const tipoMime = blob.type.toLowerCase();
 
-    return () => {
-      controlador.abort();
-      if (urlTemporal) {
-        URL.revokeObjectURL(urlTemporal);
+        const tipoValido =
+          tipo === 'foto'
+            ? tipoMime.startsWith('image/')
+            : tipoMime.startsWith('video/');
+
+        if (!blob.size || !tipoValido) {
+          throw new Error(
+            'El archivo recibido no corresponde al tipo de evidencia.',
+          );
+        }
+
+        urlCreada = URL.createObjectURL(blob);
+
+        setArchivo({
+          evidenciaId,
+          url: urlCreada,
+        });
+        setCargandoId(null);
+      } catch {
+        if (!activo || controlador.signal.aborted) {
+          return;
+        }
+
+        setArchivo(null);
+        setErrorId(evidenciaId);
+        setCargandoId(null);
       }
     };
-  }, [evidenciaId, token]);
+
+    void cargar();
+
+    return () => {
+      activo = false;
+      controlador.abort();
+
+      if (urlCreada) {
+        URL.revokeObjectURL(urlCreada);
+      }
+    };
+  }, [evidenciaId, tipo]);
 
   const url =
-    archivoCargado?.evidenciaId === evidenciaId
-      ? archivoCargado.url
+    archivo?.evidenciaId === evidenciaId
+      ? archivo.url
       : null;
-  const error = evidenciaConError === evidenciaId;
+
+  const error = errorId === evidenciaId;
+  const cargando = cargandoId === evidenciaId;
+
+  const manejarErrorArchivo = () => {
+    setErrorId(evidenciaId);
+    setArchivo((actual) =>
+      actual?.evidenciaId === evidenciaId ? null : actual,
+    );
+  };
 
   const contenido = url
     ? tipo === 'video'
@@ -79,10 +121,21 @@ export default function EvidenciaMedia({
             controls={controls}
             muted={muted}
             playsInline
+            preload="metadata"
             className={className}
+            onError={manejarErrorArchivo}
           />
         )
-      : <img src={url} alt={alt} className={className} />
+      : (
+          <img
+            src={url}
+            alt={alt}
+            loading="eager"
+            decoding="async"
+            className={className}
+            onError={manejarErrorArchivo}
+          />
+        )
     : null;
 
   if (abrirEnlace) {
@@ -91,24 +144,30 @@ export default function EvidenciaMedia({
         href={url ?? undefined}
         target={url ? '_blank' : undefined}
         rel={url ? 'noopener noreferrer' : undefined}
-        onClick={onClick}
+        onClick={url ? onClick : undefined}
         aria-disabled={!url}
         className={claseEnlace}
       >
-        {url
-          ? (
-              <>
-                {contenido}
-                {textoEnlace && (
-                  <span className="mt-2 inline-flex text-sm font-bold text-[#009444] hover:underline dark:text-[#a9d779]">
-                    {textoEnlace}
-                  </span>
-                )}
-              </>
-            )
-          : error
-            ? 'Evidencia no disponible'
-            : 'Cargando evidencia...'}
+        {contenido}
+
+        {!url && (
+          <span
+            className="flex min-h-24 items-center justify-center p-3 text-sm text-slate-500"
+            role={error ? 'status' : undefined}
+          >
+            {error
+              ? 'Evidencia no disponible'
+              : cargando
+                ? 'Cargando evidencia...'
+                : 'Preparando evidencia...'}
+          </span>
+        )}
+
+        {url && textoEnlace && (
+          <span className="mt-2 inline-flex text-sm font-bold text-[#009444] hover:underline dark:text-[#a9d779]">
+            {textoEnlace}
+          </span>
+        )}
       </a>
     );
   }
@@ -121,7 +180,9 @@ export default function EvidenciaMedia({
       >
         {error
           ? 'Evidencia no disponible'
-          : 'Cargando evidencia...'}
+          : cargando
+            ? 'Cargando evidencia...'
+            : 'Preparando evidencia...'}
       </div>
     );
   }
