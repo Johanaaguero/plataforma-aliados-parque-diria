@@ -190,11 +190,32 @@ export const listarInscripcionesAdministrativas =
         referenciaDevolucion: registro.referenciaDevolucion ?? null,
       }));
 
-    return [...participantes, ...reservasFormateadas].sort(
-      (a, b) =>
-        new Date(b.fechaInscripcion ?? 0).getTime() -
-        new Date(a.fechaInscripcion ?? 0).getTime(),
+    
+const participantesPorTicket = new Set(
+  participantes
+    .map((participante) => participante.numeroTicket)
+    .filter((ticket): ticket is string => Boolean(ticket)),
+);
+
+const reservasSinDuplicar = reservasFormateadas.filter(
+  (reserva) => {
+    if (reserva.estado !== EstadoReserva.APROBADA) {
+      return true;
+    }
+
+    return !(
+      reserva.numeroTicket &&
+      participantesPorTicket.has(reserva.numeroTicket)
     );
+  },
+);
+
+return [...participantes, ...reservasSinDuplicar].sort(
+  (a, b) =>
+    new Date(b.fechaInscripcion ?? 0).getTime() -
+    new Date(a.fechaInscripcion ?? 0).getTime(),
+);
+
   };
 
 export const actualizarEstadoReserva = async (
