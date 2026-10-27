@@ -22,6 +22,7 @@ export class IncidenciaEvidencia {
 
   @Column({
     type: 'longblob',
+    select: false,
   })
   archivo!: Buffer;
 

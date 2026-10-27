@@ -25,6 +25,7 @@ export interface ConfiguracionSolicitudApi {
   incluirAuth?: boolean;
   incluirContentType?: boolean;
   desempaquetarData?: boolean;
+  notificarErrorAuth?: boolean;
   mensajeError?: string;
 }
 
@@ -104,6 +105,7 @@ class ApiService {
       incluirAuth = true,
       incluirContentType = true,
       desempaquetarData = true,
+      notificarErrorAuth: notificarErrorAuthConfiguracion = true,
       mensajeError = 'No se pudo completar la solicitud',
     } = configuracion;
 
@@ -156,7 +158,9 @@ console.error('Error en solicitud API:', {
         status: response.status,
       };
 
-      notificarErrorAuth(error);
+      if (notificarErrorAuthConfiguracion) {
+        notificarErrorAuth(error);
+      }
 
       const solicitudError = new Error(message);
       Object.assign(solicitudError, error);

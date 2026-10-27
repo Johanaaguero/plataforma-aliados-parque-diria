@@ -775,7 +775,7 @@ export default function RegistroIncidencia({
                     archivo.file.name,
                   tamanoBytes:
                     archivo.file.size,
-                  tipo: 'foto',
+                  tipo: archivo.file.type.startsWith('video/') ? 'video' : 'foto',
                 }),
               },
             );
