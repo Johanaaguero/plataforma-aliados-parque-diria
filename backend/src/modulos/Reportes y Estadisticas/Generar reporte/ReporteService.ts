@@ -1,70 +1,67 @@
 import { AppDataSource } from '../../../data-source';
 import { Reporte, TipoReporte } from '../../../models/Reporte';
+import { Usuario } from '../../../models/Usuario';
 
 const reporteRepository = AppDataSource.getRepository(Reporte);
 
 export class ReporteService {
-
- async obtenerTodos(): Promise<Reporte[]> {
-  return await reporteRepository.find({
-    select: {
-      id: true,
-      numeroReporte: true,
-      tipoReporte: true,
-      fechaGeneracion: true,
-      usuarioGeneroId: true,
-      usuarioGenero: {
+  async obtenerTodos(): Promise<Reporte[]> {
+    return await reporteRepository.find({
+      select: {
         id: true,
-        nombreUsuario: true,
-        nombre: true,
-        apellidos: true,
+        numeroReporte: true,
+        tipoReporte: true,
+        fechaGeneracion: true,
+        usuarioGenero: {
+          id: true,
+          nombreUsuario: true,
+          nombre: true,
+          apellidos: true,
+        },
       },
-    },
-    relations: {
-      usuarioGenero: true,
-    },
-    order: {
-      fechaGeneracion: 'DESC',
-    },
-  });
-}
+      relations: {
+        usuarioGenero: true,
+      },
+      order: {
+        fechaGeneracion: 'DESC',
+      },
+    });
+  }
 
-async obtenerPorId(id: number): Promise<Reporte | null> {
-  return await reporteRepository.findOne({
-    select: {
-      id: true,
-      numeroReporte: true,
-      tipoReporte: true,
-      fechaGeneracion: true,
-      usuarioGeneroId: true,
-      usuarioGenero: {
+  async obtenerPorId(id: number): Promise<Reporte | null> {
+    return await reporteRepository.findOne({
+      select: {
         id: true,
-        nombreUsuario: true,
-        nombre: true,
-        apellidos: true,
+        numeroReporte: true,
+        tipoReporte: true,
+        fechaGeneracion: true,
+        usuarioGenero: {
+          id: true,
+          nombreUsuario: true,
+          nombre: true,
+          apellidos: true,
+        },
       },
-    },
-    where: { id },
-    relations: {
-      usuarioGenero: true,
-    },
-  });
-}
+      where: { id },
+      relations: {
+        usuarioGenero: true,
+      },
+    });
+  }
 
   /**
-   * La exportación solo necesita los metadatos del reporte. No se cargan
-   * usuarioGenero ni su rol eager: esa combinación añadía joins y aliases
-   * duplicados en MySQL durante la exportación.
+   * La exportación solo necesita los metadatos del reporte.
+   * Se evita seleccionar usuarioGeneroId como propiedad independiente
+   * porque el identificador pertenece a la relación usuarioGenero.
    */
   async obtenerParaExportar(id: number): Promise<Reporte | null> {
-    return reporteRepository
+    return await reporteRepository
       .createQueryBuilder('reporte')
       .select([
         'reporte.id',
         'reporte.numeroReporte',
         'reporte.tipoReporte',
         'reporte.fechaGeneracion',
-        'reporte.usuarioGeneroId',
       ])
       .where('reporte.id = :id', { id })
       .getOne();
@@ -75,7 +72,6 @@ async obtenerPorId(id: number): Promise<Reporte | null> {
     usuarioGeneroId: number,
     contenido?: Record<string, unknown>,
   ): Promise<Reporte> {
-
     const fecha = new Date();
 
     const fechaCodigo =
@@ -96,7 +92,9 @@ async obtenerPorId(id: number): Promise<Reporte | null> {
     const reporte = new Reporte({
       numeroReporte,
       tipoReporte,
-      usuarioGeneroId,
+      usuarioGenero: {
+        id: usuarioGeneroId,
+      } as Usuario,
       contenido: contenido ?? null,
     });
 
@@ -104,7 +102,6 @@ async obtenerPorId(id: number): Promise<Reporte | null> {
   }
 
   async eliminar(id: number): Promise<boolean> {
-
     const reporte = await reporteRepository.findOne({
       where: { id },
     });

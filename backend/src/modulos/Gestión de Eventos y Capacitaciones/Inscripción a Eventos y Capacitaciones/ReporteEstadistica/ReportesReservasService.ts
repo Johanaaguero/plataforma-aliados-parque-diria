@@ -349,6 +349,8 @@ export class ReportesReservasService {
       }),
     );
 
+   
+    
     /*
      * REGISTRAR CONSULTA DEL REPORTE
      */
@@ -363,19 +365,18 @@ export class ReportesReservasService {
     const siguienteNumero =
       (ultimoReporte[0]?.id ?? 0) + 1;
 
-    const nuevoReporte = this.reporteRepository.create(
-      {
-        numeroReporte: `REP-${String(
-          siguienteNumero,
-        ).padStart(6, '0')}`,
-        tipoReporte: TipoReporte.RESERVAS,
-        usuarioGeneroId,
-      },
-    );
+    const nuevoReporte = this.reporteRepository.create({
+      numeroReporte: `REP-${String(
+        siguienteNumero,
+      ).padStart(6, '0')}`,
+      tipoReporte: TipoReporte.RESERVAS,
+      usuarioGenero: {
+        id: usuarioGeneroId,
+      } as import('../../../../models/Usuario').Usuario,
+    });
 
-    await this.reporteRepository.save(
-      nuevoReporte,
-    );
+    await this.reporteRepository.save(nuevoReporte);
+
 
     return {
       informacionGeneral: {

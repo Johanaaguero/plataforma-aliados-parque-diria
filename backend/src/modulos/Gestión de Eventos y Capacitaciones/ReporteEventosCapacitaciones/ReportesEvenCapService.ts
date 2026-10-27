@@ -247,6 +247,7 @@ console.log('Actividades recuperadas:', eventos);
       temporada: actividad.temporada ?? null,
     }));
 
+    
     // REGISTRAR CONSULTA DEL REPORTE
     const ultimoReporte = await this.reporteRepository.find({
       order: {
@@ -260,7 +261,9 @@ console.log('Actividades recuperadas:', eventos);
     const nuevoReporte = this.reporteRepository.create({
       numeroReporte: `REP-${String(siguienteNumero).padStart(6, '0')}`,
       tipoReporte: TipoReporte.EVENTOS,
-      usuarioGeneroId,
+      usuarioGenero: {
+        id: usuarioGeneroId,
+      } as import('../../../models/Usuario').Usuario,
     });
 
     await this.reporteRepository.save(nuevoReporte);
