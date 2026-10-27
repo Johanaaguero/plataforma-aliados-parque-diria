@@ -107,7 +107,7 @@ function Informativo() {
   return (
     <section
       id="sobre-parque"
-      className="relative scroll-mt-28 overflow-hidden bg-stone-50 px-4 py-20 sm:px-6 sm:py-24 lg:px-8 lg:py-28"
+      className="sigtad-public-section relative scroll-mt-28 overflow-hidden bg-stone-50 px-4 py-20 sm:px-6 sm:py-24 lg:px-8 lg:py-28"
     >
       <div
         className="absolute -right-28 top-16 h-72 w-72 rounded-full bg-[#8dc63f]/10 blur-3xl"
@@ -191,7 +191,7 @@ function Informativo() {
             </p>
 
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              <article className="rounded-[1.5rem] border border-white/40 bg-white/75 p-5 shadow-[0_12px_34px_rgba(7,63,49,0.08)] backdrop-blur-md dark:border-white/10 dark:bg-slate-900/70">
+              <article className="rounded-[1.5rem] border border-white/60 bg-white/70 p-5 shadow-[0_14px_38px_rgba(16,82,57,0.10)] backdrop-blur-xl dark:border-white/[0.14] dark:bg-[#234437]/62 dark:shadow-[0_16px_38px_rgba(0,0,0,0.22)]">
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#009444] dark:text-[#8dc63f]">
                   Nuestra misión
                 </p>
@@ -200,7 +200,7 @@ function Informativo() {
                 </p>
               </article>
 
-              <article className="rounded-[1.5rem] border border-white/40 bg-white/75 p-5 shadow-[0_12px_34px_rgba(7,63,49,0.08)] backdrop-blur-md dark:border-white/10 dark:bg-slate-900/70">
+              <article className="rounded-[1.5rem] border border-white/60 bg-white/70 p-5 shadow-[0_14px_38px_rgba(16,82,57,0.10)] backdrop-blur-xl dark:border-white/[0.14] dark:bg-[#234437]/62 dark:shadow-[0_16px_38px_rgba(0,0,0,0.22)]">
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#009444] dark:text-[#8dc63f]">
                   Nuestra visión
                 </p>
@@ -270,7 +270,7 @@ function Informativo() {
 
         {moduloSeleccionado && (
           <div className="fixed inset-0 z-[80] flex items-end bg-emerald-950/50 p-4 backdrop-blur-md sm:items-center sm:justify-center" role="dialog" aria-modal="true" aria-labelledby="detalle-territorio" onMouseDown={() => setModuloSeleccionado(null)}>
-            <section className="w-full max-w-lg rounded-[2rem] border border-white/40 bg-white/85 p-6 shadow-2xl backdrop-blur-2xl dark:bg-slate-900/85" onMouseDown={(event) => event.stopPropagation()}>
+            <section className="w-full max-w-lg rounded-[2rem] border border-white/55 bg-white/78 p-6 shadow-[0_24px_64px_rgba(10,67,46,0.22)] backdrop-blur-2xl dark:border-white/[0.14] dark:bg-[#234437]/82" onMouseDown={(event) => event.stopPropagation()}>
               <div className="flex items-start justify-between gap-4">
                 <div><p className="text-xs font-bold uppercase tracking-[0.16em] text-[#009444]">{moduloSeleccionado.categoria}</p><h3 id="detalle-territorio" className="mt-2 text-2xl font-bold text-[#095540] dark:text-white">{moduloSeleccionado.titulo}</h3></div>
                 <button type="button" onClick={() => setModuloSeleccionado(null)} className="grid h-10 w-10 place-items-center rounded-full border border-[#095540]/15 bg-white/50 text-xl text-[#095540] backdrop-blur-md dark:bg-white/10 dark:text-white" aria-label="Cerrar detalle">×</button>

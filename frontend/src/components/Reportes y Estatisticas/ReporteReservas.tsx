@@ -724,12 +724,12 @@ function GraficaMontanaReservas({
           >
             <stop
               offset="0%"
-              stopColor="#0ea5e9"
+              stopColor="#58d6a5"
               stopOpacity="0.35"
             />
             <stop
               offset="100%"
-              stopColor="#0ea5e9"
+              stopColor="#58d6a5"
               stopOpacity="0"
             />
           </linearGradient>

@@ -41,6 +41,11 @@ export default function FeedbackToast() {
 
       if (temporizadorSalida.current) window.clearTimeout(temporizadorSalida.current);
       if (temporizadorOcultar.current) window.clearTimeout(temporizadorOcultar.current);
+      if (detalle.tipo === 'bienvenida' || detalle.tipo === 'despedida') {
+        setSaliendo(false);
+        setNotificacion(null);
+        return;
+      }
       setSaliendo(false);
       setNotificacion(detalle);
       temporizadorSalida.current = window.setTimeout(() => setSaliendo(true), 3400);

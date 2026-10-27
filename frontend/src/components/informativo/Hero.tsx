@@ -151,7 +151,7 @@ function Hero() {
   return (
     <section
       id="inicio"
-      className="relative isolate min-h-[520px] w-full overflow-hidden rounded-none bg-[#095540] text-white sm:min-h-[540px] lg:min-h-[560px]"
+      className="sigtad-hero relative isolate min-h-[520px] w-full overflow-hidden rounded-none bg-[#095540] text-white sm:min-h-[540px] lg:min-h-[560px]"
       aria-roledescription="carrusel"
       aria-label="Paisajes y experiencias del Parque Nacional Diriá"
       onMouseEnter={() => setPunteroSobreCarrusel(true)}
@@ -210,7 +210,7 @@ function Hero() {
 
       {/* Contenido principal */}
       <div className="relative z-10 flex min-h-[520px] w-full items-center px-6 pb-32 pt-28 sm:min-h-[540px] sm:px-10 sm:pb-32 sm:pt-32 lg:min-h-[560px] lg:px-14 lg:pb-36 lg:pt-36">
-        <div className="w-full max-w-4xl">
+        <div className="sigtad-hero-content w-full max-w-4xl">
           {/* Indicador de época sin emojis */}
 <div className="mb-5">
   <span className="inline-flex items-center gap-2.5 text-sm font-semibold tracking-wide text-white drop-shadow-md">

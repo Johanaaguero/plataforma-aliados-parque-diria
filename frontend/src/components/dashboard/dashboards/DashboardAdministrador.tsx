@@ -246,8 +246,8 @@ function TarjetaResumen({
   onClick,
 }: TarjetaResumenProps) {
   const base =
-    'group relative overflow-hidden rounded-3xl border border-white/20 bg-white/70 p-6 ' +
-    'shadow-xl backdrop-blur-md dark:border-white/[0.08] dark:bg-slate-900/70';
+    'group relative overflow-hidden rounded-3xl border border-white/55 bg-white/[0.62] p-6 ' +
+    'shadow-[0_18px_46px_rgba(12,78,54,0.12)] backdrop-blur-xl dark:border-white/[0.14] dark:bg-[#234437]/68 dark:shadow-[0_20px_48px_rgba(0,0,0,0.24)]';
 
   const contenido = (
     <>
@@ -414,7 +414,7 @@ export default function DashboardAdministrador({
             : 'w-[72px] lg:w-[clamp(74px,5vw,84px)]'
         }`}
       >
-        <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[#00AEEF]/50 to-transparent" />
+        <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[#58D6A5]/55 to-transparent" />
 
         <div className="flex shrink-0 items-center justify-center px-3 pt-5">
           <Link to="/" onClick={(e) => e.stopPropagation()} className="group rounded-2xl">
@@ -691,11 +691,11 @@ export default function DashboardAdministrador({
             <div className="mt-6 flex gap-2">
               <span className="h-1.5 w-16 rounded-full bg-[#009443]" />
               <span className="h-1.5 w-8 rounded-full bg-[#8dc63f]" />
-              <span className="h-1.5 w-7 rounded-full bg-[#00AEEF]" />
+              <span className="h-1.5 w-7 rounded-full bg-[#58D6A5]" />
             </div>
 
             <section className="mt-10">
-              <p className="font-brand text-[15px] font-extrabold uppercase tracking-[0.17em] text-[#00AEEF]">
+              <p className="font-brand text-[15px] font-extrabold uppercase tracking-[0.17em] text-[#168A63] dark:text-[#A2F0CE]">
                 Actividad reciente
               </p>
 
@@ -719,9 +719,9 @@ export default function DashboardAdministrador({
                     titulo="Eventos y capacitaciones"
                     valor={conteoEventos.todos}
                     etiqueta="Vigentes"
-                    brillo="bg-[#00AEEF]/15"
-                    claseIcono="bg-[#00AEEF]/10 text-[#008fbd]"
-                    claseEtiqueta="bg-[#00AEEF]/10 text-[#007fae] dark:bg-[#00AEEF]/15 dark:text-[#69d8f7]"
+                    brillo="bg-[#58D6A5]/18"
+                    claseIcono="bg-[#58D6A5]/15 text-[#168A63]"
+                    claseEtiqueta="bg-[#58D6A5]/15 text-[#168A63] dark:bg-[#58D6A5]/18 dark:text-[#A2F0CE]"
                     onClick={onIrEventos}
                   />
 
@@ -770,7 +770,7 @@ export default function DashboardAdministrador({
                 <p className="flex flex-wrap items-center gap-x-2 gap-y-1 font-brand text-[9px] font-bold uppercase tracking-[0.15em]">
                   <span className="text-[#009443]">Guanacaste</span>
                   <span className="text-slate-400">|</span>
-                  <span className="text-[#00AEEF]">Costa Rica</span>
+                  <span className="text-[#58D6A5]">Costa Rica</span>
                   <span className="text-slate-400">|</span>
                   <span className="text-[#d0cf21]">Parque Nacional Diriá</span>
                 </p>

@@ -17,56 +17,65 @@
 /* Shared presentation tokens. Existing components keep their classes and behavior. */
 :root {
   color-scheme: light;
-  --sigtad-background: #f3f6ee;
-  --sigtad-surface: rgb(255 255 251 / 68%);
-  --sigtad-surface-solid: #fffef9;
-  --sigtad-surface-soft: rgb(237 244 231 / 88%);
-  --sigtad-surface-hover: #e6efdf;
-  --sigtad-text: #233b31;
-  --sigtad-heading: #095540;
-  --sigtad-muted: #52645b;
-  --sigtad-accent-text: #416817;
-  --sigtad-border: rgb(9 85 64 / 19%);
+  --sigtad-home-background: #e5ebe3;
+  --sigtad-background: #f4fbf7;
+  --sigtad-surface: rgb(255 255 255 / 72%);
+  --sigtad-surface-solid: #ffffff;
+  --sigtad-surface-soft: #dff3e8;
+  --sigtad-surface-hover: #ccebd9;
+  --sigtad-text: #18362d;
+  --sigtad-heading: #168a63;
+  --sigtad-muted: #4d6a60;
+  --sigtad-accent-text: #126f51;
+  --sigtad-border: rgb(22 138 99 / 18%);
   --sigtad-glass-edge: rgb(255 255 255 / 55%);
-  --sigtad-focus: #08743f;
-  --sigtad-primary: #095540;
-  --sigtad-primary-hover: #08743f;
+  --sigtad-focus: #168a63;
+  --sigtad-primary: #168a63;
+  --sigtad-primary-hover: #0f7050;
   --sigtad-danger: #a51e37;
   --sigtad-danger-bg: #ffedf0;
   --sigtad-warning: #715005;
   --sigtad-warning-bg: #fff4ce;
   --sigtad-success: #176441;
   --sigtad-success-bg: #e5f3e9;
-  --sigtad-info: #086187;
-  --sigtad-info-bg: #e0f2fa;
+  --sigtad-info: #147a5d;
+  --sigtad-info-bg: #e2f4ea;
   --sigtad-shadow: 0 16px 45px rgb(7 63 49 / 10%), inset 0 1px 0 rgb(255 255 255 / 70%);
   --sigtad-catalog-overlay: rgb(244 248 239 / 83%);
+  --sigtad-radius-control: 0.9rem;
+  --sigtad-radius-panel: 1.5rem;
+  --sigtad-radius-overlay: 1.9rem;
+  --sigtad-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --sigtad-duration-fast: 180ms;
+  --sigtad-duration-normal: 240ms;
+  --sigtad-blur: 14px;
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --sigtad-background: #0b1914;
-  --sigtad-surface: rgb(22 43 34 / 92%);
-  --sigtad-surface-solid: #162b22;
-  --sigtad-surface-soft: rgb(31 54 43 / 94%);
-  --sigtad-surface-hover: #2b4938;
-  --sigtad-text: #edf5ed;
-  --sigtad-heading: #c3f0d5;
-  --sigtad-muted: #bed0c2;
-  --sigtad-accent-text: #b9e891;
-  --sigtad-border: rgb(186 223 199 / 28%);
-  --sigtad-glass-edge: rgb(196 233 211 / 28%);
-  --sigtad-focus: #b9e891;
-  --sigtad-primary: #095540;
-  --sigtad-primary-hover: #08743f;
+  --sigtad-home-background: #0b211a;
+  --sigtad-background: #101d1a;
+  --sigtad-surface: rgb(29 57 48 / 84%);
+  --sigtad-surface-solid: #1d3930;
+  --sigtad-surface-soft: #25483d;
+  --sigtad-surface-hover: #315b4c;
+  --sigtad-text: #eefbf4;
+  --sigtad-heading: #9aebc9;
+  --sigtad-muted: #bdd7ca;
+  --sigtad-accent-text: #58d6a5;
+  --sigtad-border: rgb(88 214 165 / 25%);
+  --sigtad-glass-edge: rgb(210 255 234 / 20%);
+  --sigtad-focus: #58d6a5;
+  --sigtad-primary: #1b9f75;
+  --sigtad-primary-hover: #58d6a5;
   --sigtad-danger: #ffc4cc;
   --sigtad-danger-bg: #4c2330;
   --sigtad-warning: #ffe8a5;
   --sigtad-warning-bg: #453b1c;
   --sigtad-success: #c3f0d5;
   --sigtad-success-bg: #224733;
-  --sigtad-info: #bce7ff;
-  --sigtad-info-bg: #193c4a;
+  --sigtad-info: #a2f0ce;
+  --sigtad-info-bg: #214b3c;
   --sigtad-shadow: 0 16px 45px rgb(0 0 0 / 24%), inset 0 1px 0 rgb(209 245 221 / 9%);
   --sigtad-catalog-overlay: rgb(9 25 18 / 85%);
 }
@@ -98,6 +107,10 @@ body {
   max-width: 100%;
   overflow-x: hidden;
   isolation: isolate;
+}
+
+#root:has(> main.sigtad-home) {
+  background-color: var(--sigtad-home-background);
 }
 
 .custom-scrollbar {
@@ -199,6 +212,164 @@ body {
   background-color: transparent !important;
 }
 
+/* The mobile navigation keeps one geometry while its contents enter. This
+   avoids competing radius/scale animations on the same interaction. */
+.sigtad-navbar-shell {
+  border-color: var(--sigtad-glass-edge);
+  border-radius: 1.5rem;
+  background-color: rgb(255 255 255 / 82%);
+  box-shadow: 0 10px 30px rgb(10 55 39 / 12%), inset 0 1px 0 rgb(255 255 255 / 68%);
+  -webkit-backdrop-filter: blur(14px) saturate(120%);
+  backdrop-filter: blur(14px) saturate(120%);
+  transition: box-shadow 200ms ease, background-color 200ms ease,
+    border-color 200ms ease;
+}
+
+[data-theme="dark"] .sigtad-navbar-shell {
+  background-color: rgb(29 57 48 / 88%);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 24%), inset 0 1px 0 rgb(210 255 234 / 8%);
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .sigtad-navbar-shell { background-color: var(--sigtad-surface-solid); }
+  [data-theme="dark"] .sigtad-navbar-shell { background-color: var(--sigtad-surface-solid); }
+}
+
+.sigtad-navbar-shell.sigtad-navbar-scrolled {
+  box-shadow: 0 16px 38px rgb(10 55 39 / 18%), inset 0 1px 0 rgb(255 255 255 / 68%);
+}
+
+/* Public-facing material system: ambient backgrounds remain visible in light
+   mode; dark mode polarizes transparent layers for readable, deeper glass. */
+.sigtad-public-section {
+  background-color: rgb(244 251 247 / 78%);
+  background-image:
+    radial-gradient(circle at 8% 12%, rgb(88 214 165 / 13%), transparent 28%),
+    radial-gradient(circle at 92% 74%, rgb(162 240 206 / 12%), transparent 30%);
+}
+
+.sigtad-public-section :is(article, aside, form) {
+  border-color: rgb(255 255 255 / 66%);
+  box-shadow: 0 18px 48px rgb(12 78 54 / 11%), inset 0 1px 0 rgb(255 255 255 / 58%);
+}
+
+[data-theme="dark"] .sigtad-public-section {
+  background-color: rgb(7 28 21 / 82%);
+  background-image:
+    radial-gradient(circle at 8% 12%, rgb(88 214 165 / 10%), transparent 28%),
+    radial-gradient(circle at 92% 74%, rgb(162 240 206 / 7%), transparent 30%);
+}
+
+.sigtad-home {
+  background-color: var(--sigtad-home-background);
+}
+
+.sigtad-home .sigtad-public-section {
+  background-color: transparent;
+  background-image: none;
+}
+
+[data-theme="dark"] .sigtad-home :is(.sigtad-public-section, .sigtad-glass, .sigtad-navbar-shell, .sigtad-footer) [class*="bg-white/"] {
+  background-color: rgb(13 39 29 / 78%);
+  border-color: rgb(210 255 234 / 18%);
+}
+
+[data-theme="dark"] .sigtad-home :is(.sigtad-public-section, .sigtad-glass) :is(
+  [class*="bg-emerald-50/"],
+  [class*="bg-emerald-100/"],
+  [class*="bg-[#f4fbf7]/"],
+  [class*="bg-[#eef7e7]/"]
+) {
+  background-color: rgb(17 49 37 / 82%);
+}
+
+[data-theme="dark"] .sigtad-public-section :is(article, aside, form) {
+  border-color: rgb(225 255 240 / 16%);
+  background-color: rgb(23 52 42 / 78%);
+  box-shadow: 0 20px 52px rgb(0 0 0 / 30%), inset 0 1px 0 rgb(225 255 240 / 8%);
+  -webkit-backdrop-filter: blur(18px) saturate(125%);
+  backdrop-filter: blur(18px) saturate(125%);
+}
+
+.sigtad-hero::after {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  content: "";
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 78% 24%, rgb(162 240 206 / 18%), transparent 28%),
+    linear-gradient(105deg, rgb(7 49 36 / 82%) 0%, rgb(10 81 57 / 56%) 44%, rgb(9 57 42 / 22%) 100%);
+}
+
+.sigtad-hero-content {
+  position: relative;
+  max-width: min(42rem, 100%);
+}
+
+.sigtad-hero {
+  border-radius: 0 0 2.75rem 2.75rem;
+  box-shadow: 0 22px 48px rgb(7 42 30 / 16%);
+}
+
+.sigtad-mobile-menu {
+  border-color: var(--sigtad-border);
+  transform-origin: top;
+  will-change: transform, opacity;
+  animation: sigtad-mobile-menu-in 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Gestión de roles has dense tables and controls; this scoped material keeps
+   its layers distinct without forcing opaque dark utility backgrounds. */
+.sigtad-roles :is([class*="dark:bg-[#0d2b20]"], [class*="dark:bg-[#0B3026]"],
+  [class*="dark:bg-[#09261E]"], [class*="dark:bg-[#071C16]"]) {
+  background-color: rgb(29 57 48 / 68%);
+}
+
+.sigtad-roles :is([class*="bg-white/[0.32]"], [class*="bg-white/[0.42]"],
+  [class*="bg-white/[0.44]"], [class*="bg-white/[0.46]"], [class*="bg-white/[0.50]"]) {
+  border-color: rgb(255 255 255 / 66%);
+  box-shadow: 0 18px 48px rgb(11 74 51 / 10%), inset 0 1px 0 rgb(255 255 255 / 48%);
+}
+
+:root:not([data-theme="dark"]) .sigtad-roles [class*="bg-white/"] {
+  background-color: rgb(248 251 248 / 94%);
+  border-color: rgb(45 78 57 / 14%);
+}
+
+.sigtad-roles article > span.absolute.inset-x-0.top-0.h-1 {
+  display: none;
+}
+
+:root:not([data-theme="dark"]) :is(
+  [role="listbox"][aria-label="Filtrar usuarios por rol"],
+  [role="listbox"][aria-label="Seleccionar nuevo rol"]
+) {
+  border-color: rgb(45 78 57 / 14%);
+  background-color: rgb(248 251 248 / 98%);
+  color: #304b40;
+  box-shadow: 0 22px 60px rgb(28 54 39 / 18%);
+}
+
+div[class~="absolute"][class~="inset-x-0"][class~="top-0"][class~="h-1"],
+span[class~="absolute"][class~="inset-x-0"][class~="top-0"][class~="h-1"],
+div[class~="absolute"][class~="inset-x-0"][class~="top-0"][class~="h-1.5"],
+span[class~="absolute"][class~="inset-x-0"][class~="top-0"][class~="h-1.5"] {
+  display: none;
+}
+
+.sigtad-home :is(article, aside, form, [role="dialog"], [role="listbox"]),
+.sigtad-roles :is(article, form, [role="dialog"], [role="listbox"]) {
+  -webkit-backdrop-filter: blur(22px) saturate(130%);
+  backdrop-filter: blur(22px) saturate(130%);
+}
+
+@media (min-width: 1280px) {
+  .sigtad-navbar-shell {
+    border-radius: 9999px;
+  }
+}
+
 [data-theme="dark"] .sigtad-logo-claro {
   display: none;
 }
@@ -209,9 +380,8 @@ body {
 
 button:not(:disabled) {
   font-family: inherit;
-  transition: transform 300ms ease-in-out, color 300ms ease-in-out,
-    background-color 300ms ease-in-out, border-color 300ms ease-in-out,
-    box-shadow 300ms ease-in-out;
+  transition: transform 360ms cubic-bezier(0.2, 0.8, 0.2, 1.12), color 220ms ease,
+    background-color 220ms ease, border-color 220ms ease, box-shadow 260ms ease;
 }
 
 /* Las tarjetas de notificación se animan como una unidad; sus controles no
@@ -231,16 +401,16 @@ select {
   border: 1px solid rgb(226 232 240 / 100%);
   border-radius: .75rem;
   background-color: rgb(255 255 255 / 80%);
-  color: #1e293b;
+  color: var(--sigtad-text);
   box-shadow: 0 10px 28px rgb(7 63 49 / 12%);
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
 }
 
 [data-theme="dark"] select {
-  border-color: #1e293b;
-  background-color: rgb(15 23 42 / 80%);
-  color: #fff;
+  border-color: var(--sigtad-border);
+  background-color: var(--sigtad-surface-solid);
+  color: var(--sigtad-text);
   box-shadow: 0 14px 30px rgb(0 0 0 / 32%);
 }
 
@@ -252,18 +422,19 @@ select option {
 }
 
 [data-theme="dark"] select option {
-  background-color: #0f172a;
-  color: #f8fafc;
+  background-color: var(--sigtad-surface-solid);
+  color: var(--sigtad-text);
 }
 
 @media (hover: hover) {
   button:not(:disabled):hover {
-    transform: scale(1.05);
+    transform: translateY(-1px) scale(1.015);
   }
 }
 
 button:not(:disabled):active {
-  transform: scale(0.95);
+  transform: translateY(1px) scale(0.975);
+  transition-duration: 110ms;
 }
 
 .sigtad-button-feedback {
@@ -440,6 +611,11 @@ main {
   to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
 }
 
+@keyframes sigtad-mobile-menu-in {
+  from { opacity: 0; transform: translate3d(0, -8px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
 @keyframes sigtad-modal-zoom {
   from { opacity: 0; transform: translate3d(0, 8px, 0) scale(.95); }
   to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
@@ -456,19 +632,30 @@ main {
 }
 
 .sigtad-footer {
-  background-color: #095540 !important;
-}
-
-[data-theme="dark"] .sigtad-footer {
-  background-color: #020617 !important;
+  border-top: 0;
+  background: #173f34 !important;
+  box-shadow: none;
 }
 
 .sigtad-footer-wave {
-  fill: #095540 !important;
+  fill: #173f34 !important;
 }
 
-[data-theme="dark"] .sigtad-footer-wave {
-  fill: #020617 !important;
+.sigtad-navigation-transition > :is(main, section, div) {
+  animation: sigtad-navigation-in 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes sigtad-navigation-in {
+  from {
+    opacity: 0.72;
+    transform: translateY(10px) scale(0.996);
+    filter: blur(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
 }
 
 /* La foto institucional se conserva en ambos temas; la capa de contraste se
@@ -488,7 +675,7 @@ main {
 }
 
 [data-theme="dark"] .sigtad-incidencia-form::before {
-  background: rgb(2 6 23 / 72%);
+  background: rgb(16 29 26 / 76%);
 }
 
 /* Only the decorative pseudo-element is blurred, never the catalog or its children. */
@@ -503,7 +690,8 @@ main {
   z-index: -1;
   content: "";
   pointer-events: none;
-  background: linear-gradient(var(--sigtad-catalog-overlay), var(--sigtad-catalog-overlay)),
+  background:
+    linear-gradient(var(--sigtad-catalog-overlay), var(--sigtad-catalog-overlay)),
     url("./assets/diria-paisaje-3.jpg") center top / cover no-repeat;
   filter: blur(9px);
 }
@@ -654,7 +842,7 @@ select option {
 
 :is(button, a):where([class~="bg-[#00AEEF]"], [class~="bg-[#0B7FB0]"]) {
   color: #fff;
-  background-color: #086187;
+  background-color: var(--sigtad-primary);
 }
 :is(button, a):where([class~="bg-amber-500"], [class~="bg-amber-600"]) {
   color: #fff;
@@ -856,15 +1044,15 @@ select option {
 }
 :root[data-theme="dark"] .calendario-liquid-glass.react-datepicker {
   border-color: rgb(183 232 108 / 25%);
-  background: rgb(15 23 42 / 94%);
+  background: rgb(29 57 48 / 94%);
 }
 :root[data-theme="dark"] .calendario-liquid-glass .react-datepicker__header {
   border-color: rgb(255 255 255 / 10%);
-  background: rgb(30 41 59 / 86%);
+  background: rgb(37 72 61 / 86%);
 }
 :root[data-theme="dark"] .calendario-liquid-glass .react-datepicker__current-month,
 :root[data-theme="dark"] .calendario-liquid-glass .react-datepicker__day-name,
-:root[data-theme="dark"] .calendario-liquid-glass .react-datepicker__day { color: #e2e8f0; }
+:root[data-theme="dark"] .calendario-liquid-glass .react-datepicker__day { color: var(--sigtad-text); }
 
 /* Selector de prioridades del formulario de comunicados. */
 select:has(> option[value="ALTA"]):has(> option[value="MEDIA"]):has(> option[value="BAJA"]) {
@@ -876,7 +1064,7 @@ select:has(> option[value="ALTA"]):has(> option[value="MEDIA"]):has(> option[val
   background-position: right 1rem center;
   background-repeat: no-repeat;
   background-size: 1rem;
-  color: #1e293b;
+  color: var(--sigtad-text);
   padding: .625rem 2.75rem .625rem 1rem;
   backdrop-filter: blur(12px);
 }
@@ -886,14 +1074,14 @@ select:has(> option[value="ALTA"]):has(> option[value="MEDIA"]):has(> option[val
 }
 select:has(> option[value="ALTA"]):has(> option[value="MEDIA"]):has(> option[value="BAJA"]) option {
   background: #fff;
-  color: #1e293b;
+  color: var(--sigtad-text);
 }
 :root[data-theme="dark"] select:has(> option[value="ALTA"]):has(> option[value="MEDIA"]):has(> option[value="BAJA"]) {
   border-color: rgb(16 185 129 / 30%);
-  background-color: rgb(15 23 42 / 70%);
-  color: #f1f5f9;
+  background-color: var(--sigtad-surface-solid);
+  color: var(--sigtad-text);
 }
 :root[data-theme="dark"] select:has(> option[value="ALTA"]):has(> option[value="MEDIA"]):has(> option[value="BAJA"]) option {
-  background: #0f172a;
-  color: #f1f5f9;
+  background: var(--sigtad-surface-solid);
+  color: var(--sigtad-text);
 }

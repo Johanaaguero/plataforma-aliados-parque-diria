@@ -32,10 +32,11 @@ export const puedeConsultarEvidencia = (
   actor: ActorIncidencia | null,
 ): boolean =>
   Boolean(
-    actor &&
-      (incidencia.usuarioReporta?.id === actor.id ||
-        actor.rol === 'administrador' ||
-        actor.rol === 'super_admin'),
+    incidencia.esPublica ||
+      (actor &&
+        (incidencia.usuarioReporta?.id === actor.id ||
+          actor.rol === 'administrador' ||
+          actor.rol === 'super_admin')),
   );
 
 export interface RespuestaEvidenciaAutorizada {

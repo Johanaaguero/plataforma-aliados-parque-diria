@@ -8,12 +8,10 @@ function Footer() {
   const enlace = 'w-fit rounded text-sm text-white/75 transition-colors hover:text-[#d9d823] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f]';
 
   return (
-    <footer className="sigtad-footer relative mt-20 w-full overflow-x-clip pb-4 pt-12 text-white transition-colors duration-300">
+    <footer className="sigtad-footer relative w-full overflow-x-clip pb-4 pt-12 text-white transition-colors duration-300">
       <svg className="pointer-events-none absolute inset-x-0 -top-12 h-14 w-full" viewBox="0 0 1440 56" preserveAspectRatio="none" aria-hidden="true">
         <path className="sigtad-footer-wave transition-colors duration-300" d="M0 28C160 2 280 2 440 28s280 26 440 0 280-26 560 0v28H0Z" />
       </svg>
-      <div className="pointer-events-none absolute -left-20 top-8 h-48 w-72 rotate-[-8deg] rounded-[55%] bg-[#8dc63f]/10 blur-3xl" aria-hidden="true" />
-      <div className="pointer-events-none absolute -right-24 top-3 h-56 w-80 rotate-[12deg] rounded-[55%] bg-emerald-300/10 blur-3xl" aria-hidden="true" />
       <div className="relative mx-auto max-w-7xl px-6 md:px-12">
         <div className="mb-6 grid gap-8 py-2 md:grid-cols-2 lg:grid-cols-4">
           <div className="max-w-sm">

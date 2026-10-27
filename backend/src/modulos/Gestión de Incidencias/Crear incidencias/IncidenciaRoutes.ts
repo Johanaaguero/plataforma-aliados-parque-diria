@@ -65,7 +65,7 @@ router.patch(
   (req, res) => cerrarMiIncidencia(req, res),
 );
 router.post('/:id/comentarios', verificarToken, autorizarRoles('administrador', 'super_admin'), (req, res) => agregarComentarioIncidencia(req, res));
-router.get('/:id/comentarios', verificarToken, (req, res) => obtenerComentariosIncidencia(req, res));
+router.get('/:id/comentarios', verificarTokenOpcional, (req, res) => obtenerComentariosIncidencia(req, res));
 router.get(
   '/:id/historial-cambios',
   verificarToken,
@@ -112,7 +112,7 @@ router.patch(
 
 router.get(
   '/evidencias/:id/archivo',
-  verificarToken,
+  verificarTokenOpcional,
   (req, res) => obtenerArchivoEvidencia(req, res),
 );
 

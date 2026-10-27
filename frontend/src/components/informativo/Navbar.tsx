@@ -66,6 +66,7 @@ function Navbar({
 
   const ultimoScrollY = useRef(0);
   const menuUsuarioRef = useRef<HTMLDivElement>(null);
+  const menuMovilRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const manejarScroll = () => {
@@ -89,6 +90,31 @@ function Navbar({
       window.removeEventListener('scroll', manejarScroll);
     };
   }, []);
+
+  useEffect(() => {
+    if (!menuAbierto) return;
+
+    const cerrarMenuMovil = (evento: MouseEvent) => {
+      if (
+        menuMovilRef.current &&
+        !menuMovilRef.current.contains(evento.target as Node)
+      ) {
+        setMenuAbierto(false);
+      }
+    };
+
+    const cerrarConEscape = (evento: KeyboardEvent) => {
+      if (evento.key === 'Escape') setMenuAbierto(false);
+    };
+
+    document.addEventListener('mousedown', cerrarMenuMovil);
+    document.addEventListener('keydown', cerrarConEscape);
+
+    return () => {
+      document.removeEventListener('mousedown', cerrarMenuMovil);
+      document.removeEventListener('keydown', cerrarConEscape);
+    };
+  }, [menuAbierto]);
 
   useEffect(() => {
     const cerrarMenuUsuario = (evento: MouseEvent) => {
@@ -229,14 +255,11 @@ function Navbar({
       aria-label="Navegación principal"
     >
       <div
-        className={`mx-auto max-w-7xl overflow-visible border border-white/70 bg-white/90 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/60 dark:shadow-2xl motion-safe:transition-all motion-safe:duration-300 motion-reduce:transition-none ${
-          menuAbierto
-            ? 'rounded-[1.75rem] xl:rounded-full'
-            : 'rounded-full'
-        } ${
+        ref={menuMovilRef}
+        className={`sigtad-navbar-shell mx-auto max-w-7xl overflow-visible border ${
           modoAdministracion || scrolled
-            ? 'shadow-[0_16px_45px_rgba(7,63,49,0.16)]'
-            : 'shadow-[0_10px_35px_rgba(7,63,49,0.11)]'
+            ? 'sigtad-navbar-scrolled'
+            : ''
         }`}
       >
         <div className="flex min-h-[82px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-7">
@@ -516,7 +539,7 @@ function Navbar({
 
               <button
                 type="button"
-                onClick={() => setMenuAbierto(!menuAbierto)}
+                onClick={() => setMenuAbierto((abierto) => !abierto)}
                 className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#095540] text-white shadow-sm motion-safe:transition motion-safe:duration-200 hover:bg-[#009444] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8DC63F] focus-visible:ring-offset-2 xl:hidden"
                 aria-label={
                   menuAbierto ? 'Cerrar menú' : 'Abrir menú'
@@ -567,7 +590,7 @@ function Navbar({
         {menuAbierto && (
           <div
             id="menu-principal-movil"
-            className="sigtad-menu-reveal border-t border-[#e2ebe5] px-3 pb-4 pt-3 xl:hidden"
+            className="sigtad-mobile-menu border-t px-3 pb-4 pt-3 xl:hidden"
           >
             <div className="flex flex-col gap-1">
               <button

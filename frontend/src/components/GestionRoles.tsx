@@ -434,8 +434,8 @@ export default function GestionRoles() {
       cantidad: usuarios.length,
       descripcion: 'Total de cuentas',
       abreviatura: 'US',
-      color: 'bg-sky-500/10 text-sky-700 dark:bg-sky-400/15 dark:text-sky-200',
-      acento: 'bg-sky-500',
+      color: 'bg-[#58D6A5]/15 text-[#168A63] dark:bg-[#58D6A5]/18 dark:text-[#A2F0CE]',
+      acento: 'bg-[#58D6A5]',
     },
     {
       etiqueta: 'Super Admin',
@@ -472,11 +472,11 @@ export default function GestionRoles() {
   ];
 
   return (
-    <section className="relative isolate min-h-screen w-full overflow-x-clip font-['Montserrat',sans-serif] text-[#17382B] transition-colors duration-500 dark:text-[#EDF8F1]">
+    <section className="sigtad-roles relative isolate min-h-screen w-full overflow-x-clip font-['Montserrat',sans-serif] text-[#17382B] transition-colors duration-500 dark:text-[#EDF8F1]">
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(0,174,239,0.13),transparent_34%),radial-gradient(circle_at_top_right,rgba(217,216,35,0.15),transparent_30%),linear-gradient(135deg,rgba(238,244,239,0.96),rgba(255,255,255,0.72))] dark:bg-[radial-gradient(circle_at_top_left,rgba(0,174,239,0.13),transparent_34%),radial-gradient(circle_at_top_right,rgba(141,198,63,0.12),transparent_30%),linear-gradient(135deg,rgba(7,28,20,0.97),rgba(13,43,32,0.84))]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(88,214,165,0.16),transparent_34%),radial-gradient(circle_at_top_right,rgba(162,240,206,0.15),transparent_30%),linear-gradient(135deg,rgba(244,251,247,0.96),rgba(223,243,232,0.72))] dark:bg-[radial-gradient(circle_at_top_left,rgba(88,214,165,0.13),transparent_34%),radial-gradient(circle_at_top_right,rgba(162,240,206,0.10),transparent_30%),linear-gradient(135deg,rgba(16,29,26,0.97),rgba(23,41,35,0.84))]" />
         <div className="absolute -left-28 top-10 h-[380px] w-[380px] rounded-full bg-[#8dc63f]/10 blur-[120px] dark:bg-[#8dc63f]/[0.055]" />
-        <div className="absolute -right-24 bottom-0 h-[420px] w-[420px] rounded-full bg-[#00AEEF]/[0.07] blur-[130px] dark:bg-[#00AEEF]/[0.04]" />
+        <div className="absolute -right-24 bottom-0 h-[420px] w-[420px] rounded-full bg-[#58D6A5]/[0.09] blur-[130px] dark:bg-[#58D6A5]/[0.05]" />
       </div>
       <div className="relative z-10 mx-auto w-full max-w-[1320px] px-4 pb-10 pt-5 sm:px-7 sm:pt-7 lg:px-10 lg:pt-8">
         {/* ENCABEZADO */}
@@ -486,7 +486,7 @@ export default function GestionRoles() {
             aria-hidden="true"
           />
           <div
-            className="pointer-events-none absolute -bottom-16 left-1/3 h-48 w-48 rounded-full bg-[#00AEEF]/[0.08] blur-3xl"
+            className="pointer-events-none absolute -bottom-16 left-1/3 h-48 w-48 rounded-full bg-[#58D6A5]/[0.10] blur-3xl"
             aria-hidden="true"
           />
           <div className="relative">
@@ -643,14 +643,14 @@ export default function GestionRoles() {
                     aria-selected={filtroRol === 'todos'}
                   >
                     <div className="flex items-center gap-3">
-                      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#00AEEF]/10">
-                        <span className="h-2.5 w-2.5 rounded-full bg-[#00AEEF]" />
+                      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#58D6A5]/15">
+                        <span className="h-2.5 w-2.5 rounded-full bg-[#58D6A5]" />
                       </span>
                       <span className="text-sm font-semibold">
                         Todos los usuarios
                       </span>
                     </div>
-                    <span className="rounded-full bg-[#00AEEF]/10 px-2 py-1 text-[10px] font-bold text-[#0087BA]">
+                    <span className="rounded-full bg-[#58D6A5]/15 px-2 py-1 text-[10px] font-bold text-[#168A63] dark:text-[#A2F0CE]">
                       {usuarios.length}
                     </span>
                   </button>
@@ -811,7 +811,7 @@ export default function GestionRoles() {
                   Usuarios y roles
                 </h2>
               </div>
-              <span className="inline-flex w-fit rounded-full border border-[#00AEEF]/20 bg-[#00AEEF]/10 px-3 py-1.5 text-xs font-bold text-[#0087BA] dark:border-sky-400/20 dark:bg-sky-400/10 dark:text-sky-200">
+              <span className="inline-flex w-fit rounded-full border border-[#58D6A5]/25 bg-[#58D6A5]/12 px-3 py-1.5 text-xs font-bold text-[#168A63] dark:border-[#58D6A5]/25 dark:bg-[#58D6A5]/14 dark:text-[#A2F0CE]">
                 Mostrando {usuariosPaginados.length} de {usuariosFiltrados.length}
               </span>
             </div>
@@ -846,7 +846,7 @@ export default function GestionRoles() {
                         className="px-6 py-14 text-center"
                         colSpan={5}
                       >
-                        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#00AEEF]/10 text-[#0087BA]">
+                        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#58D6A5]/14 text-[#168A63] dark:text-[#A2F0CE]">
                           <svg
                             className="h-7 w-7"
                             fill="none"
