@@ -54,7 +54,13 @@ export const AppDataSource = new DataSource({
   database: DB_DATABASE,
 timezone: '-06:00',
 ssl: process.env.DB_SSL === 'true'
-  ? { rejectUnauthorized: true }
+  ? {
+      ca: require('node:fs').readFileSync(
+        require('node:path').resolve(__dirname, '../certs/ca.pem'),
+        'utf8'
+      ),
+      rejectUnauthorized: true,
+    }
   : undefined,
   entities: [
     Usuario,
