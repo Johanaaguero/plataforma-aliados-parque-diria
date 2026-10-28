@@ -1143,28 +1143,370 @@ setSegundosRestantes(2);    } catch (error) {
             </div>
           </div>
 
-          <div className="mt-4 sm:mt-5">
-            <label className="flex items-center gap-3 rounded-2xl border border-[#095540]/15 bg-emerald-50/50 p-4 text-sm font-semibold text-[#095540]">
-              <input type="checkbox" checked={esPago} onChange={(e) => setEsPago(e.target.checked)} disabled={estado === 'cargando' || segundosRestantes !== null} />
-              Es actividad de pago
-            </label>
-            {esPago && (
-              <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                <label className={LABEL_CLASS}>Precio (₡)
-                  <input type="number" min={1} step={1} required className={`${INPUT_BASE_CLASS} ${INPUT_DEFAULT_CLASS}`} value={precio} onChange={(e) => setPrecio(e.target.value)} disabled={estado === 'cargando' || segundosRestantes !== null} />
-                </label>
-                <label className={LABEL_CLASS}>Método de pago
-                  <select className={`${INPUT_BASE_CLASS} ${INPUT_DEFAULT_CLASS}`} value={tipoPago} onChange={(e) => setTipoPago(e.target.value as 'sinpe_movil' | 'transferencia_bancaria')} disabled={estado === 'cargando' || segundosRestantes !== null}>
-                    <option value="sinpe_movil">SINPE Móvil</option>
-                    <option value="transferencia_bancaria">Transferencia bancaria</option>
-                  </select>
-                </label>
-                <label className={LABEL_CLASS}>Políticas de cancelación
-                  <textarea className={`${INPUT_BASE_CLASS} ${INPUT_DEFAULT_CLASS}`} value={politicasCancelacion} onChange={(e) => setPoliticasCancelacion(e.target.value)} disabled={estado === 'cargando' || segundosRestantes !== null} placeholder="Ej. Cancelaciones con 48 horas de anticipación." />
-                </label>
-              </div>
-            )}
+          
+<div className="mt-6 overflow-hidden rounded-3xl border border-[#095540]/15 bg-white/80 shadow-[0_12px_35px_rgba(9,85,64,0.07)] dark:border-white/10 dark:bg-slate-900/80">  {/* Encabezado de pago */}
+  <div className="border-b border-[#095540]/10 bg-gradient-to-r from-[#095540]/[0.07] via-[#8DC63F]/[0.08] to-transparent px-4 py-4 sm:px-5">
+    <div className="flex items-center gap-3">
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#095540] text-white shadow-sm">
+        <svg
+          className="h-5 w-5"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          aria-hidden="true"
+        >
+          <rect x="3" y="5" width="18" height="14" rx="2.5" />
+          <path d="M3 10h18M7 15h3" strokeLinecap="round" />
+        </svg>
+      </span>
+
+      <div className="min-w-0 flex-1">
+        <h3 className="text-base font-bold text-[#095540]">
+          Información de pago
+        </h3>
+        <p className="mt-0.5 text-xs leading-5 text-slate-500">
+          Configura si la actividad requiere un pago para participar.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div className="space-y-5 p-4 sm:p-5">
+    {/* Actividad gratuita o de pago */}
+    <button
+      type="button"
+      role="switch"
+      aria-checked={esPago}
+      onClick={() => setEsPago((actual) => !actual)}
+      disabled={
+        estado === 'cargando' ||
+        segundosRestantes !== null
+      }
+className={`flex w-full items-center gap-3 rounded-2xl border p-4 text-left outline-none transition duration-200 focus-visible:ring-4 focus-visible:ring-[#009444]/20 disabled:cursor-not-allowed disabled:opacity-60 ${
+  esPago
+    ? 'border-[#009444]/40 bg-[#8DC63F]/10 dark:border-emerald-400/30 dark:bg-emerald-400/10'
+    : 'border-[#095540]/25 bg-[#E5EBE7] hover:border-[#095540]/45 dark:border-white/10 dark:bg-slate-800 dark:hover:bg-slate-700'
+}`}
+    >
+      <span
+        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-colors ${
+          esPago
+            ? 'bg-[#095540] text-white'
+: 'bg-[#163D32] text-white shadow-sm'        }`}
+        aria-hidden="true"
+      >
+        {esPago ? (
+          <svg
+            className="h-5 w-5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+          >
+            <path
+              d="M12 2v20M17 6H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"
+              strokeLinecap="round"
+            />
+          </svg>
+        ) : (
+          <svg
+            className="h-5 w-5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+          >
+            <path
+              d="M4 12l5 5L20 6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        )}
+      </span>
+
+      <span className="min-w-0 flex-1">
+       <span className="block text-sm font-bold text-[#095540] dark:text-emerald-300">
+  {esPago ? 'Actividad de pago' : 'Actividad gratuita'}
+</span>
+<span className="mt-1 block text-xs leading-5 text-slate-500 dark:text-slate-300">          {esPago
+            ? 'Los participantes deberán pagar para reservar su espacio.'
+            : 'No se solicitará ningún pago a los participantes.'}
+        </span>
+      </span>
+
+      <span
+        className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+          esPago ? 'bg-[#009444]' : 'bg-slate-300'
+        }`}
+        aria-hidden="true"
+      >
+        <span
+          className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
+            esPago ? 'translate-x-[22px]' : 'translate-x-0.5'
+          }`}
+        />
+      </span>
+    </button>
+
+    {esPago && (
+      <div className="space-y-5">
+        {/* Precio */}
+        <div>
+          <label
+            htmlFor="precioActividad"
+            className="block text-sm font-semibold text-[#095540]"
+          >
+            Precio por participante
+          </label>
+
+          <p className="mt-1 text-xs text-slate-500">
+            Indica el monto en colones costarricenses.
+          </p>
+
+          <div className="relative mt-2">
+          <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-base font-extrabold text-[#095540]">
+  ₡
+</span>
+
+            <input
+              id="precioActividad"
+              type="number"
+              min={1}
+              step={1}
+              required={esPago}
+              value={precio}
+              onChange={(e) => setPrecio(e.target.value)}
+              disabled={
+                estado === 'cargando' ||
+                segundosRestantes !== null
+              }
+              placeholder="Ej. 2500"
+              className="block w-full rounded-2xl border border-[#095540]/20 bg-white py-3 pl-10 pr-4 text-sm font-semibold text-[#095540] shadow-sm outline-none transition placeholder:font-normal placeholder:text-slate-400 hover:border-[#095540]/40 focus:border-[#009444] focus:ring-4 focus:ring-[#009444]/15 disabled:cursor-not-allowed disabled:bg-slate-50"
+            />
           </div>
+        </div>
+
+        {/* Métodos de pago */}
+        <fieldset>
+          <legend className="text-sm font-semibold text-[#095540]">
+            Método de pago aceptado
+          </legend>
+
+          <p className="mt-1 text-xs leading-5 text-slate-500">
+            Selecciona cómo podrán realizar el pago los participantes.
+          </p>
+
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <button
+              type="button"
+              role="radio"
+              aria-checked={tipoPago === 'sinpe_movil'}
+              onClick={() => setTipoPago('sinpe_movil')}
+              disabled={
+                estado === 'cargando' ||
+                segundosRestantes !== null
+              }
+              className={`group relative flex min-h-[112px] items-start gap-3 rounded-2xl border p-4 text-left outline-none transition duration-200 focus-visible:ring-4 focus-visible:ring-[#009444]/20 disabled:cursor-not-allowed disabled:opacity-60 ${
+                tipoPago === 'sinpe_movil'
+                  ? 'border-[#009444] bg-[#8DC63F]/10 shadow-[0_6px_18px_rgba(9,85,64,0.07)]'
+                  : 'border-[#095540]/15 bg-white hover:border-[#009444]/50 hover:bg-[#8DC63F]/5'
+              }`}
+            >
+              <span
+                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-colors ${
+                  tipoPago === 'sinpe_movil'
+                    ? 'bg-[#095540] text-white'
+                    : 'bg-[#095540]/5 text-[#095540]'
+                }`}
+                aria-hidden="true"
+              >
+                <svg
+                  className="h-6 w-6"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                >
+                  <rect x="6" y="2.5" width="12" height="19" rx="2.5" />
+                  <path d="M10 5.5h4M10 18.5h4" strokeLinecap="round" />
+                  <path
+                    d="M9 11.5l2 2 4-4"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </span>
+
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-bold text-[#095540]">
+                  SINPE Móvil
+                </span>
+                <span className="mt-1 block text-xs leading-5 text-slate-500">
+                  Pago mediante transferencia móvil.
+                </span>
+              </span>
+
+              <span
+                className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
+                  tipoPago === 'sinpe_movil'
+                    ? 'border-[#009444] bg-[#009444] text-white'
+                    : 'border-[#095540]/25 bg-white'
+                }`}
+                aria-hidden="true"
+              >
+                {tipoPago === 'sinpe_movil' && (
+                  <svg
+                    className="h-3 w-3"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                  >
+                    <path
+                      d="M5 12l4 4L19 6"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                )}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              role="radio"
+              aria-checked={tipoPago === 'transferencia_bancaria'}
+              onClick={() => setTipoPago('transferencia_bancaria')}
+              disabled={
+                estado === 'cargando' ||
+                segundosRestantes !== null
+              }
+              className={`group relative flex min-h-[112px] items-start gap-3 rounded-2xl border p-4 text-left outline-none transition duration-200 focus-visible:ring-4 focus-visible:ring-[#009444]/20 disabled:cursor-not-allowed disabled:opacity-60 ${
+                tipoPago === 'transferencia_bancaria'
+                  ? 'border-[#009444] bg-[#8DC63F]/10 shadow-[0_6px_18px_rgba(9,85,64,0.07)]'
+                  : 'border-[#095540]/15 bg-white hover:border-[#009444]/50 hover:bg-[#8DC63F]/5'
+              }`}
+            >
+              <span
+                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-colors ${
+                  tipoPago === 'transferencia_bancaria'
+                    ? 'bg-[#095540] text-white'
+                    : 'bg-[#095540]/5 text-[#095540]'
+                }`}
+                aria-hidden="true"
+              >
+                <svg
+                  className="h-6 w-6"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                >
+                  <path
+                    d="M3 9h18L12 3 3 9zM5 10v8M9 10v8M15 10v8M19 10v8M3 21h18M2 18h20"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </span>
+
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-bold text-[#095540]">
+                  Transferencia bancaria
+                </span>
+                <span className="mt-1 block text-xs leading-5 text-slate-500">
+                  Pago mediante cuenta bancaria.
+                </span>
+              </span>
+
+              <span
+                className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
+                  tipoPago === 'transferencia_bancaria'
+                    ? 'border-[#009444] bg-[#009444] text-white'
+                    : 'border-[#095540]/25 bg-white'
+                }`}
+                aria-hidden="true"
+              >
+                {tipoPago === 'transferencia_bancaria' && (
+                  <svg
+                    className="h-3 w-3"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                  >
+                    <path
+                      d="M5 12l4 4L19 6"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                )}
+              </span>
+            </button>
+          </div>
+        </fieldset>
+
+        {/* Política de cancelación */}
+        <div>
+          <label
+            htmlFor="politicasCancelacion"
+            className="block text-sm font-semibold text-[#095540]"
+          >
+            Políticas de cancelación
+            <span className="ml-2 text-xs font-normal text-slate-400">
+              Opcional
+            </span>
+          </label>
+
+          <textarea
+            id="politicasCancelacion"
+            rows={3}
+            value={politicasCancelacion}
+            onChange={(e) => setPoliticasCancelacion(e.target.value)}
+            disabled={
+              estado === 'cargando' ||
+              segundosRestantes !== null
+            }
+            placeholder="Ej. Las cancelaciones deben realizarse con al menos 48 horas de anticipación."
+            className="mt-2 block w-full resize-y rounded-2xl border border-[#095540]/20 bg-white px-4 py-3 text-sm leading-6 text-slate-800 shadow-sm outline-none transition placeholder:text-slate-400 hover:border-[#095540]/40 focus:border-[#009444] focus:ring-4 focus:ring-[#009444]/15 disabled:cursor-not-allowed disabled:bg-slate-50"
+          />
+        </div>
+
+        <div className="flex items-start gap-3 rounded-2xl border border-[#095540]/10 bg-[#095540]/[0.04] p-3.5">
+          <svg
+            className="mt-0.5 h-5 w-5 shrink-0 text-[#168A63]"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            aria-hidden="true"
+          >
+            <path
+              d="M12 3l8 3v5c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6l8-3z"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M9 12l2 2 4-4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          <p className="text-xs leading-5 text-slate-600">
+            <span className="font-semibold text-[#095540]">
+              Información transparente.
+            </span>{' '}
+            Verifica que el precio, el método de pago y las condiciones
+            estén correctos antes de guardar la actividad.
+          </p>
+        </div>
+      </div>
+    )}
+  </div>
+</div>
+
 
           <div className="mt-4 sm:mt-5">
             <span className={LABEL_CLASS}>Cupos</span>
