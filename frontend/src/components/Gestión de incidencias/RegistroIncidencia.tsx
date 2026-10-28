@@ -301,6 +301,7 @@ export default function RegistroIncidencia({
   const [categoria, setCategoria] =
     useState<Categoria | ''>('');
   const [prioridad, setPrioridad] = useState<Prioridad | ''>('');
+  const [prioridadAbierta, setPrioridadAbierta] = useState(false);
   const [ubicacion, setUbicacion] =
     useState('');
   const [latitud, setLatitud] =
@@ -1064,33 +1065,152 @@ export default function RegistroIncidencia({
             </div>
           </section>
 
-          <section className="space-y-4">
-            <div>
-              <label
-                htmlFor="prioridad-incidencia"
-                className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300"
+        
+<section className="space-y-4">
+  <div>
+    <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+      Prioridad (opcional)
+    </label>
+
+    <div className="relative">
+      <button
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={prioridadAbierta}
+        onClick={() => setPrioridadAbierta((abierta) => !abierta)}
+        className="flex w-full items-center justify-between rounded-2xl border border-white/50 bg-white/60 px-4 py-3.5 text-left text-sm shadow-sm backdrop-blur-xl transition-all hover:border-emerald-500/50 focus:outline-none focus:ring-4 focus:ring-emerald-500/15 dark:border-slate-700 dark:bg-slate-900/60"
+      >
+        <span className="flex items-center gap-3">
+          <span
+            className={`h-2.5 w-2.5 rounded-full ${
+              prioridad === 'baja'
+                ? 'bg-emerald-500'
+                : prioridad === 'media'
+                  ? 'bg-amber-400'
+                  : prioridad === 'alta'
+                    ? 'bg-orange-500'
+                    : prioridad === 'critica'
+                      ? 'bg-red-500'
+                      : 'bg-slate-400'
+            }`}
+          />
+
+          <span className="font-medium text-slate-800 dark:text-slate-100">
+            {prioridad === 'baja'
+              ? 'Baja'
+              : prioridad === 'media'
+                ? 'Media'
+                : prioridad === 'alta'
+                  ? 'Alta'
+                  : prioridad === 'critica'
+                    ? 'Crítica'
+                    : 'Automática según la categoría'}
+          </span>
+        </span>
+
+        <Icon
+          className={`h-5 w-5 text-emerald-700 transition-transform dark:text-emerald-400 ${
+            prioridadAbierta ? 'rotate-180' : ''
+          }`}
+        >
+          <path d="m7 10 5 5 5-5" />
+        </Icon>
+      </button>
+
+      {prioridadAbierta && (
+        <div
+          role="listbox"
+          aria-label="Seleccionar prioridad"
+          className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-emerald-900/10 bg-white/95 p-2 shadow-xl shadow-emerald-950/10 backdrop-blur-2xl dark:border-slate-700 dark:bg-slate-900/95"
+        >
+          {[
+            {
+              value: '',
+              nombre: 'Automática según la categoría',
+              descripcion: 'El sistema determina la prioridad',
+              color: 'bg-slate-400',
+              hover: 'hover:bg-slate-100 dark:hover:bg-slate-800',
+            },
+            {
+              value: 'baja',
+              nombre: 'Baja',
+              descripcion: 'Situación de menor urgencia',
+              color: 'bg-emerald-500',
+              hover: 'hover:bg-emerald-50 dark:hover:bg-emerald-950/40',
+            },
+            {
+              value: 'media',
+              nombre: 'Media',
+              descripcion: 'Requiere atención',
+              color: 'bg-amber-400',
+              hover: 'hover:bg-amber-50 dark:hover:bg-amber-950/40',
+            },
+            {
+              value: 'alta',
+              nombre: 'Alta',
+              descripcion: 'Requiere atención prioritaria',
+              color: 'bg-orange-500',
+              hover: 'hover:bg-orange-50 dark:hover:bg-orange-950/40',
+            },
+            {
+              value: 'critica',
+              nombre: 'Crítica',
+              descripcion: 'Situación de máxima prioridad',
+              color: 'bg-red-500',
+              hover: 'hover:bg-red-50 dark:hover:bg-red-950/40',
+            },
+          ].map((opcion) => {
+            const seleccionada = prioridad === opcion.value;
+
+            return (
+              <button
+                key={opcion.value || 'automatica'}
+                type="button"
+                role="option"
+                aria-selected={seleccionada}
+                onClick={() => {
+                  setPrioridad(opcion.value as Prioridad | '');
+                  setPrioridadAbierta(false);
+                }}
+                className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors ${
+                  opcion.hover
+                } ${
+                  seleccionada
+                    ? 'bg-emerald-50 ring-1 ring-inset ring-emerald-500/20 dark:bg-emerald-950/40'
+                    : ''
+                }`}
               >
-                Prioridad (opcional)
-              </label>
-              <select
-                id="prioridad-incidencia"
-                value={prioridad}
-                onChange={(event) =>
-                  setPrioridad(event.target.value as Prioridad | '')
-                }
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 dark:border-slate-800 dark:bg-slate-900/50 dark:text-white"
-              >
-                <option value="">Automática según la categoría</option>
-                <option value="baja">Baja</option>
-                <option value="media">Media</option>
-                <option value="alta">Alta</option>
-                <option value="critica">Crítica</option>
-              </select>
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                Si no selecciona una prioridad, se asignará automáticamente según la categoría.
-              </p>
-            </div>
-          </section>
+                <span
+                  className={`h-3 w-3 shrink-0 rounded-full ${opcion.color}`}
+                />
+
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-semibold text-slate-800 dark:text-slate-100">
+                    {opcion.nombre}
+                  </span>
+                  <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">
+                    {opcion.descripcion}
+                  </span>
+                </span>
+
+                {seleccionada && (
+                  <Icon className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400">
+                    <path d="m5 12 4 4L19 6" />
+                  </Icon>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+
+    <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
+      Si no selecciona una prioridad, se asignará automáticamente según la categoría.
+    </p>
+  </div>
+</section>
+
 
           <section className="space-y-4">
             <div className="border-b border-slate-100 pb-2 dark:border-slate-800">
