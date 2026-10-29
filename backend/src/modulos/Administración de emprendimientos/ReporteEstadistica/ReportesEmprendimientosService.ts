@@ -393,6 +393,7 @@ export class ReportesService {
         categoriaId,
       );
 
+  
     // GUARDAR REPORTE GENERADO
     let reporteGenerado: Reporte | null = null;
 
@@ -418,17 +419,17 @@ export class ReportesService {
       const reporte =
         this.reporteRepository.create({
           numeroReporte,
-          tipoReporte:
-            TipoReporte.EMPRENDIMIENTOS,
-          usuarioGeneroId,
+          tipoReporte: TipoReporte.EMPRENDIMIENTOS,
+          usuarioGenero: {
+            id: usuarioGeneroId,
+          } as import('../../../models/Usuario').Usuario,
         });
 
-      await this.reporteRepository.save(
-        reporte,
-      );
+      await this.reporteRepository.save(reporte);
 
       reporteGenerado = reporte;
     }
+
 
     // RESPUESTA
     return {

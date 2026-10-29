@@ -29,7 +29,7 @@ import { PreguntasFrecuentes } from './models/PreguntasFrecuentes';
 import { ComentarioIncidencia } from './models/ComentarioIncidencia';
 import { ConfiguracionVisual } from './models/ConfiguracionVisual';
 import { ComprobantePago } from './models/ComprobantePago';
-import { CambioCorreoPerfil } from './models/CambioCorreoPerfil';
+import { SesionActiva } from './models/SesionActiva';
 
 dotenv.config();
 
@@ -54,7 +54,13 @@ export const AppDataSource = new DataSource({
   database: DB_DATABASE,
 timezone: '-06:00',
 ssl: process.env.DB_SSL === 'true'
-  ? { rejectUnauthorized: true }
+  ? {
+      ca: require('node:fs').readFileSync(
+        require('node:path').resolve(__dirname, '../certs/ca.pem'),
+        'utf8'
+      ),
+      rejectUnauthorized: true,
+    }
   : undefined,
   entities: [
     Usuario,
@@ -85,7 +91,7 @@ ssl: process.env.DB_SSL === 'true'
     ComentarioIncidencia,
     ConfiguracionVisual,
     ComprobantePago,
-    CambioCorreoPerfil,
+    SesionActiva,
 
   ],
  

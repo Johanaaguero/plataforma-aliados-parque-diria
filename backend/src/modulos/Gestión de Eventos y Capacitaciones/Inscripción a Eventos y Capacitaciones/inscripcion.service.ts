@@ -117,8 +117,8 @@ function sufijoTicketActual(): string {
 }
 
 /**
- * Genera un número de ticket consecutivo tomando en cuenta
- * los tickets existentes en reservas y participantes.
+ * Genera un ticket consecutivo considerando las reservas,
+ * los participantes y la secuencia del período actual.
  */
 export async function generarNumeroTicket(
   manager: EntityManager,
@@ -126,19 +126,18 @@ export async function generarNumeroTicket(
   const sufijo = sufijoTicketActual();
   const patron = `%${sufijo}`;
 
-  // La fila por período se bloquea hasta que finaliza la transacción que
-  // persiste la reserva o participante. Así dos transacciones no calculan el
-  // mismo consecutivo antes de insertar su ticket.
   await manager.query(
     `INSERT INTO \`secuencias_tickets\` (\`periodo\`, \`ultimo\`)
      VALUES (?, 0)
      ON DUPLICATE KEY UPDATE \`periodo\` = VALUES(\`periodo\`)`,
     [sufijo],
   );
-  const filasSecuencia = await manager.query(
-    'SELECT `ultimo` FROM `secuencias_tickets` WHERE `periodo` = ? FOR UPDATE',
+
+  const filasSecuencia = (await manager.query(
+    'SELECT \`ultimo\` FROM \`secuencias_tickets\` WHERE \`periodo\` = ? FOR UPDATE',
     [sufijo],
-  ) as Array<{ ultimo: string | number }>;
+  )) as Array<{ ultimo: string | number }>;
+
   const ultimoRegistrado = Number(filasSecuencia[0]?.ultimo ?? 0);
 
   const [reserva, participante] = await Promise.all([
@@ -178,7 +177,7 @@ export async function generarNumeroTicket(
   }
 
   await manager.query(
-    'UPDATE `secuencias_tickets` SET `ultimo` = ? WHERE `periodo` = ?',
+    'UPDATE \`secuencias_tickets\` SET \`ultimo\` = ? WHERE \`periodo\` = ?',
     [consecutivo, sufijo],
   );
 
@@ -322,188 +321,201 @@ export class InscripcionService {
   }> {
     try {
       return await AppDataSource.transaction(async (manager) => {
-      const eventosRepo = manager.getRepository(EventosCapacitaciones);
-      const reservasRepo = manager.getRepository(Reserva);
-      const comprobantesRepo = manager.getRepository(ComprobantePago);
+        const eventosRepo = manager.getRepository(EventosCapacitaciones);
+        const reservasRepo = manager.getRepository(Reserva);
+        const comprobantesRepo = manager.getRepository(ComprobantePago);
 
-      const evento = await eventosRepo
-        .createQueryBuilder('evento')
-        .setLock('pessimistic_write')
-        .where('evento.id = :id', { id: eventoCapacitacionId })
-        .getOne();
+        const evento = await eventosRepo
+          .createQueryBuilder('evento')
+          .setLock('pessimistic_write')
+          .where('evento.id = :id', { id: eventoCapacitacionId })
+          .getOne();
 
-      if (!evento) {
-        throw errorReserva(
-          'EventNotFoundError',
-          'El evento o capacitación no existe.',
-        );
-      }
-
-      if (evento.estado !== EstadoEventoCapacitacion.PUBLICADO) {
-        throw errorReserva(
-          'EventNotPublishedError',
-          'El evento o capacitación no está publicado.',
-        );
-      }
-
-      if (evento.esPago && !comprobante) {
-        throw errorReserva(
-          'PaymentProofRequiredError',
-          'La actividad pagada requiere un comprobante para crear la reserva.',
-        );
-      }
-
-      const fechaEvento = obtenerFechaValida(
-        evento.fecha,
-        'fecha del evento',
-      ).fecha;
-
-      const hoy = new Date();
-      hoy.setHours(0, 0, 0, 0);
-
-      if (fechaEvento < hoy) {
-        throw errorReserva(
-          'EventDatePassedError',
-          'La fecha del evento ya pasó.',
-        );
-      }
-
-      const datosValidados = validarDatosReserva(datos);
-
-      if (
-        (evento.edadMinima !== null &&
-          datosValidados.edad < evento.edadMinima) ||
-        (evento.edadMaxima !== null &&
-          datosValidados.edad > evento.edadMaxima)
-      ) {
-        throw errorReserva(
-          'AgeNotAllowedError',
-          'La edad no está permitida para este evento.',
-        );
-      }
-
-      if (
-        evento.cuposDisponibles === null ||
-        evento.cuposDisponibles <= 0
-      ) {
-        throw errorReserva(
-          'CapacityError',
-          'No hay cupos disponibles para este evento o capacitación.',
-        );
-      }
-
-      const reservaExistente = await reservasRepo.findOne({
-        where: { usuarioId, eventoCapacitacionId },
-      });
-
-      if (
-        reservaExistente &&
-        [
-          EstadoReservaNueva.PENDIENTE,
-          EstadoReservaNueva.APROBADA,
-        ].includes(reservaExistente.estado)
-      ) {
-        throw errorReserva(
-          'ReservationAlreadyExistsError',
-          'El usuario ya tiene una reserva activa para este evento.',
-        );
-      }
-
-      const reserva = reservaExistente
-        ? Object.assign(reservaExistente, {
-            nombreCompleto: datosValidados.nombreCompleto,
-            fechaNacimiento: datosValidados.fechaNacimiento,
-            tipoIdentificacion: datosValidados.tipoIdentificacion,
-            numeroIdentificacion: datosValidados.numeroIdentificacion,
-            correo: datosValidados.correo,
-            telefono: datosValidados.telefono,
-            estado: EstadoReservaNueva.PENDIENTE,
-            comprobanteUrl: null,
-            metodoPago: evento.esPago ? evento.tipoPago : null,
-            datosDevolucion: null,
-            motivoRechazo: null,
-            fechaExpiracionPreReserva: null,
-          })
-        : reservasRepo.create({
-            usuarioId,
-            eventoCapacitacionId,
-            nombreCompleto: datosValidados.nombreCompleto,
-            fechaNacimiento: datosValidados.fechaNacimiento,
-            tipoIdentificacion: datosValidados.tipoIdentificacion,
-            numeroIdentificacion: datosValidados.numeroIdentificacion,
-            correo: datosValidados.correo,
-            telefono: datosValidados.telefono,
-            estado: EstadoReservaNueva.PENDIENTE,
-            numeroTicket: await generarNumeroTicket(manager),
-            metodoPago: evento.esPago ? evento.tipoPago : null,
-            datosDevolucion: null,
-            fechaExpiracionPreReserva: null,
-          });
-
-      let reservaGuardada = await reservasRepo.save(reserva);
-      if (evento.esPago && comprobante) {
-        const extensiones: Record<string, string> = {
-          'application/pdf': 'pdf',
-          'image/jpeg': 'jpg',
-          'image/png': 'png',
-          'image/webp': 'webp',
-        };
-        const extension = extensiones[comprobante.mimetype];
-        if (!extension) {
-          throw errorReserva('ValidationError', 'El tipo de comprobante no es válido.');
+        if (!evento) {
+          throw errorReserva(
+            'EventNotFoundError',
+            'El evento o capacitación no existe.',
+          );
         }
-        validarContenidoComprobante(comprobante.buffer, comprobante.mimetype);
-        try {
-          // La URL histórica se conserva solo para compatibilidad; las descargas usan metadatos privados.
+
+        if (evento.estado !== EstadoEventoCapacitacion.PUBLICADO) {
+          throw errorReserva(
+            'EventNotPublishedError',
+            'El evento o capacitación no está publicado.',
+          );
+        }
+
+        if (evento.esPago && !comprobante) {
+          throw errorReserva(
+            'PaymentProofRequiredError',
+            'La actividad pagada requiere un comprobante para crear la reserva.',
+          );
+        }
+
+        const fechaEvento = obtenerFechaValida(
+          evento.fecha,
+          'fecha del evento',
+        ).fecha;
+
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+
+        if (fechaEvento < hoy) {
+          throw errorReserva(
+            'EventDatePassedError',
+            'La fecha del evento ya pasó.',
+          );
+        }
+
+        const datosValidados = validarDatosReserva(datos);
+
+        if (
+          (evento.edadMinima !== null &&
+            datosValidados.edad < evento.edadMinima) ||
+          (evento.edadMaxima !== null &&
+            datosValidados.edad > evento.edadMaxima)
+        ) {
+          throw errorReserva(
+            'AgeNotAllowedError',
+            'La edad no está permitida para este evento.',
+          );
+        }
+
+        if (
+          evento.cuposDisponibles === null ||
+          evento.cuposDisponibles <= 0
+        ) {
+          throw errorReserva(
+            'CapacityError',
+            'No hay cupos disponibles para este evento o capacitación.',
+          );
+        }
+
+        const reservaExistente = await reservasRepo.findOne({
+          where: { usuarioId, eventoCapacitacionId },
+        });
+
+        if (
+          reservaExistente &&
+          [
+            EstadoReservaNueva.PENDIENTE,
+            EstadoReservaNueva.APROBADA,
+          ].includes(reservaExistente.estado)
+        ) {
+          throw errorReserva(
+            'ReservationAlreadyExistsError',
+            'El usuario ya tiene una reserva activa para este evento.',
+          );
+        }
+
+        const reserva = reservaExistente
+          ? Object.assign(reservaExistente, {
+              nombreCompleto: datosValidados.nombreCompleto,
+              fechaNacimiento: datosValidados.fechaNacimiento,
+              tipoIdentificacion: datosValidados.tipoIdentificacion,
+              numeroIdentificacion: datosValidados.numeroIdentificacion,
+              correo: datosValidados.correo,
+              telefono: datosValidados.telefono,
+              estado: EstadoReservaNueva.PENDIENTE,
+              comprobanteUrl: null,
+              metodoPago: evento.esPago ? evento.tipoPago : null,
+              datosDevolucion: null,
+              motivoRechazo: null,
+              fechaExpiracionPreReserva: null,
+            })
+          : reservasRepo.create({
+              usuarioId,
+              eventoCapacitacionId,
+              nombreCompleto: datosValidados.nombreCompleto,
+              fechaNacimiento: datosValidados.fechaNacimiento,
+              tipoIdentificacion: datosValidados.tipoIdentificacion,
+              numeroIdentificacion: datosValidados.numeroIdentificacion,
+              correo: datosValidados.correo,
+              telefono: datosValidados.telefono,
+              estado: EstadoReservaNueva.PENDIENTE,
+              numeroTicket: await generarNumeroTicket(manager),
+              metodoPago: evento.esPago ? evento.tipoPago : null,
+              datosDevolucion: null,
+              fechaExpiracionPreReserva: null,
+            });
+
+        let reservaGuardada = await reservasRepo.save(reserva);
+
+        if (evento.esPago && comprobante) {
+          const extensiones: Record<string, string> = {
+            'application/pdf': 'pdf',
+            'image/jpeg': 'jpg',
+            'image/png': 'png',
+            'image/webp': 'webp',
+          };
+
+          const extension = extensiones[comprobante.mimetype];
+
+          if (!extension) {
+            throw errorReserva(
+              'ValidationError',
+              'El tipo de comprobante no es válido.',
+            );
+          }
+
+          validarContenidoComprobante(
+            comprobante.buffer,
+            comprobante.mimetype,
+          );
+
           reservaGuardada.comprobanteUrl = null;
           reservaGuardada = await reservasRepo.save(reservaGuardada);
-          await comprobantesRepo.save(comprobantesRepo.create({
-            reservaId: reservaGuardada.id,
-            usuarioId,
-            storageKey: null,
-            contenido: comprobante.buffer,
-            originalFilename: comprobante.originalname?.slice(0, 255) || `comprobante.${extension}`,
-            contentType: comprobante.mimetype,
-            sizeBytes: comprobante.buffer.length,
-            sha256: createHash('sha256').update(comprobante.buffer).digest('hex'),
-            storageProvider: 'mysql',
-          }));
-        } catch (error) {
-          throw error;
+
+          await comprobantesRepo.save(
+            comprobantesRepo.create({
+              reservaId: reservaGuardada.id,
+              usuarioId,
+              storageKey: null,
+              contenido: comprobante.buffer,
+              originalFilename:
+                comprobante.originalname?.slice(0, 255) ||
+                `comprobante.${extension}`,
+              contentType: comprobante.mimetype,
+              sizeBytes: comprobante.buffer.length,
+              sha256: createHash('sha256')
+                .update(comprobante.buffer)
+                .digest('hex'),
+              storageProvider: 'mysql',
+            }),
+          );
         }
-      }
 
-      evento.cuposDisponibles -= 1;
-      await eventosRepo.save(evento);
+        evento.cuposDisponibles -= 1;
+        await eventosRepo.save(evento);
 
-      await this.notificacionService.notificarReserva(
-        manager,
-        reservaGuardada,
-        evento,
-      );
+        await this.notificacionService.notificarReserva(
+          manager,
+          reservaGuardada,
+          evento,
+        );
 
-      await registrarAuditoria(
-        {
-          usuarioId,
-          action: 'CREAR_RESERVA_EVENTO_CAPACITACION',
-          description: `Creación de reserva #${reservaGuardada.id} para actividad #${evento.id}`,
-          status: 'success',
-          details: JSON.stringify({
-            reservaId: reservaGuardada.id,
-            eventoCapacitacionId: evento.id,
-            tipoActividad: evento.tipoActividad,
-            estado: reservaGuardada.estado,
-            cuposDisponibles: evento.cuposDisponibles,
-            reservaReutilizada: Boolean(reservaExistente),
-          }),
-        },
-        manager,
-      );
+        await registrarAuditoria(
+          {
+            usuarioId,
+            action: 'CREAR_RESERVA_EVENTO_CAPACITACION',
+            description: `Creación de reserva #${reservaGuardada.id} para actividad #${evento.id}`,
+            status: 'success',
+            details: JSON.stringify({
+              reservaId: reservaGuardada.id,
+              eventoCapacitacionId: evento.id,
+              tipoActividad: evento.tipoActividad,
+              estado: reservaGuardada.estado,
+              cuposDisponibles: evento.cuposDisponibles,
+              reservaReutilizada: Boolean(reservaExistente),
+            }),
+          },
+          manager,
+        );
 
-      return {
-        reserva: reservaGuardada,
-        cuposDisponibles: evento.cuposDisponibles,
-      };
+        return {
+          reserva: reservaGuardada,
+          cuposDisponibles: evento.cuposDisponibles,
+        };
       });
     } catch (error) {
       throw error;

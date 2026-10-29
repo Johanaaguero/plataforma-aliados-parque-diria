@@ -866,19 +866,19 @@ const registrosFiltrados = useMemo(() => {
                           </div>
 
                           <div className="flex flex-col gap-2 sm:flex-row">
-                            {inscripcion.esPago && inscripcion.comprobanteUrl && (
-                              <button
-                                type="button"
-                                onClick={() => void abrirComprobante(inscripcion.id)}
-                                disabled={isSubmitting || reservaConComprobanteAbierto !== null}
-                                aria-busy={reservaConComprobanteAbierto === inscripcion.id}
-                                className="inline-flex items-center justify-center rounded-xl border border-sky-200 bg-white px-4 py-2.5 text-sm font-semibold text-sky-700 hover:bg-sky-50 disabled:cursor-not-allowed disabled:opacity-60"
-                              >
-                                {reservaConComprobanteAbierto === inscripcion.id
-                                  ? 'Abriendo comprobante...'
-                                  : 'Ver comprobante'}
-                              </button>
-                            )}
+                            {inscripcion.esPago && (
+                          <button
+                            type="button"
+                            onClick={() => void abrirComprobante(inscripcion.id)}
+                            disabled={isSubmitting || reservaConComprobanteAbierto !== null}
+                            aria-busy={reservaConComprobanteAbierto === inscripcion.id}
+                            className="inline-flex items-center justify-center rounded-xl border border-sky-200 bg-white px-4 py-2.5 text-sm font-semibold text-sky-700 hover:bg-sky-50 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {reservaConComprobanteAbierto === inscripcion.id
+                              ? 'Abriendo comprobante...'
+                              : 'Ver comprobante'}
+                          </button>
+                        )}
                             <button
                               type="button"
                               onClick={() => { setReservaARechazar(inscripcion); setMotivoRechazo(''); }}

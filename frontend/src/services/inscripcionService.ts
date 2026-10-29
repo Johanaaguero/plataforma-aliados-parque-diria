@@ -132,15 +132,30 @@ export async function editarReserva(
   );
 }
 
-export async function subirComprobanteReserva(reservaId: number, comprobante: File): Promise<{ comprobanteUrl: string }> {
+export async function subirComprobanteReserva(
+  reservaId: number,
+  comprobante: File,
+): Promise<{ ok: boolean }> {
+  if (!Number.isSafeInteger(reservaId) || reservaId <= 0) {
+    throw new Error('La reserva no es válida.');
+  }
+
   const datos = new FormData();
   datos.append('comprobante', comprobante);
-  return api.solicitar<{ comprobanteUrl: string }>(`/reservas/${reservaId}/comprobante`, { method: 'POST', body: datos }, {
-    incluirAuth: true,
-    incluirContentType: false,
-    desempaquetarData: true,
-    mensajeError: 'No se pudo subir el comprobante de pago.',
-  });
+
+  return api.solicitar<{ ok: boolean }>(
+    `/reservas/${reservaId}/comprobante`,
+    {
+      method: 'POST',
+      body: datos,
+    },
+    {
+      incluirAuth: true,
+      incluirContentType: false,
+      desempaquetarData: false,
+      mensajeError: 'No se pudo subir el comprobante de pago.',
+    },
+  );
 }
 
 export async function obtenerComprobanteReserva(
