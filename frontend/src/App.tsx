@@ -43,6 +43,7 @@ import MisIncidencias from './components/Gestión de incidencias/MisIncidencias'
 import { api } from './services/api';
 
 import { useInactividad } from './services/useInactividad';
+import { useControlSesion } from './services/useControlSesion';
 
 import RegistroEmprendimiento from './components/RegistroEmprendimiento';
 
@@ -635,6 +636,32 @@ const cerrarSesionPorInactividad = () => {
     activo: rolAutenticado !== null,
   tiempoInactividad: 30 * 60 * 1000,   
  onLogout: cerrarSesionPorInactividad,
+  });
+
+  // Otra pestaña (por ejemplo, una duplicada) tomó esta misma sesión.
+  // Aquí NO se llama a api.logout: la sesión sigue viva en la pestaña nueva.
+  const cerrarPestanaReemplazada = () => {
+    setRolAutenticado(null);
+    setNombreUsuario(null);
+    setUsuarioId(null);
+    setMostrarGestionRoles(false);
+    setMostrarCuentasBloqueadas(false);
+    setMostrarLogin(false);
+    setMostrarRegistro(false);
+    setErrorAutenticacion({
+      code: 'SESSION_REPLACED',
+      message:
+        'Tu sesión se abrió en otra pestaña, por lo que esta se cerró.',
+      status: 401,
+    });
+    setMostrarErrorModal(true);
+    setEmprendimientoEditar(null);
+    setSeccionActual('inicio');
+  };
+
+  useControlSesion({
+    activo: rolAutenticado !== null,
+    onPestanaReemplazada: cerrarPestanaReemplazada,
   });
 
   const cerrarErrorModal = () => {
