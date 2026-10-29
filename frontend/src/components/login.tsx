@@ -20,6 +20,18 @@ type NombreRol =
   | 'visitante'
   | 'super_admin';
 
+const CLAVE_USUARIO_RECORDADO = 'aliados:usuario-recordado';
+
+// Solo se recuerda el usuario/correo para precargarlo. Nunca la contraseña
+// ni el token de sesión: la sesión se cierra al cerrar la pestaña.
+const leerUsuarioRecordado = (): string => {
+  try {
+    return localStorage.getItem(CLAVE_USUARIO_RECORDADO) ?? '';
+  } catch {
+    return '';
+  }
+};
+
 interface LoginProps {
   onLogin: (rol: NombreRol) => void;
   onIrRegistro?: () => void;
@@ -78,13 +90,13 @@ export default function Login({
   onIrRegistro,
 }: LoginProps) {
   const [identificador, setIdentificador] =
-    useState('');
+    useState(leerUsuarioRecordado);
 
   const [password, setPassword] =
     useState('');
 
-  const [recordarSesion, setRecordarSesion] =
-    useState(false);
+  const [recordarUsuario, setRecordarUsuario] =
+    useState(() => leerUsuarioRecordado() !== '');
 
   const [mostrarPassword, setMostrarPassword] =
     useState(false);
@@ -155,16 +167,27 @@ export default function Login({
           password
         );
 
-      if (recordarSesion) {
-        localStorage.setItem(
-          'token',
-          resultado.token
-        );
-      } else {
-        sessionStorage.setItem(
-          'token',
-          resultado.token
-        );
+      // El token vive solo en sessionStorage: se pierde al cerrar la pestaña.
+      sessionStorage.setItem(
+        'token',
+        resultado.token
+      );
+
+      try {
+        localStorage.removeItem('token');
+
+        if (recordarUsuario) {
+          localStorage.setItem(
+            CLAVE_USUARIO_RECORDADO,
+            identificador.trim()
+          );
+        } else {
+          localStorage.removeItem(
+            CLAVE_USUARIO_RECORDADO
+          );
+        }
+      } catch {
+        // Sin acceso a localStorage: el inicio de sesión sigue igual.
       }
 
       setMensaje(
@@ -412,9 +435,9 @@ export default function Login({
               <input
                 type="checkbox"
                 className="h-4 w-4 rounded border-[#095540]/30 accent-[#009444] outline-none focus-visible:ring-2 focus-visible:ring-[#009444] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                checked={recordarSesion}
+                checked={recordarUsuario}
                 onChange={(e) =>
-                  setRecordarSesion(
+                  setRecordarUsuario(
                     e.target.checked
                   )
                 }
@@ -423,7 +446,7 @@ export default function Login({
                 }
               />
 
-              Recordar sesión
+              Recordar mi usuario
             </label>
           </div>
 

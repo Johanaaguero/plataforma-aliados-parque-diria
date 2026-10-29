@@ -1,7 +1,7 @@
-import { Router } from 'express';
+import { Router, text } from 'express';
 import type { Request } from 'express';
 import { ipKeyGenerator, rateLimit } from 'express-rate-limit';
-import { login, logout } from './login.controller';
+import { cierrePendiente, latido, login, logout } from './login.controller';
 import { verificarToken } from '../../../middlewares/auth.middleware';
 
 export const obtenerClaveRateLimitLogin = (req: Request): string => {
@@ -34,5 +34,10 @@ const router = Router();
 
 router.post('/login', loginRateLimit, login);
 router.post('/logout', verificarToken, logout);
+
+// Control de sesión por pestaña. No usan verificarToken a propósito:
+// no deben contar como actividad del usuario (ultimaActividad).
+router.post('/session/heartbeat', latido);
+router.post('/session/closing', text({ type: '*/*', limit: '4kb' }), cierrePendiente);
 
 export default router;

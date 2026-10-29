@@ -1,4 +1,3 @@
-
 import { AppDataSource } from '../../../data-source';
 import { Usuario } from '../../../models/Usuario';
 import { LoginAttempt } from '../../../models/LoginAttempt';
@@ -18,7 +17,6 @@ interface LoginInput {
 
 const MAX_INTENTOS = 3;
 const MINUTOS_BLOQUEO = 15;
-const MINUTOS_INACTIVIDAD = 30; // TTL de inactividad: 30 minutos
 
 export const loginUser = async ({
   identificador,
@@ -198,41 +196,26 @@ export const loginUser = async ({
     ip: ipAddress || null,
   });
 
-  // VERIFICAR SI YA EXISTE UNA SESIÓN ACTIVA
+  // SI YA EXISTE UNA SESIÓN, LA NUEVA LA REEMPLAZA
   const ahoraFecha = new Date();
-  const limiteInactividad = new Date(
-    ahoraFecha.getTime() - MINUTOS_INACTIVIDAD * 60 * 1000,
-  );
 
   const sesionExistente = await sesionesRepo.findOne({
     where: { usuarioId: usuario.id },
   });
 
   if (sesionExistente) {
-    const sigueActiva =
-      sesionExistente.ultimaActividad > limiteInactividad &&
-      sesionExistente.expiraEn > ahoraFecha;
-
-    if (sigueActiva) {
-      await registrarAuditoria({
-        usuarioId: usuario.id,
-        action: 'LOGIN_SESSION_ALREADY_ACTIVE',
-        description: 'Inicio de sesión rechazado porque la cuenta ya tiene una sesión activa',
-        ipAddress: ipAddress || null,
-        userAgent: userAgent || null,
-        status: 'blocked',
-      });
-
-      return {
-        ok: false,
-        code: 'SESSION_ALREADY_ACTIVE',
-        message:
-          'Esta cuenta ya tiene una sesión activa en otro dispositivo. Cierra esa sesión antes de volver a ingresar.',
-      };
-    }
-
-    // La sesión anterior expiró o superó el tiempo de inactividad.
+    // Al borrar la fila, el token anterior deja de ser válido (el jti ya no
+    // coincide) y el otro dispositivo o pestaña se cierra en su próxima petición.
     await sesionesRepo.delete({ id: sesionExistente.id });
+
+    await registrarAuditoria({
+      usuarioId: usuario.id,
+      action: 'LOGIN_SESSION_REPLACED',
+      description: 'Se cerró la sesión anterior porque la cuenta inició sesión nuevamente',
+      ipAddress: ipAddress || null,
+      userAgent: userAgent || null,
+      status: 'success',
+    });
   }
 
   // CREAR TOKEN JWT CON UN IDENTIFICADOR ÚNICO
@@ -260,6 +243,8 @@ export const loginUser = async ({
       usuarioId: usuario.id,
       jti,
       ultimaActividad: ahoraFecha,
+      ultimoLatido: ahoraFecha,
+      cierrePendienteHasta: null,
       expiraEn: new Date(ahoraFecha.getTime() + 2 * 60 * 60 * 1000),
     }),
   );
