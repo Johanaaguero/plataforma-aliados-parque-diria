@@ -1,3 +1,4 @@
+
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 import dotenv from 'dotenv';
@@ -12,7 +13,7 @@ import { IntentoAcceso } from './models/IntentoAcceso';
 import { CategoriaEmprendimiento } from './models/CategoriaEmprendimiento';
 import { Emprendimiento } from './models/Emprendimiento';
 import { EmprendimientoImagen } from './models/EmprendimientoImagen';
-import { EventosCapacitaciones } from './models/EventosCapacitaciones'; 
+import { EventosCapacitaciones } from './models/EventosCapacitaciones';
 import { Participantes } from './models/Participantes';
 import { Reserva } from './models/Reserva';
 import { EventoCapacitacionImagen } from './models/EventoCapacitacionImagen';
@@ -30,6 +31,7 @@ import { ComentarioIncidencia } from './models/ComentarioIncidencia';
 import { ConfiguracionVisual } from './models/ConfiguracionVisual';
 import { ComprobantePago } from './models/ComprobantePago';
 import { SesionActiva } from './models/SesionActiva';
+import { CambioCorreoPerfil } from './models/CambioCorreoPerfil';
 
 dotenv.config();
 
@@ -52,16 +54,16 @@ export const AppDataSource = new DataSource({
   username: DB_USERNAME,
   password: DB_PASSWORD,
   database: DB_DATABASE,
-timezone: '-06:00',
-ssl: process.env.DB_SSL === 'true'
-  ? {
-      ca: require('node:fs').readFileSync(
-        require('node:path').resolve(__dirname, '../certs/ca.pem'),
-        'utf8'
-      ),
-      rejectUnauthorized: true,
-    }
-  : undefined,
+  timezone: '-06:00',
+  ssl: process.env.DB_SSL === 'true'
+    ? {
+        ca: require('node:fs').readFileSync(
+          require('node:path').resolve(__dirname, '../certs/ca.pem'),
+          'utf8'
+        ),
+        rejectUnauthorized: true,
+      }
+    : undefined,
   entities: [
     Usuario,
     Rol,
@@ -92,11 +94,10 @@ ssl: process.env.DB_SSL === 'true'
     ConfiguracionVisual,
     ComprobantePago,
     SesionActiva,
-
+    CambioCorreoPerfil,
   ],
- 
 
   migrations: [__dirname + '/migrations/*.{js,ts}'],
-  
+
   synchronize: false,
 });
