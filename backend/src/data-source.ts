@@ -29,6 +29,7 @@ import { PreguntasFrecuentes } from './models/PreguntasFrecuentes';
 import { ComentarioIncidencia } from './models/ComentarioIncidencia';
 import { ConfiguracionVisual } from './models/ConfiguracionVisual';
 import { ComprobantePago } from './models/ComprobantePago';
+import { CambioCorreoPerfil } from './models/CambioCorreoPerfil';
 
 dotenv.config();
 
@@ -84,6 +85,7 @@ ssl: process.env.DB_SSL === 'true'
     ComentarioIncidencia,
     ConfiguracionVisual,
     ComprobantePago,
+    CambioCorreoPerfil,
 
   ],
  

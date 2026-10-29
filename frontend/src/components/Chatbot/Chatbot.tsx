@@ -373,7 +373,8 @@ const Chatbot = () => {
         aria-expanded={abierto}
         title="Asistente virtual"
         className={`
-          fixed bottom-5 right-5 z-50 flex h-14 w-14 items-center justify-center
+          fixed right-4 top-1/2 z-50 flex h-14 w-14 translate-y-[-50%] items-center justify-center
+          xl:bottom-5 xl:left-auto xl:right-5 xl:top-auto xl:translate-y-0
           rounded-full bg-emerald-800 text-white
           shadow-lg shadow-emerald-900/30
           transition-all duration-300

@@ -29,8 +29,20 @@ export class Usuario {
   @Column({ type: 'varchar', length: 20 })
   telefono!: string;
 
-  @Column({ type: 'varchar', length: 255 })
+  @Column({ type: 'varchar', length: 255, select: false })
   contraseña!: string;
+
+  @Column({ type: 'boolean', default: false, name: 'correo_verificado' })
+  correoVerificado!: boolean;
+
+  @Column({ type: 'boolean', default: false, name: 'telefono_verificado' })
+  telefonoVerificado!: boolean;
+
+  @Column({ type: 'mediumblob', nullable: true, select: false, name: 'foto_perfil' })
+  fotoPerfil!: Buffer | null;
+
+  @Column({ type: 'varchar', length: 50, nullable: true, select: false, name: 'foto_perfil_mime' })
+  fotoPerfilMime!: string | null;
 
   // Clave foránea referenciando a la tabla 'roles'
   @ManyToOne(() => Rol, (rol) => rol.usuarios, { nullable: false, eager: true })
