@@ -40,6 +40,24 @@ export class SesionActiva {
   })
   expiraEn!: Date;
 
+  // Última vez que el navegador avisó que la pestaña sigue abierta.
+  @Column({
+    name: 'ultimo_latido',
+    type: 'datetime',
+    nullable: true,
+  })
+  ultimoLatido!: Date | null;
+
+  // Si la pestaña avisó que se está descargando (cerrar o refrescar),
+  // la sesión se libera cuando pase esta fecha, salvo que la nueva
+  // página la reanude antes.
+  @Column({
+    name: 'cierre_pendiente_hasta',
+    type: 'datetime',
+    nullable: true,
+  })
+  cierrePendienteHasta!: Date | null;
+
   @CreateDateColumn({
     name: 'created_at',
     type: 'datetime',
