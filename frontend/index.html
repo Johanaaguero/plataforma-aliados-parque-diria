@@ -6,9 +6,91 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light dark" />
     <meta name="description" content="Conoce el Parque Nacional Diriá, sus actividades y los emprendimientos de las comunidades aliadas." />
+    <link rel="preload" as="image" href="/logo.png" />
+    <script>
+      (() => {
+        let preference = 'auto';
+        try {
+          const saved = localStorage.getItem('sigtad:preferencia-tema');
+          if (saved === 'light' || saved === 'dark') preference = saved;
+        } catch {}
+        const theme = preference === 'auto'
+          ? (window.matchMedia('(prefers-color-scheme: dark)').matches
+              ? 'dark'
+              : (window.matchMedia('(prefers-color-scheme: light)').matches
+                  ? 'light'
+                  : ((new Date().getHours() >= 18 || new Date().getHours() < 6) ? 'dark' : 'light')))
+          : preference;
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.dataset.themePreference = preference;
+        document.documentElement.style.colorScheme = theme;
+      })();
+    </script>
+    <style>
+      #sigtad-startup-splash {
+        position: fixed;
+        inset: 0;
+        z-index: 10000;
+        display: flex;
+        min-height: 100vh;
+        align-items: center;
+        justify-content: center;
+        background: #f3faf5;
+        opacity: 1;
+      }
+      [data-theme="dark"] #sigtad-startup-splash { background: #09251c; }
+      #sigtad-startup-splash img {
+        width: 9rem;
+        height: 9rem;
+        padding: .6rem;
+        border-radius: 1.75rem;
+        background: #fff;
+        object-fit: contain;
+      }
+      #sigtad-startup-splash.is-ready img {
+        animation: sigtad-startup-zoom 2600ms cubic-bezier(.16, 1, .3, 1) both;
+      }
+      #sigtad-startup-splash.is-hiding { opacity: 0; transition: opacity 450ms ease; pointer-events: none; }
+      @keyframes sigtad-startup-zoom {
+        0% { opacity: 0; transform: scale(.45); }
+        35% { opacity: 1; transform: scale(1.08); }
+        72% { opacity: 1; transform: scale(1); }
+        100% { opacity: 0; transform: scale(1.12); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #sigtad-startup-splash.is-ready img { animation: none; }
+        #sigtad-startup-splash.is-hiding { transition-duration: 150ms; }
+      }
+      @media (min-width: 640px) {
+        #sigtad-startup-splash img { width: 10rem; height: 10rem; }
+      }
+    </style>
     <title>Inicio | Aliados Diriá</title>
   </head>
   <body>
+    <div id="sigtad-startup-splash" role="status" aria-label="Cargando Aliados del Parque Nacional Diriá">
+      <img src="/logo.png" alt="Aliados del Parque Nacional Diriá" />
+    </div>
+    <script>
+      (() => {
+        const splash = document.getElementById('sigtad-startup-splash');
+        if (!splash) return;
+        let acabado = false;
+        const retirar = () => {
+          if (acabado) return;
+          acabado = true;
+          splash.classList.add('is-hiding');
+          window.setTimeout(() => splash.remove(), 500);
+        };
+        window.addEventListener('sigtad:app-ready', () => {
+          splash.classList.add('is-ready');
+          const reducido = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+          const duracion = reducido ? 650 : 2600;
+          window.setTimeout(retirar, duracion);
+        }, { once: true });
+        window.setTimeout(retirar, 15000);
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

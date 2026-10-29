@@ -1,6 +1,7 @@
 import L from 'leaflet';
 import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
+import ScrollReveal from '../ui/ScrollReveal';
 
 // Casona / puesto de guardaparques, OSM way 402781690:
 // https://mapcarta.com/W402781690
@@ -30,7 +31,8 @@ function MapaParque() {
       aria-labelledby="titulo-mapa-parque"
       className="relative scroll-mt-28 px-4 py-16 sm:px-6 sm:py-20 lg:px-8"
     >
-      <div className="sigtad-glass mx-auto grid max-w-7xl overflow-hidden rounded-3xl lg:grid-cols-[0.8fr_1.2fr]">
+      <ScrollReveal className="mx-auto max-w-7xl">
+      <div className="sigtad-glass grid overflow-hidden rounded-3xl lg:grid-cols-[0.8fr_1.2fr]">
         <div className="flex flex-col justify-center p-6 sm:p-8 lg:p-10">
           <span className="sigtad-heading mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#8dc63f]/15">
             <svg
@@ -131,6 +133,7 @@ function MapaParque() {
           </MapContainer>
         </div>
       </div>
+      </ScrollReveal>
     </section>
   );
 }

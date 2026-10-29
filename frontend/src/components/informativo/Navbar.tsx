@@ -65,13 +65,15 @@ function Navbar({
 
   const [noLeidas, setNoLeidas] = useState(0);
   const [fotoPerfilUrl, setFotoPerfilUrl] = useState<string | null>(null);
-  const { notificacionActual, procesarNotificaciones, cerrarActual } =
+  const { notificacionesToast, procesarNotificaciones, cerrarTodas } =
     useNotificacionToast();
 
   const ultimoScrollY = useRef(0);
   const menuUsuarioRef = useRef<HTMLDivElement>(null);
   const menuMovilRef = useRef<HTMLDivElement>(null);
   const perfilMovilRef = useRef<HTMLDivElement>(null);
+  const temporizadorPresionPerfilRef = useRef<number | null>(null);
+  const suprimirClickPerfilRef = useRef(false);
 
   useEffect(() => {
     if (!rolAutenticado) {
@@ -139,6 +141,15 @@ function Navbar({
       window.removeEventListener('scroll', manejarScroll);
     };
   }, []);
+
+  useEffect(
+    () => () => {
+      if (temporizadorPresionPerfilRef.current !== null) {
+        window.clearTimeout(temporizadorPresionPerfilRef.current);
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!menuAbierto) return;
@@ -287,6 +298,32 @@ function Navbar({
     onCerrarSesion();
   };
 
+  const iniciarPresionPerfil = (evento: React.PointerEvent<HTMLButtonElement>) => {
+    if (
+      evento.pointerType !== 'touch' ||
+      !window.matchMedia('(max-width: 1279px)').matches ||
+      !(/iPhone|iPad|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1))
+    ) {
+      return;
+    }
+
+    suprimirClickPerfilRef.current = false;
+    temporizadorPresionPerfilRef.current = window.setTimeout(() => {
+      temporizadorPresionPerfilRef.current = null;
+      suprimirClickPerfilRef.current = true;
+      setMenuUsuarioAbierto(true);
+      navigator.vibrate?.(10);
+    }, 500);
+  };
+
+  const finalizarPresionPerfil = () => {
+    if (temporizadorPresionPerfilRef.current !== null) {
+      window.clearTimeout(temporizadorPresionPerfilRef.current);
+      temporizadorPresionPerfilRef.current = null;
+    }
+  };
+
   const claseNavegacion =
     'rounded-full border border-transparent px-3.5 py-2 text-sm font-semibold text-[#17372c] motion-safe:transition-all motion-safe:duration-200 motion-safe:ease-out hover:bg-[#eef7e7]/70 hover:text-[#095540] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2';
 
@@ -312,7 +349,7 @@ function Navbar({
     >
       <div
         ref={menuMovilRef}
-        className={`sigtad-navbar-shell mx-auto hidden max-w-7xl overflow-visible border xl:block ${
+        className={`sigtad-navbar-shell sigtad-navbar-desktop mx-auto hidden max-w-7xl overflow-visible border xl:block ${
           modoAdministracion || scrolled
             ? 'sigtad-navbar-scrolled'
             : ''
@@ -1001,7 +1038,22 @@ function Navbar({
           )}
           <button
             type="button"
-            onClick={() => setMenuUsuarioAbierto((abierto) => !abierto)}
+            onPointerDown={iniciarPresionPerfil}
+            onPointerUp={finalizarPresionPerfil}
+            onPointerCancel={finalizarPresionPerfil}
+            onPointerLeave={finalizarPresionPerfil}
+            onContextMenu={(evento) => {
+              if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+                evento.preventDefault();
+              }
+            }}
+            onClick={() => {
+              if (suprimirClickPerfilRef.current) {
+                suprimirClickPerfilRef.current = false;
+                return;
+              }
+              setMenuUsuarioAbierto((abierto) => !abierto);
+            }}
             className={`flex min-w-0 flex-col items-center gap-1 rounded-xl py-1 text-[10px] font-semibold transition ${
               menuUsuarioAbierto ? 'text-[#08734f] dark:text-emerald-300' : 'text-[#426257] dark:text-emerald-100/70'
             }`}
@@ -1021,8 +1073,8 @@ function Navbar({
         </div>
       </div>
       <NotificacionToast
-        notificacion={notificacionActual}
-        onClose={cerrarActual}
+        notificaciones={notificacionesToast}
+        onClose={cerrarTodas}
       />
     </nav>
   );

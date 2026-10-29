@@ -312,7 +312,7 @@ export default function DashboardAdministrador({
   const [mensajeError, setMensajeError] = useState('');
   const [intento, setIntento] = useState(0);
   const [noLeidas, setNoLeidas] = useState(0);
-  const { notificacionActual, procesarNotificaciones, cerrarActual } =
+  const { notificacionesToast, procesarNotificaciones, cerrarTodas } =
     useNotificacionToast();
 
   const { conteo } = useConteoEmprendimientos();
@@ -780,8 +780,8 @@ export default function DashboardAdministrador({
         </section>
       </div>
       <NotificacionToast
-        notificacion={notificacionActual}
-        onClose={cerrarActual}
+        notificaciones={notificacionesToast}
+        onClose={cerrarTodas}
       />
     </main>
   );

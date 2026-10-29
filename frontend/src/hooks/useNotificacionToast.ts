@@ -47,10 +47,8 @@ function guardarCursor(clave: string, id: number): void {
 }
 
 export default function useNotificacionToast() {
-  const [notificacionActual, setNotificacionActual] =
-    useState<Notificacion | null>(null);
-  const actualRef = useRef<Notificacion | null>(null);
-  const pendientesRef = useRef<Notificacion[]>([]);
+  const [notificacionesToast, setNotificacionesToast] = useState<Notificacion[]>([]);
+  const notificacionesRef = useRef<Notificacion[]>([]);
   const cursorRef = useRef<{
     usuarioId: number;
     clave: string;
@@ -65,9 +63,8 @@ export default function useNotificacionToast() {
     let cursor = cursorRef.current;
     if (!cursor || cursor.usuarioId !== usuarioId) {
       if (cursor && cursor.usuarioId !== usuarioId) {
-        actualRef.current = null;
-        pendientesRef.current = [];
-        setNotificacionActual(null);
+        notificacionesRef.current = [];
+        setNotificacionesToast([]);
       }
 
       const clave = `notificaciones-toast-cursor:${usuarioId}`;
@@ -106,22 +103,18 @@ export default function useNotificacionToast() {
 
     if (nuevas.length === 0) return;
 
-    if (actualRef.current) {
-      pendientesRef.current = [...pendientesRef.current, ...nuevas];
-      return;
-    }
+    const idsExistentes = new Set(notificacionesRef.current.map(({ id }) => id));
+    const agregadas = nuevas.filter(({ id }) => !idsExistentes.has(id));
+    if (agregadas.length === 0) return;
 
-    const [primera, ...restantes] = nuevas;
-    pendientesRef.current = [...pendientesRef.current, ...restantes];
-    actualRef.current = primera;
-    setNotificacionActual(primera);
+    notificacionesRef.current = [...notificacionesRef.current, ...agregadas];
+    setNotificacionesToast(notificacionesRef.current);
   }, []);
 
-  const cerrarActual = useCallback(() => {
-    const siguiente = pendientesRef.current.shift() ?? null;
-    actualRef.current = siguiente;
-    setNotificacionActual(siguiente);
+  const cerrarTodas = useCallback(() => {
+    notificacionesRef.current = [];
+    setNotificacionesToast([]);
   }, []);
 
-  return { notificacionActual, procesarNotificaciones, cerrarActual };
+  return { notificacionesToast, procesarNotificaciones, cerrarTodas };
 }

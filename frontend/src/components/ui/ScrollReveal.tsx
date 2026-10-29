@@ -26,7 +26,7 @@ export default function ScrollReveal({
       if (!entry?.isIntersecting) return;
       setVisible(true);
       observer.disconnect();
-    }, { threshold: 0.15 });
+    }, { threshold: 0.01, rootMargin: '0px 0px -6% 0px' });
 
     observer.observe(element);
     return () => observer.disconnect();

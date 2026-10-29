@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../../services/api';
+import ScrollReveal from '../ui/ScrollReveal';
 
 interface PreguntaFrecuentePublicada {
   id: number;
@@ -41,7 +42,7 @@ export default function SeccionPreguntasFrecuentes() {
 
   return (
     <section aria-labelledby="titulo-preguntas-frecuentes" className="sigtad-public-section bg-gradient-to-b from-[#f4fbf7] via-[#eaf8f0] to-[#dff3e8] px-4 py-16 sm:px-6 dark:from-[#101d1a] dark:via-[#172923] dark:to-[#1d3930]">
-      <div className="mx-auto max-w-5xl">
+      <ScrollReveal className="mx-auto max-w-5xl">
         <header className="mx-auto mb-9 max-w-3xl text-center">
           <h2 id="titulo-preguntas-frecuentes" className="mt-2 text-3xl font-bold tracking-tight text-emerald-950 dark:text-white sm:text-4xl">Preguntas frecuentes</h2>
           <p className="mt-3 text-sm leading-6 text-emerald-900/70 dark:text-emerald-100/70">Aqui encontraras respuesta a las preguntas más comunes.</p>
@@ -54,7 +55,7 @@ export default function SeccionPreguntasFrecuentes() {
             Cargando preguntas…
           </p>
         ) : (
-          <div className="space-y-3">
+          <ScrollReveal stagger className="space-y-3">
             {preguntas.map((pregunta) => {
               const abierta = abiertas.has(pregunta.id);
               const respuestaId = `respuesta-pregunta-frecuente-${pregunta.id}`;
@@ -100,9 +101,9 @@ export default function SeccionPreguntasFrecuentes() {
                 </article>
               );
             })}
-          </div>
+          </ScrollReveal>
         )}
-      </div>
+      </ScrollReveal>
     </section>
   );
 }
