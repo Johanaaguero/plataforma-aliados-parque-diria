@@ -1544,7 +1544,7 @@ export default function ListaEventosCapacitaciones({
   }
 
   return (
-    <section className="relative min-h-screen bg-[#f5f8f6] px-4 py-12 sm:px-6 lg:px-8">
+    <section className="relative bg-[#f5f8f6] px-4 py-12 sm:px-6 lg:px-8">
       {notificacion && (
         <div
           className="fixed right-5 top-5 z-[9999] w-[calc(100%-2.5rem)] max-w-md"

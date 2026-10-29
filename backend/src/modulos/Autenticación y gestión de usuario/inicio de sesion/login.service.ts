@@ -35,6 +35,7 @@ export const loginUser = async ({
 
   const usuario = await usuarioRepo
     .createQueryBuilder('usuario')
+    .addSelect('usuario.contraseña')
     .leftJoinAndSelect('usuario.rol', 'rol')
     .where('LOWER(usuario.correo) = :identificador', {
       identificador: identificadorNormalizado,

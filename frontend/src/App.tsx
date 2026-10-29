@@ -74,6 +74,8 @@ import ReportesPage from './components/Reportes y Estatisticas/ReportesPage';
 import GestionComunicados from './components/GestionComunicados';
 import GestionPreguntasFrecuentes from './components/GestionPreguntasFrecuentes';
 import SeccionPreguntasFrecuentes from './components/informativo/SeccionPreguntasFrecuentes';
+import GestionPerfil from './components/GestionPerfil';
+import ConfirmarCorreoPerfil from './components/ConfirmarCorreoPerfil';
 
 type NombreRol =
   | 'administrador'
@@ -304,6 +306,7 @@ const vinoDeNotificacionIncidenciasRef = useRef(false);
     | 'registroEmprendimiento'
     | 'registroCategoria'
     | 'editarEmprendimiento'
+    | 'perfil'
   >('inicio');
 
   const [emprendimientoEditar, setEmprendimientoEditar] =
@@ -568,6 +571,7 @@ const irAMisEmprendimientos = () => {
       registroCategoria: 'Registrar categoría | Aliados Diriá',
       editarEmprendimiento: 'Editar emprendimiento | Aliados Diriá',
       incidencias: 'Incidencias | Aliados Diriá',
+      perfil: 'Mi perfil | Aliados Diriá',
     };
 
     document.title =
@@ -750,6 +754,12 @@ useEffect(() => {
     setMostrarRegistro(false);
     setMostrarLogin(true);
   };
+
+  if (
+    rutaActual === '/confirmar-correo'
+  ) {
+    return <ConfirmarCorreoPerfil />;
+  }
 
   if (
     rutaActual ===
@@ -1370,6 +1380,7 @@ if (rutaActual === '/admin/roles') {
           onIrEventos={() =>
             setSeccionActual('eventos')
           }
+          onIrPerfil={() => setSeccionActual('perfil')}
           onRegistrarIncidencia={() =>
             setSeccionActual('incidencias')
           }
@@ -1444,6 +1455,7 @@ if (rutaActual === '/admin/roles') {
             onIrEventos={() =>
               setSeccionActual('eventos')
             }
+            onIrPerfil={() => setSeccionActual('perfil')}
             onRegistrarIncidencia={() =>
               setSeccionActual('incidencias')
             }
@@ -1524,6 +1536,7 @@ if (rutaActual === '/admin/roles') {
             onIrEventos={() =>
               setSeccionActual('eventos')
             }
+            onIrPerfil={() => setSeccionActual('perfil')}
             onRegistrarIncidencia={() =>
               setSeccionActual('incidencias')
             }
@@ -1814,22 +1827,39 @@ if (rutaActual === '/admin/roles') {
             onIrEventos={() =>
               setSeccionActual('eventos')
             }
+            onIrPerfil={() => setSeccionActual('perfil')}
             onRegistrarIncidencia={() =>
               setSeccionActual('incidencias')
             }
           />
 
-          <main className="sigtad-home">
-            <Hero />
-            <Informativo />
-            <SeccionResenas nombreUsuario={nombreUsuario} />
-            <MapaParque />
-            <SeccionPreguntasFrecuentes />
+          <main className={seccionActual === 'perfil' ? '' : 'sigtad-home'}>
+            {seccionActual === 'perfil' ? (
+              <GestionPerfil
+                onSesionRevocada={() => {
+                  sessionStorage.removeItem('token');
+                  localStorage.removeItem('token');
+                  setRolAutenticado(null);
+                  setNombreUsuario(null);
+                  setUsuarioId(null);
+                  setSeccionActual('inicio');
+                  navigate('/', { replace: true });
+                }}
+              />
+            ) : (
+              <>
+                <Hero />
+                <Informativo />
+                <SeccionResenas nombreUsuario={nombreUsuario} />
+                <MapaParque />
+                <SeccionPreguntasFrecuentes />
+              </>
+            )}
           </main>
 
           <Footer />
           
-          <Chatbot />
+          {seccionActual !== 'perfil' && <Chatbot />}
 
           {mostrarErrorModal &&
             errorAutenticacion && (

@@ -47,6 +47,10 @@ test('envía mediante el transportador inyectado y registra el messageId sin exp
       mensaje = opciones;
       return {
         messageId: 'brevo-message-id-123',
+        envelope: {
+          from: 'no-reply@example.test',
+          to: ['destinatario@example.test'],
+        },
         accepted: ['destinatario@example.test'],
         rejected: [],
         response: '250 Message queued',

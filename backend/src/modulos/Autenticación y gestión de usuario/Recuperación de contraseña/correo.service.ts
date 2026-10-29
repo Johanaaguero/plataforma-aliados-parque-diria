@@ -139,6 +139,105 @@ function crearTransportador(configuracion: ConfiguracionCorreo): TransportadorCo
   });
 }
 
+function escaparHtml(valor: string): string {
+  return valor.replace(/[&<>"']/g, (caracter) => {
+    const entidades: Record<string, string> = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+    };
+    return entidades[caracter] ?? caracter;
+  });
+}
+
+async function enviarCorreoPerfil(
+  destinatario: string,
+  asunto: string,
+  html: string,
+  text: string,
+): Promise<void> {
+  const configuracion = obtenerConfiguracionCorreo();
+  const transportador = crearTransportador(configuracion);
+  const resultado = await transportador.sendMail({
+    from: configuracion.from,
+    to: destinatario,
+    subject: asunto,
+    html,
+    text,
+  });
+
+  if ((resultado.rejected?.length ?? 0) > 0) {
+    throw new Error('El proveedor SMTP rechazó el destinatario');
+  }
+}
+
+export async function enviarVerificacionCambioCorreo({
+  destinatario,
+  nombre,
+  token,
+  minutosExpiracion,
+}: EnviarCorreoRecuperacionParams): Promise<void> {
+  const configuracion = obtenerConfiguracionCorreo();
+  const url = new URL(configuracion.frontendUrl);
+
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    throw new Error('FRONTEND_URL debe utilizar HTTP o HTTPS');
+  }
+
+  url.username = '';
+  url.password = '';
+  url.hash = '';
+  url.search = '';
+  url.pathname = `${url.pathname.replace(/\/+$/, '')}/confirmar-correo`;
+  url.searchParams.set('token', token);
+
+  const nombreSeguro = escaparHtml(nombre);
+  const link = escaparHtml(url.toString());
+  await enviarCorreoPerfil(
+    destinatario,
+    'Confirma tu nuevo correo | Aliados del Parque',
+    `<p>Hola ${nombreSeguro},</p><p>Confirma el cambio de correo de tu cuenta desde este enlace:</p><p><a href="${link}">Confirmar correo</a></p><p>El enlace vence en ${minutosExpiracion} minutos. Si no solicitaste este cambio, puedes ignorar este mensaje.</p>`,
+    `Hola ${nombre}, confirma el cambio de correo abriendo: ${url.toString()}\nEl enlace vence en ${minutosExpiracion} minutos. Si no solicitaste este cambio, ignora este mensaje.`,
+  );
+}
+
+export async function enviarAvisoCambioCorreo({
+  destinatario,
+  nombre,
+  nuevoCorreo,
+}: {
+  destinatario: string;
+  nombre: string;
+  nuevoCorreo: string;
+}): Promise<void> {
+  const nombreSeguro = escaparHtml(nombre);
+  const correoSeguro = escaparHtml(nuevoCorreo);
+  await enviarCorreoPerfil(
+    destinatario,
+    'Se actualizó el correo de tu cuenta | Aliados del Parque',
+    `<p>Hola ${nombreSeguro},</p><p>El correo asociado a tu cuenta se cambió correctamente a <strong>${correoSeguro}</strong>.</p><p>Si no reconoces este cambio, restablece tu contraseña y contacta al equipo de soporte.</p>`,
+    `Hola ${nombre}, el correo asociado a tu cuenta se cambió a ${nuevoCorreo}. Si no reconoces este cambio, restablece tu contraseña y contacta al equipo de soporte.`,
+  );
+}
+
+export async function enviarAvisoCambioContrasena({
+  destinatario,
+  nombre,
+}: {
+  destinatario: string;
+  nombre: string;
+}): Promise<void> {
+  const nombreSeguro = escaparHtml(nombre);
+  await enviarCorreoPerfil(
+    destinatario,
+    'Se actualizó la contraseña de tu cuenta | Aliados del Parque',
+    `<p>Hola ${nombreSeguro},</p><p>La contraseña de tu cuenta se cambió correctamente. Si no reconoces esta acción, utiliza la recuperación de contraseña y contacta al equipo de soporte.</p>`,
+    `Hola ${nombre}, la contraseña de tu cuenta se cambió correctamente. Si no reconoces esta acción, utiliza la recuperación de contraseña y contacta al equipo de soporte.`,
+  );
+}
+
 export async function enviarCorreoRecuperacion({
   destinatario,
   nombre,

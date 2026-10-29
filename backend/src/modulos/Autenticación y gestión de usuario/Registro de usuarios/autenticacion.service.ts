@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { Usuario } from '../../../models/Usuario';
 import { Rol } from '../../../models/Rol';
+import { CambioCorreoPerfil } from '../../../models/CambioCorreoPerfil';
 import { AppDataSource } from '../../../data-source';
 
 interface RegisterInput {
@@ -35,6 +36,23 @@ export const registerUser = async (data: RegisterInput) => {
     }
 
     return { ok: false, message };
+  }
+
+  const correoReservado = await AppDataSource
+    .getRepository(CambioCorreoPerfil)
+    .createQueryBuilder('cambio')
+    .where('LOWER(cambio.correoNuevo) = :correo', {
+      correo: data.correo.trim().toLowerCase(),
+    })
+    .andWhere('cambio.usedAt IS NULL')
+    .andWhere('cambio.expiresAt > :ahora', { ahora: new Date() })
+    .getOne();
+
+  if (correoReservado) {
+    return {
+      ok: false,
+      message: 'El correo está en proceso de verificación para otra cuenta.',
+    };
   }
 
   // 2. Buscar obligatoriamente el rol 'visitante' en la base de datos
