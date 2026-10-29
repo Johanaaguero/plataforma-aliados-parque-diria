@@ -25,3 +25,5 @@ createRoot(document.getElementById('root')!).render(
     </LanguageProvider>
   </StrictMode>,
 )
+
+window.dispatchEvent(new Event('sigtad:app-ready'))

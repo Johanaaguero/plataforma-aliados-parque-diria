@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import { api } from '../../services/api';
+import ScrollReveal from '../ui/ScrollReveal';
 
 interface Resena {
   id: number;
@@ -138,7 +139,7 @@ export default function SeccionResenas({
 
   return (
     <section className="sigtad-public-section bg-gradient-to-b from-[#f7fbe9] to-emerald-100/50 px-4 py-12 sm:px-6 sm:py-16 dark:from-[#082a20] dark:to-[#0a3b2d]">
-      <div className="mx-auto max-w-6xl">
+      <ScrollReveal className="mx-auto max-w-6xl">
         {/* Encabezado */}
         <div className="mb-9 text-center">
           <p className="text-xs font-bold uppercase tracking-[.22em] text-emerald-700 dark:text-emerald-300">
@@ -364,7 +365,7 @@ export default function SeccionResenas({
             )}
           </form>
         </div>
-      </div>
+      </ScrollReveal>
     </section>
   );
 }

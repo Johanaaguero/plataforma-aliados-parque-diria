@@ -12,6 +12,10 @@
   html {
     font-family: var(--font-sans);
   }
+
+  :where(a, button, summary, [role="button"], input, select, textarea) {
+    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
 }
 
 /* Shared presentation tokens. Existing components keep their classes and behavior. */
@@ -243,6 +247,45 @@ body {
 
 .sigtad-navbar-shell.sigtad-navbar-scrolled {
   box-shadow: 0 16px 38px rgb(10 55 39 / 18%), inset 0 1px 0 rgb(255 255 255 / 68%);
+}
+
+@media (min-width: 1280px) {
+  .sigtad-navbar-desktop {
+    width: min(94vw, 72rem);
+    transform: scale(0.985);
+    transform-origin: top center;
+    transition:
+      width 480ms cubic-bezier(0.16, 1, 0.3, 1),
+      transform 480ms cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 240ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .sigtad-navbar-desktop:hover,
+  .sigtad-navbar-desktop:focus-within {
+    width: min(98vw, 80rem);
+    transform: scale(1);
+  }
+}
+
+.sigtad-startup-splash {
+  animation: sigtad-startup-fade 1650ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.sigtad-startup-logo {
+  animation: sigtad-startup-zoom 1650ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  filter: drop-shadow(0 10px 28px rgb(0 0 0 / 24%));
+}
+
+@keyframes sigtad-startup-zoom {
+  0% { opacity: 0; transform: scale(0.42); }
+  35% { opacity: 1; transform: scale(1.08); }
+  72% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.14); }
+}
+
+@keyframes sigtad-startup-fade {
+  0%, 74% { opacity: 1; }
+  100% { opacity: 0; visibility: hidden; }
 }
 
 /* Public-facing material system: ambient backgrounds remain visible in light
