@@ -73,6 +73,7 @@ import notificacionIncidenciaRoutes from './modulos/Notificaciones/Crear notific
 import chatbotRoutes from './modulos/Chatbot/Atencion Automatica Visitantes/chatbot.routes';
 import preguntasFrecuentesRoutes from './modulos/PreguntasFrecuentes/preguntasFrecuentes.routes';
 import configuracionVisualRoutes from './modulos/Configuracion Visual/configuracionVisual.routes';
+import perfilRoutes from './modulos/Autenticación y gestión de usuario/Gestión de Perfil/perfil.routes';
 dotenv.config();
 
 const app = express();
@@ -112,6 +113,8 @@ app.use('/api/auth', loginRoutes);
 app.use('/api/auth', recuperacionRoutes);
 
 app.use('/api/users', rolesRoutes);
+
+app.use('/api/users', perfilRoutes);
 
 app.use('/api/admin', cuentasBloqueadasRoutes);
 
