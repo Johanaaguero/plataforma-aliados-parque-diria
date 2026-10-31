@@ -33,6 +33,7 @@ import { IncidenciaHistorial } from '../../../models/IncidenciaHistorial';
 import { validarContactoAnonimo } from './ContactoAnonimo';
 import { BloqueoCodigoIncidenciaNoDisponible } from './IncidenciaCodeLock';
 import { esPrioridadIncidencia } from './IncidenciaPrioridad';
+import { emitirCapacidadEvidenciaAnonima } from './IncidenciaEvidenciaAuthorization';
 import {
   etiquetarCampoHistorial,
   etiquetarValorHistorial,
@@ -600,6 +601,11 @@ export const registrarIncidencia = async (
           ? 'Incidencia registrada de forma anónima correctamente.'
           : 'Incidencia registrada correctamente.',
       incidencia: serializarIncidencia(incidencia),
+      ...(usuarioReporta === null
+        ? {
+            capacidadEvidencia: emitirCapacidadEvidenciaAnonima(incidencia.id),
+          }
+        : {}),
     });
   } catch (error) {
     if (error instanceof BloqueoCodigoIncidenciaNoDisponible) {

@@ -111,7 +111,7 @@ export interface Incidencia {
   esPublica?: boolean;
 
   /** El backend indica si quien reportó tiene correo (sin exponer el correo). */
-  tieneCorreoUsuario?: boolean;
+  tieneCorreoUsuario: boolean;
 
   evidencias: Evidencia[];
 }

@@ -54,6 +54,14 @@ export const crearEvidencia = async (
 
   return await evidenciaRepository.save(evidencia);
 };
+
+export const obtenerIncidenciaParaAdjuntarEvidencia = async (
+  incidenciaId: number,
+): Promise<Incidencia | null> =>
+  incidenciaRepository.findOne({
+    where: { id: incidenciaId },
+    relations: { usuarioReporta: true },
+  });
 export const obtenerEvidenciaPorId = async (
   id: number,
 ): Promise<IncidenciaEvidencia> => {

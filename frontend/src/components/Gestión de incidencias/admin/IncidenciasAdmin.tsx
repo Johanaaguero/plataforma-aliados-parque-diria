@@ -1481,7 +1481,19 @@ export default function IncidenciasAdmin({
                   }
                 />
 
-                
+                <OpcionCanal
+                  titulo="Correo electrónico"
+                  descripcion="Envía un aviso de la incidencia a la comunidad por correo electrónico."
+                  marcado={canalCorreo}
+                  deshabilitado={compartiendo}
+                  onChange={setCanalCorreo}
+                  icono={
+                    <Icon className="h-4 w-4">
+                      <path d="M4 6h16v12H4z" />
+                      <path d="m4 7 8 6 8-6" />
+                    </Icon>
+                  }
+                />
 
               </div>
 

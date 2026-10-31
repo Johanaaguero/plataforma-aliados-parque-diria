@@ -1,7 +1,12 @@
 import { Request, Response } from 'express';
-import {crearEvidencia, obtenerEvidenciaPorId, } from './IncidenciaEvidenciaService';
+import {
+  crearEvidencia,
+  obtenerEvidenciaPorId,
+  obtenerIncidenciaParaAdjuntarEvidencia,
+} from './IncidenciaEvidenciaService';
 import { obtenerActorIncidencia } from './IncidenciaService';
 import { prepararRespuestaEvidencia } from './IncidenciaAccess';
+import { puedeAdjuntarEvidenciaComoPropietario } from './IncidenciaEvidenciaAuthorization';
 
 import {
   TipoEvidenciaIncidencia,
@@ -24,6 +29,35 @@ export const registrarEvidencia = async (
       });
 
       return;
+    }
+
+    const incidencia = await obtenerIncidenciaParaAdjuntarEvidencia(
+      incidenciaId,
+    );
+
+    if (!incidencia) {
+      res.status(404).json({ mensaje: 'La incidencia no existe.' });
+      return;
+    }
+
+    if (req.usuario) {
+      const actor = await obtenerActorIncidencia(req.usuario.id);
+      if (!puedeAdjuntarEvidenciaComoPropietario(incidencia, actor)) {
+        res.status(403).json({
+          mensaje: 'No tiene permiso para adjuntar evidencias a esta incidencia.',
+        });
+        return;
+      }
+    } else {
+      if (
+        res.locals.autorizacionEvidenciaAnonima !== true ||
+        incidencia.usuarioReporta !== null
+      ) {
+        res.status(401).json({
+          mensaje: 'Se requiere autorización para adjuntar evidencias.',
+        });
+        return;
+      }
     }
 
     const {
