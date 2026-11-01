@@ -1,5 +1,6 @@
 import DashboardAdministrador from './dashboards/DashboardAdministrador';
 import DashboardSuperAdmin from './dashboards/DashboardSuper_admin';
+import DashboardAsociado from './dashboards/DashboardAsociado';
 
 type NombreRol =
   | 'administrador'
@@ -20,6 +21,12 @@ interface DashboardPageProps {
   onIrBitacora?: () => void;
   onIrCuentasBloqueadas?: () => void;
   onCerrarSesion?: () => void;
+
+  nombreUsuario?: string | null;
+  onIrMiEmprendimiento?: () => void;
+  onIrActividades?: () => void;
+  onIrMisInscripciones?: () => void;
+  onIrCatalogo?: () => void;
 }
 
 export default function DashboardPage({
@@ -35,6 +42,11 @@ export default function DashboardPage({
   onIrBitacora,
   onIrCuentasBloqueadas,
   onCerrarSesion,
+  nombreUsuario,
+  onIrMiEmprendimiento,
+  onIrActividades,
+  onIrMisInscripciones,
+  onIrCatalogo,
 }: DashboardPageProps) {
   switch (rolAutenticado) {
     case 'administrador':
@@ -48,6 +60,19 @@ export default function DashboardPage({
           onIrReportes={onIrReportes}
           onIrComunicados={onIrComunicados}
           onIrPreguntasFrecuentes={onIrPreguntasFrecuentes}
+          onCerrarSesion={onCerrarSesion ?? (() => {})}
+        />
+      );
+
+       case 'asociado':
+      return (
+        <DashboardAsociado
+          nombreUsuario={nombreUsuario ?? 'Asociado'}
+          onIrMiEmprendimiento={onIrMiEmprendimiento ?? (() => {})}
+          onIrActividades={onIrActividades ?? (() => {})}
+          onIrMisIncidencias={onIrIncidencias}
+          onIrMisInscripciones={onIrMisInscripciones ?? (() => {})}
+          onIrCatalogo={onIrCatalogo ?? (() => {})}
           onCerrarSesion={onCerrarSesion ?? (() => {})}
         />
       );
