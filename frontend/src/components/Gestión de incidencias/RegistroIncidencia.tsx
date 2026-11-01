@@ -332,6 +332,7 @@ export default function RegistroIncidencia({
   const [incidenciaPendiente, setIncidenciaPendiente] = useState<{
     id: number;
     codigo: string;
+    capacidadEvidencia?: string;
   } | null>(null);
   const [evidenciasSubidas, setEvidenciasSubidas] = useState<string[]>([]);
 
@@ -652,11 +653,13 @@ export default function RegistroIncidencia({
       try {
         let incidenciaId = incidenciaPendiente?.id;
         let codigoIncidencia = incidenciaPendiente?.codigo ?? '';
+        let capacidadEvidencia = incidenciaPendiente?.capacidadEvidencia;
         let datos: {
           mensaje?: string;
           message?: string;
           error?: string;
           incidencia?: { id?: number; codigo?: string };
+          capacidadEvidencia?: string;
           id?: number;
           data?: { id?: number };
         } = {};
@@ -734,9 +737,21 @@ export default function RegistroIncidencia({
         }
 
         codigoIncidencia = datos.incidencia?.codigo ?? '';
+        capacidadEvidencia =
+          typeof datos.capacidadEvidencia === 'string'
+            ? datos.capacidadEvidencia
+            : undefined;
+
+        if (reporteAnonimo && !capacidadEvidencia) {
+          throw new Error(
+            'El servidor no devolvió la credencial para adjuntar evidencias.',
+          );
+        }
+
         setIncidenciaPendiente({
           id: incidenciaId,
           codigo: codigoIncidencia,
+          capacidadEvidencia,
         });
         setCodigoRegistrado(codigoIncidencia);
         }
@@ -756,9 +771,16 @@ export default function RegistroIncidencia({
                 'application/json',
             };
 
-          if (token) {
+          if (reporteAnonimo && capacidadEvidencia) {
+            headersEvidencia['X-Incidencia-Evidencia-Capability'] =
+              capacidadEvidencia;
+          } else if (token) {
             headersEvidencia.Authorization =
               `Bearer ${token}`;
+          } else if (reporteAnonimo) {
+            throw new Error(
+              'No se encontró la credencial para adjuntar evidencias.',
+            );
           }
 
           const respuestaEvidencia =

@@ -753,6 +753,11 @@ useEffect(() => {
       seccionActual === 'eventos'
     );
 
+  const esVistaPrivadaAsociado =
+    rolAutenticado === 'asociado' &&
+    seccionActual === 'emprendimientos' &&
+    vistaEmprendimientos === 'mios';
+
   const volverDesdeModuloAdministrativo = () => {
     setSeccionActual('inicio');
 
@@ -908,16 +913,76 @@ useEffect(() => {
 );
   }
 
+  if (rutaActual === '/asociado/dashboard') {
+    if (rolAutenticado !== 'asociado') {
+      return <Navigate to="/" replace />;
+    }
+
+    return (
+      <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef]">
+        <DashboardPage
+          rolAutenticado={rolAutenticado}
+          nombreUsuario={nombreUsuario}
+          onIrRoles={() => {}}
+          onIrEmprendimientos={() => {}}
+          onIrEventos={() => {}}
+          onIrInscripciones={() => {}}
+          onIrIncidencias={() => navigate('/mis-incidencias')}
+          onIrReportes={() => {}}
+          onIrComunicados={() => {}}
+          onIrPreguntasFrecuentes={() => {}}
+          onIrMiEmprendimiento={() => {
+            irAMisEmprendimientos();
+            navigate('/', {
+              state: { seccionPublica: 'emprendimientos' },
+            });
+          }}
+          onIrActividades={() => {
+            navigate('/', {
+              state: { seccionPublica: 'eventos' },
+            });
+          }}
+          onIrMisInscripciones={() => {
+            navigate('/mis-inscripciones', {
+              state: { fromDashboard: true },
+            });
+          }}
+          onIrCatalogo={() => {
+            irACatalogoEmprendimientos();
+            navigate('/', {
+              state: { seccionPublica: 'emprendimientos' },
+            });
+          }}
+          onCerrarSesion={() => {
+            void cerrarSesion();
+          }}
+        />
+      </section>
+    );
+  }
+
   if (rutaActual === '/notificaciones') {
   if (!rolAutenticado) {
       return <Navigate to="/login" replace />;
   }
 
+  const returnTo =
+    location.state &&
+    typeof location.state === 'object' &&
+    (location.state as { returnTo?: unknown }).returnTo ===
+      '/asociado/dashboard'
+      ? '/asociado/dashboard'
+      : null;
+
   const rutaVolver =
-    rolAutenticado === 'administrador'
+    rolAutenticado === 'asociado' && returnTo === '/asociado/dashboard'
+      ? returnTo
+      : rolAutenticado === 'administrador'
       ? '/admin/dashboard'
       : rolAutenticado === 'super_admin'
         ? '/super-admin/dashboard'
+        : rolAutenticado === 'asociado'
+          ? '/asociado/dashboard'
         : '/';
 
   return (
@@ -1031,7 +1096,14 @@ if (rutaActual === '/admin/roles') {
     return (
       <section className="relative min-h-screen overflow-x-hidden bg-[#f5f7ef] pt-20 sm:pt-24">
         <BotonVolverInicio
-          onClick={() => navigate('/')}
+          texto={vieneDelDashboard && rolAutenticado === 'asociado' ? 'Volver al Dashboard' : 'Volver al inicio'}
+          onClick={() =>
+            navigate(
+              vieneDelDashboard && rolAutenticado === 'asociado'
+                ? '/asociado/dashboard'
+                : '/',
+            )
+          }
         />
 
         <MisInscripciones />
@@ -1076,7 +1148,7 @@ if (rutaActual === '/admin/roles') {
       return <Navigate to="/" replace />;
     }
 
-    return <MisIncidencias />;
+    return <MisIncidencias rolAutenticado={rolAutenticado} />;
   }
 
   /*
@@ -1139,10 +1211,28 @@ if (rutaActual === '/admin/roles') {
 
             mostrarBienvenidaLogin(nombre);
 
+            if (
+              (rol === 'visitante' || rol === 'asociado') &&
+              sessionStorage.getItem('actividadPendienteInscripcion')
+            ) {
+              setSeccionActual('eventos');
+
+              navigate('/', {
+                state: {
+                  seccionPublica: 'eventos',
+                },
+              });
+            }
+
             if (rol === 'administrador') {
               navigate('/admin/dashboard');
             } else if (rol === 'super_admin') {
               navigate('/super-admin/dashboard');
+            } else if (
+              rol === 'asociado' &&
+              !sessionStorage.getItem('actividadPendienteInscripcion')
+            ) {
+              navigate('/asociado/dashboard');
             }
           }}
         />
@@ -1535,7 +1625,7 @@ if (rutaActual === '/admin/roles') {
   ) {
     return (
       <>
-        {!esModuloAdministrativoDesdeDashboard && (
+        {!esModuloAdministrativoDesdeDashboard && !esVistaPrivadaAsociado && (
           <Navbar
             modoAdministracion
             seccionActiva="emprendimientos"
@@ -1583,9 +1673,25 @@ if (rutaActual === '/admin/roles') {
           className={`sigtad-catalogo min-h-[80vh] overflow-x-hidden bg-[#f5f7ef] ${
             esModuloAdministrativoDesdeDashboard
               ? 'pt-20 sm:pt-24'
-              : 'pt-24 sm:pt-28'
+              : esVistaPrivadaAsociado
+                ? 'pt-0'
+                : 'pt-24 sm:pt-28'
           }`}
         >
+          {esVistaPrivadaAsociado && (
+            <button
+              type="button"
+              onClick={() => navigate('/asociado/dashboard')}
+              aria-label="Volver al Panel de control"
+              title="Volver al Panel de control"
+              className="fixed left-3 top-3 z-[60] flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-gray-100/80 text-gray-800 shadow-[0_10px_30px_rgba(7,63,49,0.12)] backdrop-blur-md transition-all duration-200 hover:bg-gray-200/80 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/20 sm:left-5 sm:top-5"
+            >
+              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <path d="m15 18-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          )}
+
           <ListaEmprendimientos
             rolAutenticado={
               rolAutenticado ===
@@ -1625,7 +1731,7 @@ if (rutaActual === '/admin/roles') {
           />
         </main>
 
-        <Footer />
+        {!esVistaPrivadaAsociado && <Footer />}
       </>
     );
   }
@@ -1719,6 +1825,11 @@ if (rutaActual === '/admin/roles') {
                 navigate('/admin/dashboard');
               } else if (rol === 'super_admin') {
                 navigate('/super-admin/dashboard');
+              } else if (
+                rol === 'asociado' &&
+                !sessionStorage.getItem('actividadPendienteInscripcion')
+              ) {
+                navigate('/asociado/dashboard');
               }
             }}
           />

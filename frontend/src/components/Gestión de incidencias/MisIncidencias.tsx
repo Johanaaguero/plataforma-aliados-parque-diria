@@ -78,7 +78,11 @@ function formatearFechaComentario(fecha: string): string {
   }).format(new Date(fecha));
 }
 
-export default function MisIncidencias() {
+export default function MisIncidencias({
+  rolAutenticado,
+}: {
+  rolAutenticado: string | null;
+}) {
   const navigate = useNavigate();
   const [incidencias, setIncidencias] = useState<Incidencia[]>([]);
   const [filtro, setFiltro] = useState<FiltroEstado>('todas');
@@ -211,7 +215,11 @@ export default function MisIncidencias() {
       <div className="pointer-events-none fixed inset-0 -z-10 bg-emerald-950/65 backdrop-blur-[3px]" />
       <button
         type="button"
-        onClick={() => navigate('/')}
+        onClick={() =>
+          navigate(
+            rolAutenticado === 'asociado' ? '/asociado/dashboard' : '/',
+          )
+        }
         aria-label="Volver atrás"
         title="Volver atrás"
         className="fixed left-3 top-3 z-[60] flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-gray-100/80 text-gray-800 shadow-[0_10px_30px_rgba(7,63,49,0.12)] backdrop-blur-md transition-all duration-200 hover:bg-gray-200/80 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] focus-visible:ring-offset-2 dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/20 sm:left-5 sm:top-5"

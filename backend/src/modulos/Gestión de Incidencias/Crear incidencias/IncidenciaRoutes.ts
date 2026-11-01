@@ -19,6 +19,7 @@ import {
   registrarEvidencia,
   obtenerArchivoEvidencia,
 } from './IncidenciaEvidenciaController';
+import { autorizarCargaEvidencia } from './IncidenciaEvidenciaAuthorization';
 
 import {
   verificarTokenOpcional,
@@ -118,6 +119,7 @@ router.get(
 
 router.post(
   '/:id/evidencias',
+  autorizarCargaEvidencia,
   (req, res) => registrarEvidencia(req, res),
 );
 
