@@ -47,7 +47,6 @@ function Navbar({
   onBitacora: _onBitacora,
   onIrInicio,
   onIrEmprendimientos,
-    onIrMisEmprendimientos,   // nueva
 
   onIrEventos,
   onIrPerfil,
@@ -202,10 +201,14 @@ function Navbar({
     };
   }, []);
 
-  // Las notificaciones del administrador se muestran en su dashboard.
-  // Visitante, asociado y super_admin mantienen las notificaciones en el Navbar.
+  // Administrador y asociado muestran las notificaciones en su dashboard.
+  // Visitante y super_admin mantienen las notificaciones en el Navbar.
   useEffect(() => {
-    if (!rolAutenticado || rolAutenticado === 'administrador') {
+    if (
+      !rolAutenticado ||
+      rolAutenticado === 'administrador' ||
+      rolAutenticado === 'asociado'
+    ) {
       setNoLeidas(0);
       return;
     }
@@ -262,6 +265,12 @@ function Navbar({
     navigate('/super-admin/dashboard');
   };
 
+  const irDashboardAsociado = () => {
+    setMenuAbierto(false);
+    setMenuUsuarioAbierto(false);
+    navigate('/asociado/dashboard');
+  };
+
   const irMisInscripciones = () => {
     setMenuAbierto(false);
     setMenuUsuarioAbierto(false);
@@ -280,12 +289,6 @@ function Navbar({
     setMenuUsuarioAbierto(false);
     onIrPerfil?.();
   };
-
- const irMisEmprendimientos = () => {
-  setMenuAbierto(false);
-  setMenuUsuarioAbierto(false);
-  (onIrMisEmprendimientos ?? onIrEmprendimientos)();
-};
 
   const irNotificaciones = () => {
     setMenuAbierto(false);
@@ -467,7 +470,9 @@ function Navbar({
                   Visitante, asociado y super_admin: SÍ
                   Administrador: NO
               */}
-              {rolAutenticado && rolAutenticado !== 'administrador' && (
+              {rolAutenticado &&
+                rolAutenticado !== 'administrador' &&
+                rolAutenticado !== 'asociado' && (
                 <button
                   type="button"
                   onClick={irNotificaciones}
@@ -580,31 +585,13 @@ function Navbar({
                       )}
 
                       {rolAutenticado === 'asociado' && (
-                        <>
-                          <button
-                            type="button"
-                            onClick={irMisInscripciones}
-                            className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10"
-                          >
-                            {t('nav.myEvents')}
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={irMisEmprendimientos}
-                            className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10"
-                          >
-                            {t('nav.myBusinesses')}
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={irMisIncidencias}
-                            className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10"
-                          >
-                            {t('nav.myIncidents')}
-                          </button>
-                        </>
+                        <button
+                          type="button"
+                          onClick={irDashboardAsociado}
+                          className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-white/10"
+                        >
+                          {t('nav.controlPanel')}
+                        </button>
                       )}
 
                       {(rolAutenticado === 'administrador' ||
@@ -687,6 +674,7 @@ function Navbar({
                     no aparece para administrador */}
                 {!menuAbierto &&
                   rolAutenticado !== 'administrador' &&
+                  rolAutenticado !== 'asociado' &&
                   noLeidas > 0 && (
                     <span
                       className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-white bg-red-600"
@@ -759,7 +747,8 @@ function Navbar({
                   Visitante, asociado y super_admin: SÍ
                   Administrador: NO */}
               {rolAutenticado &&
-                rolAutenticado !== 'administrador' && (
+                rolAutenticado !== 'administrador' &&
+                rolAutenticado !== 'asociado' && (
                   <button
                     type="button"
                     onClick={irNotificaciones}
@@ -798,31 +787,13 @@ function Navbar({
 
               {/* ASOCIADO */}
               {rolAutenticado === 'asociado' && (
-                <>
-                  <button
-                    type="button"
-                    onClick={irMisInscripciones}
-                    className={claseNavegacionMovil}
-                  >
-                    {t('nav.myEvents')}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={irMisEmprendimientos}
-                    className={claseNavegacionMovil}
-                  >
-                    {t('nav.myBusinesses')}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={irMisIncidencias}
-                    className={claseNavegacionMovil}
-                  >
-                    {t('nav.myIncidents')}
-                  </button>
-                </>
+                <button
+                  type="button"
+                  onClick={irDashboardAsociado}
+                  className={claseNavegacionMovil}
+                >
+                  {t('nav.controlPanel')}
+                </button>
               )}
 
               {onRegistrarIncidencia && (
@@ -979,6 +950,7 @@ function Navbar({
           <span className="whitespace-nowrap text-[9px] leading-tight tracking-tight">Eventos</span>
         </button>
 
+        {rolAutenticado !== 'asociado' && (
         <button
           type="button"
           onClick={() => {
@@ -999,6 +971,7 @@ function Navbar({
             </span>
           )}
         </button>
+        )}
 
         <div ref={perfilMovilRef} className="relative flex min-w-0 flex-1 justify-center">
           {menuUsuarioAbierto && (
@@ -1015,11 +988,7 @@ function Navbar({
                     </>
                   )}
                   {rolAutenticado === 'asociado' && (
-                    <>
-                      <button type="button" onClick={irMisInscripciones} className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold hover:bg-white/10">{t('nav.myEvents')}</button>
-                      <button type="button" onClick={irMisEmprendimientos} className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold hover:bg-white/10">{t('nav.myBusinesses')}</button>
-                      <button type="button" onClick={irMisIncidencias} className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold hover:bg-white/10">{t('nav.myIncidents')}</button>
-                    </>
+                    <button type="button" onClick={irDashboardAsociado} className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold hover:bg-white/10">{t('nav.controlPanel')}</button>
                   )}
                   {(rolAutenticado === 'administrador' || rolAutenticado === 'super_admin') && (
                     <button type="button" onClick={rolAutenticado === 'super_admin' ? irDashboardSuperAdmin : irDashboard} className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold hover:bg-white/10">{t('nav.controlPanel')}</button>

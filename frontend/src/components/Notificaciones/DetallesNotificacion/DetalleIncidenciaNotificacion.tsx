@@ -1,6 +1,9 @@
 
 import type { Notificacion } from '../../../services/notificacionesService';
-import type { Incidencia } from '../../../services/incidenciaServices';
+import {
+  ETIQUETAS_ESTADO,
+  type Incidencia,
+} from '../../../services/incidenciaServices';
 import EvidenciaMedia from '../../Gestión de incidencias/EvidenciaMedia';
 
 interface Props {
@@ -181,7 +184,14 @@ export default function DetalleIncidenciaNotificacion({
               </p>
             </div>
 
-            
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                Estado
+              </p>
+              <p className="mt-1 text-sm font-semibold text-slate-700 dark:text-slate-200">
+                {ETIQUETAS_ESTADO[incidencia.estado]}
+              </p>
+            </div>
 
             <div>
               <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
