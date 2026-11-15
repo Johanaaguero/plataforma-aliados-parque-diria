@@ -345,8 +345,8 @@ function Navbar({
         transition-transform duration-300 ease-in-out
         ${
           navbarVisible || menuAbierto
-            ? 'translate-y-0'
-            : 'translate-y-0 xl:-translate-y-[150%]'
+            ? 'xl:translate-y-0'
+            : 'xl:-translate-y-[150%]'
         }`}
       aria-label="Navegación principal"
     >
@@ -975,7 +975,7 @@ function Navbar({
 
         <div ref={perfilMovilRef} className="relative flex min-w-0 flex-1 justify-center">
           {menuUsuarioAbierto && (
-            <div className="sigtad-menu-reveal absolute bottom-full right-0 z-[60] mb-2 w-56 rounded-2xl border border-white/25 bg-[#073f31]/95 p-2 text-white shadow-[0_18px_45px_rgba(7,63,49,0.32)] backdrop-blur-md">
+            <div className="sigtad-menu-reveal absolute bottom-full right-0 z-[60] mb-2 w-56 max-w-[calc(100vw-1rem)] rounded-2xl border border-white/25 bg-[#073f31]/95 p-2 text-white shadow-[0_18px_45px_rgba(7,63,49,0.32)] backdrop-blur-md">
               {rolAutenticado ? (
                 <>
                   <div className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-emerald-100/60">

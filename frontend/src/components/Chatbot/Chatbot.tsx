@@ -3,6 +3,7 @@ import {
   useEffect,
   useRef,
   useState,
+  type PointerEvent,
   type KeyboardEvent,
   type ReactNode,
 } from 'react';
@@ -217,6 +218,10 @@ const conEnlaces = (texto: string, esUsuario: boolean): ReactNode[] => {
 
 const Chatbot = () => {
   const [abierto, setAbierto] = useState(false);
+  const [posicionBoton, setPosicionBoton] = useState<{
+    right: number;
+    bottom: number;
+  } | null>(null);
   const [mensaje, setMensaje] = useState('');
   const [cargando, setCargando] = useState(false);
   const [mensajes, setMensajes] = useState<Mensaje[]>(BIENVENIDA);
@@ -229,6 +234,15 @@ const Chatbot = () => {
   const controlador = useRef<AbortController | null>(null);
   const finMensajes = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const arrastreBoton = useRef<{
+    pointerId: number;
+    inicioX: number;
+    inicioY: number;
+    right: number;
+    bottom: number;
+    movido: boolean;
+  } | null>(null);
+  const botonArrastrado = useRef(false);
 
   const hayConversacion = mensajes.some((m) => m.tipo === 'usuario');
 
@@ -364,17 +378,76 @@ const Chatbot = () => {
     setMensajes(BIENVENIDA());
   };
 
+  const iniciarArrastreBoton = (evento: PointerEvent<HTMLButtonElement>) => {
+    if (abierto || !evento.isPrimary) return;
+    const rect = evento.currentTarget.getBoundingClientRect();
+    arrastreBoton.current = {
+      pointerId: evento.pointerId,
+      inicioX: evento.clientX,
+      inicioY: evento.clientY,
+      right: posicionBoton?.right ?? window.innerWidth - rect.right,
+      bottom: posicionBoton?.bottom ?? window.innerHeight - rect.bottom,
+      movido: false,
+    };
+    evento.currentTarget.setPointerCapture(evento.pointerId);
+  };
+
+  const moverBoton = (evento: PointerEvent<HTMLButtonElement>) => {
+    const arrastre = arrastreBoton.current;
+    if (!arrastre || arrastre.pointerId !== evento.pointerId) return;
+
+    const deltaX = evento.clientX - arrastre.inicioX;
+    const deltaY = evento.clientY - arrastre.inicioY;
+    if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+      arrastre.movido = true;
+    }
+    if (!arrastre.movido) return;
+
+    const rect = evento.currentTarget.getBoundingClientRect();
+    const limiteDerecho = Math.max(8, window.innerWidth - rect.width - 8);
+    const limiteInferior = Math.max(8, window.innerHeight - rect.height - 8);
+    setPosicionBoton({
+      right: Math.max(8, Math.min(limiteDerecho, arrastre.right - deltaX)),
+      bottom: Math.max(8, Math.min(limiteInferior, arrastre.bottom - deltaY)),
+    });
+  };
+
+  const finalizarArrastreBoton = (evento: PointerEvent<HTMLButtonElement>) => {
+    const arrastre = arrastreBoton.current;
+    if (!arrastre || arrastre.pointerId !== evento.pointerId) return;
+    botonArrastrado.current = arrastre.movido;
+    arrastreBoton.current = null;
+  };
+
   return (
     <>
       {/* ---------------- BOTÓN FLOTANTE ---------------- */}
       <button
-        onClick={() => setAbierto(true)}
+        onPointerDown={iniciarArrastreBoton}
+        onPointerMove={moverBoton}
+        onPointerUp={finalizarArrastreBoton}
+        onPointerCancel={finalizarArrastreBoton}
+        onClick={() => {
+          if (botonArrastrado.current) {
+            botonArrastrado.current = false;
+            return;
+          }
+          setAbierto(true);
+        }}
         aria-label="Abrir asistente virtual"
         aria-expanded={abierto}
         title="Asistente virtual"
+        style={
+          posicionBoton
+            ? {
+                right: `${posicionBoton.right}px`,
+                bottom: `${posicionBoton.bottom}px`,
+              }
+            : undefined
+        }
         className={`
-          fixed right-4 top-1/2 z-50 flex h-14 w-14 translate-y-[-50%] items-center justify-center
-          xl:bottom-5 xl:left-auto xl:right-5 xl:top-auto xl:translate-y-0
+          fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-4 z-50 flex h-14 w-14 touch-none items-center justify-center
+          xl:bottom-5 xl:right-5
           rounded-full bg-emerald-800 text-white
           shadow-lg shadow-emerald-900/30
           transition-all duration-300

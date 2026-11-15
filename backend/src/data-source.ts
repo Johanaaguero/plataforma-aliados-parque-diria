@@ -99,5 +99,5 @@ export const AppDataSource = new DataSource({
 
   migrations: [__dirname + '/migrations/*.{js,ts}'],
 
-  synchronize: false,
+  synchronize: true,
 });

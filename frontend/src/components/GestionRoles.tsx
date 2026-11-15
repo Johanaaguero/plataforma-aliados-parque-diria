@@ -52,13 +52,71 @@ interface UsuarioRol {
   telefono: string;
   rol: NombreRol | null;
 }
+
+interface SesionActual {
+  id: number | null;
+  nombreUsuario: string | null;
+  rol: NombreRol | null;
+}
+
 const obtenerToken = () =>
   sessionStorage.getItem('token') ?? localStorage.getItem('token');
+
+const obtenerSesionActual = (): SesionActual => {
+  const token = obtenerToken();
+  if (!token) return { id: null, nombreUsuario: null, rol: null };
+
+  try {
+    const payloadCodificado = token.split('.')[1];
+    if (!payloadCodificado) {
+      return { id: null, nombreUsuario: null, rol: null };
+    }
+
+    const base64 = payloadCodificado
+      .replace(/-/g, '+')
+      .replace(/_/g, '/')
+      .padEnd(Math.ceil(payloadCodificado.length / 4) * 4, '=');
+    const bytes = Uint8Array.from(atob(base64), (caracter) =>
+      caracter.charCodeAt(0),
+    );
+    const payload = JSON.parse(
+      new TextDecoder().decode(bytes),
+    ) as Record<string, unknown>;
+    const posiblesIds = [payload.usuarioId, payload.id, payload.sub];
+    const id = posiblesIds.reduce<number | null>((resultado, valor) => {
+      if (resultado !== null) return resultado;
+      const idNumerico = typeof valor === 'number' ? valor : Number(valor);
+      return Number.isFinite(idNumerico) && idNumerico > 0
+        ? idNumerico
+        : null;
+    }, null);
+    const rol =
+      payload.rol === 'super_admin' ||
+      payload.rol === 'administrador' ||
+      payload.rol === 'asociado' ||
+      payload.rol === 'visitante'
+        ? payload.rol
+        : null;
+
+    return {
+      id,
+      nombreUsuario:
+        typeof payload.nombreUsuario === 'string'
+          ? payload.nombreUsuario.trim() || null
+          : null,
+      rol,
+    };
+  } catch {
+    return { id: null, nombreUsuario: null, rol: null };
+  }
+};
+
 const limpiarToken = () => {
   sessionStorage.removeItem('token');
   localStorage.removeItem('token');
 };
 export default function GestionRoles() {
+  const sesionActual = useMemo(() => obtenerSesionActual(), []);
   const [usuarios, setUsuarios] = useState<UsuarioRol[]>([]);
   const [busqueda, setBusqueda] = useState('');
   const [filtroRol, setFiltroRol] = useState<FiltroRol>('todos');
@@ -204,9 +262,24 @@ export default function GestionRoles() {
   }, []);
   const esSuperAdministrador = (usuario: UsuarioRol) =>
     usuario.rol === 'super_admin';
+
+  const usuariosVisibles = useMemo(
+    () =>
+      usuarios.filter((usuario) => {
+        const esMismaCuentaPorId =
+          sesionActual.id !== null && usuario.id === sesionActual.id;
+        const esMismaCuentaPorNombre =
+          sesionActual.nombreUsuario !== null &&
+          usuario.nombreUsuario.trim().toLowerCase() ===
+            sesionActual.nombreUsuario.toLowerCase();
+        return !esMismaCuentaPorId && !esMismaCuentaPorNombre;
+      }),
+    [usuarios, sesionActual],
+  );
+
   const usuariosFiltrados = useMemo(() => {
     const texto = busqueda.trim().toLowerCase();
-    return usuarios.filter((usuario) => {
+    return usuariosVisibles.filter((usuario) => {
       const nombreCompleto = `${usuario.nombre} ${usuario.apellidos}`
         .trim()
         .toLowerCase();
@@ -225,7 +298,7 @@ export default function GestionRoles() {
       }
       return coincideBusqueda && coincideRol;
     });
-  }, [usuarios, busqueda, filtroRol]);
+  }, [usuariosVisibles, busqueda, filtroRol]);
   const tamanoPagina = 10;
   const totalPaginas = Math.max(1, Math.ceil(usuariosFiltrados.length / tamanoPagina));
   const paginaSegura = Math.min(paginaActual, totalPaginas);
@@ -428,6 +501,12 @@ export default function GestionRoles() {
         return 'Todos los usuarios';
     }
   };
+  const nombreRolSesion =
+    sesionActual.rol === 'super_admin'
+      ? 'Super Admin'
+      : sesionActual.rol
+        ? obtenerNombreRol(sesionActual.rol)
+        : 'Rol no disponible';
   const tarjetasResumen = [
     {
       etiqueta: 'Usuarios registrados',
@@ -496,6 +575,28 @@ export default function GestionRoles() {
             <p className="mt-4 max-w-[800px] text-sm font-normal leading-7 text-[#687E74] dark:text-[#A9BCB4] sm:text-base">
               Administra los accesos de la plataforma y consulta el rol asignado a cada usuario.
             </p>
+            <div className="mt-6 grid gap-4 rounded-[1.5rem] border border-white/55 bg-white/[0.42] p-4 shadow-[0_12px_34px_rgba(7,63,49,0.045)] backdrop-blur-xl sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:p-5 dark:border-white/[0.10] dark:bg-white/[0.055]">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#58D6A5]/20 text-base font-extrabold uppercase text-[#08743f] dark:bg-[#58D6A5]/15 dark:text-[#A2F0CE]">
+                  {sesionActual.nombreUsuario?.charAt(0) ?? '?'}
+                </span>
+                <div className="min-w-0">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#699d27] dark:text-lime-300">
+                    Sesión iniciada
+                  </p>
+                  <p className="truncate text-base font-extrabold text-[#073f31] dark:text-white">
+                    {sesionActual.nombreUsuario ?? 'Usuario no disponible'}
+                  </p>
+                </div>
+              </div>
+              <span className="inline-flex w-fit items-center gap-2 rounded-full border border-[#009444]/25 bg-[#009444]/10 px-3.5 py-2 text-xs font-bold text-[#095540] dark:border-[#58D6A5]/25 dark:bg-[#58D6A5]/10 dark:text-[#A2F0CE]">
+                <span className="h-2 w-2 rounded-full bg-[#009444] dark:bg-[#58D6A5]" />
+                {nombreRolSesion}
+              </span>
+              <p className="text-xs leading-5 text-[#52675e] sm:col-span-2 dark:text-[#B9CBC0]">
+                Desde aquí puedes cambiar únicamente los roles de otros usuarios. Para cambiar tu propio rol, solicita a otro administrador que realice esa acción.
+              </p>
+            </div>
           </div>
         </div>
 
