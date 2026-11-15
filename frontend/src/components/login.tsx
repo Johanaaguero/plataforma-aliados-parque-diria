@@ -223,7 +223,7 @@ export default function Login({
   };
 
   return (
-    <div className="relative isolate min-h-screen overflow-hidden bg-[#095540] px-4 py-24 font-sans sm:px-6 sm:py-28 lg:px-8 lg:py-20">
+    <div className="relative isolate min-h-[100svh] min-h-dvh overflow-hidden bg-[#095540] px-4 py-10 font-sans sm:px-6 sm:py-16 lg:min-h-screen lg:px-8 lg:py-20">
       <img
         src={parqueImage}
         alt=""

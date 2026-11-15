@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useNavigate } from 'react-router-dom';
 
 import logo from '../../../assets/logo.png';
@@ -372,6 +373,15 @@ export default function DashboardAdministrador({
     };
   }, [procesarNotificaciones]);
 
+  useEffect(() => {
+    if (!menuMovilAbierto) return;
+    const cerrarConEscape = (evento: KeyboardEvent) => {
+      if (evento.key === 'Escape') setMenuMovilAbierto(false);
+    };
+    document.addEventListener('keydown', cerrarConEscape);
+    return () => document.removeEventListener('keydown', cerrarConEscape);
+  }, [menuMovilAbierto]);
+
   const opciones = [
     { etiqueta: 'Gestión de roles', icono: iconos.roles, accion: onIrRoles },
     { etiqueta: 'Emprendimientos', icono: iconos.emprendimientos, accion: onIrEmprendimientos },
@@ -531,126 +541,137 @@ export default function DashboardAdministrador({
         </div>
       </aside>
 
-      {/* Cabecera móvil */}
-      <header className="fixed inset-x-3 top-3 z-40 flex items-center justify-between rounded-[1.45rem] border border-white/60 bg-white/45 px-3 py-2.5 shadow-[0_14px_38px_rgba(11,58,39,0.11)] backdrop-blur-[24px] dark:border-white/[0.10] dark:bg-[#0d2b20]/60 lg:hidden">
-        <Link to="/" className="flex items-center gap-2">
-          <img
-            src={logo}
-            alt="Aliados del Parque Nacional Diriá"
-            className="h-11 w-11 object-contain dark:brightness-0 dark:invert"
+      {/* Panel administrativo móvil */}
+      {menuMovilAbierto &&
+        createPortal(
+        <>
+          <button
+            type="button"
+            className="fixed inset-0 z-[60] bg-[#09261e]/35 backdrop-blur-sm lg:hidden"
+            onClick={() => setMenuMovilAbierto(false)}
+            aria-label="Cerrar menú de administración"
           />
-          <span className="font-brand text-sm font-extrabold text-[#0d5f42] dark:text-[#e2f3e8]">
-            Administración
-          </span>
-        </Link>
-
-        <button
-          type="button"
-          onClick={() => setMenuMovilAbierto((actual) => !actual)}
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-white/60 bg-white/55 text-[#0b6849] dark:border-white/[0.10] dark:bg-white/[0.06] dark:text-[#e4f5eb]"
-          aria-label={menuMovilAbierto ? 'Cerrar menú' : 'Abrir menú'}
-        >
-          {menuMovilAbierto ? '×' : iconos.dashboard}
-        </button>
-      </header>
-
-      {/* Menú móvil */}
-      {menuMovilAbierto && (
-        <div className="fixed inset-3 z-[60] flex min-h-0 flex-col overflow-hidden rounded-[1.8rem] border border-white/60 bg-white/55 p-4 shadow-[0_30px_90px_rgba(11,58,39,0.18)] backdrop-blur-[30px] dark:border-white/[0.10] dark:bg-[#0d2b20]/72 lg:hidden">
-          <div className="flex shrink-0 items-center justify-between border-b border-black/[0.06] pb-4 dark:border-white/[0.07]">
-            <div className="flex items-center gap-3">
-              <img
-                src={logo}
-                alt="Aliados del Parque Nacional Diriá"
-                className="h-11 w-11 object-contain dark:brightness-0 dark:invert"
-              />
-              <div>
-                <p className="font-brand text-[9px] font-bold uppercase tracking-[0.16em] text-[#009443]">
-                  Control del sistema
-                </p>
-                <p className="font-brand text-sm font-extrabold text-[#174c38] dark:text-[#e7f5ed]">
-                  Administración
-                </p>
+          <section
+            id="menu-administrativo-movil"
+            aria-label="Menú de administración"
+            className="fixed inset-x-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-[61] flex max-h-[min(88dvh,42rem)] min-h-0 flex-col overflow-hidden rounded-[1.8rem] border border-white/60 bg-white/85 p-4 shadow-[0_30px_90px_rgba(11,58,39,0.24)] backdrop-blur-[30px] dark:border-white/[0.10] dark:bg-[#0d2b20]/95 lg:hidden"
+          >
+            <div className="mx-auto mb-4 h-1.5 w-12 shrink-0 rounded-full bg-[#0b6849]/25 dark:bg-white/20" />
+            <div className="flex shrink-0 items-center justify-between border-b border-black/[0.06] pb-4 dark:border-white/[0.07]">
+              <div className="sigtad-navbar-logo flex items-center gap-3">
+                <img
+                  src={logo}
+                  alt=""
+                  className="h-11 w-11 object-contain dark:brightness-0 dark:invert"
+                />
+                <div>
+                  <p className="font-brand text-[9px] font-bold uppercase tracking-[0.16em] text-[#009443]">
+                    Control del sistema
+                  </p>
+                  <p className="font-brand text-sm font-extrabold text-[#174c38] dark:text-[#e7f5ed]">
+                    Administración
+                  </p>
+                </div>
               </div>
+              <button
+                type="button"
+                onClick={() => setMenuMovilAbierto(false)}
+                aria-label="Cerrar menú"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0b6849] text-lg text-white"
+              >
+                ×
+              </button>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setMenuMovilAbierto(false)}
-              aria-label="Cerrar menú"
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0b6849] text-lg text-white"
-            >
-              ×
-            </button>
-          </div>
+            <nav className="mt-4 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain pb-2">
+              <Link to="/" onClick={() => setMenuMovilAbierto(false)} className={claseItemMovil}>
+                {iconos.inicio}
+                Inicio
+              </Link>
 
-          <nav className="mt-4 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain">
-            <Link to="/" onClick={() => setMenuMovilAbierto(false)} className={claseItemMovil}>
-              {iconos.inicio}
-              Inicio
-            </Link>
+              <Link
+                to="/admin/dashboard"
+                onClick={() => setMenuMovilAbierto(false)}
+                className="flex min-h-11 items-center gap-3 rounded-2xl bg-[#0b6849] px-4 py-3 font-brand text-sm font-semibold text-white"
+              >
+                {iconos.dashboard}
+                Dashboard
+              </Link>
 
-            <Link
-              to="/admin/dashboard"
-              onClick={() => setMenuMovilAbierto(false)}
-              className="flex min-h-11 items-center gap-3 rounded-2xl bg-[#0b6849] px-4 py-3 font-brand text-sm font-semibold text-white"
-            >
-              {iconos.dashboard}
-              Dashboard
-            </Link>
+              {opciones.map((opcion) => (
+                <button
+                  key={opcion.etiqueta}
+                  type="button"
+                  onClick={() => {
+                    setMenuMovilAbierto(false);
+                    opcion.accion();
+                  }}
+                  className={claseItemMovil}
+                >
+                  {opcion.icono}
+                  {opcion.etiqueta}
+                </button>
+              ))}
 
-            {opciones.map((opcion) => (
               <button
-                key={opcion.etiqueta}
                 type="button"
                 onClick={() => {
                   setMenuMovilAbierto(false);
-                  opcion.accion();
+                  irNotificaciones();
                 }}
                 className={claseItemMovil}
               >
-                {opcion.icono}
-                {opcion.etiqueta}
+                {iconos.notificaciones}
+                Notificaciones
+                {noLeidas > 0 && (
+                  <span className="ml-auto rounded-full bg-[#d9d823]/30 px-2 py-0.5 text-[10px] font-bold text-[#777600] dark:text-[#e5e36a]">
+                    {noLeidas > 99 ? '99+' : noLeidas}
+                  </span>
+                )}
               </button>
-            ))}
+            </nav>
 
-            <button
-              type="button"
-              onClick={() => {
-                setMenuMovilAbierto(false);
-                irNotificaciones();
-              }}
-              className={claseItemMovil}
-            >
-              {iconos.notificaciones}
-              Notificaciones
-              {noLeidas > 0 && (
-                <span className="ml-auto rounded-full bg-[#d9d823]/30 px-2 py-0.5 text-[10px] font-bold text-[#777600] dark:text-[#e5e36a]">
-                  {noLeidas > 99 ? '99+' : noLeidas}
-                </span>
-              )}
-            </button>
-          </nav>
+            <div className="shrink-0 border-t border-black/[0.06] pt-4 dark:border-white/[0.07]">
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuMovilAbierto(false);
+                  onCerrarSesion();
+                }}
+                className="flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#0b6849] px-4 py-3 font-brand text-sm font-semibold text-white shadow-[0_12px_28px_rgba(11,104,73,0.18)] transition-colors hover:bg-[#095b40]"
+              >
+                {iconos.cerrarSesion}
+                Cerrar sesión
+              </button>
+            </div>
+          </section>
+        </>,
+        document.body,
+      )}
 
-          <div className="shrink-0 border-t border-black/[0.06] pt-4 dark:border-white/[0.07]">
-            <button
-              type="button"
-              onClick={() => {
-                setMenuMovilAbierto(false);
-                onCerrarSesion();
-              }}
-              className="flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#0b6849] px-4 py-3 font-brand text-sm font-semibold text-white shadow-[0_12px_28px_rgba(11,104,73,0.18)] transition-colors hover:bg-[#095b40]"
-            >
-              {iconos.cerrarSesion}
-              Cerrar sesión
-            </button>
-          </div>
-        </div>
+      {!menuMovilAbierto &&
+        createPortal(
+        <button
+          type="button"
+          onClick={() => setMenuMovilAbierto(true)}
+          aria-label="Abrir menú de administración"
+          aria-expanded={menuMovilAbierto}
+          aria-controls="menu-administrativo-movil"
+          className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-[62] flex h-16 w-16 items-center justify-center rounded-full border border-white/70 bg-white/90 p-2 shadow-[0_14px_36px_rgba(7,63,49,0.25)] transition-transform duration-200 hover:scale-105 active:scale-95 lg:hidden"
+        >
+          <img
+            src={logo}
+            alt=""
+            className="h-full w-full object-contain"
+          />
+        </button>
+        ,
+        document.body,
       )}
 
       {/* Contenido */}
       <div
-        className={`relative z-0 pt-[5.5rem] transition-[padding] duration-500 lg:h-full lg:pr-3 lg:pt-0 ${anchoContenido}`}
+        className={`relative z-0 pt-4 transition-[padding] duration-500 lg:h-full lg:pr-3 lg:pt-0 ${anchoContenido}`}
       >
         {/*
           Corrección del corte inferior:
@@ -664,7 +685,7 @@ export default function DashboardAdministrador({
           <div className="flex flex-1 flex-col p-5 sm:p-7 lg:min-h-0 lg:overflow-y-auto lg:p-[clamp(2rem,3vw,3.5rem)] lg:pt-[clamp(3.75rem,7vh,6rem)]">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
               <div className="max-w-4xl">
-                <h1 className="text-5xl font-black tracking-tight text-emerald-950 dark:text-white">
+                <h1 className="break-words text-[clamp(2rem,10vw,3rem)] font-black leading-[1.05] tracking-tight text-emerald-950 [overflow-wrap:anywhere] dark:text-white lg:text-5xl">
                   Panel de Administración
                 </h1>
                 <p className="mt-4 max-w-[760px] font-brand text-sm leading-6 text-[#64776e] dark:text-[#b9cbc0] sm:text-base sm:leading-7">

@@ -132,6 +132,11 @@ function Hero() {
   };
 
   const registrarInicioArrastre = (posicionX: number) => {
+    if (posicionX <= 24 || posicionX >= window.innerWidth - 24) {
+      inicioArrastreX.current = null;
+      return;
+    }
+
     inicioArrastreX.current = posicionX;
   };
 

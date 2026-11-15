@@ -593,9 +593,9 @@ export default function DashboardSuper_admin({
       </div>
 
       {menuMovilAbierto && (
-        <div className="fixed inset-x-3 bottom-3 top-3 z-[60] flex min-h-0 flex-col overflow-hidden rounded-[1.8rem] border border-white/60 bg-white/55 p-4 shadow-[0_30px_90px_rgba(11,58,39,0.18)] backdrop-blur-[30px] lg:hidden dark:border-white/[0.10] dark:bg-[#0d2b20]/72">
+        <div className="fixed inset-x-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] top-3 z-[60] flex min-h-0 flex-col overflow-hidden rounded-[1.8rem] border border-white/60 bg-white/55 p-4 shadow-[0_30px_90px_rgba(11,58,39,0.18)] backdrop-blur-[30px] lg:hidden dark:border-white/[0.10] dark:bg-[#0d2b20]/72">
           <div className="flex shrink-0 items-center justify-between border-b border-black/[0.06] pb-4 dark:border-white/[0.07]">
-            <div className="flex min-w-0 items-center gap-3">
+            <div className="sigtad-navbar-logo flex min-w-0 items-center gap-3">
               <img
                 src={logo}
                 alt="Aliados del Parque Nacional Diriá"
