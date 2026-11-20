@@ -290,6 +290,7 @@ function App() {
     useState(false);
   const [mostrarRegistroIncidencia, setMostrarRegistroIncidencia] =
     useState(false);
+  const [menuPerfilAbierto, setMenuPerfilAbierto] = useState(false);
 
 const vinoDeNotificacionIncidenciasRef = useRef(false);
 
@@ -1532,7 +1533,7 @@ if (rutaActual === '/admin/roles') {
   )}
 </main>
 
-        <Footer />
+        {!mostrarRegistroIncidencia && <Footer />}
       </>
     );
   }
@@ -1613,7 +1614,7 @@ if (rutaActual === '/admin/roles') {
           />
         </main>
 
-        <Footer />
+        <Footer compactoMovil />
       </>
     );
   }
@@ -1731,7 +1732,7 @@ if (rutaActual === '/admin/roles') {
           />
         </main>
 
-        {!esVistaPrivadaAsociado && <Footer />}
+        {!esVistaPrivadaAsociado && <Footer compactoMovil />}
       </>
     );
   }
@@ -1966,6 +1967,7 @@ if (rutaActual === '/admin/roles') {
               setSeccionActual('eventos')
             }
             onIrPerfil={() => setSeccionActual('perfil')}
+            onMenuPerfilChange={setMenuPerfilAbierto}
             onRegistrarIncidencia={() =>
               setSeccionActual('incidencias')
             }
@@ -1995,7 +1997,9 @@ if (rutaActual === '/admin/roles') {
             )}
           </main>
 
-          <Footer />
+          <div className={seccionActual === 'perfil' ? 'hidden sm:block' : ''}>
+            <Footer />
+          </div>
           
           {seccionActual !== 'perfil' && (
             <>
@@ -2004,7 +2008,7 @@ if (rutaActual === '/admin/roles') {
                 onClick={() => setSeccionActual('incidencias')}
                 aria-label="Ir al panel de incidencias"
                 title="Ir al panel de incidencias"
-                className="fixed bottom-[calc(9.25rem+env(safe-area-inset-bottom))] right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full border border-white/40 bg-gradient-to-br from-orange-400/85 via-orange-500/75 to-orange-600/85 text-white shadow-[0_12px_30px_rgba(154,52,18,0.28),inset_0_1px_0_rgba(255,255,255,0.42)] backdrop-blur-xl transition-transform duration-200 hover:scale-105 hover:from-orange-400 hover:to-orange-600 active:scale-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-orange-300 lg:hidden"
+                className={`fixed bottom-[calc(9.25rem+env(safe-area-inset-bottom))] right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full border border-white/40 bg-gradient-to-br from-orange-400/85 via-orange-500/75 to-orange-600/85 text-white shadow-[0_12px_30px_rgba(154,52,18,0.28),inset_0_1px_0_rgba(255,255,255,0.42)] backdrop-blur-xl transition-transform duration-200 hover:scale-105 hover:from-orange-400 hover:to-orange-600 active:scale-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-orange-300 lg:hidden ${menuPerfilAbierto ? '-translate-y-40' : ''}`}
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -2020,7 +2024,7 @@ if (rutaActual === '/admin/roles') {
                   <path d="M12 10v5M9.5 12.5h5" strokeWidth="2.2" />
                 </svg>
               </button>
-              <Chatbot />
+              <Chatbot menuPerfilAbierto={menuPerfilAbierto} />
             </>
           )}
 
