@@ -649,26 +649,6 @@ export default function DashboardAdministrador({
         document.body,
       )}
 
-      {!menuMovilAbierto &&
-        createPortal(
-        <button
-          type="button"
-          onClick={() => setMenuMovilAbierto(true)}
-          aria-label="Abrir menú de administración"
-          aria-expanded={menuMovilAbierto}
-          aria-controls="menu-administrativo-movil"
-          className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-[62] flex h-16 w-16 items-center justify-center rounded-full border border-white/70 bg-white/90 p-2 shadow-[0_14px_36px_rgba(7,63,49,0.25)] transition-transform duration-200 hover:scale-105 active:scale-95 lg:hidden"
-        >
-          <img
-            src={logo}
-            alt=""
-            className="h-full w-full object-contain"
-          />
-        </button>
-        ,
-        document.body,
-      )}
-
       {/* Contenido */}
       <div
         className={`relative z-0 pt-4 transition-[padding] duration-500 lg:h-full lg:pr-3 lg:pt-0 ${anchoContenido}`}
@@ -694,18 +674,33 @@ export default function DashboardAdministrador({
                 </p>
               </div>
 
-              <div className="flex w-fit shrink-0 items-center gap-3 rounded-[1.4rem] border border-white/55 bg-white/30 px-4 py-3 shadow-[0_12px_35px_rgba(0,0,0,0.05)] backdrop-blur-xl dark:border-white/[0.07] dark:bg-white/[0.045]">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-600 text-sm font-bold text-white">
-                  A
+              <div className="flex w-full max-w-[360px] shrink-0 items-stretch gap-2 self-end lg:w-fit lg:max-w-none lg:self-auto">
+                <div className="flex min-w-0 flex-1 items-center gap-3 rounded-[1.4rem] border border-white/55 bg-white/30 px-3 py-3 shadow-[0_12px_35px_rgba(0,0,0,0.05)] backdrop-blur-xl dark:border-white/[0.07] dark:bg-white/[0.045] lg:flex-none lg:px-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-600 text-sm font-bold text-white">
+                    A
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-brand text-[10px] font-semibold text-[#829188] dark:text-[#9fb5a9]">
+                      Hola!
+                    </p>
+                    <p className="truncate font-brand text-sm font-bold text-[#173d2e] dark:text-[#eaf6ef]">
+                      Administrador
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-brand text-[10px] font-semibold text-[#829188] dark:text-[#9fb5a9]">
-                    Hola!
-                  </p>
-                  <p className="font-brand text-sm font-bold text-[#173d2e] dark:text-[#eaf6ef]">
-                    Administrador
-                  </p>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setMenuMovilAbierto(true)}
+                  aria-label="Abrir panel de administración"
+                  aria-expanded={menuMovilAbierto}
+                  aria-controls="menu-administrativo-movil"
+                  className="inline-flex h-[66px] min-w-0 flex-1 items-center justify-center gap-2 rounded-[1.4rem] border border-white/55 bg-[#0b6849]/55 px-3 font-brand text-sm font-bold text-white shadow-[0_14px_34px_rgba(11,104,73,0.20),inset_0_1px_0_rgba(255,255,255,0.42)] backdrop-blur-2xl transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#0b6849]/70 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] lg:hidden"
+                >
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/35 bg-white/15 shadow-[inset_0_1px_0_rgba(255,255,255,0.40)] [&>svg]:h-6 [&>svg]:w-6">
+                    {iconos.dashboard}
+                  </span>
+                  Panel
+                </button>
               </div>
             </div>
 

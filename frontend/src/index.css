@@ -371,8 +371,14 @@ body {
 }
 
 .sigtad-hero {
-  border-radius: 2rem 2rem 2.75rem 2.75rem;
+  border-radius: 1.5rem;
   box-shadow: 0 22px 48px rgb(7 42 30 / 16%);
+}
+
+@media (min-width: 768px) {
+  .sigtad-hero {
+    border-radius: 0 0 2.75rem 2.75rem;
+  }
 }
 
 @media (max-width: 767px) {
