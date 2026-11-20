@@ -1997,7 +1997,32 @@ if (rutaActual === '/admin/roles') {
 
           <Footer />
           
-          {seccionActual !== 'perfil' && <Chatbot />}
+          {seccionActual !== 'perfil' && (
+            <>
+              <button
+                type="button"
+                onClick={() => setSeccionActual('incidencias')}
+                aria-label="Ir al panel de incidencias"
+                title="Ir al panel de incidencias"
+                className="fixed bottom-[calc(9.25rem+env(safe-area-inset-bottom))] right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full border border-white/40 bg-gradient-to-br from-orange-400/85 via-orange-500/75 to-orange-600/85 text-white shadow-[0_12px_30px_rgba(154,52,18,0.28),inset_0_1px_0_rgba(255,255,255,0.42)] backdrop-blur-xl transition-transform duration-200 hover:scale-105 hover:from-orange-400 hover:to-orange-600 active:scale-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-orange-300 lg:hidden"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-7 w-7"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M12 3 3 20h18L12 3Z" fill="rgba(255,255,255,0.14)" />
+                  <path d="M12 10v5M9.5 12.5h5" strokeWidth="2.2" />
+                </svg>
+              </button>
+              <Chatbot />
+            </>
+          )}
 
           {mostrarErrorModal &&
             errorAutenticacion && (

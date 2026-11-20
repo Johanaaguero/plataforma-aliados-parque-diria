@@ -125,18 +125,6 @@ function IconoCerrarSesion() {
   );
 }
 
-function IconoMenu({ abierto }: { abierto: boolean }) {
-  return abierto ? (
-    <Icono>
-      <path d="m6 6 12 12M18 6 6 18" />
-    </Icono>
-  ) : (
-    <Icono>
-      <path d="M4 7h16M4 12h16M4 17h16" />
-    </Icono>
-  );
-}
-
 function TarjetaAcceso({
   icono,
   titulo,
@@ -333,26 +321,6 @@ export default function DashboardAsociado({
       />
       <div className="pointer-events-none fixed inset-0 -z-20 bg-[#eef4ef]/46 backdrop-blur-[3px] transition-colors duration-700 dark:bg-[#071c14]/58" />
 
-      {/* Barra superior para móvil y tableta. */}
-      <header className="fixed inset-x-2.5 top-2.5 z-50 flex min-h-[4rem] items-center justify-between rounded-[1.5rem] border border-white/55 bg-white/42 px-3 py-2.5 shadow-[0_18px_50px_rgba(11,58,39,0.10)] backdrop-blur-[26px] sm:px-4 sm:py-3 lg:hidden dark:border-white/[0.08] dark:bg-[#0d2b20]/48">
-        <Link to="/" className="flex min-w-0 items-center gap-3" aria-label="Ir al inicio">
-          <img src={logo} alt="Aliados del Parque Nacional Diriá" className="h-10 w-10 shrink-0 object-contain dark:brightness-0 dark:invert" />
-          <div className="min-w-0">
-            <p className="font-brand text-[9px] font-bold uppercase tracking-[0.16em] text-[#009443]">Panel de</p>
-            <p className="truncate font-brand text-sm font-extrabold text-[#0d5f42] dark:text-[#e2f3e8]">Asociado</p>
-          </div>
-        </Link>
-        <button
-          type="button"
-          onClick={() => setMenuMovilAbierto((actual) => !actual)}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/60 bg-white/55 text-[#0b6849] shadow-[0_10px_25px_rgba(11,58,39,0.08)] backdrop-blur-xl transition-transform duration-300 active:scale-95 dark:border-white/[0.10] dark:bg-white/[0.06] dark:text-[#e4f5eb]"
-          aria-label={menuMovilAbierto ? 'Cerrar menú' : 'Abrir menú'}
-          aria-expanded={menuMovilAbierto}
-        >
-          <IconoMenu abierto={menuMovilAbierto} />
-        </button>
-      </header>
-
       {menuMovilAbierto && (
         <>
           <button
@@ -361,7 +329,7 @@ export default function DashboardAsociado({
             aria-label="Cerrar menú"
             onClick={() => setMenuMovilAbierto(false)}
           />
-          <aside className="fixed inset-x-3 bottom-3 top-[5.25rem] z-[60] flex min-h-0 flex-col overflow-hidden rounded-[1.8rem] border border-white/60 bg-white/55 p-4 shadow-[0_30px_90px_rgba(11,58,39,0.18)] backdrop-blur-[30px] lg:hidden dark:border-white/[0.10] dark:bg-[#0d2b20]/72">
+          <aside id="menu-asociado-movil" className="fixed inset-3 z-[60] flex min-h-0 flex-col overflow-hidden rounded-[1.8rem] border border-white/60 bg-white/55 p-4 shadow-[0_30px_90px_rgba(11,58,39,0.18)] backdrop-blur-[30px] lg:hidden dark:border-white/[0.10] dark:bg-[#0d2b20]/72">
             <div className="flex shrink-0 items-center justify-between border-b border-black/[0.06] pb-4 dark:border-white/[0.07]">
               <div className="flex min-w-0 items-center gap-3">
                 <img src={logo} alt="Aliados del Parque Nacional Diriá" className="h-11 w-11 shrink-0 object-contain dark:brightness-0 dark:invert" />
@@ -506,7 +474,7 @@ export default function DashboardAsociado({
       </aside>
 
       {/* Contenido principal: el padding cambia con una transición, igual que Super Admin. */}
-      <div className={`relative z-0 pt-[5.25rem] transition-[padding] duration-500 sm:pt-[5.75rem] lg:pt-0 lg:pr-3 xl:pr-6 ${anchoContenido}`}>
+      <div className={`relative z-0 pt-3 transition-[padding] duration-500 sm:pt-4 lg:pt-0 lg:pr-3 xl:pr-6 ${anchoContenido}`}>
         <section className="relative mx-auto flex min-h-[calc(100dvh-7rem)] w-full flex-col overflow-hidden rounded-[1.25rem] border border-white/48 bg-white/30 shadow-[0_30px_90px_rgba(11,58,39,0.10)] backdrop-blur-[30px] transition-[min-height,box-shadow,background-color] duration-700 min-[420px]:rounded-[1.5rem] sm:min-h-[calc(100dvh-7.5rem)] sm:rounded-[2rem] md:min-h-[calc(100dvh-8rem)] lg:min-h-[calc(100dvh-3rem)] lg:rounded-[2.5rem] dark:border-white/[0.08] dark:bg-[#0b241b]/34 dark:shadow-[0_30px_90px_rgba(0,0,0,0.30)]">
           <div className="pointer-events-none absolute left-1/2 top-0 h-px w-[65%] -translate-x-1/2 bg-gradient-to-r from-transparent via-white to-transparent opacity-80" />
           <div className="flex flex-1 flex-col px-3.5 py-3.5 min-[360px]:px-4 min-[360px]:py-4 sm:px-6 sm:py-6 md:px-7 md:py-7 lg:px-[clamp(2rem,3vw,3.5rem)] lg:pb-[clamp(2rem,3vw,3.5rem)] lg:pt-[clamp(1.5rem,2vw,2rem)]">
@@ -520,14 +488,29 @@ export default function DashboardAsociado({
                 </p>
               </div>
 
-              <div className="flex w-full max-w-full items-center gap-3 rounded-[1.4rem] border border-white/55 bg-white/30 px-4 py-3 shadow-[0_12px_35px_rgba(0,0,0,0.05)] backdrop-blur-xl sm:w-fit sm:min-w-[205px] sm:max-w-[240px] dark:border-white/[0.07] dark:bg-white/[0.045]">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#8dc63f] to-[#009443] text-sm font-bold text-white shadow-sm">
-                  {iniciales}
+              <div className="flex w-full max-w-[360px] min-w-0 items-stretch gap-2 self-end lg:w-fit lg:max-w-none">
+                <div className="flex min-w-0 flex-1 items-center gap-3 rounded-[1.4rem] border border-white/55 bg-white/30 px-3 py-3 shadow-[0_12px_35px_rgba(0,0,0,0.05)] backdrop-blur-xl dark:border-white/[0.07] dark:bg-white/[0.045] lg:flex-initial lg:px-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#8dc63f] to-[#009443] text-sm font-bold text-white shadow-sm">
+                    {iniciales}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-brand text-[10px] font-semibold text-[#829188] dark:text-[#9fb5a9]">¡Hola!</p>
+                    <p className="truncate font-brand text-sm font-bold text-[#173d2e] dark:text-[#eaf6ef]">{nombreUsuario}</p>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <p className="font-brand text-[10px] font-semibold text-[#829188] dark:text-[#9fb5a9]">¡Hola!</p>
-                  <p className="truncate font-brand text-sm font-bold text-[#173d2e] dark:text-[#eaf6ef]">{nombreUsuario}</p>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setMenuMovilAbierto(true)}
+                  aria-label="Abrir panel del asociado"
+                  aria-expanded={menuMovilAbierto}
+                  aria-controls="menu-asociado-movil"
+                  className="inline-flex h-[66px] min-w-0 flex-1 items-center justify-center gap-2 rounded-[1.4rem] border border-white/55 bg-[#0b6849]/55 px-3 font-brand text-sm font-bold text-white shadow-[0_14px_34px_rgba(11,104,73,0.20),inset_0_1px_0_rgba(255,255,255,0.42)] backdrop-blur-2xl transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#0b6849]/70 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8dc63f] lg:hidden"
+                >
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/35 bg-white/15 shadow-[inset_0_1px_0_rgba(255,255,255,0.40)] [&>svg]:h-6 [&>svg]:w-6">
+                    <IconoDashboard />
+                  </span>
+                  Panel
+                </button>
               </div>
             </header>
 
