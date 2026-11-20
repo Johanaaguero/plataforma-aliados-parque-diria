@@ -216,7 +216,11 @@ const conEnlaces = (texto: string, esUsuario: boolean): ReactNode[] => {
 /* Componente                                                          */
 /* ------------------------------------------------------------------ */
 
-const Chatbot = () => {
+const Chatbot = ({
+  menuPerfilAbierto = false,
+}: {
+  menuPerfilAbierto?: boolean;
+}) => {
   const [abierto, setAbierto] = useState(false);
   const [posicionBoton, setPosicionBoton] = useState<{
     right: number;
@@ -454,6 +458,7 @@ const Chatbot = () => {
           hover:scale-105 hover:bg-emerald-900
           focus:outline-none focus-visible:ring-4 focus-visible:ring-emerald-300
           ${abierto ? 'pointer-events-none scale-75 opacity-0' : 'scale-100 opacity-100'}
+          ${menuPerfilAbierto ? '-translate-y-40 xl:translate-y-0' : 'translate-y-0'}
         `}
       >
         <IconoBot className="h-7 w-7" />

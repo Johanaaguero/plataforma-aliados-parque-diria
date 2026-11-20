@@ -31,6 +31,7 @@ interface NavbarProps {
     onIrMisEmprendimientos?: () => void;   // nueva
   onIrEventos: () => void;
   onIrPerfil?: () => void;
+  onMenuPerfilChange?: (abierto: boolean) => void;
   onRegistrarIncidencia?: () => void;
   seccionActiva?: 'inicio' | 'emprendimientos' | 'eventos' | 'incidencias';
   modoAdministracion?: boolean;
@@ -50,6 +51,7 @@ function Navbar({
 
   onIrEventos,
   onIrPerfil,
+  onMenuPerfilChange,
   onRegistrarIncidencia,
   seccionActiva = 'inicio',
   modoAdministracion = false,
@@ -149,6 +151,10 @@ function Navbar({
     },
     [],
   );
+
+  useEffect(() => {
+    onMenuPerfilChange?.(menuUsuarioAbierto);
+  }, [menuUsuarioAbierto, onMenuPerfilChange]);
 
   useEffect(() => {
     if (!menuAbierto) return;
