@@ -301,7 +301,7 @@ export default function DashboardAsociado({
         onCerrarSesion();
       }}
       title={!movil && !sidebarAbierto ? 'Cerrar sesión' : undefined}
-      className={`group flex min-h-11 w-full items-center rounded-2xl py-3 text-left text-[#877870] transition-all duration-300 hover:bg-red-50 hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 disabled:cursor-not-allowed disabled:opacity-50 dark:text-[#c6aaa1] dark:hover:bg-red-950/30 dark:hover:text-red-300 ${movil || sidebarAbierto ? 'gap-3 px-3' : 'justify-center px-2'}`}
+      className={`group flex min-h-11 w-full items-center rounded-2xl py-3 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 disabled:cursor-not-allowed disabled:opacity-50 ${movil ? 'justify-center gap-2 bg-[#0b6849] px-4 font-brand text-sm font-semibold text-white shadow-[0_12px_28px_rgba(11,104,73,0.18)] hover:bg-[#095b40]' : `text-left text-[#877870] hover:bg-red-50 hover:text-red-600 dark:text-[#c6aaa1] dark:hover:bg-red-950/30 dark:hover:text-red-300 ${sidebarAbierto ? 'gap-3 px-3' : 'justify-center px-2'}`}`}
     >
       <span className="shrink-0 transition-transform duration-300 group-hover:translate-x-0.5"><IconoCerrarSesion /></span>
       {(movil || sidebarAbierto) && <span className="font-brand text-sm font-semibold">Cerrar sesión</span>}
@@ -325,11 +325,12 @@ export default function DashboardAsociado({
         <>
           <button
             type="button"
-            className="fixed inset-0 z-[55] bg-[#08271c]/30 backdrop-blur-sm lg:hidden"
+            className="fixed inset-0 z-[60] bg-[#08271c]/30 backdrop-blur-sm lg:hidden"
             aria-label="Cerrar menú"
             onClick={() => setMenuMovilAbierto(false)}
           />
-          <aside id="menu-asociado-movil" className="fixed inset-3 z-[60] flex min-h-0 flex-col overflow-hidden rounded-[1.8rem] border border-white/60 bg-white/55 p-4 shadow-[0_30px_90px_rgba(11,58,39,0.18)] backdrop-blur-[30px] lg:hidden dark:border-white/[0.10] dark:bg-[#0d2b20]/72">
+          <aside id="menu-asociado-movil" className="fixed inset-x-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-[61] flex max-h-[min(88dvh,42rem)] min-h-0 flex-col overflow-hidden rounded-[1.8rem] border border-white/60 bg-white/85 p-4 shadow-[0_30px_90px_rgba(11,58,39,0.24)] backdrop-blur-[30px] lg:hidden dark:border-white/[0.10] dark:bg-[#0d2b20]/95">
+            <div className="mx-auto mb-4 h-1.5 w-12 shrink-0 rounded-full bg-[#0b6849]/25 dark:bg-white/20" />
             <div className="flex shrink-0 items-center justify-between border-b border-black/[0.06] pb-4 dark:border-white/[0.07]">
               <div className="flex min-w-0 items-center gap-3">
                 <img src={logo} alt="Aliados del Parque Nacional Diriá" className="h-11 w-11 shrink-0 object-contain dark:brightness-0 dark:invert" />
@@ -352,9 +353,6 @@ export default function DashboardAsociado({
             </nav>
             <div className="shrink-0 border-t border-black/[0.06] pt-4 dark:border-white/[0.07]">
               {botonCerrarSesion(true)}
-            </div>
-            <div className="mt-3 shrink-0 rounded-xl border border-white/60 bg-white/35 px-3 py-3 font-brand text-[9px] font-bold uppercase tracking-[0.14em] text-[#829188] dark:border-white/[0.07] dark:text-[#a9beb2]">
-              Espacio del asociado <span className="float-right mt-1 h-1.5 w-1.5 rounded-full bg-[#00AEEF]" />
             </div>
           </aside>
         </>
@@ -452,24 +450,6 @@ export default function DashboardAsociado({
 
           <div className="mx-3 mb-1 mt-auto h-px shrink-0 bg-black/[0.06] dark:bg-white/[0.06]" />
           {botonCerrarSesion(false)}
-
-          <div className={`${sidebarAbierto ? 'px-1' : 'px-0'} shrink-0 pb-1 pt-2`}>
-            <div className={`rounded-2xl border border-white/55 bg-white/24 p-3 backdrop-blur-xl transition-all duration-300 dark:border-white/[0.06] dark:bg-white/[0.025] ${sidebarAbierto ? '' : 'flex justify-center p-2'}`} title={!sidebarAbierto ? 'Espacio del asociado' : undefined}>
-              {sidebarAbierto ? (
-                <div className="flex items-center justify-between">
-                  <span className="font-brand text-[9px] font-bold uppercase tracking-[0.16em] text-[#829188] dark:text-[#a9beb2]">Espacio del asociado</span>
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#00AEEF]" />
-                </div>
-              ) : (
-                <Icono className="h-5 w-5 text-[#829188] dark:text-[#a9beb2]">
-                  <path d="M4 7h16M4 12h16M4 17h16" />
-                  <circle cx="9" cy="7" r="1.5" fill="currentColor" />
-                  <circle cx="15" cy="12" r="1.5" fill="currentColor" />
-                  <circle cx="11" cy="17" r="1.5" fill="currentColor" />
-                </Icono>
-              )}
-            </div>
-          </div>
         </nav>
       </aside>
 
